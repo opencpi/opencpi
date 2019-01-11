@@ -9,6 +9,7 @@
   <Property Name="enable_duty_cycle" Type="ushort" Readable="true" Writable="true" Default="1"/>
 
   <DataInterfaceSpec Name="in" Producer="false"/>
-  <DataInterfaceSpec Name="out" Producer="true"/>
+  <!-- Set the output buffer size to match the input, which may be connected to a port with a protocol-->
+  <DataInterfaceSpec Name="out" Producer="true" buffersize='in'/>
 
 </ComponentSpec>

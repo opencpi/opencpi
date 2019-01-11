@@ -89,8 +89,8 @@ function docase {
     # If we are testing in a remote environment keep infrastructure workers local
     [ "$OCPI_ENABLE_REMOTE_DISCOVERY" = 1 -o -n "$OCPI_SERVER_ADDRESS" -o \
       -n "$OCPI_SERVER_ADDRESSES" -o -n "$OCPI_SERVER_ADDRESSES_FILE" ] &&
-        lockrcc="-s 'ocpi.core.file_read=model!=\"rcc\"||platform==host_platform' \
-                 -s 'ocpi.core.file_write=model!=\"rcc\"||platform==host_platform'"
+        lockrcc="-s '?ocpi.core.file_read=model!=\"rcc\"||platform==host_platform' \
+                 -s '?ocpi.core.file_write=model!=\"rcc\"||platform==host_platform'"
     cmd=('OCPI_LIBRARY_PATH=../../../lib/rcc:../../../lib/ocl:../../gen/assemblies:$OCPI_CDK_DIR/$OCPI_TOOL_DIR/artifacts' \
              '$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin/'ocpirun -d -v -h -m$component=$1 -w$component=$2 \
                  $lockrcc -P$component=$platform \

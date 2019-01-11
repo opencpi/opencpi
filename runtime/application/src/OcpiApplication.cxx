@@ -1087,7 +1087,7 @@ namespace OCPI {
         p.m_name = a_name.c_str();
         p.m_params.add(connParams, portParams);
       } else if (ep) {
-        p.m_params = ep->m_parameters;
+        p.m_params = ep->m_parameters; // FIXME: are connparams being missed here?
         if (ep->m_url.length())
           p.m_url = ep->m_url.c_str();
         else
@@ -1101,6 +1101,13 @@ namespace OCPI {
       // Now finalize the transport selection
       // FIXME: cache results for same inputs
       // Check for collocated ports
+      ocpiInfo("Negotiating connection from instance %s (in %s) port %s to instance %s (in %s) port %s "
+	       "(buffer size is %zu/0x%zx)",
+	       lc.m_out.m_member ? lc.m_out.m_member->m_name.c_str() : "<external>",
+	       lc.m_out.m_container ? lc.m_out.m_container->cname() : "<none>", lc.m_out.m_name,
+	       lc.m_in.m_member ? lc.m_in.m_member->m_name.c_str() : "<external>",
+	       lc.m_in.m_container ? lc.m_in.m_container->cname() : "<none>", lc.m_in.m_name,
+	       lc.m_bufferSize, lc.m_bufferSize);
       if (lc.m_in.m_container && lc.m_out.m_container &&
           lc.m_in.m_container != lc.m_out.m_container &&
           (!lc.m_in.m_container->portsInProcess() ||
@@ -1120,6 +1127,20 @@ namespace OCPI {
         assert(lc.m_transport.transport.length());
       }
     }
+    // Find the launch connection
+    const OC::Launcher::Connection &ApplicationI::
+    findOtherConnection(const OC::Launcher::Port &p) {
+      const OC::Launcher::Connection *lc = &m_launchConnections[0];
+      for (unsigned n = 0; n < m_launchConnections.size(); n++, lc++)
+	if (&p != &lc->m_in && &p != &lc->m_out &&
+	    ((lc->m_in.m_member == p.m_member &&
+	      lc->m_in.m_metaPort->m_ordinal == p.m_metaPort->m_bufferSizePort) ||
+	    ((lc->m_out.m_member == p.m_member &&
+	      lc->m_out.m_metaPort->m_ordinal == p.m_metaPort->m_bufferSizePort))))
+	  return *lc;
+      assert("missing connection for buffersizeport"==0);
+      return *lc;
+    }
     // Initialize our own database of connections from the OU::Assembly connections
     // This can be done before any resources are actually allocated.  It is just
     // building the launch database.  finalizeLaunchConnections must be done after
@@ -1131,8 +1152,7 @@ namespace OCPI {
       // side will it be talking to.  In most cases you talk to everyone on the other side.
       // Basically we need a function which returns which on the other side we will talk
       // to.  We'll use a map.
-      // Pass 1: figure out how many member connections we will have, and
-      // negotiate the buffer size.
+      // Pass 1: figure out how many member connections we will have
       size_t nMemberConnections = 0;
       for (OU::Assembly::ConnectionsIter ci = m_assembly.m_connections.begin();
            ci != m_assembly.m_connections.end(); ci++) {
@@ -1196,18 +1216,11 @@ namespace OCPI {
             pIn = pOut;
           m_externals.insert(ExternalPair(e->m_name.c_str(), External(*lc)));
         }
-        // Resolve the buffer size for this connection, to apply to all member connections
-        size_t bufferSize =
-          OU::Port::determineBufferSize(pIn, aIn ? aIn->m_parameters.list() : NULL,
-                                        pOut, aOut ? aOut->m_parameters.list() : NULL,
-                                        ci->m_parameters.list());
         const OU::PValue *connParams = ci->m_parameters;
         for (unsigned nIn = 0; nIn < inScale; nIn++) {
           OC::Launcher::Member *mIn = aIn ? &m_launchMembers[iIn->m_firstMember + nIn] : NULL;
           for (unsigned nOut = 0; nOut < outScale; nOut++, lc++) {
-            OC::Launcher::Member *mOut =
-              aOut ? &m_launchMembers[iOut->m_firstMember + nOut] : NULL;
-            lc->m_bufferSize = bufferSize;
+            OC::Launcher::Member *mOut = aOut ? &m_launchMembers[iOut->m_firstMember + nOut] : NULL;
             setLaunchPort(lc->m_in, pIn, connParams, pIn->m_name,
                           aIn ? aIn->m_parameters.list() : NULL, mIn, e, inScale, nIn);
             setLaunchPort(lc->m_out, pOut, connParams, pOut->m_name,
@@ -1229,12 +1242,10 @@ namespace OCPI {
           if (p->m_isInternal) {
             if (!p->m_isOptional || i->m_bestDeployment.m_scale > 1) {
               // FIXME: any point in allowing buffer count override?
-              size_t bufferSize = OU::Port::determineBufferSize(p, NULL, p + 1, NULL, NULL);
               for (unsigned nIn = 0; nIn < scale; nIn++) {
                 OC::Launcher::Member *mIn = &m_launchMembers[i->m_firstMember + nIn];
                 for (unsigned nOut = 0; nOut < scale; nOut++, lc++) {
                   OC::Launcher::Member *mOut = &m_launchMembers[i->m_firstMember + nOut];
-                  lc->m_bufferSize = bufferSize;
                   setLaunchPort(lc->m_in, p, NULL, p->m_name, NULL, mIn, NULL, scale, nIn);
                   setLaunchPort(lc->m_out, p+1, NULL, (p+1)->m_name, NULL, mOut, NULL, scale,
                                 nOut);
@@ -1248,6 +1259,49 @@ namespace OCPI {
             p++, nn++; // always skip one after an internal since that's the other half.
           }
       }
+      // Perform buffer size negotiations including propagating buffer sizes between ports
+      // of an instance that has said that one port's buffer size should be based on other port's
+      // buffer size.  In two steps:
+      // 1. Negotiate connections that do *not* have ports with cross-port buffersize references
+      // 2. Negotiate connections that *do* have ports with cross-port buffersize references,
+      //    if the connection of the cross port has been negotiated
+      // 3. Repeat #2 until no propagation progress is being made.
+
+      // Pass 1: set the buffer size for all connections that do not have ports with cross-port refs
+      //         and in the same pass record connections for cross-port buffersize references.
+      lc = &m_launchConnections[0];
+      for (unsigned n = 0; n < m_launchConnections.size(); n++, lc++)
+	if (lc->m_bufferSize == SIZE_MAX &&
+	    lc->m_in.m_metaPort->m_bufferSizePort == SIZE_MAX &&
+	    lc->m_out.m_metaPort->m_bufferSizePort == SIZE_MAX)
+	  lc->m_bufferSize = 
+	    OU::Port::determineBufferSize(lc->m_in.m_metaPort, lc->m_in.m_params, SIZE_MAX,
+					  lc->m_out.m_metaPort, lc->m_in.m_params, SIZE_MAX, NULL);
+	else {
+	  if (lc->m_in.m_metaPort->m_bufferSizePort != SIZE_MAX)
+	    lc->m_in.m_otherConn = &findOtherConnection(lc->m_in);
+	  if (lc->m_out.m_metaPort->m_bufferSizePort != SIZE_MAX)
+	    lc->m_out.m_otherConn = &findOtherConnection(lc->m_out);
+	}
+      // Pass 2 and beyond:  propagate buffer sizes from connections that are sized to ones that are not
+      bool workDone;
+      do {
+	workDone = false;
+	lc = &m_launchConnections[0];
+	for (unsigned n = 0; n < m_launchConnections.size(); n++, lc++)
+	  if (lc->m_bufferSize == SIZE_MAX &&
+	      (!lc->m_in.m_otherConn || lc->m_in.m_otherConn->m_bufferSize != SIZE_MAX) &&
+	      (!lc->m_out.m_otherConn || lc->m_out.m_otherConn->m_bufferSize != SIZE_MAX)) {
+	    lc->m_bufferSize = 
+	      OU::Port::determineBufferSize(lc->m_in.m_metaPort, lc->m_in.m_params,
+					    lc->m_in.m_otherConn ? lc->m_in.m_otherConn->m_bufferSize : SIZE_MAX,
+					    lc->m_out.m_metaPort, lc->m_out.m_params,
+					    lc->m_out.m_otherConn ? lc->m_out.m_otherConn->m_bufferSize : SIZE_MAX,
+					    NULL);
+	    // This connection can be negotiated now
+	    workDone = true;
+	  }
+      } while (workDone);
       // Create an ordered set of pointers into the Externals
       m_externalsOrdered.resize(m_externals.size());
       External **e = &m_externalsOrdered[0];

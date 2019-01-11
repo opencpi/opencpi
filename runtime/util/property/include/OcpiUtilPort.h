@@ -168,12 +168,12 @@ namespace OCPI {
       void emitScalingAttrs(std::string &out) const;
       void emitScaling(std::string &out) const;
       // Get the buffer size to use on this port given meta info and params and defaults
-      size_t getBufferSize(const PValue *portParams, const PValue *connParams) const;
+      size_t getBufferSize(const PValue *portParams, const PValue *connParams, size_t otherSize) const;
       Distribution getDistribution(unsigned op) const;
       // Determine the buffer size for a connection, where "in" or "out" could be NULL when
       // they are "external" and not specified by any port metadata.
-      static size_t determineBufferSize(const Port *in, const PValue *paramsIn,
-					const Port *out, const PValue *paramsOut,
+      static size_t determineBufferSize(const Port *in, const PValue *paramsIn, size_t otherIn,
+					const Port *out, const PValue *paramsOut, size_t otherOut,
 					const PValue *connParams);
     };
 

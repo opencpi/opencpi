@@ -182,6 +182,8 @@ namespace OCPI {
 			 const OCPI::Container::Launcher::Member *member,
 			 const OCPI::Util::Assembly::External *ep, size_t scale, size_t index);
       void initLaunchConnections();
+      const OCPI::Container::Launcher::Connection &
+	findOtherConnection(const OCPI::Container::Launcher::Port &p);
       void initLaunchMembers();
       void finalizeLaunchPort(OCPI::Container::Launcher::Port &p);
       void finalizeLaunchConnections();

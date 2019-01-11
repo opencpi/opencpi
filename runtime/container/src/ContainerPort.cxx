@@ -64,8 +64,10 @@ namespace OCPI {
       Launcher::Connection c;
       c.m_in.m_port = isProvider() ? this : &other.containerPort(),
       c.m_out.m_port = isProvider() ? &other.containerPort() : this;
-      c.m_bufferSize = OU::Port::determineBufferSize(&c.m_in.m_port->m_metaPort, NULL,
-						     &c.m_out.m_port->m_metaPort, NULL, NULL);
+      assert(c.m_in.m_port->m_metaPort.m_bufferSizePort == SIZE_MAX &&
+	     c.m_out.m_port->m_metaPort.m_bufferSizePort == SIZE_MAX);
+      c.m_bufferSize = OU::Port::determineBufferSize(&c.m_in.m_port->m_metaPort, NULL, SIZE_MAX,
+						     &c.m_out.m_port->m_metaPort, NULL, SIZE_MAX, NULL);
       c.m_in.m_port->initialConnect(c);
       if (!c.m_out.m_done)
 	c.m_out.m_port->initialConnect(c);

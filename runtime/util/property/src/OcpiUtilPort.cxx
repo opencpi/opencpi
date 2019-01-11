@@ -223,10 +223,12 @@ namespace OCPI {
     // or overrided the default from the protocol.  If it is SIZE_MAX, then there is
     // no protocol and no default at all.
     size_t Port::
-    getBufferSize(const PValue *portParams, const PValue *connParams) const {
+    getBufferSize(const PValue *portParams, const PValue *connParams, size_t otherSize) const {
       size_t size = m_bufferSize;
       const char *type = "default";
       do {
+	if (m_bufferSizePort != SIZE_MAX)
+	  size = otherSize;
 	if (size == SIZE_MAX)
 	  size = DEFAULT_BUFFER_SIZE;
 	type = "port";
@@ -261,13 +263,14 @@ namespace OCPI {
     //    buffer sizes may legitimately be zero (for ZLM-only protocols)
     //    external ports have no inherent buffer size, but may override
     //    external-to-external MUST specify a buffer size somehow.
+    //    ports may depend on other ports for their buffer sizes
     size_t Port::
-    determineBufferSize(const Port *in, const PValue *paramsIn,
-			const Port *out, const PValue *paramsOut,
+    determineBufferSize(const Port *in, const PValue *paramsIn, size_t otherIn,
+			const Port *out, const PValue *paramsOut, size_t otherOut,
 			const PValue *connParams) {
       size_t
-	sizeIn = in ? in->getBufferSize(paramsIn, connParams) : SIZE_MAX,
-	sizeOut = out ? out->getBufferSize(paramsOut, connParams) : SIZE_MAX;
+	sizeIn = in ? in->getBufferSize(paramsIn, connParams, otherIn) : SIZE_MAX,
+	sizeOut = out ? out->getBufferSize(paramsOut, connParams, otherOut) : SIZE_MAX;
       size_t size =
 	sizeIn == SIZE_MAX ? sizeOut :
 	sizeOut == SIZE_MAX ? sizeIn :
