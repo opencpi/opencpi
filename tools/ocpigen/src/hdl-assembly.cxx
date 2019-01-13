@@ -116,19 +116,24 @@ insertAdapter(Connection &c, InstancePort &from, InstancePort &to) {
 }
 
 void Connection::
-setClock(Clock &c) {
+setClock(Clock &c, bool output) {
   assert(!m_clock);
-  m_clock = &c;
-  if (m_external)
-    m_external->m_instPort.m_port->clock = m_clock;
+  m_clock = &c; // set connection's clock
+  if (m_external) {
+    assert(!m_external->m_instPort.m_port->clock ||
+	   (m_external->m_instPort.m_port->m_type == WCIPort && !m_external->m_instPort.m_port->m_master));
+    m_external->m_instPort.m_port->clock = m_clock; // set external port's clock
+    if (output)
+      m_external->m_instPort.m_port->myClock = true; // if its an output, its this external port's clock
+  }
   // And force the clock for each connected port to BE the this clock
   // This will potentially connect an independent clock on a worker to this clock
   for (AttachmentsIter ai = m_attachments.begin(); ai != m_attachments.end(); ai++) {
     InstancePort &ip = (**ai).m_instPort;
-    if (!ip.m_external && ip.m_port->isData()) {
+    if (!ip.m_external && ip.m_port->isOCP()) {
       size_t nc = ip.m_port->clock->ordinal; // the ordinal of the clock within the worker of the port
       assert(ip.m_instance->m_clocks);
-      assert(!ip.m_instance->m_clocks[nc] || ip.m_instance->m_clocks[nc] == &c);	     
+      assert(!ip.m_instance->m_clocks[nc] || ip.m_instance->m_clocks[nc] == &c);
       ip.m_instance->m_clocks[nc] = &c;
     }
   }
@@ -140,21 +145,22 @@ setClock(Clock &c) {
 // different port of the instance that shares that clock.  So we keep trying until we find nothing to do.
 void Assembly::
 propagateClocks() {
-  bool workDone = false;
-  do
-    for (auto ci = m_connections.begin(); ci != m_connections.end(); ci++) {
+  bool workDone;
+  do {
+    workDone = false;
+    for (auto ci = m_connections.begin(); ci != m_connections.end(); ++ci) {
       Connection &c = **ci;
       if (!c.m_clock)
 	for (auto ai = c.m_attachments.begin(); ai != c.m_attachments.end(); ai++) {
 	  InstancePort &ip = (**ai).m_instPort;
-	  if (ip.m_port->isData() && ip.m_instance && ip.m_instance->m_clocks[ip.m_port->clock->ordinal]) {
-	    c.setClock(*ip.m_port->clock);
+	  if (ip.m_port->isOCP() && !ip.m_external && ip.m_instance->m_clocks[ip.m_port->clock->ordinal]) {
+	    c.setClock(*ip.m_instance->m_clocks[ip.m_port->clock->ordinal]);
 	    workDone = true;
 	    break;
 	  }
 	}
     }
-  while (workDone);
+  } while (workDone);
 }
 
 const char *Worker::
@@ -170,7 +176,7 @@ parseHdlAssy() {
   //  for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
   //    m_ctl.summarizeAccess(**pi);
   ::Assembly *a = m_assembly = new ::Assembly(*this);
-  
+
   static const char
     *topAttrs[] = {IMPL_ATTRS, HDL_TOP_ATTRS, HDL_IMPL_ATTRS, NULL},
     // FIXME: reduce to those that are hdl specific
@@ -224,24 +230,23 @@ parseHdlAssy() {
   }
   Port *wci = NULL;
   unsigned n;
-  Clock *wciClk = NULL;
-  // Establish the wciClk for all wci slaves
+  // Establish the m_wciClock for all wci slaves
   if (m_type == Container) {
     // The default WCI clock comes from the (single) wci master
-    for (n = 0, i = &a->m_instances[0]; !wciClk && n < a->m_instances.size(); n++, i++)
+    for (n = 0, i = &a->m_instances[0]; !m_wciClock && n < a->m_instances.size(); n++, i++)
       if (i->m_worker) {
 	unsigned nn = 0;
 	for (InstancePort *ip = &i->m_ports[0]; nn < i->m_worker->m_ports.size(); nn++, ip++) 
 	  if (ip->m_port->m_type == WCIPort && ip->m_port->m_master) {
 	    // Found the instance that is mastering the control plane
-	    wciClk = &addClock();
+	    m_wciClock = &addClock();
 	    // FIXME:  this should access the 0th clock more specifically for VHDL
-	    wciClk->m_name = "wciClk";
-	    OU::format(wciClk->m_signal, "%s_%s_out_i(0).Clk", i->cname(), ip->m_port->pname());
-	    OU::format(wciClk->m_reset, "%s_%s_out_i(0).MReset_n", i->cname(), ip->m_port->pname());
-	    wciClk->assembly = true;
+	    m_wciClock->m_name = "wciClk";
+	    OU::format(m_wciClock->m_signal, "%s_%s_out_i(0).Clk", i->cname(), ip->m_port->pname());
+	    OU::format(m_wciClock->m_reset, "%s_%s_out_i(0).MReset_n", i->cname(), ip->m_port->pname());
+	    m_wciClock->assembly = true;
 	    if (i->m_clocks)
-	      i->m_clocks[ip->m_port->clock->ordinal] = wciClk;
+	      i->m_clocks[ip->m_port->clock->ordinal] = m_wciClock;
 	    break;
 	  }
       }
@@ -254,8 +259,8 @@ parseHdlAssy() {
     wci = createPort<WciPort>(*this, x, NULL, -1, err);
     assert(wci);
     // Clocks: coalesce all WCI clock and clocks with same reqts, into one wci, all for the assy
-    Clock &clk = addClock();
-    // FIXME:  this should access the 0th clock more specifically for VHDL
+    assert(wci->clock);
+    Clock &clk = *wci->clock;
     clk.m_signal =
       clk.m_name =
       a->m_nWCIs > 1 ? (m_language == VHDL ? "wci_in(0).Clk" : "wci0_Clk") : "wci_Clk";
@@ -285,17 +290,16 @@ parseHdlAssy() {
 	  return err;
 	nControl++;
       }
-    wciClk = wci->clock;
   }
   // Map all the wci slave clocks to the assy's wci clock
   for (n = 0, i = &a->m_instances[0]; n < a->m_instances.size(); n++, i++)
     // Map the instance's WCI clock to the assembly's WCI clock if it has a wci port
     if (i->m_worker && i->m_worker->m_wciClock && !i->m_worker->m_assembly)
-      i->m_clocks[i->m_worker->m_wciClock->ordinal] = wciClk;
+      i->m_clocks[i->m_worker->m_wciClock->ordinal] = m_wciClock;
 #if 0
   if (i->m_worker && i->worker->m_ports[0]->m_type == WCIPort &&
     i->m_worker->m_ports[0]->m_master && !i->m_worker->m_assembly)
-    i->m_clocks[i->m_worker->m_ports[0]->clock->ordinal] = wciClk;
+    i->m_clocks[i->m_worker->m_ports[0]->clock->ordinal] = m_wciClock;
 #endif
   // Externalize ports that needed it, before dealing with clocks
   bool cantDataResetWhileSuspended = false;
@@ -310,34 +314,25 @@ parseHdlAssy() {
   if (!cantDataResetWhileSuspended && wci)
     m_wci->setResetWhileSuspended(true);
 
+  // All the external ports (and connections to them) are now established, but their clocks are not.
+  // The external port clocks will be set after the clocks for all connections are established.
+
   // Assigning clocks to connections in 4 steps:
-  // 1. Assign the wci/control clock where it is required.
-  // 2. Use clocks associated with worker ports that the worker is driving (output from workers like ADC)
+  // 1. Assign the wci/control clock to connections where it is required.
+  // 2. Assign clocks associated with worker ports that the worker is driving (output from workers like ADC)
   // 3. Specify the clock that is associated with an external port of the connection.
   // 4. For "clock islands" with none of the above, create an assembly level clock input.
 
   // 1. Assign the wci clock to connections where we can, i.e. when some port must have the WCI in any case.
-  if (wciClk)
+  if (m_wciClock)
     for (auto ci = m_assembly->m_connections.begin(); ci != m_assembly->m_connections.end(); ++ci) {
       Connection &c = **ci;
       if (!c.m_clock)
 	for (AttachmentsIter ai = c.m_attachments.begin(); ai != c.m_attachments.end(); ai++) {
 	  InstancePort &ip = (**ai).m_instPort;
-	  if (!ip.m_external && 
-	      (ip.m_port->m_type == WCIPort ||
-#if 1
-	       ip.m_port->clock == ip.m_port->worker().m_wciClock
-#else
-	       // FIXME: how can we really know this is not an independent clock??  We can't (commented out)
-	       (ip.m_port->worker().m_noControl && ip.m_port->clock && ip.m_port->clock->port == 0) ||
-	       (ip.m_instance->m_worker->m_ports[0]->m_type == WCIPort &&
-		!ip.m_instance->m_worker->m_ports[0]->m_master &&
-		// If this (data) port on the worker uses the worker's wci clock
-		ip.m_port->isData() && ip.m_port->clock &&
-		ip.m_port->clock == ip.m_instance->m_worker->m_ports[0]->clock)
-#endif
-	       )) {
-	    c.setClock(*wciClk);
+	  if (!ip.m_external &&
+	      (ip.m_port->m_type == WCIPort || ip.m_port->clock == ip.m_port->worker().m_wciClock)) {
+	    c.setClock(*m_wciClock);
 	    break;
 	  }
 	}
@@ -349,9 +344,10 @@ parseHdlAssy() {
     if (!c.m_clock)
       for (auto ai = c.m_attachments.begin(); ai != c.m_attachments.end(); ai++) {
 	InstancePort &ip = (**ai).m_instPort;
-	if (ip.m_port->isData() && ip.m_instance && !ip.m_instance->m_clocks[ip.m_port->clock->ordinal] &&
+	if (!ip.m_external && ip.m_port->isOCP() && !ip.m_instance->m_clocks[ip.m_port->clock->ordinal] &&
 	    ip.m_port->clock->m_output) {
-	  c.setClock(*ip.m_port->clock);
+	  assert(ip.m_port->myClock);
+	  c.setClock(*ip.m_port->clock, true);
 	  break;
 	}
       }
@@ -362,7 +358,8 @@ parseHdlAssy() {
   // I.e. a single clock may end up used for multiple connections with external ports.
   for (auto ci = m_assembly->m_connections.begin(); ci != m_assembly->m_connections.end(); ci++) {
     Connection &c = **ci;
-    if (!c.m_clock && c.m_external && c.m_external->m_instPort.m_port->isData()) {
+    if (!c.m_clock && c.m_external && c.m_external->m_instPort.m_port->isOCP()) {
+      // Not based on any other clock and not inferred from any other port's clock
       Clock &clk = addClock();
       clk.m_name = c.m_name + "_Clk";
       clk.m_signal = clk.m_name;
@@ -376,9 +373,10 @@ parseHdlAssy() {
     }
   }
   // 4. Now we are left with "clock islands" - internal connections with no inferrable clocks.
+  //    Create a worker-level clock not associated with any external port of the assembly.
   for (auto ci = m_assembly->m_connections.begin(); ci != m_assembly->m_connections.end(); ci++) {
     Connection &c = **ci;
-    if (!c.m_clock && !c.m_external && (*c.m_attachments.begin())->m_instPort.m_port->isData()) {
+    if (!c.m_clock && !c.m_external && (*c.m_attachments.begin())->m_instPort.m_port->isOCP()) {
       Clock &clk = addClock();
       clk.m_name = c.m_name + "_Clk";
       clk.m_signal = clk.m_name;
@@ -387,26 +385,30 @@ parseHdlAssy() {
       m_assembly->propagateClocks();
     }
   }
+  // Check for unconnected ports without clocks
   for (n = 0, i = &a->m_instances[0]; n < a->m_instances.size(); n++, i++)
     if (i->m_worker && !i->m_worker->m_assembly) {
       unsigned nn = 0;
       for (InstancePort *ip = &i->m_ports[0]; nn < i->m_worker->m_ports.size(); nn++, ip++) 
-	if (ip->m_port->isData()) {
+	if (ip->m_port->isOCP()) {
 	  size_t nc = ip->m_port->clock->ordinal;
 	  if (!i->m_clocks[nc]) {
-	    if (ip->m_port->isData())
-	      return OU::esprintf("Unconnected data interface %s of instance %s has its own clock",
-				  ip->m_port->pname(), i->cname());
+	    assert(ip->m_attachments.empty());
+	    return OU::esprintf("Unconnected interface %s of instance %s has its own clock",
+				ip->m_port->pname(), i->cname());
+#if 0
 	    Clock &clk = addClock();
 	    i->m_clocks[nc] = &clk;
 	    OU::format(clk.m_name, "%s_%s", i->cname(), ip->m_port->clock->cname());
 	    if (ip->m_port->clock->m_signal.size())
 	      OU::format(clk.m_signal, "%s_%s", i->cname(), ip->m_port->clock->signal());
 	    clk.assembly = true;
+#endif
 	  }
 	}
     }
 
+#if 0
   // Now all clocks are done.  We process the non-data external ports.
   // Now all data ports that are connected have mapped clocks and
   // all ports with WCI clocks are connected.  All that's left is
@@ -427,6 +429,7 @@ parseHdlAssy() {
         }
       }
   }
+#endif
   return 0;
 }
 

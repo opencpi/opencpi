@@ -1348,6 +1348,11 @@ emitVhdlShell(FILE *f) {
       for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
 	OU::Property &p = **pi;
 	if (!p.m_isParameter && !p.m_isRaw && (p.m_isVolatile || (p.m_isReadable && !p.m_isWritable))) {
+	  if (p.m_isSequence) {
+	    fprintf(f, "%s%s_length => props_%s%s_length",
+		    last, p.cname(), p.m_isBuiltin ? "builtin_" : "from_worker.", p.cname());
+	    last = ",\n     ";
+	  }
 	  fprintf(f, "%s%s => props_%s%s", last, p.cname(), p.m_isBuiltin ? "builtin_" : "from_worker.",
 		  p.cname());
 	  last = ",\n     ";

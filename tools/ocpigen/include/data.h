@@ -121,6 +121,8 @@ class WsiPort : public DataPort {
   bool masterIn() const;
   inline const char *prefix() const { return "wsi"; }
   inline const char *typeName() const { return "WSI"; }
+  bool haveWorkerOutputs() const { return true; }
+  bool haveWorkerInputs() const { return true; }
   void emitPortDescription(FILE *f, Language lang) const;
   void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
 			bool inPackage, bool inWorker, const char *defaultIn,

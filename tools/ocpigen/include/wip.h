@@ -67,6 +67,7 @@ class WciPort : public OcpPort {
   inline const char *prefix() const { return "wci"; }
   inline const char *typeName() const { return "WCI"; }
   bool needsControlClock() const;
+  bool haveWorkerOutputs() const { return true; }
   void emitPortDescription(FILE *f, Language lang) const;
   const char *deriveOCP();
   size_t decodeWidth() const { return ocp.MAddr.width; }
@@ -130,7 +131,6 @@ class WtiPort : public OcpPort {
 	      const char *&err) const;
   inline const char *typeName() const { return "WTI"; }
   inline const char *prefix() const { return "wti"; }
-  bool haveWorkerOutputs() const;
   const char *deriveOCP();
   void emitVhdlShell(FILE *f, Port *wci);
   void emitImplSignals(FILE *f);
@@ -431,6 +431,7 @@ class Worker : public OU::Worker {
     create(const char *file, const std::string &parentFile, const char *package,
 	   const char *outDir, Worker *parent, OU::Assembly::Properties *instancePropertyValues,
 	   size_t paramConfig, const char *&err);
+  const Ports &ports() const { return m_ports; }
   bool nonRaw(PropertiesIter pi);
   Clock &addClock();
   Clock &addWciClockReset();

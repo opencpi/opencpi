@@ -25,17 +25,12 @@ WtiPort::
 WtiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
   : OcpPort(w, x, sp, ordinal, WTIPort, "wti", err),
     m_secondsWidth(32), m_fractionWidth(0) {
-  if ((err = OE::checkAttrs(x, "Name", "Clock", "SecondsWidth", "FractionWidth",
+  if ((err = OE::checkAttrs(x, "Name", "Clock", "SecondsWidth", "FractionWidth", "myoutputclock",
 			    "AllowUnavailable", "Pattern", "master", "myclock", (void*)0)) ||
-#if 1
       (err = OE::getExprNumber(x, "SecondsWidth", m_secondsWidth, NULL, m_secondsWidthExpr,
 			       &w)) ||
       (err = OE::getExprNumber(x, "FractionWidth", m_fractionWidth, NULL, m_fractionWidthExpr,
 			       &w)) ||
-#else
-      (err = OE::getNumber(x, "SecondsWidth", &m_secondsWidth, 0, 32)) ||
-      (err = OE::getNumber(x, "FractionWidth", &m_fractionWidth, 0, 0)) ||
-#endif
       (err = OE::getBoolean(x, "AllowUnavailable", &m_allowUnavailable)))
     return;
   for (unsigned i = 0; i < w.m_ports.size(); i++) {
@@ -70,11 +65,6 @@ clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role */*
   return *new WtiPort(*this, w, name, err);
 }
 
-bool WtiPort::
-haveWorkerOutputs() const {
-  return m_allowUnavailable || clock != m_worker->m_wciClock;
-}
-
 void WtiPort::
 emitPortDescription(FILE *f, Language lang) const {
   OcpPort::emitPortDescription(f, lang);
@@ -87,7 +77,6 @@ emitPortDescription(FILE *f, Language lang) const {
 
 const char *WtiPort::
 deriveOCP() {
-  static uint8_t s[1]; // a non-zero string pointer
   OcpPort::deriveOCP();
   // Time interfaces are quite flexible.
   // Actual scenarios:
@@ -97,14 +86,18 @@ deriveOCP() {
   //     assigns another clock to this port - no Clk signal here
   //   worker wants time in the native timekeepping clock domain
   //     specifies myclock - Clk signal here
+  static uint8_t s[1]; // a non-zero string pointer
+#if 0
   if (myClock) {
     ocp.Clk.master = false;
     ocp.Clk.value = s;
   }
+#endif
   ocp.MCmd.width = 3;
   ocp.MData.width = m_dataWidth;
   // Note no MReset is present.  OCP says either reset must be present.
-  // Thus MCmd is qualified by SReset
+  // FIXME: Neither of these is actually used, but for now the ocp code
+  // always assumes there are some signals in both directions
   ocp.SReset_n.value = s;
   ocp.SThreadBusy.value = s;
   fixOCP();
@@ -119,45 +112,28 @@ emitImplSignals(FILE *f) {
   fprintf(f,
 	  "  -- Signals for the outer WTI converted to the inner worker ones\n"
 	  "  signal worker_%s : worker_%s_t;\n", in.c_str(), in.c_str());
-  if (m_allowUnavailable || clock != m_worker->m_wciClock)
+  if (haveWorkerOutputs())
     fprintf(f,
 	    "  signal worker_%s : worker_%s_t;\n", out.c_str(), out.c_str());
 }
 void WtiPort::
-emitVhdlShell(FILE *f, Port */*wci*/) {
+emitVhdlShell(FILE *f, Port *p) {
+  OcpPort::emitVhdlShell(f, p);
   std::string in, out;
   OU::format(in, typeNameIn.c_str(), "");
   OU::format(out, typeNameOut.c_str(), "");
-  if (clock != m_worker->m_wciClock) {
-    fprintf(f, "  -- The WTI interface conversion between OCP and inner worker interfaces\n");
-    if (myClock) {
-      if (clock->m_output)
-	fprintf(f,
-		"  %s.Clk <= worker_%s.clk;\n"
-		"  -- should be this, but isim crashes.\n"
-		"  -- .SReset_n <= from_bool(not wci_reset);\n"
-		"  %s.SReset_n <= '0' when its(worker_%s.reset) else '1';\n",
-		out.c_str(), out.c_str(), out.c_str(), out.c_str());
-      else
-	fprintf(f,
-		"  worker_%s.clk <= %s.Clk;\n"
-		"  worker_%s.reset <= '0' when %s.SReset_n else '1';\n",
-		in.c_str(), in.c_str(), in.c_str(), in.c_str());
-    } else if (clock->port) {
-      // The worker is expected to use the correct clock.
-#if 0
-      std::string other;
-      Port &port = *clock->port;
-      Clock &clk = *port.clock;
-      OU::format(other, clk.m_output ? port.typeNameOut.c_str() : port.typeNameIn.c_str(), "");
-      fprintf(f,
-		"  worker_%s.clk <= %s.Clk;\n"
-		"  worker_%s.reset <= '0' when %s.SReset_n else '1';\n",
-	      in.c_str(), other.c_str(), in.c_str(), other.c_str()); 
-#endif
-    } else
-      assert("No support for global clocks for wti" == 0);
-  }     
+#if 1
+  if (m_allowUnavailable)
+    fprintf(f,
+	    "  worker_%s.valid <= to_bool(%s.MCmd = ocp.MCmd_WRITE);\n",
+	    in.c_str(), in.c_str());
+  // These are not used, but assigned in any case
+  // FIXME when ocp can accomodate having no outputs at all?
+  fprintf(f,
+	  "  %s.SThreadBusy(0) <= wci_reset;\n"
+	  "  %s.SReset_n <= not wci_reset;\n", out.c_str(), out.c_str());
+#else
+  // Leave this here when we actually have support for "request", and time not available
   if (m_allowUnavailable)
     fprintf(f,
 	    "  %s.SThreadBusy(0) <= not worker_%s.request;\n"
@@ -166,6 +142,7 @@ emitVhdlShell(FILE *f, Port */*wci*/) {
   else
     fprintf(f,
 	    "  %s.SThreadBusy(0) <= wci_reset;\n", out.c_str());
+#endif
   if (m_secondsWidth)
     fprintf(f,
 	    "  g%s_seconds: if ocpi_port_%s_seconds_width > 0 generate\n"
@@ -188,13 +165,14 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
   fprintf(f,
 	  "%s    %s_in => worker_%s",
 	  last.c_str(), pname(), in.c_str());
-  if (m_allowUnavailable || clock != m_worker->m_wciClock)
+  if (haveWorkerOutputs())
     fprintf(f, ",\n    %s_out => worker_%s", pname(), out.c_str());
   last = ",\n";
 }
 
 void WtiPort::
 emitRecordInputs(FILE *f) {
+  OcpPort::emitRecordInputs(f);
   if (m_allowUnavailable)
     fprintf(f, "    valid    : Bool_t;\n");
   if (m_secondsWidth)
@@ -205,9 +183,7 @@ emitRecordInputs(FILE *f) {
 
 void WtiPort::
 emitRecordOutputs(FILE *f) {
-  if (clock != m_worker->m_wciClock)
-    fprintf(f,
-	    "    clk        : std_logic; -- this ports clk, different from wci_clk\n");
+  OcpPort::emitRecordOutputs(f);
   if (m_allowUnavailable)
     fprintf(f,
 	    "    request    : Bool_t; -- worker wants the clock to be valid\n");
@@ -234,10 +210,8 @@ emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord, 
 const char *WtiPort::
 finalizeExternal(Worker &aw, Worker &/*iw*/, InstancePort &ip,
 		 bool &/*cantDataResetWhileSuspended*/) {
-  // We don't share ports since the whole point of WTi is to get
+  // We don't an external WTI port since the whole point of WTi is to get
   // intra-chip accuracy via replication of the time clients.
-  // We could have an option to use wires instead to make things smaller
-  // and less accurate...
   const char *err;
   if (!m_master && ip.m_attachments.empty() &&
       (err = aw.m_assembly->externalizePort(ip, "wti", &aw.m_assembly->m_nWti)))

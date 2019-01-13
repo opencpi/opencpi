@@ -27,8 +27,8 @@
 Port::
 Port(Worker &w, ezxml_t x, Port *sp, int nameOrdinal, WIPType type, const char *defaultName,
      const char *&err)
-  : m_clone(false),m_morphed(false), m_worker(&w), m_ordinal(0), m_count(0), m_master(false), m_xml(x),
-    m_type(type), pattern(NULL), clock(0), clockPort(0), myClock(false), m_specXml(x) {
+  : m_internal(NULL), m_morphed(false), m_worker(&w), m_ordinal(0), m_count(0), m_master(false), m_xml(x),
+    m_type(type), pattern(NULL), clock(NULL), clockPort(NULL), myClock(false), m_specXml(x) {
   if (sp) {
     // A sort of copy constructor from a spec port to an impl port
     m_morphed = true;
@@ -92,7 +92,7 @@ Port(Worker &w, ezxml_t x, Port *sp, int nameOrdinal, WIPType type, const char *
 // instance's port in the assembly that we are cloning/externalizing.
 Port::
 Port(const Port &other, Worker &w, std::string &name, size_t count, const char *&err)
-  : m_clone(true), m_morphed(false), m_worker(&w), m_name(name), m_ordinal(w.m_ports.size()), m_count(count),
+  : m_internal(&other), m_morphed(false), m_worker(&w), m_name(name), m_ordinal(w.m_ports.size()), m_count(count),
     m_master(other.m_master), m_xml(other.m_xml), m_type(other.m_type), pattern(NULL),
     clock(NULL), clockPort(NULL), myClock(false), m_specXml(other.m_specXml)
 {
@@ -381,14 +381,6 @@ emitRecordTypes(FILE *f) {
   fprintf(f,
 	  "  type worker_%s_t is record\n", 
 	  in.c_str());
-  if ((clock != m_worker->m_wciClock && m_type != WTIPort) || this == m_worker->m_wci)
-    fprintf(f,
-	    "    clk              : std_logic;        -- %s\n",
-	    m_type == WCIPort ? "control clock for this worker" :
-	    "this port has a clk different from the control clock\n");
-  if (m_type != WTIPort)
-    fprintf(f,
-	    "    reset            : Bool_t;           -- this port is being reset from the outside peer\n");
   emitRecordInputs(f);
   fprintf(f,
 	  "  end record worker_%s_t;\n", in.c_str());

@@ -98,7 +98,7 @@ OcpPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *d
   }
 }
 
-// Our special copy constructor
+// Our special clone/copy constructor
 OcpPort::
 OcpPort(const OcpPort &other, Worker &w , std::string &name, size_t count, const char *&err)
   : Port(other, w, name, count, err) {
@@ -116,6 +116,31 @@ OcpPort(const OcpPort &other, Worker &w , std::string &name, size_t count, const
   m_byteWidth = other.m_byteWidth;
   m_continuous = other.m_continuous;
   ocp = other.ocp;
+#if 0
+  // Deal with clocks here.  Some things can be done immediately, but some things need to wait
+  // until all the external ports of the assembly are established.  To help the deferred work
+  // we record the internal port that this port was cloned from.
+  assert(other->clock);
+  if (other->clock == other->m_worker->m_wciClk) {
+    assert(m_worker->m_wciClk);
+    clock = m_worker->m_wciClk;
+  } else if (other->clockPort) {
+    // The other port is not necessarily externalized, so we can't (yet) know there is another
+    // external port that has the desired clock.  Also the other port might not be externalized yet.
+    if (there is a external port with the clock for this internal port - preferring a myclock)
+      clock->clockPort = (that other external port);
+    else { // this port must emit this clock since it is entirely internal
+      clock->m_output = true;
+      clock->myClock;
+    }
+  } else if (other->myClock) {
+    myClock = true;
+    clock->m_output = other->clock->m_output;
+  if (other->clock->m_output) {
+      clock->
+    else
+      ;
+#endif
 }
 
 void OcpPort::
@@ -273,9 +298,35 @@ emitRecordInterface(FILE *f, const char *implName) {
     emitRecordArray(f);
 }
 
+void OcpPort::
+emitRecordInputs(FILE *f) {
+  if (myClock && !clock->m_output)
+    fprintf(f,
+	    "    clk        : std_logic; -- this ports clk, as an input, different from wci_clk\n");
+  if (m_type != WTIPort)
+    fprintf(f,
+	    "    reset            : Bool_t;           -- this port is being reset from the outside\n");
+}
+void OcpPort::
+emitRecordOutputs(FILE *f) {
+  if (myClock && clock->m_output)
+    fprintf(f,
+	    "    clk        : std_logic; -- this ports clk, as an output, different from wci_clk\n");
+}
+
 bool OcpPort::
 needsControlClock() const {
   return true;
+}
+
+bool OcpPort::
+haveWorkerOutputs() const {
+  return myClock && clock->m_output;
+}
+
+bool OcpPort::
+haveWorkerInputs() const {
+  return myClock && !clock->m_output;
 }
 
 // Post processing for deriveOCP
@@ -365,6 +416,53 @@ emitVerilogSignals(FILE *f) {
 	} else
 	  fprintf(f, "  output           %s;\n", name.c_str());
       }
+  }
+}
+
+void OcpPort::
+emitVhdlShell(FILE *f, Port */*wci*/) {
+  std::string in, out;
+  OU::format(in, typeNameIn.c_str(), "");
+  OU::format(out, typeNameOut.c_str(), "");
+  if (clock != m_worker->m_wciClock) {
+    if (myClock) {
+#if 1
+      if (clock->m_output)
+	fprintf(f,
+		"  %s.Clk <= worker_%s.clk;\n",
+		out.c_str(), out.c_str());
+      else
+	fprintf(f,
+		"  worker_%s.clk <= %s.Clk;\n",
+		in.c_str(), in.c_str());
+#else
+      if (clock->m_output)
+	fprintf(f,
+		"  %s.Clk <= worker_%s.clk;\n"
+		"  -- should be this, but isim crashes.\n"
+		"  -- .SReset_n <= from_bool(not wci_reset);\n"
+		"  %s.SReset_n <= '0' when its(worker_%s.reset) else '1';\n",
+		out.c_str(), out.c_str(), out.c_str(), out.c_str());
+      else
+	fprintf(f,
+		"  worker_%s.clk <= %s.Clk;\n"
+		"  worker_%s.reset <= '0' when %s.SReset_n else '1';\n",
+		in.c_str(), in.c_str(), in.c_str(), in.c_str());
+#endif
+    } else if (clock->port) {
+      // The worker is expected to use the correct clock (and maybe reset).
+#if 0
+      std::string other;
+      Port &port = *clock->port;
+      Clock &clk = *port.clock;
+      OU::format(other, clk.m_output ? port.typeNameOut.c_str() : port.typeNameIn.c_str(), "");
+      fprintf(f,
+		"  worker_%s.clk <= %s.Clk;\n"
+		"  worker_%s.reset <= '0' when %s.SReset_n else '1';\n",
+	      in.c_str(), other.c_str(), in.c_str(), other.c_str());
+#endif
+    } else
+      assert("No support for global clocks yet" == 0);
   }
 }
 
@@ -522,7 +620,7 @@ emitConnectionSignal(FILE *f, bool output, Language lang, bool a_clock, std::str
     // Make master the canonical type?
     fprintf(f,
 	    "  signal %s : %s;\n", signal.c_str(), stype.c_str());
-  }	       
+  }
 }
 
 // Emit for one direction, into a string
@@ -547,7 +645,9 @@ emitPortSignalsDir(FILE *f, bool output, Language lang, const char *indent,
     ocpiDebug("Perhaps connecting OCP signal %s value %p master %u os->master %u atts %zu",
 	      osd->name, os->value, m_master, os->master, ip.m_attachments.size());
     // If the signal is in the interface
-    if (os->value && (output ? os->master == m_master : os->master != m_master)) {
+    if (os->value &&
+	((osd == &ocpSignals[OCP_Clk] && output == clock->m_output) ||
+	 (osd != &ocpSignals[OCP_Clk] && (output ? os->master == m_master : os->master != m_master)))) {
       std::string signal, thisComment;
       connectOcpSignal(*osd, *os, lang == VHDL ? NULL : oa, thisComment, lang, ip, signal);
       /* if (signal.length()) */ {

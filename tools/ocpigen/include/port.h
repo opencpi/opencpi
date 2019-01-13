@@ -65,7 +65,7 @@ struct InstancePort;
 // FIXME: have "implPort" class??
 class Port {
 protected:
-  bool m_clone;        // internal to external
+  const Port *m_internal; // internal port that was cloned to make this one
   bool m_morphed;      // spec->impl transitioned
   Worker *m_worker;    // spec: FIXME: name this a reference 
 public:
@@ -104,7 +104,7 @@ public:
   const char *doPattern(int n, unsigned wn, bool in, bool master, std::string &suff,
 			bool port = false);
   void emitConstant(FILE *f, const char *nameFormat, Language lang, size_t n) const;
-  bool isCloned() const { return m_clone; }
+  bool isCloned() const { return m_internal != NULL; }
   virtual void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
 				bool inPackage, bool inWorker, const char *defaultIn = NULL,
 				const char *defaultOut = NULL);

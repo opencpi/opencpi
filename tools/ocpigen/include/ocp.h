@@ -124,6 +124,8 @@ class OcpPort : public Port {
  public:
   bool isOCP() const { return true; }
   bool needsControlClock() const;
+  bool haveWorkerOutputs() const;
+  bool haveWorkerInputs() const;
   void emitPortDescription(FILE *f, Language lang) const;
   void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
 			bool inPackage, bool inWorker,
@@ -134,10 +136,13 @@ class OcpPort : public Port {
   void emitSignals(FILE *f, Language lang, std::string &last, bool inPackage, bool inWorker,
 		   bool convert);
   void emitDirection(FILE *f, const char *implName, bool mIn, std::string &dir);
+  void emitRecordInputs(FILE *f);
+  void emitRecordOutputs(FILE *f);
   void emitRecordInterface(FILE *f, const char *implName);
   void emitRecordInterfaceConstants(FILE *f);
   void emitInterfaceConstants(FILE *f, Language lang);
   void emitVerilogSignals(FILE *f);
+  void emitVhdlShell(FILE *, Port *);
   void emitVHDLShellPortMap(FILE *f, std::string &last);
   void emitVHDLSignalWrapperPortMap(FILE *f, std::string &last);
   void emitVHDLRecordWrapperSignals(FILE *f);

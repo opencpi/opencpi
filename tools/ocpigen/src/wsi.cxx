@@ -27,12 +27,12 @@ WsiPort(Worker &w, ezxml_t x, DataPort *sp, int ordinal, const char *&err)
   : DataPort(w, x, sp, ordinal, WSIPort, err) {
   if (err)
     return;
-  if ((err = OE::checkAttrs(x, "Name", "Clock", "DataWidth", "PreciseBurst",
+  if ((err = OE::checkAttrs(x, "Name", "Clock", "DataWidth", "PreciseBurst", "myoutputclock",
 			    "ImpreciseBurst", "Continuous", "Abortable",
 			    "EarlyRequest", "MyClock", "RegRequest", "InsertEOM", "workerEOF", "Pattern",
 			    "NumberOfOpcodes", "MaxMessageValues",
 			    "datavaluewidth", "zerolengthmessages",
-			    "datavaluegranularity", "implname", "producer", "optional",
+			    "datavaluegranularity", "implname", "producer", "optional", "buffersize",
 			    DISTRIBUTION_ATTRS, PARTITION_ATTRS,
 			    (void*)0)) ||
       (err = OE::getBoolean(x, "InsertEOM", &m_insertEOM)) ||

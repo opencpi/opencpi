@@ -417,12 +417,14 @@ emitRecordDataTypes(FILE *f) {
 }
 void DataPort::
 emitRecordInputs(FILE *f) {
+  OcpPort::emitRecordInputs(f);
   // All data ports have a ready input
   fprintf(f,
 	  "    ready            : Bool_t;           -- this port is ready for data movement\n");
 }
 void DataPort::
-emitRecordOutputs(FILE */*f*/) {
+emitRecordOutputs(FILE *f) {
+  OcpPort::emitRecordOutputs(f);
 }
 
 void DataPort::

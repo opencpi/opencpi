@@ -231,6 +231,7 @@ emitImplSignals(FILE *f) {
 
 void WciPort::
 emitRecordInputs(FILE *f) {
+  OcpPort::emitRecordInputs(f);
   fprintf(f,
 	  "    control_op       : wci.control_op_t; -- control op in progress, or no_op_e\n"
 	  "    state            : wci.state_t;      -- wci state: see state_t\n"
@@ -245,6 +246,7 @@ emitRecordInputs(FILE *f) {
 }
 void WciPort::
 emitRecordOutputs(FILE *f) {
+  OcpPort::emitRecordOutputs(f);
   fprintf(f,
 	  "    done             : Bool_t;           -- the pending prop access/config op is done\n"
 	  "    error            : Bool_t;           -- the pending prop access/config op is erroneous\n"

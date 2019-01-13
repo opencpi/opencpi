@@ -27,9 +27,9 @@
 #include "hdl-container.h"
 
 static void
-emitTimeClient(std::string &assy, const char *instance, const char *port) {
+emitTimeClient(std::string &assy, const char *instance, Port &port) {
   OU::formatAdd(assy,
-		"  <instance worker='time_client' name='%s_%s_time_client'/>\n"
+		"  <instance worker='time_client%s' name='%s_%s_time_client'/>\n"
 		"  <connection>\n"
 		"    <port instance='%s_%s_time_client' name='wti'/>\n"
 		"    <port instance='%s' name='%s'/>\n"
@@ -38,10 +38,11 @@ emitTimeClient(std::string &assy, const char *instance, const char *port) {
 		"    <port instance='pfconfig' name='time'/>\n"
 		"    <port instance='%s_%s_time_client' name='time'/>\n"
 		"  </connection>\n",
-		instance, port,
-		instance, port,
-		instance, port,
-		instance, port);
+		port.myClock && !port.clock->m_output ? "_co" : "",
+		instance, port.pname(),
+		instance, port.pname(),
+		instance, port.pname(),
+		instance, port.pname());
 }
 
 HdlContainer *HdlContainer::
@@ -445,10 +446,10 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 		      dt.ports()[0]->pname());
 	nWCIs++;
       }
-      // Instance time clients for the assembly
+      // Instance time clients for the device
       for (PortsIter pi = dt.ports().begin(); pi != dt.ports().end(); pi++)
 	if ((*pi)->m_type == WTIPort)
-	  emitTimeClient(assy, di.cname(), (*pi)->pname());
+	  emitTimeClient(assy, di.cname(), **pi);
     }
     for (ContConnectsIter ci = connections.begin(); ci != connections.end(); ci++)
       if ((err = emitConnection(assy, uNocs, nWCIs, *ci)))
@@ -468,7 +469,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   // Instance time clients for the assembly
   for (PortsIter pi = m_appAssembly.m_ports.begin(); pi != m_appAssembly.m_ports.end(); pi++)
     if ((*pi)->m_type == WTIPort)
-      emitTimeClient(assy, m_appAssembly.m_implName, (*pi)->pname());
+      emitTimeClient(assy, m_appAssembly.m_implName, **pi);
   OU::formatAdd(assy,
 		"  <instance worker='metadata'/>\n"
 		"    <connection>\n"
@@ -772,8 +773,10 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
 		  sma.c_str(), index++,
 		  dma.c_str(), port->isDataProducer() ? "to" : "from",
 		  sma.c_str(), port->isDataProducer() ? "from" : "to");
-    // Add time client to OCDP
-    emitTimeClient(assy, dma.c_str(), "wti");
+    // Add time client to OCDP's WTI port
+    for (auto pi = c.port->worker().ports().begin(); pi != c.port->worker().ports().end(); ++pi)
+      if ((*pi)->m_type == WTIPort)
+	emitTimeClient(assy, dma.c_str(), **pi);
     ctl = dma;
   }
   // Connect the dma to the wci, incrementing the WCI count
