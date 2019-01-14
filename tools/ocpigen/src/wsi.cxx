@@ -953,10 +953,10 @@ const char * WsiPort::
 finalize() {
   DataPort::finalize();
   if (isDataProducer()) {
-    //    AP(insert_eom,  Bool,  false, true,  false, false, true,  m_insertEom);
-    AP(blocked,     ULong,  true,  false, false, true,  true);    // cycles when output was blocked
-    AP(max_latency, UShort,false,true, false, false,  true, 256); // maximum input-to-output latency 
-    AP(latency,     UShort,  false, false, false, true,  true);   // measured latency
+    // name         type,   debug  param  initl  volatl impl   builtin value enums
+    AP(blocked,     ULong,  true,  false, false, true,  true,  true);    // cycles when output was blocked
+    AP(max_latency, UShort, false, true,  false, false, true,  false,  256); // maximum input-to-output latency 
+    AP(latency,     UShort, false, false, false, true,  true,  true);   // measured latency
   }
   return NULL;
 }

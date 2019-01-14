@@ -61,7 +61,7 @@ class DataPort : public OcpPort, public OCPI::Util::Port {
     *parseProtocolChild(ezxml_t op),
     *parseProtocol(),
     *addProperty(const char *name, OCPI::API::BaseType type, bool isDebug, bool isParameter, bool isInitial,
-		 bool isVolatile, bool isImpl, size_t value = 0, const char *enums = NULL),
+		 bool isVolatile, bool isImpl, bool isBuiltin = false, size_t value = 0, const char *enums = NULL),
     *addProperty(),
     *fixDataConnectionRole(OCPI::Util::Assembly::Role &role),
     *resolveExpressions(OCPI::Util::IdentResolver &ir);

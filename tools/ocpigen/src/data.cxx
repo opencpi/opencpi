@@ -222,7 +222,7 @@ parseProtocol() {
 
 const char *DataPort::
 addProperty(const char *a_name, OA::BaseType type, bool isDebug, bool isParameter, bool isInitial,
-	    bool isVolatile, bool isImpl, size_t value, const char *enums) {
+	    bool isVolatile, bool isImpl, bool isBuiltin, size_t value, const char *enums) {
   if (::Port::m_worker->m_noControl && !isParameter)
     return NULL;
   std::string property;
@@ -234,7 +234,7 @@ addProperty(const char *a_name, OA::BaseType type, bool isDebug, bool isParamete
   if (isInitial || isParameter)
     OU::formatAdd(property, " default='%zu'", value);
   property += "/>";
-  return worker().addProperty(property.c_str(), isImpl);
+  return worker().addProperty(property.c_str(), isImpl, isBuiltin);
 }
 
 // After the specific port types have parsed everything
@@ -265,17 +265,24 @@ finalize() {
   // Either the granule is smaller than or not a multiple of data path width
   if (granuleWidth < m_dataWidth || (m_dataWidth && granuleWidth % m_dataWidth))
     worker().m_needsEndian = true;
+  size_t max_bytes = 16*1024; // jumbo
+  if (!m_isUnbounded && m_maxMessageValues != SIZE_MAX)
+    max_bytes = (m_maxMessageValues * m_dataValueWidth + 7) / 8;
   // Now that we know everything about the port, we add properties specific to the port
   // We make things "debug" that might add gates/resources
   // Parameters generally do not so they are not debug
 
   // 1. Protocol-dependent values that are spec-determined (impl == false)
-  // name         type,  debug  param  initl  volatl impl   value
-  AP(max_opcode,  UChar, false, true, false, false, false, m_nOpcodes - 1);
-  size_t max_bytes = 16*1024; // jumbo
-  if (!m_isUnbounded && m_maxMessageValues != SIZE_MAX)
-    max_bytes = (m_maxMessageValues * m_dataValueWidth + 7) / 8;
-  AP(max_bytes,   ULong, false, true, false, false, true, max_bytes);
+  // name         type,  debug  param initl  volatl impl   builtin value enums
+  AP(max_opcode,  UChar, false, true, false, false, false, false,  m_nOpcodes - 1);
+  AP(max_bytes,   ULong, false, true, false, false, false, false,  max_bytes);
+  // 2. Runtime values provided to the worker
+  if (isDataProducer())
+    // Add a runtime output size if the protocol does not bound it
+    //    if (m_isUnbounded)
+    AP(buffer_size, UShort,false, false, true, false, true);  // settable buffer size
+    //    else
+    //      AP(buffer_size, UShort,  false, true, false, false,  true);  // constant buffer size
   // 3. Statistics counters for all models, debug and volatile
   // name         type,  debug  param  initl  volatl impl   value
   //  AP(messages,    ULong,  true, false, false, true,  false); // messages crossing this port
@@ -287,13 +294,6 @@ finalize() {
   //  AP(between,     ULong,  true,  false, false, true,  true); // cycles between messages
   //  AP(idle,        ULong,  true,  false, false, true,  true); // idle cycles within messages
   //  AP(data,        ULong,  true,  false, false, true,  true); // cycles used to move data
-  if (isDataProducer()) {
-    // Add a runtime output size if the protocol does not bound it
-    //    if (m_isUnbounded)
-    AP(buffer_size, UShort,  false, false, true, false,  true);  // settable buffer size
-    //    else
-    //      AP(buffer_size, UShort,  false, true, false, false,  true);  // constant buffer size
-  }
   return NULL;
 }
 

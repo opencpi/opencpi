@@ -432,7 +432,6 @@ class Worker : public OU::Worker {
 	   const char *outDir, Worker *parent, OU::Assembly::Properties *instancePropertyValues,
 	   size_t paramConfig, const char *&err);
   const Ports &ports() const { return m_ports; }
-  bool nonRaw(PropertiesIter pi);
   Clock &addClock();
   Clock &addWciClockReset();
   OU::Property *findProperty(const char *name) const;
@@ -470,9 +469,9 @@ class Worker : public OU::Worker {
     *parseHdlAssy(),
     *initImplPorts(ezxml_t xml, const char *element, PortCreate &pc),
     *checkDataPort(ezxml_t impl, DataPort *&sp),
-    *addProperty(ezxml_t prop, bool includeImpl, bool anyIsBad, bool isRaw, bool isBuiltin),
+    *addProperty(ezxml_t prop, bool includeImpl, bool anyIsBad, bool isRaw, bool isBuiltin = false),
     // Add a property from an xml string description
-    *addProperty(const char *xml, bool includeImpl),
+    *addProperty(const char *xml, bool includeImpl, bool isBuiltin = false),
     //    *doAssyClock(Instance *i, Port *p),
     *openSkelHDL(const char *suff, FILE *&f),
     *emitVhdlRecordInterface(FILE *f, bool isEntity = false),

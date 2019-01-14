@@ -876,11 +876,6 @@ emitVhdlPropMember(FILE *f, OU::Property &pr, unsigned maxPropName, bool in2work
     emitVhdlPropMemberData(f, pr, maxPropName);
 }
 
-bool Worker::
-nonRaw(PropertiesIter pi) {
-  return pi != m_ctl.properties.end() && !(*pi)->m_isRaw;
-}
-
 void
 emitVhdlLibraries(FILE *f) {
   if ((libraries && libraries[0])
@@ -1359,7 +1354,7 @@ emitVhdlShell(FILE *f) {
 	}
       }
       if (m_ctl.rawProperties)
-	fprintf(f, "%s   raw => props_from_worker.raw", last);
+	fprintf(f, "%sraw => props_from_worker.raw", last);
       fprintf(f, ");\n");
     }
 
@@ -1673,8 +1668,10 @@ emitImplHDL(bool wrap) {
 	  "%s Interface definition signal names are defined with pattern rule: \"%s\"\n\n",
 	  comment, m_implName, comment, m_pattern);
   unsigned maxPropName = 18;
-  for (PropertiesIter pi = m_ctl.properties.begin(); nonRaw(pi); pi++) {
+  for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
     OU::Property &pr = **pi;
+    if (pr.m_isRaw)
+      continue;
     size_t len = pr.m_name.length();
     if (pr.m_isWritable) {
       if (pr.m_isInitial)
@@ -1900,8 +1897,10 @@ emitImplHDL(bool wrap) {
 		  "  signal nonRaw_SData  : std_logic_vector(31 downto 0);\n");
 	}
 	bool first = true;
-	for (PropertiesIter pi = m_ctl.properties.begin(); nonRaw(pi); pi++) {
+	for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
 	  OU::Property &pr = **pi;
+	  if (pr.m_isRaw)
+	    continue;
 	  std::string type;
 	  prType(pr, type);
 	  char *temp = NULL;
@@ -2095,8 +2094,10 @@ emitImplHDL(bool wrap) {
 		 "nonRaw_SData") :
 		(m_ctl.rawReadables ? "props_from_worker.raw.data" : "(others => '0')"));
       n = 0;
-      for (PropertiesIter pi = m_ctl.properties.begin(); nonRaw(pi); pi++) {
+      for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
 	OU::Property &pr = **pi;
+	if (pr.m_isRaw)
+	  continue;
 	const char *name = pr.m_name.c_str();
 	bool isStringArray = pr.m_baseType == OA::OCPI_String && (pr.m_isSequence || pr.m_arrayRank);
 	if (pr.m_isParameter) {

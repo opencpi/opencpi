@@ -348,13 +348,14 @@ const char *parseControlOp(const char *op, void *arg) {
     *p ? NULL : "Invalid control operation name in ControlOperations attribute";
 }
 
+// isBuiltin means the (readable) value is not provided by the worker
 const char *Worker::
-addProperty(const char *xml, bool includeImpl) {
+addProperty(const char *xml, bool includeImpl, bool isBuiltin) {
   // Add the built-in properties
   char *dprop = strdup(xml); // Make the contents persistent
   ezxml_t dpx = ezxml_parse_str(dprop, strlen(dprop));
   ocpiDebug("Adding ocpi_debug property xml %p", dpx);
-  const char *err = addProperty(dpx, includeImpl, false, false, true);
+  const char *err = addProperty(dpx, includeImpl, false, false, isBuiltin);
   ezxml_free(dpx);
   return err;
 }

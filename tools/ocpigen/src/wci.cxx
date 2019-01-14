@@ -201,13 +201,13 @@ emitImplSignals(FILE *f) {
   if (ctl.nonRawReadbacks || ctl.rawReadables || ctl.builtinReadbacks)
     fprintf(f,
 	    "  signal internal_props_out : internal_props_out_t; -- this includes builtin volatiles\n");
-  if (ctl.builtinReadbacks) {
-    for (PropertiesIter pi = ctl.properties.begin(); pi != ctl.properties.end(); pi++) {
-      std::string type;
-      m_worker->prType(**pi, type);
-      fprintf(f, "  signal props_builtin_%s : %s;\n", (**pi).cname(), type.c_str());
-    }
-  }
+  if (ctl.builtinReadbacks)
+    for (PropertiesIter pi = ctl.properties.begin(); pi != ctl.properties.end(); pi++)
+      if ((*pi)->m_isReadable && (*pi)->m_isBuiltin) {
+	std::string type;
+	m_worker->prType(**pi, type);
+	fprintf(f, "  signal props_builtin_%s : %s;\n", (**pi).cname(), type.c_str());
+      }
   fprintf(f,
 	  "  -- wci information into worker\n"
 	  "  signal wci_is_big_endian    : Bool_t;\n"
