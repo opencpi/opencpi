@@ -114,6 +114,15 @@ namespace OCPI {
 	    return p;
       return NULL;
     }
+
+    PValue *
+    find(PValue* p, const char* name) {
+      if (p)
+	for (; p->name; p++)
+	  if (!strcasecmp(p->name, name))
+	    return p;
+      return NULL;
+    }
  
 #define OCPI_DATA_TYPE(sca, corba, letter, bits, run, pretty, store)\
     bool 							    \
@@ -204,9 +213,9 @@ namespace OCPI {
     PValueList::PValueList(const PValue *params, const PValue *override) : m_list(NULL) {
       add(params, override);
     }
-    
+
     PValueList::
-    PValueList(const PValueList &other) 
+    PValueList(const PValueList &other)
       : m_list(NULL) {
       add(other.m_list);
     }
@@ -352,11 +361,18 @@ namespace OCPI {
       delete [] oldp;
     }
     const char *PValueList::
-    add(const char *name, const char *value) {
+    add(const char *name, const char *value, bool override) {
       PValue newp;
       const char *err;
       if ((err = parseParam(name, value, newp)))
 	return err;
+      if (override) {
+	PValue *p = find(m_list, name);
+	if (p) {
+	  *p = newp;
+	  return NULL;
+	}
+      }
       add(newp);
       return NULL;
     }

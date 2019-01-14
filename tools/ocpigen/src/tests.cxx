@@ -1047,8 +1047,11 @@ namespace {
           for (unsigned n = 0; n < m_ports.size(); n++)
             if (!m_ports[n].m_port->isDataProducer()) {
               InputOutput &io = m_ports[n];
-              OU::formatAdd(app, "  <instance component='ocpi.core.file_read' connect='%s_ms_%s'>\n",
+              OU::formatAdd(app, "  <instance component='ocpi.core.file_read' connect='%s_ms_%s'",
                             dut, io.m_port->pname());
+              if (io.m_messageSize)
+                OU::formatAdd(app, " buffersize='%zu'", io.m_messageSize);
+	      app += ">\n";
               std::string l_file;
               if (io.m_file.size())
                 OU::formatAdd(l_file, "%s%s", io.m_file[0] == '/' ? "" : "../../", io.m_file.c_str());

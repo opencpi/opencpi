@@ -733,9 +733,13 @@ getTypedValue(Value &v, size_t index) const {
 	return err;
       if (z < mpz_min[v.m_vt->m_baseType] ||
 	  z > mpz_max[v.m_vt->m_baseType] ||
-	  (v.m_vt->m_baseType == OA::OCPI_Enum && z >= v.m_vt->m_nEnums))
-	return esprintf("Expression value (%s) is out of range for %s type properties",
-			mpfString(m_internal->m_number, s), baseTypeNames[v.m_vt->m_baseType]);
+	  (v.m_vt->m_baseType == OA::OCPI_Enum && z >= v.m_vt->m_nEnums)) {
+	std::string smin, smax;
+	return esprintf("Expression value (%s) is out of range for %s type properties (%s to %s)",
+			mpfString(m_internal->m_number, s), baseTypeNames[v.m_vt->m_baseType],
+			mpfString(mpz_min[v.m_vt->m_baseType], smin),
+			mpfString(mpz_max[v.m_vt->m_baseType], smax));
+      }
       mpz_class tmp = z & (uint32_t)-1;
       uint32_t low32 = (uint32_t)tmp.get_ui();
       tmp = z >>= 32;

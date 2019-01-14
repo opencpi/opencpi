@@ -594,12 +594,14 @@ namespace OCPI {
 	const OU::Port *p;
 	if ((err = m_assembly.getPortAssignment(pName, assign, instn, portn, p, value)))
 	  return err;
-	// This is taking the string value of a port param and using the same param
+	// This is taking the string value of a app-level assigned port param and using the same param
 	// name for a port param.  When the data types are different (at least), we need to
 	// change the name.  We have a little heuristic rather than a real table.
 	// FIXME: some more serious scheme for "port and instance params into underlying ones"
 	const char *newName = !strncasecmp(pName, "port", 4) ? pName + 4 : pName;
-	m_assembly.assyPort(instn, portn)->m_parameters.add(newName, value);
+	// Override any port parameters that might have been set in XML
+	// Override any same-named connection params
+	m_assembly.assyPort(instn, portn)->setParam(newName, value);
 #else
         unsigned instn;
         // assign now points to:  <instance>=<port>=<value>
@@ -1276,7 +1278,7 @@ namespace OCPI {
 	    lc->m_out.m_metaPort->m_bufferSizePort == SIZE_MAX)
 	  lc->m_bufferSize = 
 	    OU::Port::determineBufferSize(lc->m_in.m_metaPort, lc->m_in.m_params, SIZE_MAX,
-					  lc->m_out.m_metaPort, lc->m_in.m_params, SIZE_MAX, NULL);
+					  lc->m_out.m_metaPort, lc->m_out.m_params, SIZE_MAX, NULL);
 	else {
 	  if (lc->m_in.m_metaPort->m_bufferSizePort != SIZE_MAX)
 	    lc->m_in.m_otherConn = &findOtherConnection(lc->m_in);
