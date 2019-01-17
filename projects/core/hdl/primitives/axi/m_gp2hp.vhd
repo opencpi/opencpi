@@ -11,20 +11,24 @@ entity m_gp2hp is
 end entity m_gp2hp;
 architecture rtl of m_gp2hp is
 begin
-  hp_in.ACLK     <= gp_in.ACLK   ;
-  hp_in.AR.READY <= gp_in.ARREADY;
-  hp_in.AW.READY <= gp_in.AWREADY;
-  hp_in.B.VALID  <= gp_in.BVALID ;
-  hp_in.R.LAST   <= gp_in.RLAST  ;
-  hp_in.R.VALID  <= gp_in.RVALID ;
-  hp_in.W.READY  <= gp_in.WREADY ;
-  hp_in.B.ID     <= gp_in.BID    ;
-  hp_in.R.ID     <= gp_in.RID    ;
-  hp_in.B.RESP   <= gp_in.BRESP  ;
-  hp_in.R.RESP   <= gp_in.RRESP  ;
-  hp_in.R.DATA   <= gp_in.RDATA  ;
+  hp_in.ACLK     <= gp_in.ACLK     ;
+  hp_in.AR.READY <= gp_in.ARREADY  ;
+  hp_in.AW.READY <= gp_in.AWREADY  ;
+  hp_in.B.VALID  <= gp_in.BVALID   ;
+  hp_in.R.LAST   <= gp_in.RLAST    ;
+  hp_in.R.VALID  <= gp_in.RVALID   ;
+  hp_in.W.READY  <= gp_in.WREADY   ;
+  hp_in.B.ID     <= gp_in.BID      ;
+  hp_in.R.ID     <= gp_in.RID      ;
+  hp_in.B.RESP   <= gp_in.BRESP    ;
+  hp_in.R.RESP   <= gp_in.RRESP    ;
+  hp_in.R.DATA   <= gp_in.RDATA    ;
+  hp_in.AW.COUNT <= (others => '0');
+  hp_in.AR.COUNT <= (others => '0');
+  hp_in.W.COUNT  <= (others => '0');
+  hp_in.R.COUNT  <= (others => '0');
 
-  gp_out.ARESETN <= hp_out.ARESETN;
+  gp_out.ARESETN <= hp_out.ARESETN ;
   gp_out.ARVALID <= hp_out.AR.VALID;
   gp_out.AWVALID <= hp_out.AW.VALID;
   gp_out.BREADY  <= hp_out.B.READY ;
