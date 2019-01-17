@@ -229,9 +229,10 @@ protected:
     m_endpointSpecific = "ocpi-socket-rdma";
     m_endpointSize = OH::SDP::Header::max_addressable_bytes * OH::SDP::Header::max_nodes;
     cAccess().setAccess(NULL, this, OCPI_UTRUNCATE(RegisterOffset, 0));
-    // data offset is after the first node
-    dAccess().setAccess(NULL, this, OCPI_UTRUNCATE(RegisterOffset,
-						   OH::SDP::Header::max_addressable_bytes));
+    // data offset is after the first node - this might no longer be true (see note below)
+    // Note: Data offset for SDP is zero instead of OH::SDP::Header::max_addressable_bytes here.
+    //       This is necessary after changes for zynqmp to HdlContainer.cxx that allow SDP ID to be 0.
+    dAccess().setAccess(NULL, this, OCPI_UTRUNCATE(RegisterOffset, 0));
     init(error);
     // Note we are emulating here, still not creating any file system dirs or fifos
   }
