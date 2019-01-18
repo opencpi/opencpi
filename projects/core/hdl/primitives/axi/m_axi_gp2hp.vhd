@@ -1,15 +1,15 @@
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library platform; use platform.all;
 library work; use work.axi_pkg.all;
-entity m_gp2hp is
+entity m_axi_gp2hp is
   port(
     gp_in  : in  m_axi_gp_in_t;
     gp_out : out m_axi_gp_out_t;
     hp_in  : out m_axi_hp_in_t;
     hp_out : in  m_axi_hp_out_t
     );
-end entity m_gp2hp;
-architecture rtl of m_gp2hp is
+end entity m_axi_gp2hp;
+architecture rtl of m_axi_gp2hp is
 begin
   hp_in.ACLK     <= gp_in.ACLK     ;
   hp_in.AR.READY <= gp_in.ARREADY  ;

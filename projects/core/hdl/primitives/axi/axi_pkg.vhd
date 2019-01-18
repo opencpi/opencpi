@@ -392,14 +392,14 @@ constant Resp_EXOKAY : Resp_t := "01";
 constant Resp_SLVERR : Resp_t := "10";
 constant Resp_DECERR : Resp_t := "11";
 
-component m_gp2hp is
+component m_axi_gp2hp is
   port(
     gp_in  : in  m_axi_gp_in_t;
     gp_out : out m_axi_gp_out_t;
     hp_in  : out m_axi_hp_in_t;
     hp_out : in  m_axi_hp_out_t
     );
-end component m_gp2hp;
+end component m_axi_gp2hp;
 
 component axi2cp is
   port(
