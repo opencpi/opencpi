@@ -88,32 +88,31 @@ begin
     m_axi_hp_out(i).AR.ISSUECAP1_EN <= '0';
     --m_axi_hp_out(i).AR.COUNT <= (others => '0');
 
-    maxigp_bids(i)(11 downto 0)  <= m_axi_hp_in(0).B.ID;
+    maxigp_bids(i)(11 downto 0)  <= m_axi_hp_in(i).B.ID;
     maxigp_bids(i)(15 downto 12) <= (others =>'0');
 
-    maxigp_rids(i)(11 downto 0) <= m_axi_hp_in(0).R.ID;
+    maxigp_rids(i)(11 downto 0) <= m_axi_hp_in(i).R.ID;
     maxigp_rids(i)(15 downto 12) <= (others =>'0');
   end generate;
 
   s : for i in 0 to C_S_AXI_HP_COUNT-1 generate
     s_axi_hp_out(i).ARESETN <= '1';
 
-    saxigp_awaddrs(i)(35 downto 0)  <= s_axi_hp_in(0).AW.ADDR;
+    saxigp_awaddrs(i)(35 downto 0)  <= s_axi_hp_in(i).AW.ADDR;
     saxigp_awaddrs(i)(48 downto 36) <= (others =>'0');
-    saxigp_awlens(i)(3 downto 0)  <= s_axi_hp_in(0).AW.LEN;
+    saxigp_awlens(i)(3 downto 0)  <= s_axi_hp_in(i).AW.LEN;
     saxigp_awlens(i)(7 downto 4) <= (others =>'0');
     s_axi_hp_out(i).AW.COUNT <= (others => '0');
 
     s_axi_hp_out(i).W.COUNT <= (others => '0');
 
-    saxigp_araddrs(i)(35 downto 0)  <= s_axi_hp_in(0).AR.ADDR;
+    saxigp_araddrs(i)(35 downto 0)  <= s_axi_hp_in(i).AR.ADDR;
     saxigp_araddrs(i)(48 downto 36) <= (others =>'0');
-    saxigp_arlens(i)(3 downto 0)  <= s_axi_hp_in(0).AR.LEN;
+    saxigp_arlens(i)(3 downto 0)  <= s_axi_hp_in(i).AR.LEN;
     saxigp_arlens(i)(7 downto 4) <= (others =>'0');
     s_axi_hp_out(i).AR.COUNT <= (others => '0');
 
     s_axi_hp_out(i).R.COUNT <= (others => '0');
-
   end generate;
 
   -- Connect the Verilog PS8 wrapper to the VHDL axi records to abstract the interface
