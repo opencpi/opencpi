@@ -44,7 +44,7 @@ class ProjectTest(unittest.TestCase):
         """
         my_asset = AssetFactory.factory(self.asset_type,
                                                   "../av-test",
-                                                  init_apps=True)
+                                                  init_apps_col=True)
         assert my_asset.run() == 0
         AssetFactory.remove("../av-test")
 

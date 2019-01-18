@@ -39,4 +39,4 @@ OcpiKernelDir=release/kernel-headers
 OcpiPlatformOs=linux
 OcpiPlatformOsVersion=x13_3
 OcpiPlatformArch=arm
-OcpiPlatformPrerequisites=busybox:xilinx13_3
+OcpiPlatformPrerequisites=busybox:xilinx13_3 gdb:xilinx13_3 rsync:xilinx13_3

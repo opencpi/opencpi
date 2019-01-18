@@ -170,7 +170,9 @@
        used, but the data sheet may use the signal name without any suffix (e.g. DATA_CLK)
        The two ports (P0_D[11:0] and P1_D [11:0]) are split in half since the halves are in fact
        sometimes used in opposite directions.
-       Direction of most signals depends on the mode. -->       
+       Direction of most signals depends on the mode.
+       ***** NOTE: Because the worker inner layer coded explicitly instances I/O
+                   buffer primitives, e.g. BUFFER_IN_1, pin='1' is used below. -->
   <Signal name='DATA_CLK_P' direction='in' pin='1'
 	  description='Pin G11: RX Clock from ad9361 (positive).'/>
   <!--Signal name='DATA_CLK_N' direction='lvds_p ? in : unused' pin='1' --> <!-- TODO/FIXME - comment this back in once problem is fixed -->

@@ -177,6 +177,7 @@ def set_init_values(args, dir_type):
     if args['noun'] == "project":
         args['init_libs'] = True
         args['init_tests'] = True
+        args['init_apps_col'] = True
         args['init_apps'] = True
     if args['noun'] == "tests":
         args['init_libs'] = True

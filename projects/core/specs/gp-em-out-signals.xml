@@ -1,0 +1,5 @@
+<!-- gp emulator out signal definitions -->
+<!-- Enable signal for when emulator should start sending messages -->
+<Signals>
+  <Signal Name="enable" Direction="out"/>
+</Signals>

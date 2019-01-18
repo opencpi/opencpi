@@ -743,7 +743,7 @@ emitImplRCC() {
 
     if (!m_slaves.empty()) {
       unsigned int index = 0;
-      // for each slave decalre the slave class which extends RCCUserSlave and is named generically
+      // for each slave declare the slave class which extends RCCUserSlave and is named generically
       // Slave1, Slave2 ... etc
       for (auto it = m_slaves.begin(); it != m_slaves.end(); ++it) {
         // This worker is a proxy.  Give it access to each of its slaves
@@ -1309,7 +1309,8 @@ const char* Worker::parseSlaves(){
   std::string l_slave;
   std::vector <StringPair> all_slaves;
   if (OE::getOptionalString(m_xml, l_slave, "slave")) {
-	addSlave(l_slave, l_slave.substr(0, l_slave.find(".", 0)));
+    if ((err = addSlave(l_slave, l_slave.substr(0, l_slave.find(".", 0)))))
+  	  return err;
   }
   std::map<std::string, unsigned int> wkr_num_map;
   std::map<std::string, unsigned int> wkr_idx_map;

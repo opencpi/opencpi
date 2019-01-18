@@ -94,6 +94,7 @@ ocpi_copyright['rpmspec'] = ocpi_copyright['script']
 ocpi_copyright['text'] = build_copyright('')
 ocpi_copyright['verilog'] = ocpi_copyright['c']
 ocpi_copyright['vhdl'] = build_copyright('--')
+ocpi_copyright['xml'] = build_copyright('   -', pre=r'<!--', post=r'-->')
 
 # LUT for extension <=> file type
 extensions = dict()
@@ -109,6 +110,7 @@ extensions['script'] = ('csh', 'js', 'pl', 'py', 'qsf', 'sdc', 'sh', 'tcl', 'ucf
 extensions['text'] = ('txt',)
 extensions['verilog'] = ('v', 'vh')
 extensions['vhdl'] = ('vhd', 'vhi')
+extensions['xml'] = ('sdef',)
 extensions['skip'] = ('asm',  # Future? Don't think we have any of our own now.
                       'aux',
                       'bat',  # Future?
@@ -239,7 +241,9 @@ def scanfunc_skip():
                 if reg.search(line) is not None:
                     logging.debug('%s: Found copyrighted regex "%s". Skipping.', filename, str(reg.pattern))
                     return True
-        if gbuff[0].strip().startswith('<?xml'):
+        ext = os.path.splitext(filename)[1][1:]
+        if gbuff[0].strip().startswith('<?xml') and \
+           ext not in extensions['xml']:
             return True
     return False
 
@@ -337,6 +341,8 @@ def smart_scan():
     start = 1
     # Skip shell declaration
     if gbuff[0].startswith("#!"):
+        start = 2
+    if gbuff[0].startswith("<?xml"):
         start = 2
     # Skip preprocessor commands and comments
     while any([x in gbuff[start-1] for x in ('not used by RPM-based',
@@ -437,8 +443,10 @@ def process():
             start = input()
             if start == '.':  # "fast insert" which means 1,n,y,save
                 start = 1
-                # Check for shell shebang or LaTeX document class
-                if gbuff[0].startswith("#!") or gbuff[0].strip().startswith(r'\documentclass'):
+                # Check for shell shebang, LaTeX document class, or XML header
+                if gbuff[0].startswith("#!") or \
+                   gbuff[0].strip().startswith(r'\documentclass') or \
+                   gbuff[0].startswith("<?xml"):
                     start = 2
                 fast_insert = True
                 logging.warning('%s: User-requested fast insert at line %d.', filename, start)

@@ -27,4 +27,5 @@ __all__ = [
            "platform",
            "assembly",
            "library",
+           "component",
           ]

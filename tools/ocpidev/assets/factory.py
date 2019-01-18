@@ -65,13 +65,17 @@ class AssetFactory():
         import _opencpi.assets.library
         import _opencpi.assets.project
         import _opencpi.assets.registry
+        import _opencpi.assets.component
         actions = {"worker":         cls.__worker_with_model,
                    "hdl-assemblies":_opencpi.assets.assembly.HdlAssembliesCollection,
                    "hdl-assembly":  _opencpi.assets.assembly.HdlApplicationAssembly,
                    "hdl-platforms": _opencpi.assets.platform.HdlPlatformsCollection,
                    "hdl-platform":  _opencpi.assets.platform.HdlPlatformWorker,
                    "hdl-container": _opencpi.assets.assembly.HdlContainer,
+                   "rcc-platforms": _opencpi.assets.platform.RccPlatformsCollection,
+                   "rcc-platform":  _opencpi.assets.platform.RccPlatform,
                    "test":          _opencpi.assets.test.Test,
+                   "component":     _opencpi.assets.component.Component,
                    "application":   _opencpi.assets.application.Application,
                    "applications":  _opencpi.assets.application.ApplicationsCollection,
                    "library":       _opencpi.assets.library.Library,

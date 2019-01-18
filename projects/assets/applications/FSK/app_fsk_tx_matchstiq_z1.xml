@@ -24,7 +24,13 @@
     <Property Name="R" Value="16"/>
     <Property Name="ACC_WIDTH" Value="28"/>
   </Instance>
-
+  <!-- GP Out device worker-->
+  <!-- An example of how to use the GP Out device worker. Setting the mask_data
+  property to drive GPIO pin 2 low and pin 3 high. GPIO pin 1 is controlled by
+  the lime_tx device worker. -->
+  <Instance Component="ocpi.core.gp_out">
+    <Property Name="mask_data" Value="0x00040004"/>
+  </Instance>
   <!-- Command and Control -->
   <Instance Component="ocpi.assets.devices.si5338"/>
   <Instance Component="ocpi.assets.devices.tmp100"/>
@@ -39,7 +45,7 @@
     <Property Name="messageSize" Value="8192"/>
     <Property Name="granularity" Value="1"/>
   </Instance>
-  
+
   <!-- RCC Proxies -->
   <!-- TX Chain -->
   <Instance Component="ocpi.assets.devices.rf_tx_proxy" Slave="rf_tx"/>
@@ -50,13 +56,13 @@
     <Property Name="led" Value="green"/>
   </Instance>
   <Instance Component="ocpi.assets.devices.tmp100_proxy" Slave="tmp100"/>
-  
+
   <!-- RCC Frontend Proxies -->
   <!-- TX Chain -->
   <Instance Component="ocpi.core.tx">
     <Property Name="TYPE_p" Value="matchstiq_z1"/>
   </Instance>
-  
+
   <!-- Connections -->
   <!-- TX Chain -->
   <Connection>

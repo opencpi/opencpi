@@ -1,5 +1,5 @@
-<signals>
-  <signal output='data' width='24'/>
-  <signal output='tx_frame'/>
-  <signal output='fb_clk'/>
-</signals>
+<Signals>
+  <Signal Name="data" Direction="out" Width="24"/>
+  <Signal Name="tx_frame" Direction="out"/>
+  <Signal Name="fb_clk" Direction="out"/>
+</Signals>

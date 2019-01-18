@@ -90,7 +90,12 @@ def parseCLVars():
                         "authoring model to operate on. If choosing an authoring model " +
                         "(hdl/rcc), the platforms or targets nouns can follow.",
                         choices=FIRST_NOUNS)
-    parser.add_argument("-v", "--verbose", action="store_true", help="Be verbose with output.")
+    parser.add_argument("-v", "--verbose", action="store_const", dest="verbose", default=0, const=1,
+                        help="Be verbose with output.")
+    parser.add_argument("-vv", "--very-verbose", action="store_const", dest="verbose", default=0,
+                        const=2, help="Be very verbose with output.")
+    parser.add_argument("-vvv", "--very--very-verbose", action="store_const", default=0,
+                        dest="verbose", const=3, help="Be very very verbose with output.")
     parser.add_argument("-d", dest="cur_dir", default=os.path.curdir,
                         help="Change directory to the specified path " + "before proceeding. " +
                         "Changing directory may have no effect for some commands.")
@@ -156,8 +161,8 @@ def check_scope_options(scope, noun):
     valid_scope_dict = {}
     valid_scope_dict["registry"] = ["global"]
     valid_scope_dict["projects"] = ["global"]
-    valid_scope_dict["workers"] = []
-    valid_scope_dict["components"] = []
+    valid_scope_dict["workers"] = ["global"]
+    valid_scope_dict["components"] = ["global"]
     valid_scope_dict["tests"] = ["local"]
     valid_scope_dict["libraries"] = ["local"]
     valid_scope_dict["project"] = ["local"]
@@ -172,14 +177,21 @@ def check_scope_options(scope, noun):
         raise ocpiutil.OCPIException("Invalid scope option '" + scope + "' for " + noun +
                                      ".  Valid options are: " + " ,".join(valid_scope_dict[noun]))
 
-
 def set_init_values(args, noun):
-    if (noun == "project" and args["verbose"] == True):
+    if (noun == "project" and args["verbose"] > 0):
+        args["init_apps_col"]= True
+        args["init_hdlplats"]= True
+        args["init_rccplats"]= True
+        args["hdl_plats"] = ["local"]
+        args["init_comps"] = True
+    if (noun == "project" and args["verbose"] > 1):
         args["init_libs"]= True
-    elif noun == "tests" :
+    #elif (noun == "project" and args["verbose"] > 2):
+    #    args["init_wkr_config"]= True
+    elif noun in ["tests", "workers", "components"]:
         args["init_libs"]= True
 
-def get_noun_from_plural(directory, args, noun):
+def get_noun_from_plural(directory, args, noun, scope):
     action = ""
     class_dict = {
                  None:           "Project",
@@ -192,9 +204,12 @@ def get_noun_from_plural(directory, args, noun):
                  "platforms":    "Platform",
                  }
 
-    if args["noun"] in ["tests", "libraries"]:
+    if args["noun"] in ["tests", "libraries", "workers", "components"]:
         action = "show_" + args["noun"]
-        noun = "project"
+        if scope == "global":
+            noun = "registry"
+        elif scope == "local":
+            noun = "project"
     else:
         action = class_dict[noun] + '.show_all("' + args["details"] + '")'
         noun = None
@@ -219,15 +234,18 @@ def main():
 
         if noun in ["registry", "projects"]:
             directory = ocpiregistry.Registry.get_registry_dir()
-        elif noun not in ["libraries", "hdlplatforms", "hdltargets", "rccplatforms", "rcctargets", "platforms", "targets"]:
+        elif noun not in ["libraries", "hdlplatforms", "hdltargets", "rccplatforms", "rcctargets", "platforms", "targets", "workers", "components"]:
             directory = ocpiutil.get_ocpidev_working_dir(origin_path=cur_dir,
                                                          noun=noun,
                                                          name=name,
                                                          library=args['library'],
                                                          hdl_library=args['hdl_library'],
                                                          hdl_platform=args['hdl_plat_dir'])
-        elif noun == "libraries":
-            directory = ocpiutil.get_path_to_project_top()
+        elif noun in ["libraries", "tests", "workers", "components"]:
+            if args.get("scope", None) == "local":
+                directory = ocpiutil.get_path_to_project_top()
+            elif args.get("scope", None) == "global":
+                directory = ocpiregistry.Registry.get_registry_dir()
         else:
             directory = ""
 
@@ -241,11 +259,11 @@ def main():
         # If name is not set, set it to the current directory's basename
         if name == "." and dir_type in DIR_TYPES:
             name = os.path.basename(os.path.realpath(cur_dir))
-        set_init_values(args, noun)
+        set_init_values(args, noun, )
         plural_noun_list = NOUN_PLURALS + ["hdlplatforms", "hdltargets", "rccplatforms",
                                            "rcctargets", "platforms", "targets"]
         if noun in plural_noun_list:
-            (noun, action) = get_noun_from_plural(directory, args, noun)
+            (noun, action) = get_noun_from_plural(directory, args, noun, args.get("scope", None))
         ocpiutil.logging.debug('Choose noun: "' + str(noun) + '" and action: "' + action +'"')
         if noun not in [None, "hdlplatforms", "hdltargets", "rccplatforms", "rcctargets",
                         "platforms", "targets", "projects"]:

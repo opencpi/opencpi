@@ -80,6 +80,7 @@
 +tools/ocpidev/assets/registry.py <target>/lib/_opencpi/assets/
 +tools/ocpidev/assets/test.py <target>/lib/_opencpi/assets/
 +tools/ocpidev/assets/worker.py <target>/lib/_opencpi/assets/
++tools/ocpidev/assets/component.py <target>/lib/_opencpi/assets/
 +tools/ocpidev/ocpidev.sh <target>/bin/ocpidev
 +tools/ocpidev/ocpidev_run.py scripts/   
 +tools/ocpidev/ocpishow.py scripts/ 

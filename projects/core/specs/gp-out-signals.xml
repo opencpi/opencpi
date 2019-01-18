@@ -1,0 +1,6 @@
+<!-- gp out signal definitions -->
+<!-- A GP Out device worker can use these to control a GPIO pin -->
+<Signals>
+  <Signal Name="data" Direction="out"/>
+  <Signal Name="mask" Direction="out"/>
+</Signals>

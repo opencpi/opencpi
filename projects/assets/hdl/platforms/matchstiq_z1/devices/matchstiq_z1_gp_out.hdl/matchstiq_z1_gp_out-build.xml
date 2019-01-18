@@ -1,0 +1,11 @@
+<build>
+
+  <configuration id='0'>
+    <parameter name='simulation_p' value='false'/>
+  </configuration>
+
+  <configuration id='1'>
+    <parameter name='simulation_p' value='true'/>
+  </configuration>
+
+</build>

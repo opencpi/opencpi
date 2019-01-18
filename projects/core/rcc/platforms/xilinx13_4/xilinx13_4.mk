@@ -26,3 +26,4 @@ include $(dir $(lastword $(MAKEFILE_LIST)))../../../../core/rcc/platforms/xilinx
 OcpiPlatformOs=linux
 OcpiPlatformOsVersion=x13_4
 OcpiPlatformArch=arm
+OcpiPlatformPrerequisites=busybox:xilinx13_4 gdb:xilinx13_4 rsync:xilinx13_4

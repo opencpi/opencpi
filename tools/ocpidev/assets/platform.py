@@ -26,6 +26,34 @@ sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM'
 import _opencpi.util
 import json
 
+class RccPlatformsCollection(ShowableAsset):
+    """
+    Collection of HDL Platform Workers. This class represents the hdl/platforms directory.
+    """
+
+    valid_settings = []
+    def __init__(self, directory, name=None, **kwargs):
+        self.check_dirtype("rcc-platforms", directory)
+        super().__init__(directory, name, **kwargs)
+
+        self.platform_list = []
+        if kwargs.get("init_hdlplats", False):
+            logging.debug("Project constructor creating HdlPlatformWorker Objects")
+            for plat_directory in self.get_valid_platforms():
+                self.platform_list.append(AssetFactory.factory("rcc-platform", plat_directory,
+                                                               **kwargs))
+
+    def get_valid_platforms(self):
+        """
+        Probes filesystem in order to determine the list of active platforms in the
+        platforms collection
+        """
+        return [(self.directory + "/" + dir) for dir in os.listdir(self.directory)
+                if os.path.isdir(self.directory + "/" + dir)]
+
+    def show(self):
+        pass
+
 class HdlPlatformsCollection(HDLBuildableAsset, ReportableAsset):
     """
     Collection of HDL Platform Workers. This class represents the hdl/platforms directory.
@@ -44,12 +72,15 @@ class HdlPlatformsCollection(HDLBuildableAsset, ReportableAsset):
         self.check_dirtype("hdl-platforms", directory)
         super().__init__(directory, name, **kwargs)
 
+        self.hdl_plat_strs = kwargs.get("hdl_plats", None)
+
         self.platform_list = []
         if kwargs.get("init_hdlplats", False):
             logging.debug("Project constructor creating HdlPlatformWorker Objects")
             for plat_directory in self.get_valid_platforms():
                 # Only construct platforms that were requested and listed in hdl_platforms
-                if os.path.basename(plat_directory) in [plat.name for plat in self.hdl_platforms]:
+                if ("local" in self.hdl_plat_strs  or
+                   os.path.basename(plat_directory) in [plat.name for plat in self.hdl_platforms]):
                     self.platform_list.append(AssetFactory.factory("hdl-platform", plat_directory,
                                                                    **kwargs))
 
@@ -110,6 +141,7 @@ class HdlPlatformWorker(HdlWorker, ReportableAsset):
         super().__init__(directory, name, **kwargs)
         self.configs = {}
         self.platform = hdltargets.HdlToolFactory.factory("hdlplatform", self.name)
+        #TODO this should be guarded by a init kwarg wariable, not always needed i.e. show project
         self.init_configs()
 
     def init_configs(self):
@@ -118,8 +150,13 @@ class HdlPlatformWorker(HdlWorker, ReportableAsset):
         Construct an HdlPlatformWorkerConfig for each and add to the self.configs map.
         """
         # Get the list of Configurations from make
-        plat_vars = ocpiutil.set_vars_from_make(mk_file=self.directory + "/Makefile",
-                                                mk_arg="ShellHdlPlatformVars=1", verbose=True)
+        logging.debug("Get the list of platform Configurations from make")
+        try:
+            plat_vars = ocpiutil.set_vars_from_make(mk_file=self.directory + "/Makefile",
+                                                    mk_arg="ShellHdlPlatformVars=1", verbose=False)
+        except ocpiutil.OCPIException as ex:
+            # if make shoots out an error asume configs are blank
+            plat_vars = {"Configurations" : ""}
         if "Configurations" not in plat_vars:
             raise ocpiutil.OCPIException("Could not get list of HDL Platform Configurations " +
                                          "from \"" + self.directory + "/Makefile\"")
@@ -202,7 +239,7 @@ class HdlPlatformWorkerConfig(HdlAssembly):
         else:
             return ocpiutil.Report()
 
-class Platform(object):
+class Platform(Asset):
     @classmethod
     def show_all(cls, details):
         if details == "simple" or details == "table":
@@ -235,9 +272,9 @@ class Target(object):
             print()
 
 class RccPlatform(Platform):
-    def __init__(self, name, target):
-        self.name = name
-        self.target = target
+    def __init__(self, directory, name, **kwargs):
+        self.check_dirtype("rcc-platform", directory)
+        super().__init__(directory, name, **kwargs)
 
     def __str__(self):
         return self.name

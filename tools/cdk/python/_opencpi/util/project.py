@@ -56,7 +56,10 @@ def get_dirtype(directory="."):
     if match is None:
         if os.path.isfile(directory + "/project-package-id"):
             return "project"
-        return None
+        elif directory.endswith(("rcc/platforms", "rcc/platforms/")):
+            return "rcc-platforms"
+        elif "rcc/platforms/" in directory:
+            return "rcc-platform"
     return match
 
 def get_subdirs_of_type(dirtype, directory="."):
@@ -398,7 +401,8 @@ def get_all_projects():
 
 # Directory types that may contain sub-assets
 COLLECTION_DIRTYPES = ["project", "applications", "library", "libraries", "hdl-library",
-                       "hdl-platform", "hdl-platforms", "hdl-assemblies", "hdl-primitives"]
+                       "hdl-platform", "hdl-platforms", "hdl-assemblies", "hdl-primitives",
+                       "rcc-platforms"]
 
 def get_ocpidev_working_dir(origin_path=".", noun="", name=".",
                             library=None, hdl_library=None, hdl_platform=None):

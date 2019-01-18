@@ -1,8 +1,7 @@
 <!--
   The slot type declaration for Altera HSMC implementation on the Stratix IV development (alst4) board.
   *****************************************************************************************************************************************
-  This slot type declaration is distinctly different from the regular HSMC spec because the alst4 board's usage of D37_OR_LVDS_CLKIN1p and D39_OR_LVDS_CLKIN1n SEEM TO BE INCOMPATIBLE WITH THE HSMC SPEC due to the restriction of pin directionality
-  See also/contrast with: hdl/cards/specs/hsmc.xml
+  This slot type declaration is different from the regular HSMC spec (hsmc.xml) because the alst4 board's usage of D37_OR_LVDS_CLKIN1p and D39_OR_LVDS_CLKIN1n SEEM TO BE INCOMPATIBLE WITH THE HSMC SPEC due to the restriction of pin directionality
   *****************************************************************************************************************************************
   The following HSMC specification document was referenced:
     Document Version: 1.7

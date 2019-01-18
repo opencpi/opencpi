@@ -52,7 +52,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         self.check_dirtype("project", directory)
         super().__init__(directory, name, **kwargs)
         self.lib_list = None
-        self.apps_list = None
+        self.apps_col_list = None
 
         # Boolean for whether or the current directory is within this project
         # TODO: is current_project needed as a field, or can it be a function?
@@ -74,24 +74,46 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
             for lib_directory in self.get_valid_libraries():
                 self.lib_list.append(AssetFactory.factory("library", lib_directory, **kwargs))
 
-        if kwargs.get("init_apps", False):
-            self.apps_list = []
-            logging.debug("Project constructor creating Applications Objects")
-            for app_directory in self.get_valid_apps():
-                self.apps_list.append(AssetFactory.factory("applications", app_directory, **kwargs))
+        if kwargs.get("init_apps_col", False):
+            self.apps_col_list = []
+            logging.debug("Project constructor creating ApplicationCollection Objects")
+            for app_directory in self.get_valid_apps_col():
+                self.apps_col_list.append(AssetFactory.factory("applications",
+                                                               app_directory,
+                                                               **kwargs))
+        self.comp_list = None
+        if kwargs.get("init_comps", False):
+            self.comp_list = []
+            for comp_directory in self.get_valid_components():
+                comp_name = ocpiutil.rchop(os.path.basename(comp_directory), "spec.xml")[:-1]
+                self.comp_list.append(AssetFactory.factory("component", comp_directory,
+                                                           name=comp_name, **kwargs))
+        self.hdlplatforms = None
+        self.rccplatforms = None
+        if kwargs.get("init_hdlplats", False):
+            kwargs["init_rccplats"] = True
+            kwargs["init_hdlplats"] = True
 
+        if kwargs.get("init_rccplats", False):
+            logging.debug("Project constructor creating RccPlatformsCollection Object")
+            plats_directory = self.directory + "/rcc/platforms"
+            # If hdl/platforms exists for this project, construct the HdlPlatformsCollection
+            # instance
+            if os.path.exists(plats_directory):
+                self.rccplatforms = [AssetFactory.factory("rcc-platforms", plats_directory,
+                                                         **kwargs)]
+            else:
+                self.rccplatforms = []
         if kwargs.get("init_hdlplats", False):
             logging.debug("Project constructor creating HdlPlatformsCollection Object")
             plats_directory = self.directory + "/hdl/platforms"
             # If hdl/platforms exists for this project, construct the HdlPlatformsCollection
             # instance
             if os.path.exists(plats_directory):
-                self.hdlplatforms = AssetFactory.factory("hdl-platforms", plats_directory,
-                                                         **kwargs)
+                self.hdlplatforms = [AssetFactory.factory("hdl-platforms", plats_directory,
+                                                         **kwargs)]
             else:
-                self.hdlplatforms = None
-        else:
-            self.hdlplatforms = None
+                self.hdlplatforms = []
 
         if kwargs.get("init_hdlassembs", False):
             logging.debug("Project constructor creating HdlAssembliesCollection Object")
@@ -157,7 +179,34 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                                              self.directory + "\".")
         self.package_id = project_package
 
-    def get_valid_apps(self):
+    #TODO do we need this function?
+    def get_valid_plats(self):
+        """
+        Gets a list of all directories of type hdl-platform and rcc platform in the project and puts
+        the directories and the basename of that directory into a dictionary to return
+        """
+        ret_val = []
+        ret_val.append(ocpiutil.get_subdirs_of_type("hdl-platform", self.directory))
+        ret_val.append(ocpiutil.get_subdirs_of_type("rcc-platform", self.directory))
+        return ret_val
+
+    #TODO do we need this function?
+    def get_valid_hdl_plats(self):
+        """
+        Gets a list of all directories of type hdl-platform in the project and puts
+        the directories and the basename of that directory into a dictionary to return
+        """
+        return ocpiutil.get_subdirs_of_type("hdl-platform", self.directory)
+
+    #TODO do we need this function?
+    def get_valid_rcc_plats(self):
+        """
+        Gets a list of all directories of type rcc-platform in the project and puts
+        the directories and the basename of that directory into a dictionary to return
+        """
+        return ocpiutil.get_subdirs_of_type("rcc-platform", self.directory)
+
+    def get_valid_apps_col(self):
         """
         Gets a list of all directories of type applications in the project and puts that
         applications directory and the basename of that directory into a dictionary to return
@@ -178,12 +227,12 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         initialization time
         """
         ret_val = 0
-        if (self.apps_list is None) and (self.lib_list is None):
+        if (self.apps_col_list is None) and (self.lib_list is None):
             raise ocpiutil.OCPIException("For a Project to be run \"init_libs\" and " +
-                                         "\"init_tests\" or \"init_apps\" must be set to " +
+                                         "\"init_tests\" or \"init_apps_col\" must be set to " +
                                          "True when the object is constructed")
-        if self.apps_list is not None:
-            for apps in self.apps_list:
+        if self.apps_col_list is not None:
+            for apps in self.apps_col_list:
                 run_val = apps.run()
                 ret_val = ret_val + run_val
         if self.lib_list is not None:
@@ -191,7 +240,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                 run_val = lib.run()
                 ret_val = ret_val + run_val
         return ret_val
-        
+
     #placeholder function
     def build(self):
         """
@@ -207,7 +256,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         project_dict = {}
         libraries_dict = {}
         for lib in self.lib_list:
-            valid_tests = lib.get_valid_tests()
+            valid_tests, valid_workers = lib.get_valid_tests_workers()
             if  valid_tests:
                 lib_dict = {}
                 lib_package = lib.package_id
@@ -310,6 +359,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         project_vars = ocpiutil.set_vars_from_make(mk_file=self.directory + "/Makefile",
                                                    mk_arg="projectdeps ShellProjectVars=1",
                                                    verbose=True)
+        #TODO output the project's registry here too
         proj_depends = project_vars['ProjectDependencies']
         if not proj_depends:
             proj_depends.append("None")
@@ -336,16 +386,79 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         proj_dict = {}
         top_dict = {}
         libraries_dict = {}
+        top_comp_dict = {}
+        for comp in self.comp_list:
+            top_comp_dict[comp.name] = comp.directory
+        top_dict["components"] = top_comp_dict
+        for lib in self.get_valid_libraries():
+            lib_dict = {}
+            lib_package = Library.get_package_id(lib)
+            i = 1
+            while lib_package in libraries_dict:
+                lib_package += ":" + str(i)
+                i += 1
+            libraries_dict[lib_package] = lib
+        if os.path.isdir(self.directory + "/applications"):
+            apps_dict = {}
+            for app_col in self.apps_col_list:
+                for app in app_col.apps_list:
+                    apps_dict[app.name]=app.directory
+            top_dict["applications"] = apps_dict
+
+        rcc_plats_dict = {}
+        for rcc_plats_col in self.rccplatforms:
+            for rcc_plat in rcc_plats_col.platform_list:
+                rcc_plats_dict[rcc_plat.name] = rcc_plat.directory
+        hdl_plats_dict = {}
+        for hdl_plats_col in self.hdlplatforms:
+            for hdl_plat in hdl_plats_col.platform_list:
+                hdl_plats_dict[hdl_plat.name] = hdl_plat.directory
+        plats_dict = {"rcc": rcc_plats_dict, "hdl": hdl_plats_dict}
+
+        project_vars = ocpiutil.set_vars_from_make(mk_file=self.directory + "/Makefile",
+                                                   mk_arg="projectdeps ShellProjectVars=1",
+                                                   verbose=True)
+        proj_depends = project_vars['ProjectDependencies']
+        if not proj_depends:
+            proj_depends.append("None")
+        top_dict["dependencies"] = proj_depends
+        top_dict["directory"] = self.directory
+        top_dict["libraries"] = libraries_dict
+        top_dict["platforms"] = plats_dict
+        top_dict["package"] = self.package_id
+        proj_dict["project"] = top_dict
+        return proj_dict
+
+    def _collect_very_verbose_dict(self):
+        have_any_tests = False
+        have_any_wkrs = False
+        have_any_comps = False
+        proj_dict = {}
+        top_dict = {}
+        libraries_dict = {}
         for lib in self.lib_list:
             lib_dict = {}
             lib_package = lib.package_id
             lib_dict["package"] = lib_package
             lib_dict["directory"] = lib.directory
-            valid_tests = lib.get_valid_tests()
+            top_comp_dict = {}
+            for comp in self.comp_list:
+                top_comp_dict[comp.name] = comp.directory
+            top_dict["components"] = top_comp_dict
+            valid_tests, valid_workers = lib.get_valid_tests_workers()
             if  valid_tests:
-                have_any_tests = True
+                have_any_tests= True
                 lib_dict["tests"] = {os.path.basename(test.rstrip('/')):test
                                      for test in valid_tests}
+            if valid_workers:
+                have_any_wkrs= True
+                lib_dict["workers"] = {os.path.basename(wkr.rstrip('/')):wkr
+                                     for wkr in valid_workers}
+            valid_comps = lib.get_valid_components()
+            if valid_comps:
+                have_any_comps= True
+                lib_dict["components"]= {ocpiutil.rchop(os.path.basename(comp), "spec.xml")[:-1]:
+                                         comp for comp in valid_comps}
             # in case two or more  libraries have the same package id we update the key to end
             # with a number
             i = 1
@@ -365,6 +478,23 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
             for prim in prims:
                 prims_dict[prim] = prim_dir + "/" + prim
             top_dict["primitives"] = prims_dict
+        if os.path.isdir(self.directory + "/applications"):
+            apps_dict = {}
+            for app_col in self.apps_col_list:
+                for app in app_col.apps_list:
+                    apps_dict[app.name]=app.directory
+            top_dict["applications"] = apps_dict
+
+        rcc_plats_dict = {}
+        for rcc_plats_col in self.rccplatforms:
+            for rcc_plat in rcc_plats_col.platform_list:
+                rcc_plats_dict[rcc_plat.name] = rcc_plat.directory
+        hdl_plats_dict = {}
+        for hdl_plats_col in self.hdlplatforms:
+            for hdl_plat in hdl_plats_col.platform_list:
+                hdl_plats_dict[hdl_plat.name] = hdl_plat.directory
+        plats_dict = {"rcc": rcc_plats_dict, "hdl": hdl_plats_dict}
+
         project_vars = ocpiutil.set_vars_from_make(mk_file=self.directory + "/Makefile",
                                                    mk_arg="projectdeps ShellProjectVars=1",
                                                    verbose=True)
@@ -374,21 +504,65 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         top_dict["dependencies"] = proj_depends
         top_dict["directory"] = self.directory
         top_dict["libraries"] = libraries_dict
+        top_dict["platforms"] = plats_dict
         top_dict["package"] = self.package_id
         proj_dict["project"] = top_dict
-        return proj_dict, have_any_tests
+        return proj_dict, have_any_tests, have_any_wkrs, have_any_comps
 
     def _show_verbose(self, details, **kwargs):
-        if self.lib_list is None:
-            raise ocpiutil.OCPIException("For a Project to show verbosely \"init_libs\" "
-                                         "must be set to True when the object is constructed")
-        proj_dict, have_any_tests = self._collect_verbose_dict()
+        proj_dict = self._collect_verbose_dict()
 
         if details == "simple":
-
             print("Project Directory: " + proj_dict["project"]["directory"])
             print("Package-ID: " + proj_dict["project"]["package"])
             print("Project Dependencies: " + ", ".join(proj_dict["project"]["dependencies"]))
+            comp_dict =  proj_dict["project"].get("components", [])
+            comps = []
+            for comp in comp_dict:
+                comps.append(comp)
+            if comp_dict:
+                print("Top Level Components: " + ", ".join(comps))
+            lib_dict = proj_dict["project"].get("libraries", [])
+            for lib in lib_dict:
+                print("  Library: " + lib_dict[lib])
+        elif details == "table":
+            print("Overview:")
+            rows = [["Project Directory", "Package-ID", "Project Dependencies"]]
+            rows.append([proj_dict["project"]["directory"],
+                        proj_dict["project"]["package"],
+                        ", ".join(proj_dict["project"]["dependencies"])])
+            ocpiutil.print_table(rows, underline="-")
+            comp_dict =  proj_dict["project"].get("components", [])
+            if comp_dict:
+                print("Top Level Components:")
+                rows = [["Component Name"]]
+                for comp in comp_dict:
+                    rows.append([comp])
+                ocpiutil.print_table(rows, underline="-")
+            lib_dict = proj_dict["project"].get("libraries", [])
+            if lib_dict:
+                print("Libraries:")
+                rows = [["Library Directories"]]
+                for lib in lib_dict:
+                    rows.append([lib_dict[lib]])
+                ocpiutil.print_table(rows, underline="-")
+        else:
+            json.dump(proj_dict, sys.stdout)
+            print()
+
+    def _show_very_verbose(self, details, **kwargs):
+        proj_dict, have_any_tests, have_any_wkrs, have_any_comps = self._collect_very_verbose_dict()
+
+        if details == "simple":
+            print("Project Directory: " + proj_dict["project"]["directory"])
+            print("Package-ID: " + proj_dict["project"]["package"])
+            print("Project Dependencies: " + ", ".join(proj_dict["project"]["dependencies"]))
+            comp_dict =  proj_dict["project"].get("components", [])
+            comps = []
+            for comp in comp_dict:
+                comps.append(comp)
+            if comp_dict:
+                print("Top Level Components: " + ", ".join(comps))
             prim_dict = proj_dict["project"].get("primitives", [])
             if prim_dict:
                 print("  HDL Primitives: " + self.directory + "/hdl/primitives")
@@ -402,6 +576,12 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                 test_dict = lib_dict[lib].get("tests", [])
                 for test in test_dict:
                     print("    Test: " + test)
+                wkr_dict = lib_dict[lib].get("workers", [])
+                for wkr in wkr_dict:
+                    print("    Worker: " + wkr)
+                comp_dict = lib_dict[lib].get("components", [])
+                for comp in comp_dict:
+                    print("    Component: " + comp)
         elif details == "table":
             print("Overview:")
             rows = [["Project Directory", "Package-ID", "Project Dependencies"]]
@@ -409,6 +589,20 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                         proj_dict["project"]["package"],
                         ", ".join(proj_dict["project"]["dependencies"])])
             ocpiutil.print_table(rows, underline="-")
+            comp_dict =  proj_dict["project"].get("components", [])
+            if comp_dict:
+                print("Top Level Components:")
+                rows = [["Compenent Name"]]
+                for comp in comp_dict:
+                    rows.append([comp])
+            ocpiutil.print_table(rows, underline="-")
+            prim_dict = proj_dict["project"].get("primitives", [])
+            if prim_dict:
+                print("Primitives:")
+                rows = [["Primitive Directory", "Primitive"]]
+                for prim in prim_dict:
+                    rows.append([self.directory + "/hdl/primitives", prim])
+                ocpiutil.print_table(rows, underline="-")
             lib_dict = proj_dict["project"].get("libraries", [])
             if lib_dict:
                 print("Libraries:")
@@ -425,12 +619,23 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                     for test in test_dict:
                         rows.append([os.path.dirname(ocpiutil.rchop(test_dict[test],"/")), test])
                 ocpiutil.print_table(rows, underline="-")
-            prim_dict = proj_dict["project"].get("primitives", [])
-            if prim_dict:
-                print("Primitives:")
-                rows = [["Primitive Directory", "Primitive"]]
-                for prim in prim_dict:
-                    rows.append([self.directory + "/hdl/primitives", prim])
+            if have_any_wkrs:
+                print("Workers:")
+                rows = [["Library Directory", "Worker"]]
+                lib_dict = proj_dict["project"].get("libraries", [])
+                for lib in lib_dict:
+                    wkr_dict = lib_dict[lib].get("workers", [])
+                    for wkr in wkr_dict:
+                        rows.append([os.path.dirname(ocpiutil.rchop(wkr_dict[wkr],"/")), wkr])
+                ocpiutil.print_table(rows, underline="-")
+            if have_any_comps:
+                print("Components:")
+                rows = [["Library Directory", "Component"]]
+                lib_dict = proj_dict["project"].get("libraries", [])
+                for lib in lib_dict:
+                    comp_dict = lib_dict[lib].get("components", [])
+                    for comp in comp_dict:
+                        rows.append([os.path.dirname(ocpiutil.rchop(comp_dict[comp],"/")), comp])
                 ocpiutil.print_table(rows, underline="-")
 
         else:
@@ -447,10 +652,12 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
             tests (T/F) - Instructs the method whether print out the tests that that exist in
                           this project
         """
-        if not verbose:
+        if verbose == 0:
             self._show_non_verbose(details, **kwargs)
-        else:
+        elif verbose == 1:
             self._show_verbose(details, **kwargs)
+        elif verbose == 2:
+            self._show_very_verbose(details, **kwargs)
 
     def show_utilization(self):
         """
@@ -461,7 +668,8 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
 
         # if this project has an hdl/platforms dir, show its utilization
         if self.hdlplatforms:
-            self.hdlplatforms.show_utilization()
+            for hdlplatforms in self.hdlplatforms:
+                hdlplatforms.show_utilization()
 
         # if this project has an hdl/assemblies dir, show its utilization
         if self.hdlassemblies:

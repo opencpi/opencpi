@@ -32,7 +32,8 @@ SourceFiles=$(patsubst %,%.vhd,\
 	misc_prims_pkg \
 	lfsr/src/lfsr \
 	round_conv/src/round_conv \
-	event_in_to_txen/src/event_in_to_txen )
+	event_in_to_txen/src/event_in_to_txen \
+	edge_detector/src/edge_detector)
 
 
 # Remember two rules for OpenCPI primitive libraries, in order to be usable with all tools:

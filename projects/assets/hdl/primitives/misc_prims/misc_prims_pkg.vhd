@@ -71,4 +71,16 @@ component event_in_to_txen
     IS_OPERATING           : out std_logic);
 end component;
 
+component edge_detector
+  generic(
+    width : positive := 1); -- width of in port and out port
+  port(
+    clk               : in  std_logic;  -- control plane clock
+    reset             : in  std_logic;  -- control plane reset (active-high)
+    enable            : in  std_logic; -- controls when to do edge detection
+    input             : in  std_logic_vector(width-1 downto 0);  -- input signal
+    rising_pulse      : out std_logic_vector(width-1 downto 0);  -- rising edge pulse
+    falling_pulse     : out std_logic_vector(width-1 downto 0)); -- falling edge pulse
+end component;
+
 end package misc_prims;

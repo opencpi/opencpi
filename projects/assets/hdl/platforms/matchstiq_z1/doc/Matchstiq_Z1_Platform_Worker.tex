@@ -131,7 +131,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \section*{Functionality}
 \begin{flushleft}
-The Matchstiq-Z1 Platform Worker is the interface between the Processing System and the FPGA on the Matchstiq-Z1 Platform. It makes the connections between the AXI buses on the ARM and the OpenCPI Control and Data Planes. Optionally, it can also be used to interface with the SPI, I2C, and UART buses with device workers.
+The Matchstiq-Z1 Platform Worker is the interface between the Processing System and the FPGA on the Matchstiq-Z1 Platform. It makes the connections between the AXI buses on the ARM and the OpenCPI Control and Data Planes. Optionally, it can also be used to interface with the SPI, I2C, and UART buses with device workers. \newline
+
+There is also a GPO device worker called matchstiq\_z1\_gp\_out that can control the three GPIO pins present on the Matchstiq-Z1. By default it is not included in the platform configuration files but can be utilized by adding it to an assembly container. If the device worker is not added to an assembly container, the unused pins will be driven low.
+
 \end{flushleft}
 
 \section*{Worker Implementation Details}
@@ -383,6 +386,8 @@ assets/hdl/primitives/sdp/sdp\_body.vhd
 			\hline
 			matchstiq\_z1\_i2c         &CLK\_FREQ\_p & 100*10\textsuperscript{6}                            & SCL               & -                         \\
 			\hline
+			matchstiq\_z1\_gp\_out         &simulation\_p &  false  &       & -                         \\
+			\hline
 		\end{tabular}
 
 \section*{Signals}
@@ -397,8 +402,6 @@ Note that this signal table does not include signals that may be provided by slo
 	SI5338\_CLK0B  & Input  & false        & 1     & Differential clock input from Si5338 Clock Generator \\
 	\hline
 	LIME\_RX\_CLK  & Output & false        & 1     & Single ended clock output to Lime RX\_CLK pin        \\
-	\hline
-	clocktest      & Output & false        & 1     & Copy of LIME\_RX\_CLK. Pin 3 of rear debug connector \\
 	\hline
 	GPS\_1PPS\_IN  & Input  & false        & 1     & 1 PPS output from GPS module                         \\
 	\hline

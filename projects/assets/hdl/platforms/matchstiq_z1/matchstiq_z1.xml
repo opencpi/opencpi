@@ -19,7 +19,7 @@
   <property name="debug_state1" type="Ulonglong" arraylength='4' volatile='true' debug='false'/>
   <property name="debug_state2" type="Ulonglong" arraylength='4' volatile='true' debug='false'/>
   <!-- Supported Device Workers -->
-  <device worker="lime_adc"> <!-- Uses RX_CLK_OUT from Lime --> 
+  <device worker="lime_adc"> <!-- Uses RX_CLK_OUT from Lime -->
     <property name="USE_CLK_OUT_p" value="1"/>
     <property name="USE_CLK_IN_p" value="0"/>
     <property name="USE_CTL_CLK_p" value="0"/>
@@ -36,7 +36,9 @@
   <device worker="lime_rx"> <!-- RXEN not connected to FPGA -->
     <signal name="rxen" platform=""/>
   </device>
-  <device worker="lime_tx"/>
+  <device worker="lime_tx">
+   <signal name="txen" platform=""/> <!--This pin is unconnected-->
+  </device>
   <device worker="gps_uart"/>
   <!-- I2C bus -->
   <device worker="si5338">
@@ -48,11 +50,14 @@
   <device worker="pca9535"/>
   <device worker="tmp100"/>
   <device worker="matchstiq_z1_i2c"/>
+  <!-- GP Out device worker-->
+  <device worker="matchstiq_z1_gp_out">
+    <property name="simulation_p" value="false"/>
+  </device>
   <!-- Clocking signals -->
   <signal input="SI5338_CLK0A"/>
   <signal input="SI5338_CLK0B"/>
   <signal output="LIME_RX_CLK"/> <!-- Goes to RX_CLK to Lime -->
-  <signal output="clocktest"/> <!-- Pin 3 on the rear debug connector -->
   <!-- 1 PPS -->
   <signal input="GPS_1PPS_IN"/> <!-- 1 PPS output from GPS module -->
   <signal input="GPS_FIX_IND"/> <!-- Fix indication output from GPS module -->
@@ -60,4 +65,3 @@
   <!-- LEDs on ATLAS module-->
   <signal output="ATLAS_LEDS" width="3"/>
 </HdlPlatform>
-

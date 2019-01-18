@@ -606,7 +606,7 @@ file2String(std::string &out, const char *file, const char *start, const char *m
     else if (end)
       out += end;
   } else
-    err = "file could not be open for reading";
+    err = "file could not be opened for reading";
    if (f)
     fclose(f);
   if (err) {

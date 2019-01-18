@@ -17,6 +17,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from .abstract import *
+from .factory import *
 import os
 import sys
 import logging
@@ -69,9 +70,23 @@ class ApplicationsCollection(RunnableAsset, RCCBuildableAsset):
         self.check_dirtype("applications", directory)
         super().__init__(directory, name, **kwargs)
 
+        self.apps_list = None
+        if kwargs.get("init_apps_col", False):
+            self.apps_list = []
+            logging.debug("ApplicationsCollection constructor creating Applications Objects")
+            for app_directory in self.get_valid_apps():
+                self.apps_list.append(AssetFactory.factory("application", app_directory, **kwargs))
+
         self.run_before = kwargs.get("run_before", None)
         self.run_after = kwargs.get("run_after", None)
         self.run_arg = kwargs.get("run_arg", None)
+
+    def get_valid_apps(self):
+       """
+       Gets a list of all directories of type applications in the project and puts that
+       applications directory and the basename of that directory into a dictionary to return
+       """
+       return ocpiutil.get_subdirs_of_type("application", self.directory)
 
     def run(self):
         """

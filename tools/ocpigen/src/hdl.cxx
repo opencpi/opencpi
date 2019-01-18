@@ -399,13 +399,13 @@ parse(ezxml_t x, Worker *w) {
   } else {
     if (direction)
       return "Signal directions must be specified using the "
-	"input/output/inout/bidirecitonal attributes if the name attribute is "
+	"input/output/inout/bidirectional attributes if the name attribute is "
 	"not used.  Using \"name\" and \"direction\" is recommended";
     switch ((nameIn ? 1 : 0) + (nameOut ? 1 : 0) + (nameInOut ? 1 : 0) + (nameBiDir ? 1 : 0)) {
     default:
-      return "Only one of the input/output/inout/bidirecitonal attributes can be specified";
+      return "Only one of the input/output/inout/bidirectional attributes can be specified";
     case 0:
-      return "If the \"name\" attribute is unspecified, one of input/output/inout/bidirecitonal "
+      return "If the \"name\" attribute is unspecified, one of input/output/inout/bidirectional "
 	"must be specified";
     case 1:
       if ((name = nameIn))

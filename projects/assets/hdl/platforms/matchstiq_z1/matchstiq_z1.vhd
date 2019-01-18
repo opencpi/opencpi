@@ -16,7 +16,7 @@
 -- You should have received a copy of the GNU Lesser General Public License
 -- along with this program. If not, see <http://www.gnu.org/licenses/>.
 
--- Matchstiq-Z1 Platform Worker 
+-- Matchstiq-Z1 Platform Worker
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
 library platform; use platform.platform_pkg.all;
@@ -47,7 +47,7 @@ architecture rtl of matchstiq_z1_worker is
   signal dbg_state_r      : ulonglong_array_t(0 to 3);
   signal dbg_state1_r     : ulonglong_array_t(0 to 3);
   signal dbg_state2_r     : ulonglong_array_t(0 to 3);
-  signal rx_clk_sig    : std_logic;
+
 begin
   timebase_out.clk   <= clk;
   timebase_out.reset <= reset;
@@ -136,13 +136,10 @@ begin
     generic map (
       DIFF_TERM => true)
     port map (
-      O  => rx_clk_sig,
+      O  => LIME_RX_CLK,
       I  => SI5338_CLK0A,
       IB => SI5338_CLK0B);
 
-  LIME_RX_CLK <= rx_clk_sig;
-  clocktest <= rx_clk_sig;
-  
   ATLAS_LEDS(2) <= not gps_fix_ind;
   ATLAS_LEDS(1) <= gps_fix_ind;
   ATLAS_LEDS(0) <= not gps_fix_ind;

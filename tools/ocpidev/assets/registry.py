@@ -44,7 +44,7 @@ class Registry(ShowableAsset):
         self.__projects = {}
         for proj in glob(self.directory + '/*'):
             pid = os.path.basename(proj)
-            self.__projects[pid] = (AssetFactory.factory("project", proj)
+            self.__projects[pid] = (AssetFactory.factory("project", proj, **kwargs)
                                     if os.path.exists(proj) else None)
 
     def contains(self, package_id=None, directory=None):
@@ -274,6 +274,105 @@ class Registry(ShowableAsset):
                                          "' exists but is not a directory.\nCorrect " +
                                          "'OCPI_PROJECT_REGISTRY_DIR'")
         return project_registry_dir
+
+    def _collect_workers_dict(self):
+        ret_dict = {}
+        proj_dict = {}
+        for proj in self.__projects:
+            lib_dict = {}
+            #print(self.__projects[proj].name)
+            for lib in self.__projects[proj].lib_list:
+                wkr_dict = {}
+                tests, wkrs= lib.get_valid_tests_workers()
+                for wkr in wkrs:
+                     wkr_dict[os.path.basename(wkr)] = wkr
+                if wkr_dict:
+                    wkrs_dict= {"workers":wkr_dict,
+                                "directory":lib.directory,
+                                "package_id": lib.package_id}
+                    lib_dict[lib.package_id] = wkrs_dict
+            if lib_dict:
+                libs_dict= {"libraries":lib_dict,
+                            "directory":self.__projects[proj].directory,
+                            "package_id": self.__projects[proj].package_id}
+                proj_dict[self.__projects[proj].package_id]= libs_dict
+
+        ret_dict["projects"] = proj_dict
+        return ret_dict
+
+    def _collect_components_dict(self):
+        ret_dict = {}
+        proj_dict = {}
+        for proj in self.__projects:
+            top_comp_dict = {}
+            for comp in self.__projects[proj].get_valid_components():
+                comp_name = ocpiutil.rchop(os.path.basename(comp), "spec.xml")[:-1]
+                top_comp_dict[comp_name] = comp
+            lib_dict = {}
+            for lib in self.__projects[proj].lib_list:
+                comp_dict = {}
+                for comp in lib.get_valid_components():
+                    comp_name = ocpiutil.rchop(os.path.basename(comp), "spec.xml")[:-1]
+                    comp_dict[comp_name] = comp
+                if comp_dict:
+                    comps_dict= {"components":comp_dict,
+                                 "directory":lib.directory,
+                                 "package_id": lib.package_id}
+                    lib_dict[lib.package_id] = comps_dict
+            if lib_dict:
+                libs_dict= {"libraries":lib_dict,
+                            "directory":self.__projects[proj].directory,
+                            "package_id": self.__projects[proj].package_id}
+                if top_comp_dict:
+                    libs_dict["components"]=top_comp_dict
+                proj_dict[self.__projects[proj].package_id]= libs_dict
+
+        ret_dict["projects"] = proj_dict
+        return ret_dict
+
+    def show_workers(self, details, verbose, **kwargs):
+        reg_dict = self._collect_workers_dict()
+        if (details == "simple"):
+            for proj in reg_dict["projects"]:
+                for lib in reg_dict["projects"][proj]["libraries"]:
+                    for wkr in reg_dict["projects"][proj]["libraries"][lib]["workers"]:
+                        print (wkr + " ", end="")
+            print()
+        elif (details == "table"):
+            rows = [["Project", "Library Directory", "Worker"]]
+            for proj in reg_dict["projects"]:
+                for lib in reg_dict["projects"][proj]["libraries"]:
+                    for wkr in reg_dict["projects"][proj]["libraries"][lib]["workers"]:
+                        lib_dict = reg_dict["projects"][proj]["libraries"][lib]
+                        rows.append([proj, lib_dict["directory"], wkr])
+            ocpiutil.print_table(rows, underline="-")
+        elif (details == "json"):
+            json.dump(reg_dict, sys.stdout)
+            print()
+
+    def show_components(self, details, verbose, **kwargs):
+        reg_dict = self._collect_components_dict()
+        if (details == "simple"):
+            for proj in reg_dict["projects"]:
+                for comp in reg_dict["projects"][proj].get("components", []):
+                    print (comp + " ", end="")
+                for lib in reg_dict["projects"][proj]["libraries"]:
+                    for comp in reg_dict["projects"][proj]["libraries"][lib]["components"]:
+                        print (comp + " ", end="")
+            print ()
+        elif (details == "table"):
+            rows = [["Project", "Component Spec Directory", "Component"]]
+            for proj in reg_dict["projects"]:
+                for comp in reg_dict["projects"][proj].get("components", []):
+                    rows.append([proj, reg_dict["projects"][proj]["directory"] + "/specs", comp])
+                for lib in reg_dict["projects"][proj]["libraries"]:
+                    for comp in reg_dict["projects"][proj]["libraries"][lib]["components"]:
+                        lib_dict = reg_dict["projects"][proj]["libraries"][lib]
+                        rows.append([proj, lib_dict["directory"] + "/specs", comp])
+            ocpiutil.print_table(rows, underline="-")
+        elif (details == "json"):
+            json.dump(reg_dict, sys.stdout)
+            print()
 
     def _get_dict(self):
         proj_dict = {}

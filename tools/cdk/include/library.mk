@@ -40,6 +40,9 @@ generate:
 	$(call BuildModel,test,generate)
 
 ifdef ShellLibraryVars
+showlib:
+	$(info Tests="$(TestImplementations); Workers="$(Implementations)";)
+	$(info Workers="$(Implementations)";)
 showtests:
 	$(info Tests="$(TestImplementations)";)
 showworkers:

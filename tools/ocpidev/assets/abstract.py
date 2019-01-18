@@ -110,6 +110,22 @@ class Asset(metaclass=ABCMeta):
         if force:
             shutil.rmtree(self.directory)
 
+    def get_valid_components(self):
+        """
+        this is function is used by both projects and libraries  to find the component specs that
+        are owned by that asset.
+        TODO move this function to a seperate class from asset and have project and library inherit
+             from that class???
+        """
+        ret_val = []
+        if os.path.isdir(self.directory + "/specs"):
+            files = [dir for dir in os.listdir(self.directory + "/specs")
+                     if os.path.isfile(os.path.join(self.directory + "/specs", dir))]
+            for comp in files:
+                if Component.is_component_spec_file(self.directory + "/specs/" + comp):
+                    ret_val.append(self.directory + "/specs/" + comp)
+        return ret_val
+
 class BuildableAsset(Asset):
     """
     Virtual class that requires that any child classes implement a build method.  Contains settings
@@ -176,8 +192,9 @@ class HDLBuildableAsset(BuildableAsset):
             if "all" in self.hdl_plat_strs:
                 self.hdl_platforms = hdltargets.HdlToolFactory.get_or_create_all("hdlplatform")
                 self.hdl_targets = hdltargets.HdlToolFactory.get_or_create_all("hdltarget")
-            else:
+            elif "local" not in self.hdl_plat_strs:
                 for plat in self.hdl_plat_strs:
+                    print("HDLbuildable plat: "+ plat)
                     plat = hdltargets.HdlToolFactory.factory("hdlplatform", plat)
                     self.hdl_platforms.add(plat)
                     self.hdl_targets.add(plat.target)
@@ -337,3 +354,4 @@ from .worker import *
 from .platform import *
 from .assembly import *
 from .library import *
+from .component import *

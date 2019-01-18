@@ -1,3 +1,3 @@
-<signals>
-  <signal output='force_reset'/>
-</signals>
+<Signals>
+  <Signal Name="force_reset" Direction="out"/>
+</Signals>

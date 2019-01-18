@@ -1,8 +1,8 @@
-<signals>
+<Signals>
   <!-- The AD9361 register set determines which channel mode is used (1R1T,
        1R2T, 2R1T, or 1R2T). This mode is part of what eventually determines
        which timing diagram the AD9361 is expecting for the RX/TX data path
        pins. -->
-  <signal input='config_is_two_t'/>
-  <signal input='force_two_r_two_t_timing'/>
-</signals>
+  <Signal Name="config_is_two_t" Direction="in"/>
+  <Signal Name="force_two_r_two_t_timing" Direction="in"/>
+</Signals>

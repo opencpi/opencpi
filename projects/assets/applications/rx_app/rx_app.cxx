@@ -553,8 +553,7 @@ int main(int argc, char **argv) {
   }
 
   {
-  OA::Property p(app, "rx", "rf_gain_dB");
-  double BB_gain = p.getValue<double>();
+  double BB_gain = app.getPropertyValue<double>("rx", "bb_gain_dB");
   printf("BB gain               : %0.15f\tdB (nominal)\n",  BB_gain);
   }
 

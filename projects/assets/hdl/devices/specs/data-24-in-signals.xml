@@ -1,4 +1,4 @@
-<signals>
-  <signal input='data' width='24'/>
-  <signal input='rx_frame'/>
-</signals>
+<Signals>
+  <Signal Name="data" Direction="in" Width="24"/>
+  <Signal Name="rx_frame" Direction="in"/>
+</Signals>

@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Generic RF Interface Guide}
-\def\docVersion{1.4}
+\def\docVersion{\color{red}vdevelop}
 %----------------------------------------------------------------------------------------
 \input{snippets/LaTeX_Header.tex}
 \date{Version \docVersion} % Force date to be blank and override date with version
@@ -31,6 +31,15 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \begin{document}
 \maketitle
 \thispagestyle{fancy}
+
+\begin{center}
+\framebox{\parbox{0.8\linewidth}{\centering
+\textcolor{red}{WARNING:}
+The rx\_spec and tx\_spec component specs covered by this document are not recommended for new designs. See dig\_radio\_ctrlr-spec.xml component spec and corresponding document: \url{https://opencpi.github.io/Dig_Radio_Ctrlr.pdf}
+
+\PackageWarning{}{} }}
+\end{center}
+
 \newpage
 
 	\begin{center}
@@ -45,6 +54,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		    v1.1 & Initial Release & 3/2017 \\
 		    \hline
 		    v1.2 & Updated for Release 1.2 & 8/2017 \\
+		    \hline
+        \color{red}vdevelop & Not recommended for new designs warning added. & \color{red}pre-release \\
 		    \hline
 			\end{tabularx}
 		\end{table}
