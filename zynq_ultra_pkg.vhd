@@ -21,7 +21,7 @@ component zynq_ultra_ps_e is
     ps_out       : out   ps2pl_t;
     m_axi_hp_in  : in    m_axi_hp_in_array_t(0 to C_M_AXI_HP_COUNT-1);
     m_axi_hp_out : out   m_axi_hp_out_array_t(0 to C_M_AXI_HP_COUNT-1);
-    s_axi_hp_in  : in    s_axi_hp_in_array_t(0 to C_S_AXI_HP_COUNT-1);
+    s_axi_hp_in  : in    s_axi_hp_in_addr36_array_t(0 to C_S_AXI_HP_COUNT-1);
     s_axi_hp_out : out   s_axi_hp_out_array_t(0 to C_S_AXI_HP_COUNT-1)
     );
 end component zynq_ultra_ps_e;
