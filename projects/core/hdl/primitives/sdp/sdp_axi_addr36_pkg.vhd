@@ -22,7 +22,8 @@ library axi; use axi.axi_pkg.all;
 library work; use work.sdp.all;
 package sdp_axi is
 
--- This is the sdp2axi component with 32 bits of axi_in address space
+-- ZynqMP/PS8 requires 36 bits to access full DDR
+-- So, there must be a version of this package/component for 32 and 36 bits of axi_in address space
 component sdp2axi is
   generic(
     ocpi_debug : boolean;
@@ -36,7 +37,7 @@ component sdp2axi is
     sdp_out      : out m2s_t;
     sdp_out_data : out dword_array_t(0 to sdp_width-1);
     axi_in       : in  s_axi_hp_out_t;
-    axi_out      : out s_axi_hp_in_t;
+    axi_out      : out s_axi_hp_in_addr36_t;
     axi_error    : out bool_t;
     dbg_state    : out ulonglong_t;
     dbg_state1   : out ulonglong_t;

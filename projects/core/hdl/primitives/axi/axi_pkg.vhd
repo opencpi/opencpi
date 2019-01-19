@@ -27,7 +27,7 @@ library platform; use platform.platform_pkg.all;
 package axi_pkg is
 
 constant C_AXI_ADDR_WIDTH      : natural := 32; -- pinned at 32 in the AXI spec.
-constant C_S_AXI_HP_ADDR_WIDTH : natural := 36; -- pinned at 32 in the AXI spec.
+constant C_S_AXI_HP_ADDR_WIDTH : natural := 36;
 
 constant C_M_AXI_GP_ID_WIDTH   : natural := 12;
 constant C_S_AXI_GP_ID_WIDTH   : natural := 6;
@@ -210,7 +210,7 @@ type m_axi_gp_out_array_t is array (natural range <>) of m_axi_gp_out_t;
 
 type s_axi_hp_in_aw_t is record
   ID           : std_logic_vector(C_S_AXI_HP_ID_WIDTH-1 downto 0);
-  ADDR         : std_logic_vector(C_S_AXI_HP_ADDR_WIDTH-1 downto 0);
+  ADDR         : std_logic_vector(C_AXI_ADDR_WIDTH-1 downto 0);
   LEN          : std_logic_vector(3 downto 0);
   SIZE         : std_logic_vector(2 downto 0); -- bit 2 unused, but in PS7 interface
   BURST        : std_logic_vector(1 downto 0);
@@ -221,6 +221,20 @@ type s_axi_hp_in_aw_t is record
   QOS          : std_logic_vector(3 downto 0);
   ISSUECAP1_EN : std_logic;
 end record s_axi_hp_in_aw_t;
+-- ZynqMP/PS8 requires 36 bits to access full DDR
+type s_axi_hp_in_aw_addr36_t is record
+  ID           : std_logic_vector(C_S_AXI_HP_ID_WIDTH-1 downto 0);
+  ADDR         : std_logic_vector(C_S_AXI_HP_ADDR_WIDTH-1 downto 0);
+  LEN          : std_logic_vector(3 downto 0);
+  SIZE         : std_logic_vector(2 downto 0);
+  BURST        : std_logic_vector(1 downto 0);
+  LOCK         : std_logic_vector(1 downto 0);
+  CACHE        : std_logic_vector(3 downto 0);
+  PROT         : std_logic_vector(2 downto 0);
+  VALID        : std_logic;
+  QOS          : std_logic_vector(3 downto 0);
+  ISSUECAP1_EN : std_logic;
+end record s_axi_hp_in_aw_addr36_t;
 type s_axi_hp_out_aw_t is record
   READY : std_logic;
   COUNT : std_logic_vector(5 downto 0);
@@ -238,7 +252,7 @@ type s_axi_hp_out_w_t is record
 end record s_axi_hp_out_w_t;
 type s_axi_hp_in_ar_t is record
   ID           : std_logic_vector(C_S_AXI_HP_ID_WIDTH-1 downto 0);
-  ADDR         : std_logic_vector(C_S_AXI_HP_ADDR_WIDTH-1 downto 0);
+  ADDR         : std_logic_vector(C_AXI_ADDR_WIDTH-1 downto 0);
   LEN          : std_logic_vector(3 downto 0);
   SIZE         : std_logic_vector(2 downto 0); -- bit 2 unused, but in PS7 interface
   BURST        : std_logic_vector(1 downto 0);
@@ -249,6 +263,20 @@ type s_axi_hp_in_ar_t is record
   QOS          : std_logic_vector(3 downto 0);
   ISSUECAP1_EN : std_logic; -- when true, look at the PS register to throttle
 end record s_axi_hp_in_ar_t;
+-- ZynqMP/PS8 requires 36 bits to access full DDR
+type s_axi_hp_in_ar_addr36_t is record
+  ID           : std_logic_vector(C_S_AXI_HP_ID_WIDTH-1 downto 0);
+  ADDR         : std_logic_vector(C_S_AXI_HP_ADDR_WIDTH-1 downto 0);
+  LEN          : std_logic_vector(3 downto 0);
+  SIZE         : std_logic_vector(2 downto 0);
+  BURST        : std_logic_vector(1 downto 0);
+  LOCK         : std_logic_vector(1 downto 0);
+  CACHE        : std_logic_vector(3 downto 0);
+  PROT         : std_logic_vector(2 downto 0);
+  VALID        : std_logic;
+  QOS          : std_logic_vector(3 downto 0);
+  ISSUECAP1_EN : std_logic; -- when true, look at the PS register to throttle
+end record s_axi_hp_in_ar_addr36_t;
 type s_axi_hp_out_ar_t is record
   READY : std_logic;
   COUNT : std_logic_vector(2 downto 0);
@@ -281,6 +309,16 @@ type s_axi_hp_in_t is record
   b  : s_axi_hp_in_b_t;
 end record s_axi_hp_in_t;
 type s_axi_hp_in_array_t is array (natural range <>) of s_axi_hp_in_t;
+-- ZynqMP/PS8 requires 36 bits to access full DDR
+type s_axi_hp_in_addr36_t is record
+  ACLK    : std_logic; -- In the zynq AXI_HP, the PL as master supplies the clock
+  aw : s_axi_hp_in_aw_addr36_t;
+  ar : s_axi_hp_in_ar_addr36_t;
+  w  : s_axi_hp_in_w_t;
+  r  : s_axi_hp_in_r_t;
+  b  : s_axi_hp_in_b_t;
+end record s_axi_hp_in_addr36_t;
+type s_axi_hp_in_addr36_array_t is array (natural range <>) of s_axi_hp_in_addr36_t;
 
 type s_axi_hp_out_t is record
   ARESETN : std_logic; -- In the zynq AXI_HP, the *PS* as slave supplies the reset
