@@ -210,20 +210,39 @@ int main(int argc, char **argv) {
 
   double runtime;
   enum HdlPlatform           {matchstiq_z1, zed, alst4, alst4x, ml605};
-  enum HdlPlatformRFFrontend {matchstiq_z1_Frontend, zipperFrontend, FMCOMMS2Frontend, FMCOMMS3Frontend};
+  enum HdlPlatformRFFrontend {NONE, matchstiq_z1_Frontend, zipperFrontend, FMCOMMS2Frontend, FMCOMMS3Frontend};
   OA::Container *container;
   const HdlPlatform           defaultPlatform = matchstiq_z1;
   const HdlPlatformRFFrontend defaultFrontend = matchstiq_z1_Frontend;
   HdlPlatform           currentPlatform = defaultPlatform;
   HdlPlatformRFFrontend currentFrontend = defaultFrontend;
 
+  // Check the mode early so that we can skip checking for the frontend if in filerw mode
+  if (argc > 1)
+  {
+    mode = argv[1];
+    if ( (mode != "rx") && (mode != "tx") && (mode != "txrx") && (mode != "filerw") && (mode != "bbloopback") )
+    {
+      usage(argv0,"Error: incorrect test mode.\n");
+    }
+  }
+  else
+  {
+    usage(argv0,"Error: wrong number of arguments.\n");
+  }
   //Check what platform we are on
   bool validContainerFound = false;
   for (unsigned n = 0; (container = OA::ContainerManager::get(n)); n++)
   {
-    printf("container is %s\n", container->platform().c_str()) ;
-
-    if (container->model() == "hdl" && container->platform() == "matchstiq_z1")
+    printf("container is %s\n", container->platform().c_str());
+    if (mode == "filerw" and container->model() == "hdl")
+    {
+        // Frontend is not needed for filerw mode
+        printf("FSK App for %s\n", container->platform().c_str());
+        currentFrontend = NONE;
+        validContainerFound = true;
+    }
+    else if (container->model() == "hdl" && container->platform() == "matchstiq_z1")
     {
       currentPlatform = matchstiq_z1;
       currentFrontend = matchstiq_z1_Frontend;
@@ -593,6 +612,14 @@ int main(int argc, char **argv) {
       {
         usage(argv0,"Error: incorrect test mode.\n");
       }
+    }
+    else if (mode == "filerw")
+    {
+      xml_name = "app_fsk_filerw.xml";
+    }
+    else
+    {
+      usage(argv0,"Error: incorrect test mode.\n");
     }
 
     printf("Application properties are found in XML file: %s\n", xml_name.c_str());
