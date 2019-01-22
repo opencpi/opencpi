@@ -611,12 +611,15 @@ BitName=$(call BitBase,$1,$2,$3).bit
 BifName=$(call BitBase,$1,$2,$3).bif
 BinName=$(call BitBase,$1,$2,$3).bin
 
-# Some devices require that a *.bin be generated after the bitstream
+# Some devices require that a *.bin be generated after the bitstream because .bit files are not directly loadable
 BinOrBitBitstreamExt=$(if $(filter $(HdlTarget),zynq_ultra),bin,bit)
 # This file will be used to create the compressed bitstream with metadata that is findable by ocpirun's searching
+# This is either a bit or bin file depending on the device family. If this is a bin file, then the last implementation
+# rule is used (BinName which depends on the bitfile), otherwise the bitfile is the last thing generated for implementation.
 BitFile_vivado=$1.$(BinOrBitBitstreamExt)
 
 # Bootgen requires that the FPGA/PS Architecture be specified. This is either zynq, zynqmp (zynq_ultra) or fpga.
+# This is only used for zynq_ultra today, so 'zynq' and 'fpga' should never be chosen.
 BootgenArch=$(if $(filter zynq,$(HdlTarget)),zynq,$(if $(filter zynq_ultra,$(HdlTarget)),zynqmp,fpga))
 
 SynthName=$1/$2.edf

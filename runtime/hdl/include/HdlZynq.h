@@ -26,6 +26,7 @@ namespace OCPI {
     namespace Zynq {
 #endif
       const uint32_t GP0_PADDR = 0x40000000;
+      const uint32_t GP1_PADDR = 0x80000000;
       const uint32_t MP_GP0_PADDR = 0xA0000000;
       const uint32_t FPD_SLCR_ADDR = 0xFD615000;   //zynqmp controlplane width
       const uint32_t IDCODE_ADDR = 0xFFCA0000;
