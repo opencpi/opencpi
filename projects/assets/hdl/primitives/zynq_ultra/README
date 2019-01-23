@@ -1,3 +1,6 @@
+To see full git history of this directory, use 'git log --follow .'. This primitive was moved from another
+project and a plain 'git log' will not show everything.
+
 The source files below basically wrap the ZynqMP UltraScale+ PS multiple times to further abstract away its
 low level interface. At the lowest level, we have zynq_ultra_ps_e_v3_2_1.v which is a generated file that
 interfaces with the PS8 primitive.

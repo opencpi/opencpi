@@ -35,6 +35,7 @@ PrimitiveLibraries=comms_prims \
                    stratix4 \
                    xilinx \
                    zynq \
+                   zynq_ultra \
                    i2c
 # PrimitiveCores=core1 core2
 # Otherwise all primitives will be built
