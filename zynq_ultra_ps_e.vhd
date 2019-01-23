@@ -24,7 +24,7 @@ library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
 library zynq_ultra; use zynq_ultra.zynq_ultra_pkg.all;
 library axi; use axi.axi_pkg.all;
-library zynq_ultra; use zynq_ultra.zynq_ultra_ps_e_wrap.all;
+library zynq_ultra; use zynq_ultra.zynq_ultra_ps_e_0_pkg.all;
 entity zynq_ultra_ps_e is
   port(
     ps_in        : in    pl2ps_t;

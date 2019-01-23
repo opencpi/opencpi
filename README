@@ -1,0 +1,14 @@
+The source files below basically wrap the ZynqMP UltraScale+ PS multiple times to further abstract away its
+low level interface. At the lowest level, we have zynq_ultra_ps_e_v3_2_1.v which is a generated file that
+interfaces with the PS8 primitive.
+
+zynq_ultra_ps_e_0.vhd is a generated VHDL file containing the entity and architecture that wraps the PS8
+Verilog file for a specific configuration of the PS with certain AXI ports chosen and only the features
+needed for OpenCPI.
+
+zynq_ultra_ps_e_0_pkg.vhd is just a VHDL package that contains the component declaration for that VHDL wrapper
+entity. This is constructed programmatically from the generated VHO instantiation template.
+
+Finally, zynq_ultra_ps_e.vhd connects that VHDL entity's ports to OpenCPI's AXI primitives, and along with
+zynq_ultra_pkg.vhd, exposes those AXI interfaces via the 'zynq_ultra_ps' component in the zynq_ultra VHDL
+package.
