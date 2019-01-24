@@ -177,7 +177,7 @@ namespace OCPI {
       };
       // See "Table 10-8: PS System Register Map" in:
       // https://www.xilinx.com/support/documentation/user_guides/ug1085-zynq-ultrascale-trm.pdf
-      const uint64_t USP_AXI_HP_ADDR  = 0xFD380000;
+      const uint32_t USP_AXI_HP_ADDR  = 0xFD380000;
       // UltraScale+ "AFIFM Module" from:
       // https://www.xilinx.com/html_docs/registers/ug1087/ug1087-zynq-ultrascale-registers.html
       struct USP_AFIFM {
