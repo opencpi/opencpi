@@ -75,10 +75,6 @@
 	       (volatile SLCR *)m_driver.map(sizeof(SLCR), SLCR_ADDR, err);
 	     if (!slcr)
 	       return true;
-             /// @todo / FIXME - check whether this works on zynqmp
-             //volatile USP_CSU *csu = (volatile USP_CSU *)map(USP_CSU_ADDR, sizeof(USP_CSU));
-  	     //if (!csu) {
-  	     //  return true;
 	     // We're not loaded, but fake as much stuff as possible.
 	     const char *p = ezxml_cattr(config, "platform");
 	     m_platform = p ? p : "zed"; // FIXME: is there any other automatic way for this?
