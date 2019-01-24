@@ -39,6 +39,8 @@ namespace OCPI {
         uint32_t pss_idcode;
       };
       const uint32_t FTM_ADDR = 0xF880B000;
+      // register map from Appendix B.12 "PL Fabric Trace Monitor" in:
+      // https://www.xilinx.com/support/documentation/user_guides/ug585-Zynq-7000-TRM.pdf
       struct FTM {
 	uint32_t
 	  glbctrl,
@@ -175,6 +177,7 @@ namespace OCPI {
 	  pad8[(0x530-0x448-4)/4],
 	  pss_idcode;
       };
+
       // See "Table 10-8: PS System Register Map" in:
       // https://www.xilinx.com/support/documentation/user_guides/ug1085-zynq-ultrascale-trm.pdf
       const uint32_t USP_AXI_HP_ADDR  = 0xFD380000;
@@ -210,6 +213,7 @@ namespace OCPI {
       struct USP_AXI_HP {
 	  USP_AFIFM afifm[USP_NAXI_HPS];
       };
+
 #ifdef __cplusplus
     }
   }

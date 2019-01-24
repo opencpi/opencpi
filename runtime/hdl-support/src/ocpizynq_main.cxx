@@ -75,7 +75,7 @@ static uint8_t *map(off_t addr, size_t arg_size) {
 
 int
 mymain(const char **argv) {
-#if !defined(OCPI_ARCH_arm) && !defined(OCPI_ARCH_arm_cs)
+#if !defined(OCPI_ARCH_arm) && !defined(OCPI_ARCH_arm_cs) && !defined(OCPI_ARCH_arm64)
   fprintf(stderr, "This program is only functional on Zynq/Arm platforms\n");
   return 1;
 #endif
@@ -186,26 +186,54 @@ mymain(const char **argv) {
     struct AXI_HP {
       AFI afi[NAXI_HPS];
     };
-    const uint32_t AXI_HP_ADDR = 0xf8008000;
-    volatile AXI_HP *axi_hp = (volatile AXI_HP *)map(AXI_HP_ADDR, sizeof(AXI_HP));
-    if (!axi_hp)
-      return 1;
-    volatile AFI *afi = axi_hp->afi;
-    printf("AXI_HP_ADDR 0x%x axi_hp 0x%p afi 0x%p\n", AXI_HP_ADDR, axi_hp, afi);
-    sleep(10);
-    for (unsigned n = 0; n < NAXI_HPS; n++, afi++) {
-#if 1
-      printf("AXI_HP %u: rdctrl: 0x%x rdissue: 0x%x rdqos: 0x%x rdfifo: <unread> rddebug: 0x%x\n",
-	     n, afi->rdchan_ctrl, afi->rdchan_issuingcap, afi->rdqos,
-	     /*afi->rddatafifo_level,*/ afi->rddebug);
-      printf("        : wrctrl: 0x%x wrissue: 0x%x wrqos: 0x%x wrfifo: <unread> wrdebug: 0x%x\n",
-	     afi->wrchan_ctrl, afi->wrchan_issuingcap, afi->wrqos, /*afi->wrdatafifo_level,*/
-	     afi->wrdebug);
-#else
-      printf("AXI_HP %u: rdctrl: 0x%x rdissue: 0x%x rdqos: 0x%x rdfifo: 0x%x rddebug: 0x%x\n",
-	     n, afi->rdchan_ctrl, afi->rdchan_issuingcap, afi->rdqos, afi->rddatafifo_level, 0);
-#endif
+
+    bool is_ultra_scale_plus = false;
+
+    volatile USP_AXI_HP *axi_hp = (volatile USP_AXI_HP *)map(USP_AXI_HP_ADDR, sizeof(USP_AXI_HP));
+    if (axi_hp) {
+      volatile USP_AFIFM *afifm = axi_hp->afifm;
+
+      // i.e. S_AXI_HP0_FPD AFIFM RDDEBUG register's bitfield's
+      // AFI_VERSION == 'Zynq 8 Series', ref:
+      // https://www.xilinx.com/html_docs/registers/ug1087/ug1087-zynq-ultrascale-registers.html
+      is_ultra_scale_plus = (afifm->rddebug & 0x40000000) == 0x40000000;
+
+      if (is_ultra_scale_plus) {
+        printf("Detected Zynq architecture: UltraScale+\n");
+        for (unsigned n = 0; n < USP_NAXI_HPS; n++, afifm++) {
+          printf("AXI_HP %u: rdctrl: 0x%x rdissue: 0x%x rdqos: 0x%x rddebug: 0x%x\n",
+	         n, afifm->rdctrl, afifm->rdissue, afifm->rdqos, afifm->rddebug);
+          printf("        : wrctrl: 0x%x wrissue: 0x%x wrqos: 0x%x\n",
+	         afifm->wrctrl, afifm->wrissue, afifm->wrqos);
+          printf("        :  i_sts: 0x%x i_en: 0x%x i_dis: 0x%x i_mask: 0x%x control: 0x%x safety_chk 0x%x\n",
+	         afifm->i_sts, afifm->i_en, afifm->i_dis, afifm->i_mask, afifm->control, afifm->safety_chk);
+        }
+      }
+    }
+
+    if (!is_ultra_scale_plus) {
+      printf("Detected Zynq family: 7000\n");
+      const uint32_t AXI_HP_ADDR = 0xf8008000;
+      volatile AXI_HP *axi_hp = (volatile AXI_HP *)map(AXI_HP_ADDR, sizeof(AXI_HP));
+      if (!axi_hp)
+        return 1;
+      volatile AFI *afi = axi_hp->afi;
+      printf("AXI_HP_ADDR 0x%x axi_hp 0x%p afi 0x%p\n", AXI_HP_ADDR, axi_hp, afi);
       sleep(10);
+      for (unsigned n = 0; n < NAXI_HPS; n++, afi++) {
+#if 1
+        printf("AXI_HP %u: rdctrl: 0x%x rdissue: 0x%x rdqos: 0x%x rdfifo: <unread> rddebug: 0x%x\n",
+	       n, afi->rdchan_ctrl, afi->rdchan_issuingcap, afi->rdqos,
+	       /*afi->rddatafifo_level,*/ afi->rddebug);
+        printf("        : wrctrl: 0x%x wrissue: 0x%x wrqos: 0x%x wrfifo: <unread> wrdebug: 0x%x\n",
+	       afi->wrchan_ctrl, afi->wrchan_issuingcap, afi->wrqos, /*afi->wrdatafifo_level,*/
+	       afi->wrdebug);
+#else
+        printf("AXI_HP %u: rdctrl: 0x%x rdissue: 0x%x rdqos: 0x%x rdfifo: 0x%x rddebug: 0x%x\n",
+	       n, afi->rdchan_ctrl, afi->rdchan_issuingcap, afi->rdqos, afi->rddatafifo_level, 0);
+#endif
+        sleep(10);
+      }
     }
   }
   return 0;
