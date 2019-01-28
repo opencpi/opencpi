@@ -567,6 +567,7 @@ parseSpec(const char *a_package) {
   const char *err;
   // xi:includes at this level are component specs, nothing else can be included
   ezxml_t spec = NULL;
+  const char *name = ezxml_name(m_xml);
   if ((err = tryOneChildInclude(m_xml, m_file, "ComponentSpec", &spec, m_specFile, true)))
     return err;
   const char *specAttr = ezxml_cattr(m_xml, "spec");
@@ -575,7 +576,9 @@ parseSpec(const char *a_package) {
       return "Can't have both ComponentSpec element (maybe xi:included) and a 'spec' attribute";
     if ((err = parseFile(specAttr, m_file, "ComponentSpec", &spec, m_specFile, false)))
       return err;
-  } else if (!spec)
+  } else if (!strcasecmp("ComponentSpec", name))
+    spec=m_xml;
+  else if (!spec)
     return "missing componentspec element or spec attribute";
 #if 0
   if (m_specFile == m_file) {
@@ -584,30 +587,33 @@ parseSpec(const char *a_package) {
       return "Missing Name attribute for ComponentSpec";
   } else
 #endif
+   if (strcasecmp("ComponentSpec", name))
    {
-     // default the specname from the file of the current file,
-     // which may in fact be the name of the worker file if the component spec is embedded
-     std::string l_name, fileName;
-     if ((err = getNames(spec, m_specFile.c_str(), "ComponentSpec", l_name, fileName)))
-       return err;
-     size_t len = strlen("-spec");
-     if (l_name.length() > len) {
-       const char *tail = l_name.c_str() + l_name.length() - len;
-       if (!strcasecmp(tail, "-spec") || !strcasecmp(tail, "_spec"))
-         l_name.resize(l_name.size() - len);
+     {
+       // default the specname from the file of the current file,
+       // which may in fact be the name of the worker file if the component spec is embedded
+       std::string l_name, fileName;
+       if ((err = getNames(spec, m_specFile.c_str(), "ComponentSpec", l_name, fileName)))
+         return err;
+       size_t len = strlen("-spec");
+       if (l_name.length() > len) {
+         const char *tail = l_name.c_str() + l_name.length() - len;
+         if (!strcasecmp(tail, "-spec") || !strcasecmp(tail, "_spec"))
+           l_name.resize(l_name.size() - len);
+       }
+       m_specName = strdup(l_name.c_str());
      }
-     m_specName = strdup(l_name.c_str());
-   }
-  // Find the package even though the spec package might be specified already
-  if ((err = findPackage(spec, a_package)))
-    return err;
-  if (strchr(m_specName, '.'))
-    m_specName = strdup(m_specName);
-  else
-    ocpiCheck(asprintf((char **)&m_specName, "%s.%s", m_package.c_str(), m_specName) > 0);
-  if ((err = OE::checkAttrs(spec, "Name", "NoControl", "package", (void*)0)) ||
-      (err = OE::getBoolean(spec, "NoControl", &m_noControl)))
-    return err;
+    // Find the package even though the spec package might be specified already
+    if ((err = findPackage(spec, a_package)))
+      return err;
+    if (strchr(m_specName, '.'))
+      m_specName = strdup(m_specName);
+    else
+      ocpiCheck(asprintf((char **)&m_specName, "%s.%s", m_package.c_str(), m_specName) > 0);
+    if ((err = OE::checkAttrs(spec, "Name", "NoControl", "package", (void*)0)) ||
+        (err = OE::getBoolean(spec, "NoControl", &m_noControl)))
+      return err;
+  }
   // Parse control port info
   ezxml_t ps;
   std::string dummy;
@@ -821,6 +827,10 @@ create(const char *file, const std::string &parentFile, const char *package, con
         err = w->parseHdl(package);
     } else if (!strcasecmp("OclAssembly", name))
       err = w->parseOclAssy();
+    else if (!strcasecmp("ComponentSpec", name)) {
+      err = w->parseSpec("");
+      w->m_model= NoModel;
+    }
     else
       err = OU::esprintf("Unrecognized top level tag: \"%s\" in file \"%s\"", name, xfile);
   }
@@ -1180,6 +1190,22 @@ emitArtXML(const char *wksFile) {
     return "Could not close output file. No space?";
   if (wksFile)
     return emitWorkersHDL(wksFile);
+  return 0;
+}
+
+const char *Worker::
+emitCompArtXML() {
+  const char *err;
+  FILE *f = stdout;
+  fprintf(f, "<!--\n");
+  printgen(f, "", m_file.c_str());
+  fprintf(f,
+          " This file contains the artifact descriptor XML for a Component.\n"
+          " It is used for informational purposes by ocpidev\n");
+  fprintf(f, "  -->\n");
+  emitXmlWorker(f);
+  if (fclose(f))
+    return "Could not close output file. No space?";
   return 0;
 }
 

@@ -1,0 +1,4 @@
+<tests useHDLFileIo='true'>
+  <input port='in' file='input_file.dat'/>
+  <output port='out' script='verify.py ../../input_file.dat'/>
+</tests>

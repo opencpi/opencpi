@@ -1391,7 +1391,7 @@ parseRccImpl(const char *a_package) {
   m_pattern = ezxml_cattr(m_xml, "ExternMethods");
   m_staticPattern = ezxml_cattr(m_xml, "StaticMethods");
   ezxml_t xctl;
-  if ((err = parseSpec(a_package)) ||
+  if ((((strcasecmp(m_xml->name, "ComponentSpec")) && (err = parseSpec(a_package)))) ||
       (err = parseImplControl(xctl, NULL)) ||
       (xctl && (err = OE::checkAttrs(xctl, GENERIC_IMPL_CONTROL_ATTRS, "Threaded", (void *)0))) ||
       (err = OE::getBoolean(m_xml, "Threaded", &m_isThreaded)))
@@ -1481,14 +1481,16 @@ parseRcc(const char *a_package) {
                         " in RccWorker xml file: '%s'", lang, m_file.c_str());
   const char *err;
   // Here is where there is a difference between a implementation and an assembly
-  if (!strcasecmp(m_xml->name, "RccWorker") || !strcasecmp(m_xml->name, "RccImplementation")) {
+  if (!strcasecmp(m_xml->name, "RccWorker") ||
+      !strcasecmp(m_xml->name, "RccImplementation") ||
+      !strcasecmp(m_xml->name, "ComponentSpec")) {
     if ((err = parseRccImpl(a_package)))
       return OU::esprintf("in %s for %s: %s", m_xml->name, m_implName, err);
   } else if (!strcasecmp(m_xml->name, "RccAssembly")) {
     if ((err = parseRccAssy()))
       return OU::esprintf("in %s for %s: %s", m_xml->name, m_implName, err);
   } else
-      return "file contains neither an RccWorker nor an RccAssembly";
+      return "file contains neither an ComponentSpec, RccWorker. nor an RccAssembly";
   m_model = RccModel;
   m_modelString = "rcc";
   m_reusable = true;

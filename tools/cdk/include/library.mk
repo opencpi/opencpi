@@ -21,7 +21,8 @@
 include $(OCPI_CDK_DIR)/include/util.mk
 include $(OCPI_CDK_DIR)/include/lib.mk
 
-.PHONY: generate run $(OcpiTestGoals)
+.PHONY: generate run $(OcpiTestGoals) showincludes showpackage showworkers showtests
+.SILENT: showincludes showpackage showworkers showtests
 run: runtest # generic "run" runs test
 OldTests=$(foreach i,$(TestImplementations),\
            $(shell [ -f $i/Makefile ] && grep -q '(OCPI_CDK_DIR)/include/test.mk' $i/Makefile || echo $i))
@@ -49,4 +50,7 @@ showworkers:
 	$(info Workers="$(Implementations)";)
 showpackage:
 	$(info Package="$(Package)";)
+showincludes:
+	$(call OcpiSetXmlIncludes)
+	$(info XmlIncludeDirsInternal="$(XmlIncludeDirsInternal)";)
 endif

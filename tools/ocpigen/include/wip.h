@@ -237,7 +237,7 @@ class TimeBasePort : public Port {
   void emitRecordInterface(FILE *f, const char *implName);
   //  void emitVHDLShellPortMap(FILE *f, std::string &last);
   void emitVHDLSignalWrapperPortMap(FILE *f, std::string &last);
-#if 0 
+#if 0
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
 		       std::string &last, const char *myComment, OcpAdapt *adapt,
@@ -381,7 +381,7 @@ class Worker : public OU::Worker {
   Clock *m_wciClock;
   Endian m_endian;
   bool m_needsEndian;               // does any port imply an endian issue?
-  const char 
+  const char
     *m_pattern,                     // pattern for signal names within ports
     *m_portPattern,                 // pattern for port names
     *m_staticPattern;               // pattern for rcc static methods
@@ -503,6 +503,7 @@ class Worker : public OU::Worker {
     *resolveExpressions(OCPI::Util::IdentResolver &ir),
     *parseInstance(Worker &parent, Instance &inst, ezxml_t x), // FIXME: should be HdlInstance...
     *emitArtXML(const char *wksFile),
+    *emitCompArtXML(),
     *emitWorkersHDL(const char *file),
     *emitAttribute(const char *attr),
     *emitUuid(const OU::Uuid &uuid);

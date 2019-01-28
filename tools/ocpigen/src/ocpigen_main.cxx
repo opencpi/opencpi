@@ -96,7 +96,8 @@ add to tree.
   CMD_OPTION  (pfdir,     F,    String, NULL, "The directory where the current platform lives") \
   CMD_OPTION  (gentest,   T,    Bool,   NULL, "Generate unit testing files, assemblies, apps")  \
   CMD_OPTION  (gencases,  C,    Bool,   NULL, "Figure out which test cases to run on which platforms") \
-  CMD_OPTION  (dynamic,   Z,    Bool,   NULL, "Whether the artifact should be dynamic") \  
+  CMD_OPTION  (dynamic,   Z,    Bool,   NULL, "Whether the artifact should be dynamic") \
+  CMD_OPTION  (comp,      G,    Bool,   NULL, "Generate component output for use with ocpidev") \
 
 #define OCPI_OPTION
 #define OCPI_OPTIONS_NO_MAIN
@@ -113,7 +114,7 @@ main(int argc, const char **argv) {
   bool
     doDefs = false, doEnts = false, doImpl = false, doSkel = false, doAssy = false, doWrap = false,
     doArt = false, doTopContainer = false, doTest = false, doCases = false, verbose = false,
-    doTopConfig = false;
+    doTopConfig = false, doCompArt = false;
   int doGenerics = -1;
   if (argc <= 1) {
     fprintf(stderr,
@@ -143,6 +144,7 @@ main(int argc, const char **argv) {
             " -M <file>     Specify the file to write makefile dependencies to\n"
             " -S <assembly> Specify the name of the assembly for a container\n"
             " -T            Generate test artifacts\n"
+            " -G            Generate Component Artifact for use with ocpidev\n"
             );
     return 1;
   }
@@ -251,6 +253,9 @@ main(int argc, const char **argv) {
       case 'F':
         platformDir = *++ap;
         break;
+      case 'G':
+        doCompArt = true;
+        break;
       default:
         err = OU::esprintf("Unknown flag: %s\n", *ap);
       }
@@ -300,6 +305,7 @@ main(int argc, const char **argv) {
         }
         Worker *w = Worker::create(*ap, parent, package, outDir, NULL, NULL,
                                    doGenerics >= 0 ? doGenerics : 0, err);
+
         if (err)
           err = OU::esprintf("For file %s: %s", *ap, err);
         else if (attribute && (err = w->emitAttribute(attribute)))
@@ -327,32 +333,35 @@ main(int argc, const char **argv) {
           err = OU::esprintf("%s: Error generating parameter file for tools: %s", *ap, err);
         else if (options.build() && (err = w->emitMakefile()))
           err = OU::esprintf("%s: Error generating gen/*.mk file for tools", err);
-        else if (doArt)
+        else if (doArt) {
           switch (w->m_model) {
           case HdlModel:
             if (!g_platform || !g_device)
               err = OU::esprintf("%s: Missing container/platform/device options for HDL "
                                  "artifact descriptor", *ap);
             else if ((err = w->emitArtXML(wksFile)))
-              err = OU::esprintf("%s: Error generating bitstream artifact XML: %s",
-                                 *ap, err);
+              err = OU::esprintf("%s: Error generating bitstream artifact XML: %s", *ap, err);
             break;
           case RccModel:
             if (!g_os || !g_os_version || !g_arch)
               err = OU::esprintf("%s: Missing os/os_version/arch options for RCC artifact "
                                  "descriptor", *ap);
             else if ((err = w->emitArtXML(wksFile)))
-              err = OU::esprintf("%s: Error generating shared library artifact XML: %s",
-                                 *ap, err);
+              err = OU::esprintf("%s: Error generating shared library artifact XML: %s", *ap, err);
             break;
           case OclModel:
             if ((err = w->emitArtXML(wksFile)))
-              err = OU::esprintf("%s: Error generating shared library artifact XML: %s",
-                      *ap, err);
+              err = OU::esprintf("%s: Error generating shared library artifact XML: %s", *ap, err);
             break;
           case NoModel:
             ;
           }
+        }
+        else if (doCompArt) {
+            err = w->emitCompArtXML();
+            if (err)
+              err = OU::esprintf("%s: Error generating json file for ocpidev: %s", *ap, err);
+        }
         delete w;
       } catch (std::string &e) {
         fprintf(stderr, "Exception thrown: %s\n", e.c_str());

@@ -402,7 +402,7 @@ def get_all_projects():
 # Directory types that may contain sub-assets
 COLLECTION_DIRTYPES = ["project", "applications", "library", "libraries", "hdl-library",
                        "hdl-platform", "hdl-platforms", "hdl-assemblies", "hdl-primitives",
-                       "rcc-platforms"]
+                       "rcc-platforms", "component"]
 
 def get_ocpidev_working_dir(origin_path=".", noun="", name=".",
                             library=None, hdl_library=None, hdl_platform=None):
@@ -459,8 +459,8 @@ def get_ocpidev_working_dir(origin_path=".", noun="", name=".",
 
     #from _opencpi.util import OCPIException
     if not is_path_in_project(origin_path):
-        raise OCPIException("Path \"" + os.path.realpath(origin_path) + "\" is not in a project, so its settings " +
-                            "as a subdirectory of a project could not be determined.")
+        raise OCPIException("Path \"" + os.path.realpath(origin_path) + "\" is not in a project, " +
+                            "so this command is invalid.")
 
     # if this is a collection type, we care about the current directory's dirtype,
     # otherwise we want the current asset's containing collection's dirtype
@@ -635,12 +635,21 @@ def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platfo
         asset = "components"
     elif noun in ["application", "applications"]:
         asset = "applications"
-    elif noun in ["hdl-primitive", "hdl-primitives"]:
+    elif noun in ["hdl-primitive", "hdl-phdlrimitives"]:
         asset = "hdl/primitives"
     elif noun == "hdl-platforms":
         asset = "hdl/platforms"
     elif noun in ["hdl-assembly", "hdl-assemblies"]:
         asset = "hdl/assemblies"
+    elif noun == "component":
+        if hdl_library:
+            asset= "hdl/" +  hdl_library + "/specs/" + name
+        elif library:
+            asset= library + "/specs/" + name
+        elif hdl_platform:
+            asset= "hdl/platforms/" +  hdl_platform + "/devices/specs/" + name
+        else:
+            asset= "specs/" + name
     elif noun == "hdl-platform" or hdl_platform is not None:
         # hdl platform is specified in some way
 
@@ -700,7 +709,6 @@ def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platfo
         # When locating a project, it is either the current project (name is none), or the
         # the directory is specified by name
         asset = "." if name is None else name
-
     elif noun is None:
         # when no noun or location-directive gives direction regarding where to look for an
         # asset, assume the top-level of the project

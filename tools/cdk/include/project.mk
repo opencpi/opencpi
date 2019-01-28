@@ -62,7 +62,10 @@ ifeq ($(NoExports)$(wildcard exports)$(filter projectpackage,$(MAKECMDGOALS)),)
 endif
 
 ifeq (@,$(AT))
-  .SILENT: clean imports exports components hdlprimitives hdlcomponents hdldevices hdladapters hdlcards hdlplatforms hdlassemblies cleanhdl rcc cleanrcc ocl cleanocl applications run cleancomponents cleanapplications cleanimports cleanexports cleaneverything $(OcpiTestGoals)
+  .SILENT: clean imports exports components hdlprimitives hdlcomponents hdldevices hdladapters \
+	hdlcards hdlplatforms hdlassemblies cleanhdl rcc cleanrcc ocl cleanocl applications run \
+	cleancomponents cleanapplications cleanimports cleanexports cleaneverything $(OcpiTestGoals) \
+	projectpackage projectdeps projectincludes
 endif
 
 MaybeMake=if [ -d $1 ]; then $(MAKE) -C $1 $2; fi
@@ -73,7 +76,7 @@ $(foreach p,$(HdlPlatform) $(HdlPlatforms),\
    echo =============Building platform $p/$2 for $3 &&\
    $(call MaybeMake,$1/$p/$2,$3) &&) true
 
-.PHONY: all applications clean imports exports components cleanhdl $(OcpiTestGoals)
+.PHONY: all applications clean imports exports components cleanhdl $(OcpiTestGoals) projectpackage projectdeps projectincludes
 .PHONY: hdl hdlassemblies hdlprimitives hdlcomponents hdldevices hdladapters hdlplatforms hdlassemblies hdlportable
 all: applications
 
@@ -260,4 +263,7 @@ projectpackage:
 	$(info ProjectPackage="$(ProjectPackage)";)
 projectdeps:
 	$(info ProjectDependencies="$(ProjectDependencies)";)
+projectincludes:
+	$(call OcpiSetXmlIncludes)
+	$(info XmlIncludeDirsInternal="$(XmlIncludeDirsInternal)";)
 endif

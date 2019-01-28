@@ -114,7 +114,7 @@ namespace OCPI {
 	    goto cont2;
 	  }
 	  const char *eq = strchr(arg, '=');
-	  size_t len = eq ? eq - arg : strlen(arg);
+	  size_t len = eq ? static_cast<size_t>(eq - arg) : strlen(arg);
 	  Member *m = m_options;
 	  for (unsigned n = 0; n < m_nOptions; n++, m++)
 	    if (len == m_names[n].size() && !strncasecmp(arg, m_names[n].c_str(), len)) {
@@ -137,7 +137,7 @@ namespace OCPI {
       }
       m_argv = ap;
       while (*ap) ap++;
-      m_argvCount = ap - m_argv;
+      m_argvCount = static_cast<size_t>(ap - m_argv); // always positive
       if (debug) {
 	Member *m = m_options;
 	for (unsigned n = 0; n < m_nOptions; n++, m++)
@@ -177,7 +177,7 @@ namespace OCPI {
 	size_t nlwidth = 1000;
 	const char *nl = strchr(m->m_description.c_str(), '\n');
 	if (nl)
-	  nlwidth = nl - m->m_description.c_str();
+	  nlwidth = static_cast<size_t>(nl - m->m_description.c_str());
 	fprintf(stderr, "  %-*s   %-6s  %-8s   %s   %-.*s.", (int)width, m_names[n].c_str(),
 		m->m_abbrev.size() ? m->m_abbrev.c_str() : "<none>",
 		baseTypeNames[m->m_baseType],
@@ -185,7 +185,7 @@ namespace OCPI {
 	while (nl) {
 	  const char *start = ++nl;
 	  nl = strchr(start, '\n');
-	  nlwidth = nl ? nl - start : 1000;
+	  nlwidth = nl ? static_cast<size_t>(nl - start) : 1000;
 	  fprintf(stderr, "\n%*s%-.*s", (int)width + 30, "", (int)nlwidth, start);
 	}
 	if (m_defaults[n])

@@ -772,6 +772,8 @@ OcpiPrependEnvPath=\
 # Set the given directory as the project directory, include the Project.mk file that is there
 # and setting an environment variable OCPI_PROJECT_DIR to that place.
 # This allows any path-related settings to be relative to the project dir
+#TODO all the cooments within this define should probably be moved out for perfromance reasons
+#     because this function is used by $(call ...)
 define OcpiSetProject
   # This might already be set
   $$(call OcpiDbg,Setting project to $1)
@@ -1041,7 +1043,6 @@ OcpiShellWithEnv=$(shell $(foreach e,$1,\
 $(call OcpiDbg,End of util.mk)
 
 # Set up the standard set of places to look for xml files.
-define OcpiSetXmlIncludes
 # Here we add access to:
 # 0. The current directory
 # 1. The generated directory
@@ -1052,6 +1053,7 @@ define OcpiSetXmlIncludes
 # 6. Any other component library's XML dirs
 # 6. The standard component library for specs
 # 7. The standard component library's exports for proxy slaves
+define OcpiSetXmlIncludes
 $(eval override XmlIncludeDirsInternal:=\
   $(call Unique,\
     . $(GeneratedDir) \

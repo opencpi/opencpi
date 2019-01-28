@@ -81,8 +81,12 @@ def execute_cmd(settings, directory, action=None):
     # arbitary code
     #ocpidev run test --hdl-platform \$\(./script.temp\)
     # all the script would need to do is cat isim then go on its merry way doing whatever it wanted
-    child = subprocess.Popen(make_list)
-    child.wait()
+    try:
+        child = subprocess.Popen(make_list)
+        child.wait()
+    except KeyboardInterrupt:
+        child.kill()
+        raise OCPIException("Recived Keyboard Interupt Exiting")
     return child.returncode
 
 def set_vars_from_make(mk_file, mk_arg="", verbose=None):

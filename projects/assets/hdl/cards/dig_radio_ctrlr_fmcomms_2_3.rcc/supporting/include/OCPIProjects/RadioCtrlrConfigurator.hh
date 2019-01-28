@@ -34,7 +34,7 @@ namespace RadioCtrlr {
 
 typedef Util::LockRConstrConfig<ConfigValueRange> LockRConstrConfig;
 
-/*! @brief An radio's lockable, value range-constrained configs
+/*! @brief A radio's lockable, value range-constrained configs
  *         (std::map of LockRConstrConfig).
  ******************************************************************************/
 class RadioConfiguratorDataStreamBase {

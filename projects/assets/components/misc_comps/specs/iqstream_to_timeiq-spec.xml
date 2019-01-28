@@ -1,0 +1,4 @@
+<ComponentSpec>
+  <Port Name='in'  Protocol='iqstream_protocol'/>
+  <Port Name='out' Producer='true'  Protocol='TimeStamped_IQ-prot'/>
+</ComponentSpec>

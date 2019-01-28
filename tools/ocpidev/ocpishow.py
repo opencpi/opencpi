@@ -40,12 +40,13 @@ from _opencpi.assets.project import Project
 # but if the noun is a SUB_PARSER_NOUN, then it
 # looks for a second noun from the SUBNOUNS list.
 PLAIN_NOUNS = ["registry", "projects", "workers", "components", "platforms", "targets", "tests",
-              "libraries", "project"]
+              "libraries", "project", "component"]
 SUB_PARSER_NOUNS = ["hdl", "rcc"]
 FIRST_NOUNS = PLAIN_NOUNS + SUB_PARSER_NOUNS
 SUBNOUNS = {}
 SUBNOUNS['hdl'] = ["targets", "platforms"]
 SUBNOUNS['rcc'] = ["targets", "platforms"]
+NOUN_NON_PLURALS = ["component", "project"]
 
 # NOUNS is the list of all nouns, where noun-subparser nouns
 # are listed as <noun>-<subnoun>
@@ -158,11 +159,16 @@ def parseCLVars():
     return args, noun
 
 def check_scope_options(scope, noun):
+
+    if noun in NOUN_NON_PLURALS:
+        scope="local"
+
     valid_scope_dict = {}
     valid_scope_dict["registry"] = ["global"]
     valid_scope_dict["projects"] = ["global"]
     valid_scope_dict["workers"] = ["global"]
     valid_scope_dict["components"] = ["global"]
+    valid_scope_dict["component"] = ["local"]
     valid_scope_dict["tests"] = ["local"]
     valid_scope_dict["libraries"] = ["local"]
     valid_scope_dict["project"] = ["local"]
@@ -190,6 +196,8 @@ def set_init_values(args, noun):
     #    args["init_wkr_config"]= True
     elif noun in ["tests", "workers", "components"]:
         args["init_libs"]= True
+    elif noun == "component":
+        args["init_comp_details"]= True
 
 def get_noun_from_plural(directory, args, noun, scope):
     action = ""
@@ -234,7 +242,8 @@ def main():
 
         if noun in ["registry", "projects"]:
             directory = ocpiregistry.Registry.get_registry_dir()
-        elif noun not in ["libraries", "hdlplatforms", "hdltargets", "rccplatforms", "rcctargets", "platforms", "targets", "workers", "components"]:
+        elif noun not in ["libraries", "hdlplatforms", "hdltargets", "rccplatforms", "rcctargets",
+                          "platforms", "targets", "workers", "components"]:
             directory = ocpiutil.get_ocpidev_working_dir(origin_path=cur_dir,
                                                          noun=noun,
                                                          name=name,

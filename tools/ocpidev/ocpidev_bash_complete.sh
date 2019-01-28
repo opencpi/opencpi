@@ -112,7 +112,7 @@ _ocpidev()
     elif [[ ${verb} == show ]] ; then
       # valid nouns in first slot
       nouns1="projects registry components workers platforms targets hdl rcc project libraries \
-             tests"
+             tests component"
       # valid nouns in second slot
       nouns2="platforms targets"
       # valid nouns in third slot
