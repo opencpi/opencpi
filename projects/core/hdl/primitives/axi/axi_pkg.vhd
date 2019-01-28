@@ -26,8 +26,10 @@ library ocpi; use ocpi.types.all;
 library platform; use platform.platform_pkg.all;
 package axi_pkg is
 
+-- C_AXI_ADDR_WIDTH is used for the m_axi_gp/hp, and s_axi_gp
+-- There is then a version of s_axi_hp that uses this constant, and another version
+-- that is hardcoded to use a different value of 36 (ZynqMP/UltraScale+)
 constant C_AXI_ADDR_WIDTH      : natural := 32; -- pinned at 32 in the AXI spec.
-constant C_S_AXI_HP_ADDR_WIDTH : natural := 36;
 
 constant C_M_AXI_GP_ID_WIDTH   : natural := 12;
 constant C_S_AXI_GP_ID_WIDTH   : natural := 6;
@@ -224,7 +226,7 @@ end record s_axi_hp_in_aw_t;
 -- ZynqMP/PS8 requires 36 bits to access full DDR
 type s_axi_hp_in_aw_addr36_t is record
   ID           : std_logic_vector(C_S_AXI_HP_ID_WIDTH-1 downto 0);
-  ADDR         : std_logic_vector(C_S_AXI_HP_ADDR_WIDTH-1 downto 0);
+  ADDR         : std_logic_vector(35 downto 0);
   LEN          : std_logic_vector(3 downto 0);
   SIZE         : std_logic_vector(2 downto 0);
   BURST        : std_logic_vector(1 downto 0);
@@ -266,7 +268,7 @@ end record s_axi_hp_in_ar_t;
 -- ZynqMP/PS8 requires 36 bits to access full DDR
 type s_axi_hp_in_ar_addr36_t is record
   ID           : std_logic_vector(C_S_AXI_HP_ID_WIDTH-1 downto 0);
-  ADDR         : std_logic_vector(C_S_AXI_HP_ADDR_WIDTH-1 downto 0);
+  ADDR         : std_logic_vector(35 downto 0);
   LEN          : std_logic_vector(3 downto 0);
   SIZE         : std_logic_vector(2 downto 0);
   BURST        : std_logic_vector(1 downto 0);
