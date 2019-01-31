@@ -44,7 +44,7 @@ else
  OcpiCrossCompile=
  OcpiCC=gcc 
  OcpiCXX=g++
- OCPI_TARGET_DIR=$OCPI_TOOL_DIR
+ OCPI_TARGET_DIR=$(OCPI_TOOL_DIR)
 endif
 # Set the global make variables that the kernel Makefiles want to see set in global variables
 CC=$(OcpiCrossCompile)$(OcpiCC)
