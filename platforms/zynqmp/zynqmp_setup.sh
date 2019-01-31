@@ -19,23 +19,10 @@
 # If there is a "mysetup.sh" script in this directory it will run it after the
 # other setup items, and arrange for it to be run in any login scripts later
 # e.g. ssh logins
-if test $# != 2; then
-  echo You must supply 2 arguments to this script.
-  echo Usage is: zynqmp_setup.sh '<ntp-server> <timezone>'
-  echo A good example timezone is: EST5EDT,M3.2.0,M11.1.0
-  echo If the ntp-server is '"-"', no ntpclient will be started.
+if test $# != 0; then
+  echo Usage is: zynqmp_setup.sh
 else
   export OCPI_CDK_DIR=/home/root/opencpi
-  # In case dhcp failed on eth0, try it on eth1
-  if test "$1" != -; then
-    echo Attempting to set the time from time server: $1
-    if rdate $1; then
-      echo Succeeded in setting the time from time server: $1
-    else
-      echo ====YOU HAVE NO NETWORK CONNECTION and NO HARDWARE CLOCK====
-      echo Set the time using the '"date YYYY.MM.DD-HH:MM[:SS]"' command.
-    fi
-  fi
   # Make sure the hostname is in the host table
   myhostname=`hostname`
   if ! grep -q $myhostname /etc/hosts; then echo 127.0.0.1 $myhostname >> /etc/hosts; fi
@@ -48,8 +35,6 @@ else
     if test -f /etc/opencpi-release; then
       read OCPI_TOOL_PLATFORM x < /etc/opencpi-release
     else
-      #echo No /etc/opencpi-release - assuming zcu102 hardware
-      #OCPI_TOOL_PLATFORM=zcu102
       echo No /etc/opencpi-release - assuming xilinx18_2 hardware
       OCPI_TOOL_PLATFORM=xilinx18_2
     fi
@@ -62,7 +47,6 @@ else
     # This is only for explicitly-linked driver libraries.  Fixed someday.
     export LD_LIBRARY_PATH=$OCPI_CDK_DIR/\$OCPI_TOOL_DIR/lib:\$LD_LIBRARY_PATH
     ocpidriver load
-    export TZ=$2
     echo OpenCPI ready for zynqmp.
     if test -r $OCPI_CDK_DIR/mysetup.sh; then
        source $OCPI_CDK_DIR/mysetup.sh

@@ -19,13 +19,12 @@
 # If there is a "mynetsetup.sh" script in this directory it will run it after the
 # other setup items, and arrange for it to be run in any login scripts later
 # e.g. ssh logins
-if test -z  "$5"; then
-  echo You must supply at least 5 arguments to this script.
-  echo Usage is: zynqmp_net_setup.sh '<nfs-ip-address> <nfs-share-name> <opencpi-dir> <time-server> <timezone> [<hdl-platform>]'
-  echo A good example timezone is: EST5EDT,M3.2.0,M11.1.0
+if test -z  "$3"; then
+  echo You must supply at least 3 arguments to this script.
+  echo Usage is: zynqmp_net_setup.sh '<nfs-ip-address> <nfs-share-name> <opencpi-dir> [<hdl-platform>]'
 else
-  if test -n "$6"; then
-     echo OCPI_HDL_PLATFORM set to $6.
+  if test -n "$4"; then
+     echo OCPI_HDL_PLATFORM set to $4.
   fi
   if ifconfig | grep -v 127.0.0.1 | grep 'inet addr:' > /dev/null; then
      echo An IP address was detected.
@@ -33,8 +32,7 @@ else
      echo No IP address was detected! No network or no DHCP.
      break;
   fi
-  echo Setting the time from time server: $4
-  rdate $4
+  mkdir -p /mnt/net
   # Mount the opencpi development system as an NFS server, onto /mnt/net
   mount -t nfs -o udp,nolock,soft,intr $1:$2 /mnt/net
   # Make sure the hostname is in the host table
@@ -59,8 +57,6 @@ else
     if test -f /etc/opencpi-release; then
       read OCPI_TOOL_PLATFORM x < /etc/opencpi-release
     else
-      #echo No /etc/opencpi-release - assuming zcu102 hardware
-      #OCPI_TOOL_PLATFORM=zcu102
       echo No /etc/opencpi-release - assuming xilinx18_2 hardware
       OCPI_TOOL_PLATFORM=xilinx18_2
     fi
@@ -93,7 +89,6 @@ else
     # This is only for ACI executables in special cases...
     export LD_LIBRARY_PATH=$OCPI_CDK_DIR/\$OCPI_TOOL_DIR/lib:\$LD_LIBRARY_PATH
     ocpidriver load
-    export TZ=$5
     echo OpenCPI ready for zynq_ultra.
     if test -r /home/root/opencpi/mynetsetup.sh; then
        source /home/root/opencpi/mynetsetup.sh

@@ -24,11 +24,7 @@
 
 trap "trap - ERR; break" ERR; for i in 1; do
 if test "$OCPI_CDK_DIR" = ""; then
-
-  # CUSTOMIZE THIS LINE FOR YOUR ENVIRONMENT
-  # First argument is time server for the (old) time protocol used by the rdate command
-  # Second argument is timezone spec - see "man timezone" for the format.
-  source /home/root/opencpi/zynqmp_setup.sh time.nist.gov EST5EDT,M3.2.0,M11.1.0
+  source /home/root/opencpi/zynqmp_setup.sh
   # add any commands to be run only the first time this script is run
 
   break # this script will be rerun recursively by setup.sh
@@ -40,8 +36,7 @@ export OCPI_DEFAULT_HDL_DEVICE=pl:0
 export OCPI_SYSTEM_CONFIG=/home/root/opencpi/system.xml
 # Get ready to run some test xml-based applications
 cd $OCPI_CDK_DIR/applications
-# Shorten the default shell prompt
-PS1='% '
+
 # add any commands to be run every time this script is run
 
 

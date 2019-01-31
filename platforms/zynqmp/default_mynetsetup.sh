@@ -33,9 +33,7 @@ if test "$OCPI_CDK_DIR" = ""; then
   # CUSTOMIZE THIS LINE FOR YOUR ENVIRONMENT
   # Second arg is shared file system mount point on development system
   # Third argument is opencpi dir relative to mount point
-  # Fourth argument is time server for the (old) time protocol used by the rdate command
-  # Fifth arg is timezone spec - see "man timezone" for the format.
-  source /home/root/opencpi/zynqmp_net_setup.sh $1 /opt/opencpi cdk time.nist.gov EST5EDT,M3.2.0,M11.1.0
+  source /home/root/opencpi/zynqmp_net_setup.sh $1 /opt/opencpi cdk
   # mkdir -p /mnt/ocpi_core
   # mount -t nfs -o udp,nolock,soft,intr $1:/home/user/core /mnt/ocpi_core
   # mkdir -p /mnt/ocpi_assets
@@ -53,7 +51,7 @@ export OCPI_DEFAULT_HDL_DEVICE=pl:0
 # Only override this file if it is customized beyond what is the default for the platform
 # export OCPI_SYSTEM_CONFIG=/home/root/opencpi/system.xml
 # Get ready to run some test xml-based applications
-PS1='% '
+
 # add any commands to be run every time this script is run
 
 # Print the available containers as a sanity check
