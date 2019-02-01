@@ -86,8 +86,27 @@ else
     fi
     export OCPI_SYSTEM_CONFIG
     export PATH=$OCPI_CDK_DIR/\$OCPI_TOOL_DIR/bin:\$PATH
+
+    # On certain ZynqMP boards, a bitstream must be loaded before ANY OpenCPI use
+    # (even ocpihdl). So, if /home/root/opencpi/<hw-platform>/default_opencpi.bin
+    # exists, load that now using fpga_manager
+    # A temporarily exported variable was needed here or it appeared unset in the following lines
+    if test -n "$OCPI_HDL_PLATFORM"; then
+      export OCPI_HDL_PLATFORM_TMP=$OCPI_HDL_PLATFORM
+    else
+      export OCPI_HDL_PLATFORM_TMP=zcu102
+    fi
+    if test -e /home/root/opencpi/$OCPI_HDL_PLATFORM_TMP/default_opencpi.bin; then
+      echo Loading default OpenCPI bitstream
+      echo 0 > /sys/class/fpga_manager/fpga0/flags
+      mkdir -p /lib/firmware
+      cp /home/root/opencpi/$OCPI_HDL_PLATFORM_TMP/default_opencpi.bin /lib/firmware/
+      echo default_opencpi.bin > /sys/class/fpga_manager/fpga0/firmware
+    fi
+
     # This is only for ACI executables in special cases...
     export LD_LIBRARY_PATH=$OCPI_CDK_DIR/\$OCPI_TOOL_DIR/lib:\$LD_LIBRARY_PATH
+
     ocpidriver load
     echo OpenCPI ready for zynq_ultra.
     if test -r /home/root/opencpi/mynetsetup.sh; then
