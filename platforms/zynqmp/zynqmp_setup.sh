@@ -48,17 +48,16 @@ else
     # On certain ZynqMP boards, a bitstream must be loaded before ANY OpenCPI use
     # (even ocpihdl). So, if /home/root/opencpi/<hw-platform>/default_opencpi.bin
     # exists, load that now using fpga_manager
-    # A temporarily exported variable was needed here or it appeared unset in the following lines
-    if test -n "$OCPI_HDL_PLATFORM"; then
-      export OCPI_HDL_PLATFORM_TMP=$OCPI_HDL_PLATFORM
-    else
-      export OCPI_HDL_PLATFORM_TMP=zcu102
-    fi
-    if test -e /home/root/opencpi/$OCPI_HDL_PLATFORM_TMP/default_opencpi.bin; then
+    # Default ZynqMP HDL platform is zcu102.
+    if test -e /home/root/opencpi/$OCPI_HDL_PLATFORM/default_opencpi.bin -o -e /home/root/opencpi/zcu102/default_opencpi.bin; then
       echo Loading default OpenCPI bitstream
       echo 0 > /sys/class/fpga_manager/fpga0/flags
       mkdir -p /lib/firmware
-      cp /home/root/opencpi/$OCPI_HDL_PLATFORM_TMP/default_opencpi.bin /lib/firmware/
+      if test -e /home/root/opencpi/$OCPI_HDL_PLATFORM/default_opencpi.bin; then
+        cp /home/root/opencpi/$OCPI_HDL_PLATFORM/default_opencpi.bin /lib/firmware/
+      else
+        cp /home/root/opencpi/zcu102/default_opencpi.bin /lib/firmware/
+      fi
       echo default_opencpi.bin > /sys/class/fpga_manager/fpga0/firmware
     fi
 
