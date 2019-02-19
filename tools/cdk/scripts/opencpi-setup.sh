@@ -102,7 +102,7 @@ esac
 	 --dynamic or -d:   enable the currently running tools platform to use dynamic linking
 	 --optimized or -O: enable the currently running tools platform to use optimized code
 	When --set or --reset is used, the OpenCPI CDK location is inferred from the location
-	of this file, where sourced.  E.g. issueing the command "source a/b/c/opencpi-setup.sh -s"
+	of this file, where sourced.  E.g. issuing the command "source a/b/c/opencpi-setup.sh -s"
 	will setup the CDK as found in a/b/c.
 	When in the root directory of the OpenCPI source tree, the typical usage is:
 	   source cdk/opencpi-setup.sh -s
@@ -273,6 +273,6 @@ ocpi_comp=$OCPI_CDK_DIR/scripts/ocpidev_bash_complete
 	EOF
 [ "$ocpi_verbose" = 1 ] && {
   echo "Below are all OCPI_* environment variables now set:" >&2
-  env | grep OCPI >&2
+  env | grep OCPI | sort >&2
 }
 return 0

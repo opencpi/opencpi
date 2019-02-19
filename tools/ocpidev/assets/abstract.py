@@ -15,14 +15,15 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
+"""
+Abstract classes that are used in other places within the assests module are defined in this file
+"""
 
 from abc import ABCMeta, abstractmethod
 import os
-import sys
 import logging
 import copy
 import shutil
-sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
 import _opencpi.util as ocpiutil
 
 class Asset(metaclass=ABCMeta):
@@ -181,7 +182,7 @@ class HDLBuildableAsset(BuildableAsset):
         # and add to the hdl_targets set
         if self.hdl_tgt_strs is not None:
             if "all" in self.hdl_tgt_strs:
-                self.hdl_targets  = hdltargets.HdlToolFactory.get_or_create_all("hdltarget")
+                self.hdl_targets = set(hdltargets.HdlToolFactory.get_or_create_all("hdltarget"))
             else:
                 for tgt in self.hdl_tgt_strs:
                     self.hdl_targets.add(hdltargets.HdlToolFactory.factory("hdltarget", tgt))
@@ -190,8 +191,8 @@ class HDLBuildableAsset(BuildableAsset):
         # Also get the corresponding HdlTarget and add to the hdl_targets set
         if self.hdl_plat_strs is not None:
             if "all" in self.hdl_plat_strs:
-                self.hdl_platforms = hdltargets.HdlToolFactory.get_or_create_all("hdlplatform")
-                self.hdl_targets = hdltargets.HdlToolFactory.get_or_create_all("hdltarget")
+                self.hdl_platforms = set(hdltargets.HdlToolFactory.get_or_create_all("hdlplatform"))
+                self.hdl_targets = set(hdltargets.HdlToolFactory.get_or_create_all("hdltarget"))
             elif "local" not in self.hdl_plat_strs:
                 for plat in self.hdl_plat_strs:
                     print("HDLbuildable plat: "+ plat)
@@ -248,7 +249,6 @@ class RunnableAsset(Asset):
         """
         raise NotImplementedError("RunnableAsset.run() is not implemented")
 
-
 class ShowableAsset(Asset):
     """
     Virtual class that requires that any child classes implement a show function
@@ -259,15 +259,6 @@ class ShowableAsset(Asset):
         This function will show this asset must be implemented by the child class
         """
         raise NotImplementedError("ShowableAsset.show() is not implemented")
-
-    #@classmethod
-    #@abstractmethod
-    #def showall(cls, options, only_registry):
-    #    """
-    #    This function will show all assets of this type, must be implemented by the child class
-    #    """
-    #    raise NotImplementedError("ShowableAsset.showall() is not implemented")
-
 
 class ReportableAsset(Asset):
     """
@@ -281,7 +272,7 @@ class ReportableAsset(Asset):
     valid_formats = ["table", "latex"]
     def __init__(self, directory, name=None, **kwargs):
         """
-        Initializes HDLReportableAsset member data  and calls the super class __init__
+        Initializes ReportableAsset member data  and calls the super class __init__
         valid kwargs handled at this level are:
             output_format (str) - mode to output utilization info (table, latex)
                                   output_formats not yet implenented: simple, json, csv
@@ -320,9 +311,7 @@ class ReportableAsset(Asset):
         # Get the utilization using this class' hopefully overridden get_utilization() function
         util_report = self.get_utilization()
         if not util_report:
-            logging.warning("Skipping " + caption + " because the report is empty for \n" +
-                            "\tHDL Platforms: " + str([str(p) for p in self.hdl_platforms]) +
-                            " and\n\tHDL Targets:   " + str([str(p) for p in self.hdl_targets]))
+            logging.warning("Skipping " + caption + " because the report is empty")
             return
 
         if self.output_format not in self.valid_formats:
@@ -344,14 +333,8 @@ class ReportableAsset(Asset):
                 # Only write to the file if the latex table is non-empty
                 if latex_table != "":
                     util_file.write(latex_table)
-                    logging.info("  LaTeX Utilization Table was written to: " + util_file_path + "\n")
-
-from .application import *
-from .test import *
-from .registry import *
-from .project import *
-from .worker import *
-from .platform import *
-from .assembly import *
-from .library import *
-from .component import *
+                    logging.info("  LaTeX Utilization Table was written to: " + util_file_path +
+                                 "\n")
+# pylint:disable=wrong-import-position
+from .component import Component
+# pylint:disable=wrong-import-position

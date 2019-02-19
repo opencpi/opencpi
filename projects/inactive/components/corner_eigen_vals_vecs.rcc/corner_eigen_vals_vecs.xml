@@ -1,6 +1,5 @@
-<RccImplementation>
+<RccWorker spec="corner_eigen_vals_vecs_spec.xml">
   <ControlInterface ControlOperations="start, release"/>
-  <xi:include href="corner_eigen_vals_vecs_spec.xml"/>
-</RccImplementation>
+</RccWorker>
 
 

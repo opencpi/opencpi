@@ -1,7 +1,9 @@
+<!-- <HdlWorker language='vhdl' spec='metadata_stressor-spec'> -->
 <HdlWorker language='vhdl' spec='metadata_stressor-spec'>
+
   <Property Name="DATA_WIDTH_p" Type="ulong" Parameter="true" Default="32"
             Description="Determines the width of the buses in and out of the worker."/>
 
   <StreamInterface name="in" dataWidth="DATA_WIDTH_p" ZeroLengthMessages="true" />
-  <StreamInterface name="out" dataWidth="DATA_WIDTH_p" ZeroLengthMessages="true" />
+  <StreamInterface name="out" buffersize='in' dataWidth="DATA_WIDTH_p" ZeroLengthMessages="true" />
 </HdlWorker>

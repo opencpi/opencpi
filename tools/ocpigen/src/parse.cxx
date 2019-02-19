@@ -53,12 +53,13 @@ OCPI_PROPERTY_DATA_TYPES
 const char *g_platform = 0, *g_device = 0, *load = 0, *g_os = 0, *g_os_version = 0, *g_arch = 0,
   *assembly = 0, *attribute, *platformDir;
 bool g_dynamic = false;
+bool g_multipleWorkers = false;
 
-Clock *Worker::
+Clock &Worker::
 addClock() {
-  Clock *c = new Clock;
-  c->ordinal = m_clocks.size();
-  m_clocks.push_back(c);
+  Clock &c = *new Clock;
+  c.ordinal = m_clocks.size();
+  m_clocks.push_back(&c);
   return c;
 }
 // Check for implementation attributes common to data interfaces, several of which
@@ -179,39 +180,63 @@ tryOneChildInclude(ezxml_t top, const std::string &parent, const char *element,
 }
 
 const char *Worker::
-addProperty(ezxml_t prop, bool includeImpl, bool anyIsBad)
-{
-  OU::Property *p = new OU::Property;
+addProperty(ezxml_t prop, bool includeImpl, bool anyIsBad, bool isRaw, bool isBuiltin) {
+  OU::Property &p = *new OU::Property;
+  const char *err;
 
-  const char *err =
-    p->parse(prop, includeImpl, (unsigned)(m_ctl.ordinal++), this);
-  // Now that have parsed the property "in a vacuum", do two context-sensitive things:
-  // Override the default value of parameter properties
-  // Skip debug properties if the debug parameter is not present.
-  if (!err) {
-    if (!p->m_isParameter && anyIsBad)
-      return OU::esprintf("Property \"%s\" is not a parameter and is invalid in this context",
-                          p->m_name.c_str());
+  do { // break from block on error
+    if ((err = p.parse(prop, includeImpl, (unsigned)(m_ctl.ordinal++), this)))
+      break;
+    p.m_isBuiltin = isBuiltin;
+    if (isRaw && includeImpl && !p.m_isParameter && !p.m_rawSet) {
+      if (p.m_isRaw) {
+	err = OU::esprintf("Property \"%s\" is declared raw, but firstRaw attribute also set for worker",
+			   p.cname());
+	break;
+      }
+      p.m_isRaw = true;
+    }
+    if (p.m_isRaw && !m_ctl.firstRaw)
+      m_ctl.firstRaw = &p;
+    // Now that have parsed the property "in a vacuum", do two context-sensitive things:
+    // Override the default value of parameter properties
+    // Skip debug properties if the debug parameter is not present.
+    if (!p.m_isParameter && anyIsBad) {
+      err = OU::esprintf("Property \"%s\" is not a parameter and is invalid in this context",
+			 p.cname());
+      break;
+    }
     // Now allow overrides of values.
-    if (!strcasecmp(p->m_name.c_str(), "ocpi_debug"))
-      m_debugProp = p;
-    m_ctl.properties.push_back(p);
-    p->m_isImpl = includeImpl;
-    //    addAccess(*p);
+    if (!strcasecmp(p.cname(), "ocpi_debug"))
+      m_debugProp = &p;
+    ocpiDebug("Adding property %s isParam %u", p.cname(), p.m_isParameter);
+    m_ctl.properties.push_back(&p);
+    p.m_isImpl = includeImpl;
+    if (!p.m_isImpl) {
+      p.m_specInitial = p.m_isInitial;
+      p.m_specReadable = p.m_isReadable;
+      p.m_specParameter = p.m_isParameter;
+      p.m_specWritable = p.m_isWritable;
+    }
+    m_ctl.summarizeAccess(p);
     return NULL;
-  }
-  delete p;
+  } while(0);
+  delete &p;
   return err;
 }
 
+// Context info when we are parsing properties
 struct PropInfo {
   Worker *m_worker;
   bool m_isImpl; // Are we in an implementation context?
   bool m_anyIsBad;
   bool m_top;    // Are we in a top layer mixed with other elements?
   const char *m_parent;
-  PropInfo(Worker *worker, bool isImpl, bool anyIsBad, const char *parent)
-    : m_worker(worker), m_isImpl(isImpl), m_anyIsBad(anyIsBad), m_top(true), m_parent(parent) {}
+  const char *m_firstRaw;
+  bool m_raw;
+  PropInfo(Worker *worker, bool isImpl, bool anyIsBad, const char *parent, const char *firstRaw, bool raw)
+    : m_worker(worker), m_isImpl(isImpl), m_anyIsBad(anyIsBad), m_top(true), m_parent(parent),
+      m_firstRaw(firstRaw), m_raw(raw) {}
 };
 
 // process something that might be a property, either at spec time or at impl time
@@ -238,8 +263,6 @@ doMaybeProp(ezxml_t maybe, void *vpinfo) {
       (err = tryChildInclude(maybe, pinfo.m_parent, "Properties", &props, childFile, pinfo.m_top)))
     return err;
   if (props) {
-    //    if (pinfo.anyIsBad)
-    // return "A Properties element is invalid in this context";
     bool save = pinfo.m_top;
     pinfo.m_top = false;
     const char *parent = pinfo.m_parent;
@@ -261,36 +284,62 @@ doMaybeProp(ezxml_t maybe, void *vpinfo) {
     else
       return OU::esprintf("Invalid child element '%s' of a 'Properties' element", eName);
   }
-  //  if (pinfo.anyIsBad)
-  //    return "A Property or SpecProperty element is invalid in this context";
   const char *name = ezxml_cattr(maybe, "Name");
   if (!name)
     return "Property or SpecProperty has no \"Name\" attribute";
   OU::Property *p = NULL;
-  for (PropertiesIter pi = w->m_ctl.properties.begin(); pi != w->m_ctl.properties.end(); pi++)
+  for (PropertiesIter pi = w->m_ctl.properties.begin(); pi != w->m_ctl.properties.end(); pi++) {
     if (!strcasecmp((*pi)->m_name.c_str(), name)) {
       p = *pi;
       break;
     }
+  }
+  bool firstRaw = pinfo.m_firstRaw && !strcasecmp(name, pinfo.m_firstRaw);
   if (isSpec) {
     // FIXME mark a property as "impled" so we reject doing it more than once
     if (!p)
-      return OU::esprintf("Existing property named \"%s\" not found", name);
+      return OU::esprintf("Existing spec property named \"%s\" not found", name);
     if (strcmp(p->m_name.c_str(), name))
       return OU::esprintf("SpecProperty name (%s) and Property name (%s) differ in case",
                           name, p->m_name.c_str());
-    // So simply add impl info to the existing property.
-    return p->parseImpl(maybe, w);
-  } else if (p)
-      return OU::esprintf("Property named \"%s\" conflicts with existing/previous property",
-                          name);
-  // All the spec attributes plus the impl attributes
-  return w->addProperty(maybe, pinfo.m_isImpl, pinfo.m_anyIsBad);
+    // So simply add impl info to the existing property, and re-summarize access
+    if ((err = p->parseImpl(maybe, w)))
+      return err;
+    if (firstRaw) {
+      if (p->m_isParameter)
+	return OU::esprintf("The property designated as firstRaw (%s), cannot be a parameter property",
+			    name);
+      if (p->m_rawSet && !p->m_isRaw)
+	return OU::esprintf("The property designated as firstRaw (%s), is set to not-raw?", name);
+
+      // So a spec property is the first raw one, which means all non-parameter spec properties AFTER
+      // it are also raw, and all non-parameter impl properties are also raw.
+      bool raw = false;
+      p->m_isRaw = true;
+      for (PropertiesIter pi = w->m_ctl.properties.begin(); pi != w->m_ctl.properties.end(); pi++) {
+	OU::Property &pp = **pi;
+	if (&pp == p)
+	  raw = true;
+	else if (raw && !pp.m_rawSet && !pp.m_isParameter)
+	  pp.m_isRaw = true;
+      }
+      w->m_ctl.firstRaw = p;
+      pinfo.m_raw = true; // all future impl properties are raw too.
+    }
+
+    w->m_ctl.summarizeAccess(*p, true);
+    return NULL;
+  }
+  if (p)
+    return OU::esprintf("Property named \"%s\" conflicts with existing/previous property", name);
+  if (firstRaw)
+    pinfo.m_raw = true; // this does in fact allow an impl parameter property to be tagged by firstRaw...
+  return w->addProperty(maybe, pinfo.m_isImpl, pinfo.m_anyIsBad, pinfo.m_raw, false);
 }
 
 const char *Worker::
-doProperties(ezxml_t top, const char *parent, bool impl, bool anyIsBad) {
-  PropInfo pi(this, impl, anyIsBad, parent);
+doProperties(ezxml_t top, const char *parent, bool impl, bool anyIsBad, const char *firstRaw, bool allRaw) {
+  PropInfo pi(this, impl, anyIsBad, parent, firstRaw, allRaw);
   return OE::ezxml_children(top, doMaybeProp, &pi);
 }
 
@@ -300,20 +349,21 @@ const char *parseControlOp(const char *op, void *arg) {
   const char **p;
   for (p = OU::Worker::s_controlOpNames; *p; p++, n++)
     if (!strcasecmp(*p, op)) {
-      w->m_ctl.controlOps |= 1 << n;
+      w->m_ctl.controlOps |= 1u << n;
       break;
     }
   return
     *p ? NULL : "Invalid control operation name in ControlOperations attribute";
 }
 
+// isBuiltin means the (readable) value is not provided by the worker
 const char *Worker::
-addProperty(const char *xml, bool includeImpl) {
+addProperty(const char *xml, bool includeImpl, bool isBuiltin) {
   // Add the built-in properties
   char *dprop = strdup(xml); // Make the contents persistent
   ezxml_t dpx = ezxml_parse_str(dprop, strlen(dprop));
   ocpiDebug("Adding ocpi_debug property xml %p", dpx);
-  const char *err = addProperty(dpx, includeImpl, false);
+  const char *err = addProperty(dpx, includeImpl, false, false, isBuiltin);
   ezxml_free(dpx);
   return err;
 }
@@ -322,18 +372,28 @@ const char *Worker::
 addBuiltinProperties() {
   const char *err;
   if ((err = addProperty("<property name='ocpi_debug' type='bool' parameter='true' "
-                         "          default='false'/>", true)) ||
+                         "          default='false'/>", false)) ||
       (err = addProperty("<property name='ocpi_endian' type='enum' parameter='true' "
                          "          default='little'"
-                         "          enums='little,big,dynamic'/>", true)))
+                         "          enums='little,big,dynamic'/>", false)))
     return err;
   return NULL;
 }
 // Parse the generic implementation control aspects (for rcc and hdl and other)
 const char *Worker::
-parseImplControl(ezxml_t &xctl, const char */*firstRaw*/) { // FIXME: nuke the second arg
+parseImplControl(ezxml_t &xctl) {
   // Now we do the rest of the control interface
   const char *err;
+    // An emulator must have the same version as the device worker
+    if ((err = OE::getNumber8(m_xml, "version", &m_version)))
+      return err;
+  if (!m_emulate) {
+    std::string vp;
+    OU::format(vp, "<property name='ocpi_version' hidden='1' type='uchar' parameter='true' default='%u'/>",
+	       m_version);
+    if ((err = addProperty(vp.c_str(), false)))
+      return err;
+  }
   if ((xctl = ezxml_cchild(m_xml, "ControlInterface")) &&
       m_noControl)
     return "Worker has a ControlInterface element, but also has NoControl=true";
@@ -350,22 +410,34 @@ parseImplControl(ezxml_t &xctl, const char */*firstRaw*/) { // FIXME: nuke the s
       (xctl &&
        (err = OU::parseList(ezxml_cattr(xctl, "ControlOperations"), parseControlOp, this))))
     return err;
-  // Add the built-in properties
-  if ((!m_emulate && (err = addBuiltinProperties())) ||
-      (err = doProperties(m_xml, m_file.c_str(), true, false)))
+  const char *firstRaw = ezxml_cattr(m_xml, "FirstRawProperty");
+  bool allImplRaw = false;
+  if ((err = OE::getBoolean(m_xml, "RawProperties", &allImplRaw)))
     return err;
-  // Now that we have all information about properties and we can actually
-  // do the offset calculations and summarize the access type counts and flags
-  for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
-    OU::Property &p = **pi;
-#if 0 // deferred to finalizeProperties to be after setParamConfig
-    // Raw properties must start on a 4 byte boundary
-    if (firstRaw && !strcasecmp(p.m_name.c_str(), firstRaw))
-      m_ctl.offset = OU::roundUp(m_ctl.offset, 4);
-    if ((err = p.offset(m_ctl.offset, m_ctl.sizeOfConfigSpace, this)))
-      return err;
-#endif
-    m_ctl.summarizeAccess(p);
+  if (firstRaw && allImplRaw)
+    return OU::esprintf("Only one of the \"rawproperties\" and \"firstraw\" attributes is allowed");
+  // Parse all of the OWD properties
+  if ((err = doProperties(m_xml, m_file.c_str(), true, false, firstRaw, allImplRaw)))
+    return err;
+  if (firstRaw && !m_ctl.rawProperties) { // firstraw was not found yet.  Must simply be a spec property
+    bool raw = false;
+    for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
+      OU::Property &p = **pi;
+      if (!strcasecmp(p.cname(), firstRaw)) {
+	assert(!p.m_isImpl);
+	if (p.m_isParameter)
+	  return OU::esprintf("The property designated as firstRaw (%s), cannot be a parameter property",
+			      firstRaw);
+	raw = true;
+      }
+      if (raw && !p.m_isParameter) {
+	p.m_isRaw = true;
+	m_ctl.summarizeAccess(p);
+      }
+    }
+    if (!m_ctl.rawProperties)
+      return OU::esprintf("The firstraw attribute (%s) specified a non-existent property",
+			  firstRaw);
   }
   // Allow overriding sizeof config space, giving priority to controlinterface
   uint64_t sizeOfConfigSpace;
@@ -413,16 +485,31 @@ const char *Worker::
 finalizeProperties() {
   // Now that we have all information about properties and we can actually
   // do the offset calculations and summarize the access type counts and flags
-  const char *firstRaw = ezxml_cattr(m_xml, "FirstRawProperty");
+  const char *err;
+#if 0
+  if ((err = OU::Worker::finalizeProperties(m_ctl.offset, m_ctl.sizeOfConfigSpace, this)))
+    return err;
+#else
+  bool raw = false;
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
     OU::Property &p = **pi;
-    // Raw properties must start on a 4 byte boundary
-    if (firstRaw && !strcasecmp(p.m_name.c_str(), firstRaw))
-      m_ctl.offset = OU::roundUp(m_ctl.offset, 4);
-    const char *err;
-    if ((err = p.offset(m_ctl.offset, m_ctl.sizeOfConfigSpace, this)))
+    if (p.m_isRaw)
+      raw = true;
+    else if ((err = p.offset(m_ctl.offset, m_ctl.sizeOfConfigSpace, this)))
       return err;
   }
+  if (raw) {
+    m_ctl.offset = OU::roundUp(m_ctl.offset, 4);
+    for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
+      OU::Property &p = **pi;
+      if (p.m_isRaw && (err = p.offset(m_ctl.offset, m_ctl.sizeOfConfigSpace, this)))
+	return err;
+    }
+  }
+#endif
+  // Ensure all parameters are in all paramConfigs, since some may have been added.
+  for (unsigned n = 0; n < m_paramConfigs.size(); n++)
+    m_paramConfigs[n]->doDefaults();
   return NULL;
 }
 
@@ -445,7 +532,7 @@ parseImplLocalMemory() {
 }
 
 // Parse the control information about the component spec
-  const char *Worker::
+const char *Worker::
 parseSpecControl(ezxml_t ps) {
   const char *err;
   if (ps &&
@@ -461,63 +548,11 @@ parseSpecControl(ezxml_t ps) {
 }
 
 const char *checkSuffix(const char *str, const char *suff, const char *last) {
-  size_t nstr = last - str, nsuff = strlen(suff);
+  size_t nstr = OCPI_SIZE_T_DIFF(last, str), nsuff = strlen(suff);
   const char *start = str + nstr - nsuff;
   return nstr > nsuff && !strncmp(suff, start, nsuff) ? start : str + nstr;
 }
 
-#if 0
-
-Protocol::
-Protocol(Port &port)
-  : m_port(port) {}
-
-const char * Protocol::
-parse(const char *file, ezxml_t prot)
-{
-  if (file) {
-    // If we are being parsed from a protocol file, default the name.
-    const char *start = strrchr(file, '/');
-    if (start)
-      start++;
-    else
-      start = file;
-    const char *last = strrchr(file, '.');
-    if (!last)
-      last = file + strlen(file);
-    last = checkSuffix(start, "_protocol", last);
-    last = checkSuffix(start, "_prot", last);
-    last = checkSuffix(start, "-protocol", last);
-    last = checkSuffix(start, "-prot", last);
-    m_name.assign(start, last - start);
-    std::string ofile = m_port.m_worker->m_file;
-    m_port.m_worker->m_file = file;
-    const char *err = OU::Protocol::parse(prot);
-    m_port.m_worker->m_file = ofile;
-    return err;
-  }
-  return prot ? OU::Protocol::parse(prot) : NULL;
-}
-
-const char *Protocol::
-parseOperation(ezxml_t op) {
-  const char *err;
-  std::string ifile;
-  ezxml_t iprot = 0;
-  if ((err = tryInclude(op, m_port.m_worker->m_file.c_str(), "Protocol", &iprot,
-                        ifile, false)))
-    return err;
-  // If it is an "include", basically recurse
-  if (iprot) {
-    std::string ofile = m_port.m_worker->m_file;
-    m_port.m_worker->m_file = ifile;
-    err = OU::Protocol::parse(iprot, false);
-    m_port.m_worker->m_file = ofile;
-    return err;
-  }
-  return OU::Protocol::parseOperation(op);
-}
-#endif
 // The package serves two purposes: the spec and the impl.
 // If the spec already has a package prefix, then it will only
 // be used as the package of the impl.
@@ -538,7 +573,7 @@ findPackage(ezxml_t spec, const char *a_package) {
     // If the specfile (first) or the implfile (second) has a dir,
     // look there for package name file.  If not, look in the CWD (the worker dir).
     if (cp)
-      packageFileDir.assign(base, cp + 1 - base);
+      packageFileDir.assign(base, OCPI_SIZE_T_DIFF(cp + 1, base));
 
     // FIXME: Fix this using the include path maybe?
     std::string packageFileName = packageFileDir + "package-id";
@@ -554,10 +589,10 @@ findPackage(ezxml_t spec, const char *a_package) {
     }
     for (cp = m_package.c_str(); *cp && isspace(*cp); cp++)
       ;
-    m_package.erase(0, cp - m_package.c_str());
+    m_package.erase(0, OCPI_SIZE_T_DIFF(cp, m_package.c_str()));
     for (cp = m_package.c_str(); *cp && !isspace(*cp); cp++)
       ;
-    m_package.resize(cp - m_package.c_str());
+    m_package.resize(OCPI_SIZE_T_DIFF(cp, m_package.c_str()));
   }
   return NULL;
 }
@@ -567,42 +602,32 @@ parseSpec(const char *a_package) {
   const char *err;
   // xi:includes at this level are component specs, nothing else can be included
   ezxml_t spec = NULL;
-  const char *name = ezxml_name(m_xml);
   if ((err = tryOneChildInclude(m_xml, m_file, "ComponentSpec", &spec, m_specFile, true)))
     return err;
   const char *specAttr = ezxml_cattr(m_xml, "spec");
+  bool isSpec = !strcasecmp(ezxml_name(m_xml), "ComponentSpec");
   if (specAttr) {
     if (spec)
       return "Can't have both ComponentSpec element (maybe xi:included) and a 'spec' attribute";
     if ((err = parseFile(specAttr, m_file, "ComponentSpec", &spec, m_specFile, false)))
       return err;
-  } else if (!strcasecmp("ComponentSpec", name))
-    spec=m_xml;
+  } else if (isSpec)
+    spec = m_xml;
   else if (!spec)
     return "missing componentspec element or spec attribute";
-#if 0
-  if (m_specFile == m_file) {
-    // If not in its own file, then it must have a name attr
-    if (!(m_specName = ezxml_cattr(spec, "Name")))
-      return "Missing Name attribute for ComponentSpec";
-  } else
-#endif
-   if (strcasecmp("ComponentSpec", name))
-   {
-     {
-       // default the specname from the file of the current file,
-       // which may in fact be the name of the worker file if the component spec is embedded
-       std::string l_name, fileName;
-       if ((err = getNames(spec, m_specFile.c_str(), "ComponentSpec", l_name, fileName)))
-         return err;
-       size_t len = strlen("-spec");
-       if (l_name.length() > len) {
-         const char *tail = l_name.c_str() + l_name.length() - len;
-         if (!strcasecmp(tail, "-spec") || !strcasecmp(tail, "_spec"))
-           l_name.resize(l_name.size() - len);
-       }
-       m_specName = strdup(l_name.c_str());
-     }
+  if (!isSpec) {
+    // default the specname from the file of the current file,
+    // which may in fact be the name of the worker file if the component spec is embedded
+    std::string l_name, fileName;
+    if ((err = getNames(spec, m_specFile.c_str(), "ComponentSpec", l_name, fileName)))
+      return err;
+    size_t len = strlen("-spec");
+    if (l_name.length() > len) {
+      const char *tail = l_name.c_str() + l_name.length() - len;
+      if (!strcasecmp(tail, "-spec") || !strcasecmp(tail, "_spec"))
+	l_name.resize(l_name.size() - len);
+    }
+    m_specName = strdup(l_name.c_str());
     // Find the package even though the spec package might be specified already
     if ((err = findPackage(spec, a_package)))
       return err;
@@ -619,7 +644,8 @@ parseSpec(const char *a_package) {
   std::string dummy;
   if ((err = tryOneChildInclude(spec, m_file, "PropertySummary", &ps, dummy, true)))
     return err;
-  if ((err = doProperties(spec, m_file.c_str(), false, ps != NULL || m_noControl)))
+  if ((err = doProperties(spec, m_file.c_str(), false, ps != NULL || m_noControl, NULL, false)) ||
+      (!m_emulate && (err = addBuiltinProperties())))
     return err;
   if (m_noControl) {
     if (ps)
@@ -773,7 +799,7 @@ getNames(ezxml_t xml, const char *file, const char *tag, std::string &name,
     const char *cp = strrchr(file, '/');
     cp = cp ? cp + 1 : file;
     const char *lp = strrchr(cp, '.');
-    fileName.assign(cp, lp ? lp - cp : strlen(cp));
+    fileName.assign(cp, lp ? OCPI_SIZE_T_DIFF(lp, cp) : strlen(cp));
   }
   if (fileName.empty())
     return OE::getRequiredString(xml, name, "name", ezxml_name(xml));
@@ -810,7 +836,6 @@ create(const char *file, const std::string &parentFile, const char *package, con
   else if (!strcasecmp("HdlAssembly", name))
     w = HdlAssembly::create(xml, xfile, parent, err);
   else if (!strcasecmp("HdlDevice", name)) {
-    //w = HdlDevice::get(file, parentFile.c_str(), parent, err);
     w = HdlDevice::create(xml, xfile, NULL, parent, instancePVs, err);
   } else if (!strcasecmp("RccAssembly", name))
     w = RccAssembly::create(xml, xfile, err);
@@ -828,19 +853,17 @@ create(const char *file, const std::string &parentFile, const char *package, con
     } else if (!strcasecmp("OclAssembly", name))
       err = w->parseOclAssy();
     else if (!strcasecmp("ComponentSpec", name)) {
-      err = w->parseSpec("");
+      err = w->parseSpec();
       w->m_model= NoModel;
-    }
-    else
+    } else
       err = OU::esprintf("Unrecognized top level tag: \"%s\" in file \"%s\"", name, xfile);
   }
-  if (!err &&
-      !(err = w->setParamConfig(instancePVs, paramConfig)) &&
-      !(err = w->finalizeProperties()) &&
-      !(err = w->resolveExpressions(*w)) &&
-      w->m_model == HdlModel)
-    err = w->finalizeHDL();
-  if (err) {
+  if (err ||
+      (err = w->setParamConfig(instancePVs, paramConfig)) ||
+      // Resolving expressions finalizes data ports, which may add built-in properties for ports
+      (err = w->resolveExpressions(*w)) ||
+      (err = w->finalizeProperties()) ||
+      (w->m_model == HdlModel && (err = w->finalizeHDL()))) {
     delete w;
     w = NULL;
   } else {
@@ -881,7 +904,7 @@ const char *
 addLibMap(const char *map) {
   ocpiDebug("addLibMap: %s", map);
   const char *cp = strchr(map, ':');
-  const char *newLib = cp ? strndup(map, cp - map) : strdup(map);
+  const char *newLib = cp ? strndup(map, OCPI_SIZE_T_DIFF(cp, map)) : strdup(map);
   if (cp)
     cp++;
   for (const char **mp = mappedLibraries; mp && *mp; mp++)
@@ -912,7 +935,7 @@ findLibMap(const char *file) {
   const char *cp = strrchr(file, '/');
   for (unsigned n = 0; n < nMaps; n++) {
     size_t len = strlen(mappedDirs[n]);
-    if (len && cp && len == (size_t)(cp - file) && !strncmp(mappedDirs[n], file, len))
+    if (len && cp && len == OCPI_SIZE_T_DIFF(cp, file) && !strncmp(mappedDirs[n], file, len))
       return mappedLibraries[n];
   }
   return NULL;
@@ -930,17 +953,35 @@ initAccess() {
   writables = nonRawWritables = rawWritables = false;
   readables = nonRawReadables = rawReadables = false;
   sub32Bits = nonRawSub32Bits = volatiles = nonRawVolatiles = false;
-  readbacks = nonRawReadbacks = rawReadbacks = rawProperties = false;
+  readbacks = nonRawReadbacks = rawReadbacks = rawProperties = builtinReadbacks = false;
   nRunProperties = nNonRawRunProperties = nParameters = 0;
 }
+
+// This method might be called when a property is augmented from
+// being a spec property to an impl property.  This "morphing" is generally additive
+// to these control summary boolean values.
+// But it may also change the counts (e.g. non-parameter to parameter)
+// All the raw stuff is done in the HDL parser.
 void Control::
-summarizeAccess(OU::Property &p) {
-  // All the raw stuff is done in the HDL parser.
+summarizeAccess(OU::Property &p, bool isSpecProperty) {
   if (p.m_isParameter) {
-    p.m_paramOrdinal = nParameters++;
+    if (isSpecProperty) {
+      // If we are being morphed to a parameter, we might need to
+      // reassign parameter ordinals, so do it over again, and recount runtimes
+      nRunProperties = nParameters = 0;
+      for (PropertiesIter pi = properties.begin(); pi != properties.end(); pi++) {
+	OU::Property &pp = **pi;
+	if (pp.m_isParameter)
+	  pp.m_paramOrdinal = nParameters++;
+	else
+	  nRunProperties++;
+      }
+    } else
+      p.m_paramOrdinal = nParameters++;
     if (!p.m_isReadable)
       return;
-  }
+  } else if (!isSpecProperty)
+    nRunProperties++;
   if (p.m_isReadable)
     readables = true;
   if (p.m_isWritable)
@@ -951,8 +992,13 @@ summarizeAccess(OU::Property &p) {
     volatiles = true;
   if (p.m_isVolatile || (p.m_isReadable && !p.m_isWritable && !p.m_isParameter))
     readbacks = true;
-  nRunProperties++;
+  if (p.m_isRaw) {
+    rawProperties = true;
+    if (!firstRaw)
+      firstRaw = &p;
+  }
 }
+
 
 Worker::
 Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
@@ -962,11 +1008,11 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
     m_wci(NULL), m_noControl(false), m_reusable(false),
     m_specName(NULL), m_isThreaded(false), m_maxPortTypeName(0), m_wciClock(NULL),
     m_endian(NoEndian), m_needsEndian(false), m_pattern(NULL), m_portPattern(NULL),
-    m_staticPattern(NULL), m_defaultDataWidth(-1), m_language(NoLanguage), m_assembly(NULL),
+    m_staticPattern(NULL), m_defaultDataWidth(SIZE_MAX), m_language(NoLanguage), m_assembly(NULL),
     m_emulate(NULL), m_emulator(NULL), m_library(NULL), m_outer(false),
     m_debugProp(NULL), m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_build(*this),
     m_paramConfig(NULL), m_parent(parent), m_scalable(false), m_requiredWorkGroupSize(0),
-    m_maxLevel(0), m_dynamic(false)
+    m_maxLevel(0), m_dynamic(false), m_isSlave(false)
 {
   if ((err = getNames(xml, xfile, NULL, m_name, m_fileName)))
     return;
@@ -1143,7 +1189,7 @@ Parsed(ezxml_t xml,        // The xml for this entity
 
 Clock::
 Clock()
-  : port(NULL), assembly(false), ordinal(0) {
+  : port(NULL), assembly(false), m_output(false), ordinal(0) {
 }
 
 const char *Worker::
@@ -1194,8 +1240,7 @@ emitArtXML(const char *wksFile) {
 }
 
 const char *Worker::
-emitCompArtXML() {
-  const char *err;
+emitToolArtXML() {
   FILE *f = stdout;
   fprintf(f, "<!--\n");
   printgen(f, "", m_file.c_str());
@@ -1203,9 +1248,9 @@ emitCompArtXML() {
           " This file contains the artifact descriptor XML for a Component.\n"
           " It is used for informational purposes by ocpidev\n");
   fprintf(f, "  -->\n");
-  emitXmlWorker(f);
-  if (fclose(f))
-    return "Could not close output file. No space?";
+  emitXmlWorker(f, true);
+  if (fflush(f))
+    return "Could not flush stdout. No space?";
   return 0;
 }
 
@@ -1214,8 +1259,7 @@ deriveOCP() {
   const char *err;
   for (unsigned i = 0; i < m_ports.size(); i++) {
     Port *p = m_ports[i];
-    if (p->isOCP() &&
-        (err = p->deriveOCP()))
+    if (p->isOCP() && !p->isCloned() && (err = p->deriveOCP()))
       return err;
   }
   return NULL;

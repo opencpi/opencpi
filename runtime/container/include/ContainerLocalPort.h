@@ -84,8 +84,10 @@ namespace OCPI {
 	  m_next;   // next opposite member to deal with
 	const OCPI::Util::Member *m_hashField;
 	BridgeMode m_mode;
+	BridgeOp();
       } *m_bridgeOp;
       std::vector<BridgeOp> m_bridgeOps;
+      BridgeOp m_defaultBridgeOp; // used when there are no operations at the ports
       // These are the functions to set up the bridge op according distribution and scale
       // on both sides, per op.
 

@@ -86,7 +86,7 @@ def execute_cmd(settings, directory, action=None):
         child.wait()
     except KeyboardInterrupt:
         child.kill()
-        raise OCPIException("Recived Keyboard Interupt Exiting")
+        raise OCPIException("Received Keyboard Interrupt - Exiting")
     return child.returncode
 
 def set_vars_from_make(mk_file, mk_arg="", verbose=None):

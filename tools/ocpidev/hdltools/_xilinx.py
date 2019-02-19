@@ -15,12 +15,13 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
-import _opencpi.util as ocpiutil
-from _opencpi.hdlreportableitem import ReportableItem
 """
 This file contains common ReportableItems/regexs for both ISE and Vivado.
 This has been tested with build logs from Xilinx ISE 14.7 and Vivado 2017.1.
 """
+import _opencpi.util as ocpiutil
+from _opencpi.hdlreportableitem import ReportableItem
+
 
 # NOTE: If adding regular expressions for new tool versions, individual regular
 #       expressions can be replaced with lists of regexs. This way, we can add
@@ -28,9 +29,7 @@ This has been tested with build logs from Xilinx ISE 14.7 and Vivado 2017.1.
 #       older versions.
 
 # Xilinx tools (XST/ISE and Vivado) have common regular expressions that can be used
-regs_item = ReportableItem("Registers (Typ)", r"Slice Registers.*",
-                           match_and_transform_synth_function=\
-                                ocpiutil.match_regex_get_first_num)
-luts_item = ReportableItem("LUTs (Typ)", r"Slice LUTs.*",
-                           match_and_transform_synth_function=\
-                               ocpiutil.match_regex_get_first_num)
+REGS_ITEM = ReportableItem("Registers (Typ)", r"Slice Registers.*",
+                           match_and_transform_synth_function=ocpiutil.match_regex_get_first_num)
+LUTS_ITEM = ReportableItem("LUTs (Typ)", r"Slice LUTs.*",
+                           match_and_transform_synth_function=ocpiutil.match_regex_get_first_num)

@@ -28,6 +28,9 @@ This file contains the unit tests for the Project object
 """
 class ProjectTest(unittest.TestCase):
     asset_type = "project"
+    def tearDown(self):
+        AssetFactory.remove_all()
+
     def test_prj_bad_dir(self):
         """
         create a project in an invalid directory and an exception should be thrown
@@ -46,7 +49,6 @@ class ProjectTest(unittest.TestCase):
                                                   "../av-test",
                                                   init_apps_col=True)
         assert my_asset.run() == 0
-        AssetFactory.remove("../av-test")
 
     def test_prj_no_init(self):
         """
@@ -61,12 +63,11 @@ class ProjectTest(unittest.TestCase):
         create a project in the default way
         """
         my_asset = AssetFactory.factory(self.asset_type,
-                                                  "../av-test",
-                                                  "av-test",
-                                                  init_tests=True,
-                                                  init_libs=True)
+                                        "../av-test",
+                                        "av-test",
+                                        init_tests=True,
+                                        init_libs=True)
         assert my_asset.run() == 0
-        AssetFactory.remove(instance=my_asset)
 
 class DeleteProjectTest(unittest.TestCase):
     asset_type = "project"

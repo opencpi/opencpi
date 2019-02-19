@@ -1,5 +1,4 @@
-<RccImplementation controloperations="start">
-  <xi:include href="comparator_real_spec.xml"/>
-</RccImplementation>
+<RccWorker controloperations="start" spec="comparator_real_spec.xml">
+</RccWorker>
 
 

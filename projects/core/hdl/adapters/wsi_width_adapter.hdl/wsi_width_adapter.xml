@@ -1,4 +1,4 @@
-<HdlImplementation language="vhdl">
+<HdlWorker language="vhdl">
   <ComponentSpec nocontrol='true'>
     <!-- declare accommodating ports with 8-bit bytes, ZLMs, and max opcodes.-->
     <DataInterfaceSpec Name="in"  Producer="false"
@@ -10,4 +10,4 @@
   </ComponentSpec>
   <streaminterface name='in' datawidth='width_in'/>
   <streaminterface name='out' datawidth='width_out'/>
-</HdlImplementation>
+</HdlWorker>

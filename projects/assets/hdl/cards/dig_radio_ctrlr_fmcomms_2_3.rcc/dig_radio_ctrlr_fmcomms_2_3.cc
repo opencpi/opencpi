@@ -50,10 +50,10 @@ class Dig_radio_ctrlr_fmcomms_2_3Worker : public Dig_radio_ctrlr_fmcomms_2_3Work
 
   struct ad9361_rf_phy* m_ad9361_rf_phy; //No-OS struct
 
-#if PARAM_FMCOMMS_NUM_p() == 2
+#if OCPI_PARAM_dig_radio_ctrlr_fmcomms_2_3_FMCOMMS_NUM_p() == 2
   RadioCtrlrFMCOMMS2TuneResamp<Slave1> m_ctrlr;
 #endif
-#if PARAM_FMCOMMS_NUM_p() == 3
+#if OCPI_PARAM_dig_radio_ctrlr_fmcomms_2_3_FMCOMMS_NUM_p() == 3
   RadioCtrlrFMCOMMS3TuneResamp<Slave1> m_ctrlr;
 #endif
 

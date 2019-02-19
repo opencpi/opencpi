@@ -3,8 +3,7 @@ The file writer writes a file from data it recieves on its input
 Properties:
  messagesInFile: indicates that messages, including length and opcode, should be written in the file
 -->
-<RccImplementation controloperations="start,release">
-  <xi:include href="file_write_spec.xml"/>
+<RccWorker controloperations="start,release" spec="file_write_spec.xml">
   <specproperty name="fileName" readable='true'/>
   <port name='in' buffersize='8k'/>
-</RccImplementation>
+</RccWorker>

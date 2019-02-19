@@ -173,7 +173,7 @@ Launcher::Port::
 Port()
   : m_launcher(NULL), m_container(NULL), m_containerApp(NULL), m_member(NULL), m_port(NULL),
     m_name(NULL), m_metaPort(NULL), m_scale(0), m_index(0), m_url(NULL),
-    m_transportBridged(false), m_started(false), m_done(false) {
+    m_transportBridged(false), m_started(false), m_done(false), m_otherConn(NULL) {
 }
 
 Launcher::Connection::

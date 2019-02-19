@@ -443,6 +443,7 @@ doComponent(TaggedComponent &tc) throw(std::string) {
       addr += fileName;
       doAddress(addr);
     }
+    break;
   case TAG_OMNIORB_OCPI_TRANS:
     {
       OCPI::Util::CDR::Decoder cd (tc.component_data);

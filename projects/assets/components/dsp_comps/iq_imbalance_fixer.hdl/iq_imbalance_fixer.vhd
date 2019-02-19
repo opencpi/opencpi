@@ -122,15 +122,15 @@ begin
 
         case current_state is
           when INIT_s =>
-            if (in_in.som = '1' and in_in.eom = '1' and in_in.valid = '0') then
+            if (in_in.ready = '1' and in_in.som = '1' and in_in.eom = '1' and in_in.valid = '0') then
               current_state <= SEND_s;
-            elsif (in_in.som = '1' and in_in.valid = '0') then
+            elsif (in_in.ready = '1' and in_in.som = '1' and in_in.valid = '0') then
               current_state <= WAIT_s;
             end if;
           when WAIT_s =>
-            if (in_in.valid = '1') then
+            if (in_in.ready = '1' and in_in.valid = '1') then
               current_state <= INIT_s;
-            elsif (in_in.eom = '1') then
+            elsif (in_in.ready = '1' and in_in.eom = '1') then
               current_state <= SEND_s;
             end if;
           when SEND_s =>

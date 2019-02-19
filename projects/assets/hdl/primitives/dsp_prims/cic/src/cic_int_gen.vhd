@@ -101,7 +101,8 @@ architecture rtl of cic_int_gen is
   signal vld_cnt   : unsigned(INT_CNT_WIDTH-1 downto 0);
   signal integ_vld : std_logic;
   signal integ     : integ_t;
-
+  signal seen_in   : std_logic; -- the first in happened
+  signal seen_out  : std_logic; -- the first out from the first in happened
 begin
 
   ----------------------------------------------------------------------------
@@ -144,6 +145,7 @@ begin
   ----------------------------------------------------------------------------
   -- Set DOUT_VLD
   -- DOUT_VLD is set high after first sample of DIN plus latency
+  -- But is set low if no new input has come after our latency
   ----------------------------------------------------------------------------
 
   proc_LatencyCount : process(CLK)
@@ -151,17 +153,32 @@ begin
     if rising_edge(CLK) then
       if (RST = '1') then
         vld_cnt <= (others => '0');
-      else
-        if (DOUT_EN = '1' and vld_cnt = 0) then
-          vld_cnt <= vld_cnt+1;
-        elsif (vld_cnt > 0 and vld_cnt < N*R+N) then
-          vld_cnt <= vld_cnt+1;
+        seen_out <= '0';
+        seen_in  <= '0';
+      elsif (DOUT_EN = '1') then
+        if (seen_in = '0') then
+          if (DIN_VLD = '1') then
+            vld_cnt <= to_unsigned(1, vld_cnt'length);
+            seen_in <= '1';
+          end if;
+        elsif (seen_out = '0') then
+          if vld_cnt = N*R+N then -- counter has saturated the first time
+            seen_out <= '1';
+            vld_cnt <= to_unsigned(N, vld_cnt'length);
+          else
+            vld_cnt <= vld_cnt + 1;
+          end if;
+        elsif (DIN_VLD = '1') then
+          vld_cnt <= to_unsigned(1, vld_cnt'length);
+        else
+          vld_cnt <= vld_cnt + 1;
         end if;
       end if;
     end if;
   end process;
 
-  integ_vld <= '1' when (vld_cnt = N*R+N and DOUT_EN = '1') else '0';
+  -- This (non-registered) output allows us to shut down the output when DIN_VLD doesn't show up
+  DOUT_VLD <= '1' when DOUT_EN= '1' and seen_out = '1' and (vld_cnt < R or DIN_VLD = '1') else '0';
 
   ----------------------------------------------------------------------------
   -- Integrator Stages
@@ -193,10 +210,10 @@ begin
     if rising_edge(CLK) then
       if (RST = '1') then
         DOUT     <= (others => '0');
-        DOUT_VLD <= '0';
+--        DOUT_VLD <= '0';
       elsif (DOUT_EN = '1') then
         DOUT     <= integ(N)(ACC_WIDTH-1 downto ACC_WIDTH-DOUT_WIDTH);
-        DOUT_VLD <= integ_vld;
+--        DOUT_VLD <= integ_vld;
       end if;
     end if;
   end process;

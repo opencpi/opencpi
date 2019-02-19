@@ -76,7 +76,7 @@ namespace OCPI {
 	  std::string globbedName;
 	  if (OU::globPath(name().c_str(), globbedName))
 	    ocpiInfo("Library path pathname \"%s\" is invalid or nonexistent, and ignored",
-		    name().c_str());
+		     name().c_str());
 	  doPath(globbedName);
 	}
 	OCPI::Library::Artifact *

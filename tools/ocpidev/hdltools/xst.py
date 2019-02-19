@@ -30,22 +30,20 @@ from . import _xilinx
 # ReportableItems specific to XST
 
 # Use two different regexs for synthesis and implementation
-part_item = ReportableItem("Device",
+PART_ITEM = ReportableItem("Device",
                            synth_regexs=r"Selected Device\s+:\s+([0-9a-zA-Z\-]+)",
                            impl_regexs=r"Using target part\s+\"([0-9a-zA-Z\-]+)\"")
-# This regex was not found consistently
-#part_item = ReportableItem("Device", r"Target Device\s+: ([0-9a-zA-Z\-]+)")
 
 # Use two different regexs for synthesis and implementation
-vrsn_item = ReportableItem("Version",
+VRSN_ITEM = ReportableItem("Version",
                            synth_regexs=r"Release ([0-9]{2}\.[0-9]) - xst.*",
                            impl_regexs=r"Release ([0-9]{2}\.[0-9]) - Map.*")
 
 # Use a single regex for synthesis and implementation
-fmax_item = ReportableItem("Fmax (MHz) (Typ)",
+FMAX_ITEM = ReportableItem("Fmax (MHz) (Typ)",
                            r"Maximum [fF]requency: ([0-9,]+\.[0-9]+)[MG]Hz")
 # Various special functions and their corresponding regexs
-spec_item = ReportableItem("Memory/Special Functions",
+SPEC_ITEM = ReportableItem("Memory/Special Functions",
                            {"DSP48E1":r"Number of DSP48E1s:\s*([0-9]+)\s*",
                             "RAM64M":r"\s+RAM64M\s+:\s+([0-9]+)\s*",
                             "RAMB36E1":r"\s+RAMB36E1\s+:\s+([0-9]+)\s*",
@@ -55,9 +53,9 @@ spec_item = ReportableItem("Memory/Special Functions",
                             "BUFGCTRL":r"\s*Number of BUFG/BUFGCTRLs:\s+([0-9]+)\s+.*"})
 
 # The item ordering of this list is the report order
-reportable_items = [vrsn_item, part_item, _xilinx.regs_item, _xilinx.luts_item,
-                    fmax_item, spec_item]
+REPORTABLE_ITEMS = [VRSN_ITEM, PART_ITEM, _xilinx.REGS_ITEM, _xilinx.LUTS_ITEM,
+                    FMAX_ITEM, SPEC_ITEM]
 
 # Synthesis and implementation files for utilization reporting.
-synth_files = ["*-xst.out"]
-impl_files = ["map.out", "trce.out"]
+SYNTH_FILES = ["*-xst.out"]
+IMPL_FILES = ["map.out", "trce.out"]

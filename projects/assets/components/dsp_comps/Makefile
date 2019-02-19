@@ -37,6 +37,7 @@ Workers = \
 	Baudtracking_simple.rcc \
 	real_digitizer.rcc \
 	dc_offset_filter.hdl \
+	dc_offset_filter2.hdl \
 	iq_imbalance_fixer.hdl \
 	complex_mixer.rcc \
 	complex_mixer.hdl \
@@ -46,5 +47,7 @@ Workers = \
 	pr_cordic.hdl \
 	cic_dec.hdl \
 	cic_int.hdl \
+	cic_dec2.hdl \
+	cic_int2.hdl \
 
 include $(OCPI_CDK_DIR)/include/library.mk

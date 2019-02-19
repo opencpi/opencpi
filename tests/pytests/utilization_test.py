@@ -48,7 +48,8 @@ OCPI_TOOL_PLATFORM = os.environ.get('OCPI_TOOL_PLATFORM')
 OCPIDEV_PATH = OCPI_CDK_DIR + '/' + OCPI_TOOL_PLATFORM + '/bin/ocpidev'
 
 # Project with dummy assets and read-only log files for testing utilization reporting
-UTIL_PROJ = "utilization_proj/"
+
+UTIL_PROJ = "utilization_proj"
 
 #TODO This test suite can be expanded to be more truly a unit test suite and test the
 #     individual get_utilization functions for the lower level classes like
@@ -168,7 +169,11 @@ class TestUtilization(unittest.TestCase):
         """
         Need to make sure registry is set to current system default before proceeding
         """
+        if subprocess.call("mkdir -p " + UTIL_PROJ, shell=True) != 0:
+           raise ocpiutil.OCPIException("mkdir failed to create the utilization test project directory")
         with ocpiutil.cd(UTIL_PROJ):
+            if subprocess.call("tar xf ../" + UTIL_PROJ + ".tgz", shell=True) != 0:
+                raise ocpiutil.OCPIException("could not unpack tar file for utilization test project")
             process = subprocess.Popen([OCPIDEV_PATH, "set", "registry"])
             results = process.communicate()
             if results[1] or process.returncode != 0:

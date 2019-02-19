@@ -825,6 +825,7 @@ namespace OCPI {
 	    strncmp(start, EXPR_PREFIX, EXPR_PREFIX_LEN))
 	  break;
 	start += EXPR_PREFIX_LEN;
+	// falls thru
       default:;
 	return parseExpressionValue(start, end, nSeq, nArray);
       }	  
@@ -1344,4 +1345,3 @@ getValue(ExprValue &val) const {
 }
 }
 }
-

@@ -125,7 +125,7 @@ namespace OCPI {
     void WciControl::
     prepareProperty(OU::Property &md, 
 		    volatile uint8_t *&writeVaddr,
-		    const volatile uint8_t *&readVaddr) {
+		    const volatile uint8_t *&readVaddr) const {
       ocpiAssert(m_hasControl);
       (void)readVaddr;
       if (m_properties.registers() &&
@@ -138,9 +138,13 @@ namespace OCPI {
 	writeVaddr = m_properties.registers() + md.m_offset;
     }
     void WciControl::
-    checkControlState() {
+    checkControlState() const {
       if (!m_hasControl)
 	return;
+      if (!m_device.isAlive() || m_device.isFailed()) {
+	setControlState(OU::Worker::UNUSABLE);
+	return;
+      }
       // This polling call is to detect the current control state when
       // it might be changed by the worker or container autonomously,
       // in a way that does not update the state here.
@@ -507,7 +511,7 @@ namespace OCPI {
     OC::Port *DirectWorker::findPort(const char *) { return NULL; }
     const std::string &DirectWorker::name() const { return m_name; }
     void DirectWorker::
-    prepareProperty(OU::Property &, volatile uint8_t *&, const volatile uint8_t *&) {}
+    prepareProperty(OU::Property &, volatile uint8_t *&, const volatile uint8_t *&) const {}
     OC::Port &DirectWorker::createPort(const OU::Port &, const OU::PValue *) {
       ocpiAssert("This method is not expected to ever be called" == 0);
       return *(OC::Port*)this;

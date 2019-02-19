@@ -1,6 +1,6 @@
 <!-- The mulislave_test application xml file -->
 <Application>
-  <Instance component="comp1" name="comp1">
+  <Instance component="av.test.comp1" name="comp1">
     <Property Name="test_double" Value="0"></Property>
     <Property Name="test_ulong" Value="0"></Property>
     <Property Name="test_bool" Value="false"></Property>
@@ -15,7 +15,7 @@
     <Property Name="my_enum" Value="0"></Property>
     <Property Name="my_string" Value='"bad"'></Property>
   </Instance>
-  <Instance component="comp1" name="comp2">
+  <Instance component="av.test.comp1" name="comp2">
     <Property Name="test_double" Value="0"></Property>
     <Property Name="test_ulong" Value="0"></Property>
     <Property Name="test_bool" Value="false"></Property>
@@ -30,7 +30,7 @@
     <Property Name="my_enum" Value="0"></Property>
     <Property Name="my_string" Value='"bad"'></Property>
   </Instance>
-  <Instance component="comp2" name="comp3">
+  <Instance component="av.test.comp2" name="comp3">
     <Property Name="test_double" Value="0"></Property>
     <Property Name="test_ulong" Value="0"></Property>
     <Property Name="test_bool" Value="false"></Property>
@@ -43,7 +43,7 @@
     <Property Name="test_ulonglong" Value="0"></Property>
     <Property Name="test_ushort" Value="0"></Property>
   </Instance>
-  <Instance Name='proxy1' component="proxy1">
+  <Instance Name='proxy1' component="av.test.proxy1">
     <slave name='comp1'/>
     <slave name='comp2'/>
     <slave name='comp3'/>

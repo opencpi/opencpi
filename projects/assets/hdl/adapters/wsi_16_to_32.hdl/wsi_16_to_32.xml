@@ -1,4 +1,4 @@
-<HdlImplementation Language="vhdl" spec="wsi_16_to_32_spec">
+<HdlWorker Language="vhdl" spec="wsi_16_to_32_spec">
 
 
   <streaminterface name='in' datawidth='16'/>
@@ -6,4 +6,4 @@
   <!-- round(buffersize,16) = 32768/2 - 16 (metadata) - 16 (4 flags round up to 16))] -->
   <streaminterface name='out' datawidth='32' maxMessageValues='16352'/>
 
-</HdlImplementation>
+</HdlWorker>

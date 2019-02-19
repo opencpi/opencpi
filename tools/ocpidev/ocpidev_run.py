@@ -16,12 +16,14 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
+"""
+Main program that processes the run verb for ocpidev
+"""
 import argparse
 import os
 import sys
 import pydoc
 import types
-sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
 import _opencpi.assets.factory as ocpifactory
 import _opencpi.util as ocpiutil
 
@@ -35,28 +37,28 @@ def parse_cl_vars():
     return
     """
     description = ("Utility for running component unit-tests and simple applications \n" +
-                  "Component unit-tests have 5 phases: \n" +
-                  "    Generate: generate testing artifacts after finding the spec and the \n" +
-                  "              workers\n" +
-                  "    Build:    building HDL bitstream/executable artifacts for testing\n" +
-                  "    Prepare:  examine available built workers and available platforms, \n" +
-                  "              creating execution scripts to use them all for executing \n" +
-                  "              feasible tests.\n" +
-                  "    Run:      execute tests for all workers, configurations, test cases \n" +
-                  "              and platforms\n"
-                  "    Verify:   verify results from the execution of tests on workers and \n" +
-                  "              platforms\n \n" +
-                  "Usage Examples: \n" +
-                  "run a single application: \n" +
-                  "    ocpidev run application <app_name> \n"
-                  "run all applications in a project: \n" +
-                  "    ocpidev run applications \n"
-                  "run a single test: \n" +
-                  "    ocpidev run -l <library_dir> test <test_name> \n"
-                  "run all tests in a library: \n" +
-                  "    ocpidev run library <library_name> \n"
-                  "run generate and build stages of a single test: \n" +
-                  "    ocpidev run -l <library_dir>  --mode gen_build test <test_name>\n")
+                   "Component unit-tests have 5 phases: \n" +
+                   "    Generate: generate testing artifacts after finding the spec and the \n" +
+                   "              workers\n" +
+                   "    Build:    building HDL bitstream/executable artifacts for testing\n" +
+                   "    Prepare:  examine available built workers and available platforms, \n" +
+                   "              creating execution scripts to use them all for executing \n" +
+                   "              feasible tests.\n" +
+                   "    Run:      execute tests for all workers, configurations, test cases \n" +
+                   "              and platforms\n"
+                   "    Verify:   verify results from the execution of tests on workers and \n" +
+                   "              platforms\n \n" +
+                   "Usage Examples: \n" +
+                   "run a single application: \n" +
+                   "    ocpidev run application <app_name> \n"
+                   "run all applications in a project: \n" +
+                   "    ocpidev run applications \n"
+                   "run a single test: \n" +
+                   "    ocpidev run -l <library_dir> test <test_name> \n"
+                   "run all tests in a library: \n" +
+                   "    ocpidev run library <library_name> \n"
+                   "run generate and build stages of a single test: \n" +
+                   "    ocpidev run -l <library_dir>  --mode gen_build test <test_name>\n")
 
     parser = argparse.ArgumentParser(description=description,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -79,15 +81,15 @@ def parse_cl_vars():
     parser.add_argument("-v", "--verbose", action="store_true", help="Be verbose with output.")
     parser.add_argument("--keep-simulations", dest="keep_sims", action="store_true",
                         help="Keep HDL simulation files regardless of verification results.  " +
-                            "By default, simulation files are removed if the verification is " +
-                            "successful.  Warning: Simulation files can become large!")
+                        "By default, simulation files are removed if the verification is " +
+                        "successful.  Warning: Simulation files can become large!")
     parser.add_argument("--accumulate-errors", dest="acc_errors", action="store_true",
                         help="When enabled, execution or verification errors are accumulated " +
-                            "(i.e. not stop the process) and simply be reported as they occur, " +
-                            "rather than ending the test upon first failure detected.")
+                        "(i.e. not stop the process) and simply be reported as they occur, " +
+                        "rather than ending the test upon first failure detected.")
     parser.add_argument("--view", dest="view", action="store_true",
                         help="When set the view script (view.sh) for this test is run at the " +
-                             "conclusion of the test's execution.  Not valid for Application")
+                        "conclusion of the test's execution.  Not valid for Application")
     parser.add_argument("-G", "--only-platform", metavar="ONLY_PLAT", dest="only_plats",
                         action="append", help="Specify which platforms to use with a unit test " +
                         "from the list of runtime platforms.")
@@ -128,7 +130,7 @@ def parse_cl_vars():
                         "ocpirun.  Not valid for Test.")
     parser.add_argument("--mode", dest="mode", default="all", choices=MODES,
                         help="Specify which phase(s) of the unit test to execute.  Not valid " +
-                             "for Application.")
+                        "for Application.")
     parser.add_argument("--remotes", dest="remote_test_sys", action="append",
                         help="Specify remote systems to run the test(s) using the format " +
                         "<IP address=u/n=p/w=NFS mount directory>.  see OpenCPI Component " +
@@ -154,7 +156,8 @@ def get_directory(args, name, lib):
     ret_val = os.path.realpath('.')
     if args['noun'] == "applications":
         ret_val = ocpiutil.get_path_to_project_top() + "/applications"
-    elif args['noun'] in ["test", "library"] and name and name != os.path.basename(os.path.realpath('.')):
+    elif (args['noun'] in ["test", "library"] and name and
+          name != os.path.basename(os.path.realpath('.'))):
         ret_val = os.path.realpath('.') + "/" + lib + "/" + name
         if args['noun'] == "test" and not ret_val.endswith(".test"):
             ret_val = ret_val + ".test"
@@ -190,6 +193,9 @@ def set_init_values(args, dir_type):
                                          dir_type + "\". Valid types are library and project")
 
 def main():
+    """
+    Function that is called if this module is called as a mian function
+    """
     args = parse_cl_vars()
     directory = None
     name = None
@@ -219,9 +225,7 @@ def main():
             ocpiutil.logging.debug("creating asset as the following \nname: " + str(name) + "\n" +
                                    "directory: " + str(directory) + "\nargs: " + str(args))
             my_asset = ocpifactory.AssetFactory.factory(args['noun'], directory,
-                                                       name, **args)
-            #TODO make sure return value is working right always returning zero ?
-
+                                                        name, **args)
             sys.exit(my_asset.run())
     except ocpiutil.OCPIException as ex:
         ocpiutil.logging.error(ex)

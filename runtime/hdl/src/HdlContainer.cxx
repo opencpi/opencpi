@@ -306,7 +306,7 @@ namespace OCPI {
 
       virtual void prepareProperty(OU::Property &mp,
 				   volatile uint8_t *&writeVaddr,
-				   const volatile uint8_t *&readVaddr) {
+				   const volatile uint8_t *&readVaddr) const {
         return WciControl::prepareProperty(mp, writeVaddr, readVaddr);
       }
 #undef OCPI_DATA_TYPE_S
@@ -463,8 +463,9 @@ OCPI_DATA_TYPES
 	  m_memorySize =
 	    m_properties.get32Register(memory_bytes, SDP::Properties);
 	  myDataOffset =
-	    (m_properties.get8Register(sdp_id, SDP::Properties) - 1) *
+	    m_properties.get8Register(sdp_id, SDP::Properties) *
 	    (1 << m_properties.get8Register(window_log2, SDP::Properties));
+	  ocpiDebug("SDP ID: %u:0x%zx", m_properties.get8Register(sdp_id, SDP::Properties), myDataOffset);
 	  myDesc.metaDataPitch      = 0;
 	  myDesc.metaDataBaseAddr   = 0; //m_properties.physOffset(offsetof(SDP::Properties,
 	                                 //       metadata));
@@ -657,7 +658,7 @@ OCPI_DATA_TYPES
 	    m_properties.set32Register(remoteFlagHi, OcdpProperties, (uint32_t)(addr >> 32));
 	    m_properties.set32Register(remoteFlagPitch, OcdpProperties, pitch);
 	  }
-	  ocpiDebug("HDL Port is %s, AFC, flag is 0x%" PRIx64 "pitch %u", 
+	  ocpiDebug("HDL Port is %s, AFC, flag is 0x%" PRIx64 " pitch %u", 
 		    isProvider() ? "consumer" : "producer", addr, pitch);
           break;
         case OCPI::RDT::ActiveMessage:

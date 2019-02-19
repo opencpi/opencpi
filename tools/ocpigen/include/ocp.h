@@ -124,6 +124,8 @@ class OcpPort : public Port {
  public:
   bool isOCP() const { return true; }
   bool needsControlClock() const;
+  bool haveWorkerOutputs() const;
+  bool haveWorkerInputs() const;
   void emitPortDescription(FILE *f, Language lang) const;
   void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
 			bool inPackage, bool inWorker,
@@ -134,32 +136,53 @@ class OcpPort : public Port {
   void emitSignals(FILE *f, Language lang, std::string &last, bool inPackage, bool inWorker,
 		   bool convert);
   void emitDirection(FILE *f, const char *implName, bool mIn, std::string &dir);
+  void emitRecordInputs(FILE *f);
+  void emitRecordOutputs(FILE *f);
   void emitRecordInterface(FILE *f, const char *implName);
   void emitRecordInterfaceConstants(FILE *f);
   void emitInterfaceConstants(FILE *f, Language lang);
   void emitVerilogSignals(FILE *f);
+  void emitVhdlShell(FILE *, Port *);
+  void emitVHDLShellPortMap(FILE *f, std::string &last);
   void emitVHDLSignalWrapperPortMap(FILE *f, std::string &last);
   void emitVHDLRecordWrapperSignals(FILE *f);
   void emitVHDLRecordWrapperAssignments(FILE *f);
   void emitVHDLRecordWrapperPortMap(FILE *f, std::string &last);
-  void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+  void emitConnectionSignal(FILE *f, bool output, Language lang, bool clock, std::string &signal);
+#if 1
+  void emitPortSignalsDir(FILE *f, bool output, Language lang, const char *indent,
+			  bool &any, std::string &comment, std::string &last, const InstancePort &ip);
+  void emitPortSignals(FILE *f, const InstancePort &ip, Language lang, const char *indent, bool &any,
+		       std::string &comment, std::string &last, const char *myComment, std::string &exprs);
+#else
   void emitPortSignalsDir(FILE *f, bool output, Language lang, const char *indent,
 			  bool &any, std::string &comment, std::string &last,
 			  OcpAdapt *adapt, Attachments &atts);
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
 		       std::string &last, const char *myComment, OcpAdapt *adapt,
-		       std::string *signalIn, std::string &exprs);
-  InstancePort &ocpSignalPrefix(std::string &signal, bool master, Language lang,
-				Attachments &atts);
-  void emitExprAssignments(std::string &out, std::string &signalIn, OcpAdapt *adapt,
-			   Attachments &atts);
+		       std::string *signalIn, std::string &clockSignal, std::string &exprs);
+#endif
+  InstancePort &ocpSignalPrefix(bool master, bool clock, Language lang, const Attachments &atts,
+				std::string &signal);
+#if 1
+  void emitExprAssignments(const InstancePort &ip, Language lang, std::string &out);
+  void connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, const OcpAdapt *oa, std::string &thisComment,
+			Language lang, const InstancePort &ip, std::string &signal);
+#else
+  void emitExprAssignments(std::string &out, std::string &signalIn, OcpAdapt *adapt, Attachments &atts,
+			   Language lang);
   void connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, OcpAdapt &oa,
 			std::string &signal, std::string &thisComment, Language lang,
-			Attachments &atts);
+			const Attachments &atts);
+#endif
+  void getClockSignal(const InstancePort &ip, Language lang, std::string &s);
   const char *doPatterns(unsigned nWip, size_t &maxPortTypeName);
   const char *deriveOCP();
   const char *resolveExpressions(OCPI::Util::IdentResolver &ir);
+  const char *adjustConnection(Connection &c, bool isProducer, OcpAdapt *myAdapt, bool &myHasExpr,
+			       ::Port &otherPort, OcpAdapt *otherAdapt, bool &otherHasExpr,
+			       Language lang, size_t &unused);
 };
 
 struct OcpAdapt {

@@ -16,13 +16,17 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from .abstract import *
-from .worker import *
-import os
-import sys
+"""
+Defintion of HDL assembly and related classes
+"""
+
 import logging
-sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
 import _opencpi.util as ocpiutil
+import _opencpi.hdltargets as hdltargets
+from .factory import AssetFactory
+from .abstract import HDLBuildableAsset, ReportableAsset
+from .worker import HdlCore
+
 
 class HdlAssembly(HdlCore):
     """
@@ -36,6 +40,12 @@ class HdlAssembly(HdlCore):
         super().__init__(directory, name, **kwargs)
         # TODO Collect list of included HdlCores
 
+    def build(self):
+        """
+        Function to build the HdlAssembly
+        """
+        raise NotImplementedError("build() is not implemented")
+
 class HdlApplicationAssembly(HdlAssembly, ReportableAsset):
     """
     The classic user-facing HDL Assembly. This is a collection of
@@ -47,6 +57,12 @@ class HdlApplicationAssembly(HdlAssembly, ReportableAsset):
         super().__init__(directory, name, **kwargs)
         # container maps container name/XML to HdlContainer object
         self.containers = {}
+
+    def build(self):
+        """
+        Function to build the HdlApplicationAssembly
+        """
+        raise NotImplementedError("build() is not implemented")
 
     # TODO: Should we just init for all platforms in constructor, or wait for
     # user to call some function that requires containers and enforce that they
@@ -75,8 +91,8 @@ class HdlApplicationAssembly(HdlAssembly, ReportableAsset):
             #       hdl-pre calls multiple sub-make commands and causes complications
             assemb_vars = ocpiutil.set_vars_from_make(mk_file=self.directory + "/Makefile",
                                                       mk_arg=plat_string +
-                                                             " shellhdlassemblyvars " +
-                                                             "ShellHdlAssemblyVars=1",
+                                                      " shellhdlassemblyvars " +
+                                                      "ShellHdlAssemblyVars=1",
                                                       verbose=True)
             if "Containers" not in assemb_vars:
                 raise ocpiutil.OCPIException("Could not get list of HDL containers from " +
@@ -249,6 +265,12 @@ class HdlContainer(HdlAssembly, ReportableAsset):
                                                                          name=impl_name,
                                                                          platform=plat)
 
+    def build(self):
+        """
+        Function to build the HdlContainer
+        """
+        raise NotImplementedError("build() is not implemented")
+
     def get_utilization(self):
         """
         Get the utilization Report for this Container. It will be combination of reports for
@@ -296,6 +318,12 @@ class HdlContainerImplementation(HdlAssembly):
         # The subdirectory where target-specific artifacts will be made for this
         # container implementation
         self.target_subdir = self.directory + "/target-" + self.platform.target.name
+
+    def build(self):
+        """
+        Function to build the HdlContainerImplementation
+        """
+        raise NotImplementedError("build() is not implemented")
 
     def get_utilization(self):
         """

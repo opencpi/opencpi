@@ -29,6 +29,7 @@ endif
 # SKIP_TEST if the test should not run
 -include localinclude.mk
 
+ECHO=/bin/echo
 WORKER=advanced_pattern
 ifneq (,$(filter testrun,$(MAKECMDGOALS)))
 ifeq (,$(VG))
@@ -74,7 +75,7 @@ build: testgen_wrapper
 prepare: testgen_wrapper
 
 testgen_wrapper:
-	$(foreach tst, $(TESTS), echo -n "Generating $(tst): " && \
+	$(foreach tst, $(TESTS), $(ECHO) -n "Generating $(tst): " && \
 	  cat $(tst)/description && \
 	  $(MAKE) -f ../Makefile -sC $(tst) --no-print-directory testgen && \
 	  ) true
@@ -84,13 +85,13 @@ ifneq (,$(IP))
 	@echo "wrapper not written to handle remote!"
 	@false
 endif
-	$(foreach tst, $(TESTS), echo -n "Running $(tst): " && \
+	$(foreach tst, $(TESTS), $(ECHO) -n "Running $(tst): " && \
 	  cat $(tst)/description && \
 	  $(MAKE) -f ../Makefile -sC $(tst) --no-print-directory testrun OCPI_HDL_SIMULATORS= && \
 	  ) true
 
 testverify_wrapper:
-	$(foreach tst, $(TESTS), echo -n "Verifying $(tst): " && \
+	$(foreach tst, $(TESTS), $(ECHO) -n "Verifying $(tst): " && \
 	  cat $(tst)/description && \
 	  $(MAKE) -f ../Makefile -sC $(tst) --no-print-directory testverify && \
 	  ) true
@@ -149,14 +150,14 @@ endif
 
 tests: clean
 ifneq (,$(IP))
-	$(foreach tst, $(TESTS), echo -n "Executing $(tst): " && \
+	$(foreach tst, $(TESTS), $(ECHO) -n "Executing $(tst): " && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testgen && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testrun REMOTE=1 TEST=$(tst) && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testverify && \
 	  ) true
 else
 ifneq ($(RCC_CONTAINERS),0)
-	$(foreach tst, $(TESTS), echo -n "Executing ${tst}: " && \
+	$(foreach tst, $(TESTS), $(ECHO) -n "Executing ${tst}: " && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testgen && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testrun OCPI_HDL_SIMULATORS= && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testverify && \

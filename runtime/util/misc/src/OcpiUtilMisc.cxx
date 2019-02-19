@@ -34,6 +34,7 @@
 #include "OcpiOsFileSystem.h"
 #include "OcpiUtilValue.h"
 #include "OcpiUtilException.h"
+#include "OcpiUtilUUID.h"
 #include "OcpiUtilMisc.h"
 
 /*
@@ -43,7 +44,7 @@
  */
 
 namespace {
-  char i2sDigits[16] = {
+  static const char i2sDigits[16] = {
     '0', '1', '2', '3', '4', '5', '6', '7',
     '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
   };
@@ -55,25 +56,19 @@ namespace OCPI {
 std::string
 integerToString (int value)
 {
-  bool positive = (value >= 0);
+  const bool positive = (value >= 0);
   unsigned count=1;
-  int tmp;
 
   if (!positive) {
     value = -value;
     count++;
   }
 
-  for (tmp=value; tmp>9; count++) {
+  for (int tmp=value; tmp>9; count++) {
     tmp /= 10;
   }
 
-  std::string result;
-  result.resize (count);
-
-  if (!positive) {
-    result[0] = '-';
-  }
+  std::string result(count,'-');
 
   while (value > 9) {
     result[--count] = i2sDigits[value%10];
@@ -251,6 +246,8 @@ stringToUnsigned (const std::string & str,
   return res;
 }
 
+#if 0
+// DISABLED - this is just broken - assuming strtoul is "good enough" is unacceptable
 unsigned long long
 stringToULongLong (const std::string & str,
                                     unsigned int base)
@@ -260,7 +257,8 @@ stringToULongLong (const std::string & str,
 
   errno = 0;
 
-#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+// TODO: Move this to autotools checking if strtoull is available and not this hack
+#if (defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) || (__cplusplus >= 201103)
   unsigned long long int value;
   value = std::strtoull (txtPtr, &endPtr, (int)base);
 #else
@@ -274,6 +272,7 @@ stringToULongLong (const std::string & str,
 
   return value;
 }
+#endif // disabled stringToULongLong
 
 /*
  * ----------------------------------------------------------------------
@@ -725,10 +724,33 @@ unsigned fls64(uint64_t n) {
 
 const std::string &
 getSystemId() {
-  static std::string *id = NULL;
-  if (!id)
-    id = new std::string(getSystemAddr().pretty());
-  return *id;
+  static std::string id;
+  if (id.empty()) {
+    OCPI::OS::Ether::Address addr;
+    try {
+      addr = getSystemAddr();
+    } catch (Error&) {
+      // No valid MAC address found; generate a fake one (AV-4173)
+      // We'll generate a UUID with the format:
+      // edea2406-83ab-4405-a8fd-514a3f496c3c
+      // and then take the last part (514a3f496c3c) as the six octets
+      std::string fakeUUID = UUID::binaryToHex(UUID::produceRandomUUID());
+      // stringToULongLong is broken... fakeUUID.erase(0, 24); addr.set64(stringToULongLong(fakeUUID, 16));
+      // We don't have strtoull on some old compilers, and don't really care about the value, so scrambling bytes is OK
+      uint64_t fake_addr = 0;
+      for (auto i=3; i; --i) { // 3 16-bit chunks = 48 bits (MAC)
+        fake_addr <<= 16;
+        const size_t fakeUUID_m4 = fakeUUID.length()-4; // last four chars
+        const char *sub = fakeUUID.data()+fakeUUID_m4;
+        fake_addr |= stringToUnsigned(sub, 16);
+        fakeUUID.erase(fakeUUID_m4);
+      }
+      addr.set64(fake_addr);
+      ocpiDebug("Establishing system identity from random UUID: %s", addr.pretty());
+    }
+    id = addr.pretty();
+  }
+  return id;
 }
 
 OCPI::OS::Ether::Address &
@@ -742,13 +764,13 @@ getSystemAddr() {
     if (error.empty()) {
       OE::Interface eif;
       while (ifs.getNext(eif, error)) {
-	if (eif.addr.isEther()) {
-	  addr = eif.addr;
-	  ocpiDebug("Establishing system identify from interface '%s': %s",
-		    eif.name.c_str(), addr.pretty());
-	  set = true;
-	  break;
-	}
+        if (eif.addr.isEther()) {
+          addr = eif.addr;
+          ocpiDebug("Establishing system identity from interface '%s': %s",
+                    eif.name.c_str(), addr.pretty());
+          set = true;
+          break;
+        }
       }
       if (error.empty() && !set)
 	throw Error("No network interface found to establish a system identity from its MAC address");
@@ -1035,9 +1057,9 @@ getCDK() {
     } else {
       l_cdk = getOpenCPI() + "/cdk";
       if (!isCdk(l_cdk))
-	throw Error("When looking for the OpenCPI CDK, \"%s\" is not a valid penCPI CDK",
-		    l_cdk.c_str());
-    }      
+        throw Error("When looking for the OpenCPI CDK, \"%s\" is not a valid OpenCPI CDK",
+                    l_cdk.c_str());
+    }
     char *abs = ::realpath(l_cdk.c_str(), NULL);
     if (!abs)
       throw Error("Cannot get absolute path for OpenCPI CDK at \"%s\"",

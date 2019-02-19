@@ -22,6 +22,7 @@ import logging
 import datetime
 from functools import reduce
 import operator
+import curses
 from .file import *
 from _opencpi.util import OCPIException
 
@@ -53,6 +54,86 @@ def normalize_column_lengths(lists):
         newlists.append([format_function(length, elem) for elem, length in zip(oldlist, newlens)])
     return newlists
 
+def snip_widest_column(rows, forced_screen_width=None):
+    """
+    This function guesses at what the final TABLE width will be, then
+    shrinks the widest column so the table will fit in the available terminal
+    display without word-wrapping. This works best when there is one column in
+    your table that is super wide. It is not smart enough to handle the case of
+    having a LOT of columns, where more than one would need to be trimmed.
+
+    >>> table = [['this is a pretty long cell'] * 2]
+    >>> snip_widest_column(table, forced_screen_width=40)
+    [['this...', 'this is a pretty long cell']]
+    >>>
+
+    >>> table = [['this is a pretty long cell'] * 2]
+    >>> snip_widest_column(table, forced_screen_width=80)
+    [['this is a pretty long cell', 'this is a pretty long cell']]
+    >>>
+
+    >>> table = [['this is a pretty long cell'] * 2]
+    >>> snip_widest_column(table, forced_screen_width=10)
+    [['this is a pretty long cell', 'this is a pretty long cell']]
+    >>>
+
+    >>> table = [['cel'] * 2]
+    >>> snip_widest_column(table, forced_screen_width=40)
+    [['cel', 'cel']]
+    >>>
+    """
+    # forced_screen_width is really just for unit testing. If
+    # it's set, then we don't even try to figure out what the user's
+    # terminal size is. Otherwise, we attempt to determine the terminal
+    # size, which could fail if don't actually have a terminal!
+    if forced_screen_width is not None:
+        screen_width = forced_screen_width
+    else:
+        try:
+            stdscr = curses.initscr()
+            screen_width = curses.COLS
+            curses.endwin()
+        except Exception as ex:
+            logging.error(ex)
+            return rows
+
+    # Take a nice guess at the final width of the table to be displayed.
+    # Just add 3 to each column width to account for their spacing, 
+    # plus 1 table border char.
+    table_width = max([ sum([ len(col)+3 for col in row ]) for row in rows]) + 1
+
+    if table_width <= screen_width:
+        return rows
+    
+    trim_amount = abs(screen_width - table_width)
+
+    # Find the column index with the widest cell.
+    max_cell_len = 0
+    widest_col_index = 0
+    for i_row, row in enumerate(rows):
+        for i_col, cell in enumerate(row):
+            if len(cell) > max_cell_len:
+                max_cell_len = len(cell)
+                widest_col_index = i_col
+    
+    # Do nothing if it looks like we'll try to trim a column more than
+    # its width. This will happen if we have LOTS of tiny columns, where
+    # we'd need to be smarter and trim more than just one column.
+    if trim_amount + len('...') >= max_cell_len:
+        return rows
+    
+    # Now edit.
+    for i_row, row in enumerate(rows):
+        for i_col, cell in enumerate(row):
+            if i_col == widest_col_index:
+                # Snip all the cells in the wide column
+                rows[i_row][i_col] = rows[i_row][i_col][:(-trim_amount)]
+                if not rows[i_row][i_col][-1].isspace() and len(rows[i_row][i_col]) > len('...'):
+                    # Replace the last few chars with ... when appropriate.
+                    rows[i_row][i_col] = rows[i_row][i_col][:-len('...')] + '...'
+
+    return rows
+
 def format_table(rows, col_delim='|', row_delim=None, surr_cols_delim='|', surr_rows_delim='-',
                  underline=None):
     """
@@ -63,7 +144,7 @@ def format_table(rows, col_delim='|', row_delim=None, surr_cols_delim='|', surr_
     determine the border of the table.
     """
 
-    rows_norm = normalize_column_lengths(rows)
+    rows_norm = snip_widest_column( normalize_column_lengths(rows) )
 
     # If an underline character was provided, insert a row containing this character repeated
     # at position 1 (right below the header)

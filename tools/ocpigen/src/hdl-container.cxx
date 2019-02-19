@@ -27,9 +27,9 @@
 #include "hdl-container.h"
 
 static void
-emitTimeClient(std::string &assy, const char *instance, const char *port) {
+emitTimeClient(std::string &assy, const char *instance, const char *portName, Port *port = NULL) {
   OU::formatAdd(assy,
-		"  <instance worker='time_client' name='%s_%s_time_client'/>\n"
+		"  <instance worker='time_client%s' name='%s_%s_time_client'/>\n"
 		"  <connection>\n"
 		"    <port instance='%s_%s_time_client' name='wti'/>\n"
 		"    <port instance='%s' name='%s'/>\n"
@@ -38,10 +38,11 @@ emitTimeClient(std::string &assy, const char *instance, const char *port) {
 		"    <port instance='pfconfig' name='time'/>\n"
 		"    <port instance='%s_%s_time_client' name='time'/>\n"
 		"  </connection>\n",
-		instance, port,
-		instance, port,
-		instance, port,
-		instance, port);
+		port && port->myClock && !port->clock->m_output ?  "_co" : "",
+		instance, portName,
+		instance, portName,
+		instance, portName,
+		instance, portName);
 }
 
 HdlContainer *HdlContainer::
@@ -445,10 +446,12 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 		      dt.ports()[0]->pname());
 	nWCIs++;
       }
-      // Instance time clients for the assembly
-      for (PortsIter pi = dt.ports().begin(); pi != dt.ports().end(); pi++)
-	if ((*pi)->m_type == WTIPort)
-	  emitTimeClient(assy, di.cname(), (*pi)->pname());
+      // Instance time clients for the device
+      for (auto pi = dt.ports().begin(); pi != dt.ports().end(); ++pi) {
+        Port &p = **pi;
+        if (p.m_type == WTIPort)
+          emitTimeClient(assy, di.cname(), p.pname(), &p);
+      }
     }
     for (ContConnectsIter ci = connections.begin(); ci != connections.end(); ci++)
       if ((err = emitConnection(assy, uNocs, nWCIs, *ci)))
@@ -466,9 +469,11 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   for (UNocsIter ii = uNocs.begin(); ii != uNocs.end(); ii++)
     ii->second.terminate(assy);
   // Instance time clients for the assembly
-  for (PortsIter pi = m_appAssembly.m_ports.begin(); pi != m_appAssembly.m_ports.end(); pi++)
-    if ((*pi)->m_type == WTIPort)
-      emitTimeClient(assy, m_appAssembly.m_implName, (*pi)->pname());
+  for (auto pi = m_appAssembly.m_ports.begin(); pi != m_appAssembly.m_ports.end(); ++pi) {
+    Port &p = **pi;
+    if (p.m_type == WTIPort)
+      emitTimeClient(assy, m_appAssembly.m_implName, p.pname(), &p);
+  }
   OU::formatAdd(assy,
 		"  <instance worker='metadata'/>\n"
 		"    <connection>\n"
@@ -772,7 +777,7 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
 		  sma.c_str(), index++,
 		  dma.c_str(), port->isDataProducer() ? "to" : "from",
 		  sma.c_str(), port->isDataProducer() ? "from" : "to");
-    // Add time client to OCDP
+    // Add time client to OCDP's WTI port
     emitTimeClient(assy, dma.c_str(), "wti");
     ctl = dma;
   }
@@ -1154,7 +1159,7 @@ parsePlatform(ezxml_t xml, std::string &config, std::string &constraints,
       if (cf)
 	return "specifying both \"config\" attribute and config after slash in \"platform\" "
 	  "attribute is invalid";
-      p.assign(pf, slash - pf);
+      p.assign(pf, OCPI_SIZE_T_DIFF(slash, pf));
       cf = slash + 1;
     } else
       p = pf;

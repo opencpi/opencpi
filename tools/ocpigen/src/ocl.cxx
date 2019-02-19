@@ -191,8 +191,8 @@ emitImplOCL() {
       if (p.m_isParameter) {
 	std::string value;
 	fprintf(f,
-		"#ifndef PARAM_%s\n"
-		"#define PARAM_%s() (%s)\n"
+		"#ifndef OCPI_PARAM_%s\n"
+		"#define OCPI_PARAM_%s() (%s)\n"
 		"#endif\n",
 		p.m_name.c_str(), p.m_name.c_str(), rccPropValue(p, value));
       }
@@ -246,13 +246,13 @@ emitImplOCL() {
     fprintf(f,"  %c%sProperties properties;\n",
             toupper(m_implName[0]), m_implName + 1);
     if (m_ctl.sizeOfConfigSpace & 7)
-      fprintf(f, "  uint8_t pad0[(sizeof(%c%sProperties)+7)&~7];\n",
+      fprintf(f, "  uint8_t pad0[(sizeof(%c%sProperties)+7)&~7u];\n",
             toupper(m_implName[0]), m_implName + 1);
   }
   if (m_localMemories.size())
     for (unsigned n = 0; n < m_localMemories.size(); n++) {
       LocalMemory* mem = m_localMemories[n];
-      fprintf(f, "  uint8_t %s[%zu];\n", mem->name, (mem->sizeOfLocalMemory+7)&~7);
+      fprintf(f, "  uint8_t %s[%zu];\n", mem->name, (mem->sizeOfLocalMemory+7)&~7u);
     }
   fprintf(f,
           "} %c%sPersist;\n\n",
@@ -307,7 +307,7 @@ emitSkelOCL() {
   const char **cp;
   const char *mName;
   for (cp = OU::Worker::s_controlOpNames; *cp; cp++, op++)
-    if (m_ctl.controlOps & (1 << op)) {
+    if (m_ctl.controlOps & (1u << op)) {
       if ((err = rccMethodName(*cp, mName)))
 	return err;
       fprintf(f,
@@ -474,7 +474,7 @@ emitEntryPointOCL() {
   unsigned op = 0;
   const char* mName;
   for (const char** cp = OU::Worker::s_controlOpNames; *cp; cp++, op++)
-    if (m_ctl.controlOps & (1 << op )) {
+    if (m_ctl.controlOps & (1u << op)) {
       if ((err = rccMethodName (*cp, mName)))
         return err;
       else {
@@ -514,7 +514,7 @@ parseOcl() {
     return OU::esprintf("For an OCL worker, language \"%s\" is invalid", lang);
   ezxml_t xctl;
   if ((err = parseSpec()) ||
-      (err = parseImplControl(xctl, NULL)) ||
+      (err = parseImplControl(xctl)) ||
       (xctl && (err = OE::checkAttrs(xctl, GENERIC_IMPL_CONTROL_ATTRS, (void *)0))) ||
       (err = parseImplLocalMemory()))
     return err;

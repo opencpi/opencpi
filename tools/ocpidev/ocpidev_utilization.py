@@ -24,7 +24,6 @@ import os
 import sys
 import pydoc
 import types
-sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
 import _opencpi.util as ocpiutil
 import _opencpi.assets.factory as ocpifactory
 from _opencpi.assets.abstract import ReportableAsset
@@ -117,18 +116,18 @@ def parse_cl_vars():
             exit(1)
             ), parser)
     parser.add_argument("noun", type=str, nargs='?', help="This is either the noun to show or the" +
-                               " authoring model to operate on. If choosing an authoring model " +
-                               "(hdl), there are secondary nouns that can follow.\nValid " +
-                               "nouns are: " + ", ".join(FIRST_NOUNS) + "\nValid secondary " +
-                               "nouns for 'hdl' are: " + ", ".join(SUBNOUNS['hdl']),
-                               choices=FIRST_NOUNS)
+                        " authoring model to operate on. If choosing an authoring model " +
+                        "(hdl), there are secondary nouns that can follow.\nValid " +
+                        "nouns are: " + ", ".join(FIRST_NOUNS) + "\nValid secondary " +
+                        "nouns for 'hdl' are: " + ", ".join(SUBNOUNS['hdl']),
+                        choices=FIRST_NOUNS)
     parser.add_argument("-v", "--verbose", action="store_true", help="Be verbose with output.")
 
     parser.add_argument("--format", dest="output_format", default="table",
                         choices=ReportableAsset.valid_formats,
                         help='Format to output utilization information. "latex" results in ' +
-                             'silent stdout, and all output goes to "utilization.inc" files ' +
-                             'in the directories for the assets acted on.')
+                        'silent stdout, and all output goes to "utilization.inc" files ' +
+                        'in the directories for the assets acted on.')
     parser.add_argument("--hdl-platform", metavar="HDL_PLAT", dest="hdl_plats", action="append",
                         help="Specify which HDL platform from the list of buildable " +
                         "platforms to show utilization for.")
@@ -188,18 +187,18 @@ def set_init_values(args, dir_type):
     Determine which contents of library and project objects need to be initialized and set the
     corresponding kwargs values
     """
-    noun = dir_type if args['noun'] is None else args['noun']
-    if (noun in ["workers", "library", "libraries", "project"]
-        or dir_type in ["library", "libraries", "project"]):
+    my_noun = dir_type if args['noun'] is None else args['noun']
+    container_nouns = ["library", "libraries", "project"]
+    if (my_noun in ["workers", "library", "libraries", "project"] or dir_type in container_nouns):
         args['init_workers'] = True
-    if noun in ["hdl-assemblies", "project"] or dir_type in ["hdl-assemblies", "project"]:
+    if my_noun in ["hdl-assemblies", "project"] or dir_type in ["hdl-assemblies", "project"]:
         args['init_hdlassembs'] = True
-    if noun in ["workers", "libraries", "project"] or dir_type in ["libraries", "project"]:
+    if my_noun in ["workers", "libraries", "project"] or dir_type in ["libraries", "project"]:
         args['init_libs'] = True
-    if noun in ["hdl-platforms", "project"] or dir_type in ["hdl-platforms", "project"]:
+    if my_noun in ["hdl-platforms", "project"] or dir_type in ["hdl-platforms", "project"]:
         args['init_hdlplats'] = True
 
-    if noun == "workers":
+    if my_noun == "workers":
         if dir_type not in ["library", "libraries", "project"]:
             raise ocpiutil.OCPIException('Use of workers noun in an invalid directory type: "' +
                                          dir_type + '". Valid types are library and project')
@@ -208,6 +207,9 @@ def set_init_values(args, dir_type):
         args['hdl_plats'] = ["all"]
 
 def main():
+    """
+    Function that is called if this module is called as a mian function
+    """
     args = parse_cl_vars()
     try:
         cur_dir = args['cur_dir']

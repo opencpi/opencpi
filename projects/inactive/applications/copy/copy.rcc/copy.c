@@ -52,8 +52,10 @@ run(RCCWorker *self, RCCBoolean timeout, RCCBoolean *newRunCondition) {
   self->container.send(out, &in->current, in->input.u.operation, in->input.length);
   return RCC_OK;
 #else
-  memcpy(out->current.data, in->current.data, in->input.length);
   out->output.length = in->input.length;
+  if (in->input.length == 0)
+    return RCC_ADVANCE_DONE;
+  memcpy(out->current.data, in->current.data, in->input.length);
   return RCC_ADVANCE;
 #endif
 }

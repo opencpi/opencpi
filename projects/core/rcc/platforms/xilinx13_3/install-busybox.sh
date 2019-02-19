@@ -35,12 +35,17 @@ export CROSS_COMPILE=$OcpiCrossCompile
 # In ntpd from busy box you cannot use -c to give your own config file.
 # This is a patch that will change the location to what we want and give us the
 # option to add -c
-patch -p0 < $OcpiThisPrerequisiteDir/prerequisites/$me/ntpd.patch
-echo 1
+if ! patch -R -p0 -s -f --dry-run < $OcpiThisPrerequisiteDir/prerequisites/$me/ntpd.patch > /dev/null; then
+  patch -p0 < $OcpiThisPrerequisiteDir/prerequisites/$me/ntpd.patch
+fi
 cp $OcpiThisPrerequisiteDir/prerequisites/$me/busybox.config .config
+# Adding appropriate sysroot to config file based off of OcpiCrossCompile variable
+sysroot=$(echo $OcpiCrossCompile | sed "s/\/bin\/$OcpiCrossHost-//")/$OcpiCrossHost/libc
+# Replacing / with \/
+sysroot=$(echo $sysroot | sed 's/\//\\\//g')
+sed -i "s/CONFIG_SYSROOT=.*/CONFIG_SYSROOT=\"$sysroot\"/g" .config
 make -j
 # Reverse the patch so other sw platforms are not affected
-echo 2
 patch -R -p0 < $OcpiThisPrerequisiteDir/prerequisites/$me/ntpd.patch
 # Move contents produced to specific build dir
 cd -

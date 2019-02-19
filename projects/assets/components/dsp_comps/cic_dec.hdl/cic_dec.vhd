@@ -122,10 +122,10 @@ begin
         case zlm_current_state is
           when INIT_s =>
             -- 'Full' ZLM present, send ZLM
-            if (in_in.som = '1' and in_in.eom = '1' and in_in.valid = '0' and zlm_force_eom_l = '0') then
+            if (in_in.ready = '1' and in_in.som = '1' and in_in.eom = '1' and in_in.valid = '0' and zlm_force_eom_l = '0') then
               zlm_current_state <= SEND_s;
            -- 'Partial' ZLM present, wait for remaining portion of ZLM
-            elsif (in_in.som = '1' and in_in.valid = '0') then
+            elsif (in_in.ready = '1' and in_in.som = '1' and in_in.valid = '0') then
               zlm_current_state <= WAIT_s;
             -- Observe backpressure
             elsif (zlm_force_eom = '1' and zlm_force_som = '1' and out_in.ready = '0') then
@@ -137,10 +137,10 @@ begin
           when WAIT_s =>
             zlm_take          <= '1';
             -- Valid message from upstream, return to ZLM detection
-            if (in_in.valid = '1') then
+            if (in_in.ready = '1' and in_in.valid = '1') then
               zlm_current_state <= INIT_s;
             -- Remainder of 'partial' ZLM present, send ZLM
-            elsif (in_in.eom = '1') then
+            elsif (in_in.ready = '1' and in_in.eom = '1') then
               zlm_current_state <= SEND_s;
             end if;
           when SEND_s =>

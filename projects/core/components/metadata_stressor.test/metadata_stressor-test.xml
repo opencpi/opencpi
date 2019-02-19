@@ -1,30 +1,92 @@
 <!-- This is the test xml for testing component "metadata_stressor" -->
 <Tests UseHDLFileIo='true'>
 <!-- these two tests can fail because of AV-4720 and will be added back once that is resolved -->
-<!--
+
+  <!-- these cases are testing weird combinations of swms and zlms -->
+  <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
+    <input Port='in' MessagesInFile='true' StressorMode='full' script='generate.py 0 4'/>
+    <property name='mode' values='bypass'/>
+    <output Port='out' Script='verify.py' MessagesInFile='true'/>
+  </case>
+
+  <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
+    <input Port='in' MessagesInFile='true' StressorMode='full' script='generate.py 0 2'/>
+    <property name='mode' values='bypass'/>
+    <output Port='out' Script='verify.py' MessagesInFile='true'/>
+  </case>
+
+  <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
+    <input Port='in' MessagesInFile='true' StressorMode='full' script='generate.py 0 3'/>
+    <property name='mode' values='bypass'/>
+    <output Port='out' Script='verify.py' MessagesInFile='true'/>
+  </case>
+
   <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
     <input port='in' script='generate.py 4096 1' messagesInFile='true' />
     <property name='mode' values='full,metadata,data'/>
     <property name='insert_nop' values='1'/>
     <property name='enable_take_lsfr' values='1'/>
     <property name='enable_give_lsfr' values='1'/>
-    <output port='out' script='verify.py 1' disableBackpressure='false' stopOnEOF='true'/>
+    <output port='out' script='verify.py' messagesInFile='true' stopOnEOF='true'/>
   </case>
 
   <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
     <input port='in' script='generate.py 4096 1' messagesInFile='true' />
     <property name='mode' values='full,metadata,data'/>
-    <output port='out' script='verify.py 1' disableBackpressure='true' stopOnEOF='true'/>
+    <output port='out' script='verify.py' messagesInFile='true' stopOnEOF='true'/>
   </case>
--->
+
+  <!-- these cases are testing ending on different states -->
   <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
-    <input port='in' script='generate.py 4096 0' messageSize='4' stressorMode='full'/>
-    <property name='mode' values='full,metadata,data'/>
-    <property name='take_duty' values='1,5'/>
-    <property name='give_duty' values='1,4'/>
+    <input port='in' script='generate.py 90 0' messageSize='4' stressorMode='full'/>
+    <property name='mode' values='full'/>
     <property name='insert_nop' values='0,1'/>
-    <output port='out' script='verify.py 0' stopOnEOF='true'/>
+    <output port='out' script='verify.py' stopOnEOF='true'/>
   </case>
+
+  <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
+    <input port='in' script='generate.py 91 0' messageSize='4' stressorMode='full'/>
+    <property name='mode' values='full'/>
+    <property name='insert_nop' values='0,1'/>
+    <output port='out' script='verify.py' stopOnEOF='true'/>
+  </case>
+
+  <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
+    <input port='in' script='generate.py 92 0' messageSize='4' stressorMode='full'/>
+    <property name='mode' values='full'/>
+    <property name='insert_nop' values='0,1'/>
+    <output port='out' script='verify.py' stopOnEOF='true'/>
+  </case>
+
+  <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
+    <input port='in' script='generate.py 93 0' messageSize='4' stressorMode='full'/>
+    <property name='mode' values='full'/>
+    <property name='insert_nop' values='0,1'/>
+    <output port='out' script='verify.py' stopOnEOF='true'/>
+  </case>
+
+  <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
+    <input port='in' script='generate.py 94 0' messageSize='4' stressorMode='full'/>
+    <property name='mode' values='full'/>
+    <property name='insert_nop' values='0,1'/>
+    <output port='out' script='verify.py' stopOnEOF='true'/>
+  </case>
+
+  <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
+    <input port='in' script='generate.py 95 0' messageSize='4' stressorMode='full'/>
+    <property name='mode' values='full'/>
+    <property name='insert_nop' values='0,1'/>
+    <output port='out' script='verify.py' stopOnEOF='true'/>
+  </case>
+
+  <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
+    <input port='in' script='generate.py 96 0' messageSize='4' stressorMode='full'/>
+    <property name='mode' values='full'/>
+    <property name='insert_nop' values='0,1'/>
+    <output port='out' script='verify.py' stopOnEOF='true'/>
+  </case>
+
+  <!-- these cases are testing more common operations -->
   <case timeout='240' ExcludeWorkers='metadata_stressor.rcc'>
     <input port='in' script='generate.py 4096 0' messageSize='128' stressorMode='full'/>
     <property name='mode' values='metadata, data, full'/>
@@ -34,17 +96,19 @@
     <property name='enable_give_lsfr' values='0,1'/>
     <property name='insert_nop' values='0,1'/>
     <property name='seed' values='35'/>
-    <output port='out' script='verify.py 0' stopOnEOF='true'/>
+    <output port='out' script='verify.py' stopOnEOF='true'/>
   </case>
-  <case duration='100' ExcludeWorkers='metadata_stressor.rcc'>
+
+  <!-- <case duration='100' ExcludeWorkers='metadata_stressor.rcc'>
     <input port='in' script='generate.py 4096 0' messageSize='128' stressorMode='full'/>
     <property name='allow_zlms' values='1'/>
     <property name='mode' values='metadata,full'/>
     <property name='insert_nop' values='0,1'/>
-    <output port='out' script='verify.py 0' stopOnEOF='false'/>
-  </case>
+    <output port='out' script='verify.py' stopOnEOF='false'/>
+  </case> -->
+
   <case timeout='120' ExcludeWorkers='metadata_stressor.hdl'>
     <input port='in' script='generate.py 4096 0'/>
-    <output port='out' script='verify.py 0'/>
+    <output port='out' script='verify.py'/>
   </case>
 </Tests>

@@ -127,6 +127,7 @@ namespace OCPI {
         bool m_knownRole;     // role is known
         bool m_bidirectional; // possible when inherited from a port
         bool m_provider;      // is this attachment acting as a provider to the world?
+        bool isProducer() const { return !m_provider; } // migration aid
         Role();
       };
       // The attachment of a connection to external or port
@@ -156,10 +157,13 @@ namespace OCPI {
         // and the XML assembly might not use port names
         mutable PValueList m_parameters;
         Port *m_connectedPort; // the "other" port of the connection
+	Connection *m_connection; // for navigating parameters
         const char *cname() const { return m_name.c_str(); }
-        const char *parse(ezxml_t x, Assembly &a, const PValue *pvl, const PValue *params);
-        const char *init(Assembly &a, const char *name, unsigned instance, bool isInput,
+        const char *parse(ezxml_t x, Assembly &a, Connection &c, const PValue *pvl, const PValue *params);
+        const char *init(Assembly &a, Connection &c, const char *name, unsigned instance, bool isInput,
                          bool bidi, bool known, size_t index, const PValue *params);
+	// Set parameters for a port after XML parsing, to override
+	const char *setParam(const char *name, const char *value);
       };
       struct Connection {
         std::string m_name;
@@ -221,11 +225,11 @@ namespace OCPI {
         *findInstanceForParam(const char *pName, const char *&assign, unsigned &instn),
         *checkInstanceParams(const char *pName, const PValue *params, bool checkMapped = false,
                              bool singleAssignment = false),
-        *addConnection(const char *name, Connection *&c),
+        *addConnection(const char *name, ezxml_t xml, Connection *&c),
         *getInstance(const char *name, unsigned &),
-        *addPortConnection(unsigned from, const char *name, unsigned to, const char *toPort,
-                           const char *transport, const OCPI::Util::PValue *params),
-        *addExternalConnection(unsigned instance, const char *port,
+        *addPortConnection(ezxml_t ix, unsigned from, const char *name, unsigned to,
+			   const char *toPort, const OCPI::Util::PValue *params),
+        *addExternalConnection(ezxml_t x, unsigned instance, const char *port,
                                const OCPI::Util::PValue *params = NULL, bool isInput = false,
                                bool bidi = false, bool known = false),
         *addExternalConnection(ezxml_t x, const OCPI::Util::PValue *params);

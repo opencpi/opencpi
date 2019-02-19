@@ -97,6 +97,7 @@ entity dc_offset_cancellation is
     TC         : in  signed(7 downto 0);
     DIN        : in  signed(DATA_WIDTH-1 downto 0);
     DIN_VLD    : in  std_logic;
+    DOUT_RDY   : in  std_logic := '1'; -- take the valid output even if no input, like AXI READY
     DOUT       : out signed(DATA_WIDTH-1 downto 0);
     DOUT_VLD   : out std_logic := '0'
     );
@@ -126,14 +127,16 @@ begin
         a_r2     <= (others => '0');
         b_r1     <= (others => '0');
       else
-        DOUT_VLD <= DIN_VLD;
         if (DIN_VLD = '1') then
+          DOUT_VLD <= '1'; -- an input data always pushed out the output data
           din_r  <= DIN;
           a_r2   <= a;
           b_r1   <= a_r1;
           if (UPDATE = '1') then
             a_r1 <= a;
           end if;
+        elsif DOUT_RDY = '1' then
+          DOUT_VLD <= '0'; -- if no input, the output can be taken anyway
         end if;
       end if;
     end if;

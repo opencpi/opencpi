@@ -229,9 +229,9 @@ protected:
     m_endpointSpecific = "ocpi-socket-rdma";
     m_endpointSize = OH::SDP::Header::max_addressable_bytes * OH::SDP::Header::max_nodes;
     cAccess().setAccess(NULL, this, OCPI_UTRUNCATE(RegisterOffset, 0));
-    // data offset is after the first node
-    dAccess().setAccess(NULL, this, OCPI_UTRUNCATE(RegisterOffset,
-						   OH::SDP::Header::max_addressable_bytes));
+    // data offset overlays the control plane since it is SDP node 0.
+    dAccess().setAccess(NULL, this, OCPI_UTRUNCATE(RegisterOffset, 0));
+    //						   OH::SDP::Header::max_addressable_bytes));
     init(error);
     // Note we are emulating here, still not creating any file system dirs or fifos
   }
@@ -420,6 +420,8 @@ protected:
   void
   flush() {
     ocpiDebug("Flushing all session state");
+    if (m_verbose)
+      fprintf(stderr, "Simulator device flushing all session state\n");
     m_req.flush();  // FIXME: could this steal partial requests and get things out of sync?
     m_resp.flush(); // FIXME: should we wait for the request fifo to clear?
     m_exec.clear();
@@ -457,6 +459,7 @@ protected:
     }
     m_exited = false;
     flush();
+    m_isAlive = false;
   }
   bool
   spin(std::string &error) {
@@ -592,7 +595,7 @@ protected:
     ocpiDebug("When %s time since spin is: %" PRIu32 ".%03" PRIu32 " s ago", msg,
 	      et.seconds(), (et.nanoseconds() + 500000) / 1000000);
   }
-#define myassert(cond) do if (!(cond)) { terminate(); assert(cond); } while (0)
+#define myassert(cond) do if (!(cond)) { OS::dumpStack(); terminate(); assert(cond); } while (0)
   // This is the way control plane responses come back.
   // It is also the way data plane output request (writes) come out of the sim
   bool
@@ -677,7 +680,7 @@ protected:
   }
 public:
   ~Device() {
-    lock(); // unlocked by SeftMutex destructor
+    lock(); // unlocked by SelfMutex destructor
     shutdown();
     OH::Driver::getSingleton().m_devices.erase(this);
     ocpiDebug("Simulation server %s destruction", m_name.c_str());
@@ -739,9 +742,13 @@ public:
 		m_name.c_str(), m_cumTicks, m_simTicks);
       ocpiInfo("Simulator \"%s\" credits at %" PRIu64 " exceeded %u, stopping simulation",
 	       m_name.c_str(), m_cumTicks, m_simTicks);
-    } else
+    } else {
+      if (m_verbose)
+	fprintf(stderr, "Simulator \"%s\" shutting down. Error: %s\n",
+		m_name.c_str(), error.empty() ? "none" : error.c_str());
       ocpiInfo("Simulator \"%s\" shutting down. Error: %s",
 	       m_name.c_str(), error.empty() ? "none" : error.c_str());
+    }
     shutdown();
     return true;
   }

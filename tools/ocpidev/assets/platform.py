@@ -15,22 +15,26 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
+"""
+Defining rcc/hdl platform related classes
+"""
 
-from .abstract import *
-from .assembly import *
-from _opencpi.hdltargets import HdlToolFactory, HdlToolSet
 import os
 import sys
 import logging
-sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
-import _opencpi.util
 import json
+import _opencpi.util as ocpiutil
+import _opencpi.hdltargets as hdltargets
+from .abstract import ShowableAsset, HDLBuildableAsset, ReportableAsset, Asset
+from .assembly import HdlAssembly
+from .worker import HdlWorker
+from .factory import AssetFactory
+
 
 class RccPlatformsCollection(ShowableAsset):
     """
     Collection of HDL Platform Workers. This class represents the hdl/platforms directory.
     """
-
     valid_settings = []
     def __init__(self, directory, name=None, **kwargs):
         self.check_dirtype("rcc-platforms", directory)
@@ -51,8 +55,11 @@ class RccPlatformsCollection(ShowableAsset):
         return [(self.directory + "/" + dir) for dir in os.listdir(self.directory)
                 if os.path.isdir(self.directory + "/" + dir)]
 
-    def show(self):
-        pass
+    def show(self, details, verbose, **kwargs):
+        """
+        Show all of the Rcc platforms in this collection
+        """
+        raise NotImplementedError("show() is not implemented")
 
 class HdlPlatformsCollection(HDLBuildableAsset, ReportableAsset):
     """
@@ -71,16 +78,15 @@ class HdlPlatformsCollection(HDLBuildableAsset, ReportableAsset):
         """
         self.check_dirtype("hdl-platforms", directory)
         super().__init__(directory, name, **kwargs)
-
         self.hdl_plat_strs = kwargs.get("hdl_plats", None)
-
         self.platform_list = []
         if kwargs.get("init_hdlplats", False):
             logging.debug("Project constructor creating HdlPlatformWorker Objects")
             for plat_directory in self.get_valid_platforms():
                 # Only construct platforms that were requested and listed in hdl_platforms
-                if ("local" in self.hdl_plat_strs  or
-                   os.path.basename(plat_directory) in [plat.name for plat in self.hdl_platforms]):
+                plat_in_list = (os.path.basename(plat_directory) in
+                                [plat.name for plat in self.hdl_platforms])
+                if "local" in self.hdl_plat_strs or plat_in_list:
                     self.platform_list.append(AssetFactory.factory("hdl-platform", plat_directory,
                                                                    **kwargs))
 
@@ -114,6 +120,7 @@ class HdlPlatformsCollection(HDLBuildableAsset, ReportableAsset):
         """
         raise NotImplementedError("HdlPlatformsCollection.build() is not implemented")
 
+# pylint:disable=too-many-ancestors
 class HdlPlatformWorker(HdlWorker, ReportableAsset):
     """
     An HDL Platform Worker is a special case of HDL Worker that defines an HDL Platform.
@@ -140,28 +147,46 @@ class HdlPlatformWorker(HdlWorker, ReportableAsset):
             name = os.path.basename(directory)
         super().__init__(directory, name, **kwargs)
         self.configs = {}
-        self.platform = hdltargets.HdlToolFactory.factory("hdlplatform", self.name)
+        self.package_id = None
+        config_list = self.get_make_vars()
+        self.platform = hdltargets.HdlToolFactory.factory("hdlplatform", self.name, self.package_id)
         #TODO this should be guarded by a init kwarg wariable, not always needed i.e. show project
-        self.init_configs()
+        self.init_configs(config_list)
 
-    def init_configs(self):
+
+    def build(self):
         """
-        Collect the list of build configurations for this Platform Worker.
-        Construct an HdlPlatformWorkerConfig for each and add to the self.configs map.
+        This function will build the HdlPlatformWorker
+        """
+        raise NotImplementedError("build() is not implemented")
+
+    def get_make_vars(self):
+        """
+        Collect the list of build configurations and package id for this Platform Worker.
         """
         # Get the list of Configurations from make
         logging.debug("Get the list of platform Configurations from make")
         try:
             plat_vars = ocpiutil.set_vars_from_make(mk_file=self.directory + "/Makefile",
-                                                    mk_arg="ShellHdlPlatformVars=1", verbose=False)
-        except ocpiutil.OCPIException as ex:
+                                                    mk_arg="ShellHdlPlatformVars=1 showinfo",
+                                                    verbose=False)
+        except ocpiutil.OCPIException:
             # if make shoots out an error asume configs are blank
-            plat_vars = {"Configurations" : ""}
+            plat_vars = {"Configurations" : "", "Package":"N/A"}
         if "Configurations" not in plat_vars:
             raise ocpiutil.OCPIException("Could not get list of HDL Platform Configurations " +
                                          "from \"" + self.directory + "/Makefile\"")
+        self.package_id = plat_vars["Package"]
         # This should be a list of Configuration NAMES
         config_list = plat_vars["Configurations"]
+
+        return config_list
+
+    def init_configs(self, config_list):
+        """
+        Construct an HdlPlatformWorkerConfig for each and add to the self.configs map.
+        """
+
         # Directory for each config is <platform-worker-dir>/config-<configuration>
         cfg_prefix = self.directory + "/config-"
         for config_name in config_list:
@@ -196,6 +221,7 @@ class HdlPlatformWorker(HdlWorker, ReportableAsset):
                 sub_report.assign_for_all_points(key="Configuration", value=cfg_name)
                 util_report += sub_report
         return util_report
+# pylint:enable=too-many-ancestors
 
 class HdlPlatformWorkerConfig(HdlAssembly):
     """
@@ -220,6 +246,13 @@ class HdlPlatformWorkerConfig(HdlAssembly):
                                          "being provided a platform")
         self.subdir_prefix = directory + "/target-" + self.platform.target.name
 
+    #placeholder function
+    def build(self):
+        """
+        This is a placeholder function will be the function that builds this Asset
+        """
+        raise NotImplementedError("HdlPlatformWorkerConfig.build() is not implemented")
+
     def get_utilization(self):
         """
         Get any utilization information for this instance
@@ -240,39 +273,80 @@ class HdlPlatformWorkerConfig(HdlAssembly):
             return ocpiutil.Report()
 
 class Platform(Asset):
+    """
+    Base Class for both rcc and hdl platforms
+    """
     @classmethod
     def show_all(cls, details):
-        if details == "simple" or details == "table":
+        """
+        shows the list of all rcc and hdl platforms in the format specified from details
+        (simple, table, or json)
+        """
+        if details == "simple":
             print("RCC:")
             RccPlatform.show_all(details)
             print("HDL:")
             HdlPlatform.show_all(details)
+        elif details == "table":
+            #need to combine rcc and hdl into a single table
+            rcc_table = RccPlatform.get_all_table(RccPlatform.get_all_dict())
+            rcc_table[0].insert(1, "Type")
+            rcc_table[0].append("HDL Part")
+            rcc_table[0].append("HDL Vendor")
+            for my_list in rcc_table[1:]:
+                my_list.append("N/A")
+            for my_list in rcc_table[1:]:
+                my_list.append("N/A")
+            for my_list in rcc_table[1:]:
+                my_list.insert(1, "rcc")
+            hdl_table = HdlPlatform.get_all_table(HdlPlatform.get_all_dict())
+            for my_list in hdl_table[1:]:
+                my_list.insert(1, "hdl")
+            for my_list in hdl_table[1:]:
+                rcc_table.append(my_list)
+            ocpiutil.print_table(rcc_table, underline="-")
+
         elif details == "json":
-            rcc_dict = RccPlatform._get_all_dict()
-            hdl_dict = HdlPlatform._get_all_dict()
+            rcc_dict = RccPlatform.get_all_dict()
+            hdl_dict = HdlPlatform.get_all_dict()
 
             plat_dict = {"rcc":rcc_dict, "hdl":hdl_dict}
             json.dump(plat_dict, sys.stdout)
             print()
 
+# pylint:disable=too-few-public-methods
 class Target(object):
+    """
+    Base Class for both rcc and hdl targets
+    """
     @classmethod
     def show_all(cls, details):
+        """
+        shows the list of all rcc and hdl targets in the format specified from details
+        (simple, table, or json)
+        """
         if details == "simple" or details == "table":
             print("RCC:")
             RccTarget.show_all(details)
             print("HDL:")
             HdlTarget.show_all(details)
         elif details == "json":
-            rcc_dict = RccTarget._get_all_dict()
-            hdl_dict = HdlTarget._get_all_dict()
+            rcc_dict = RccTarget.get_all_dict()
+            hdl_dict = HdlTarget.get_all_dict()
 
             target_dict = {"rcc":rcc_dict, "hdl":hdl_dict}
             json.dump(target_dict, sys.stdout)
             print()
+# pylint:enable=too-few-public-methods
 
 class RccPlatform(Platform):
+    """
+    An OpenCPI Rcc software platform
+    """
     def __init__(self, directory, name, **kwargs):
+        """
+        Constructor for RccPlatform no extra values from kwargs processed in this constructor
+        """
         self.check_dirtype("rcc-platform", directory)
         super().__init__(directory, name, **kwargs)
 
@@ -280,39 +354,62 @@ class RccPlatform(Platform):
         return self.name
 
     @classmethod
-    def _get_all_dict(cls):
-        rccDict = ocpiutil.get_make_vars_rcc_targets()
+    def get_all_dict(cls):
+        """
+        returns a dictionary with all available rcc platforms from the RccAllPlatforms make variable
+        """
+        rcc_dict = ocpiutil.get_make_vars_rcc_targets()
         try:
-          rccPlatforms = rccDict["RccAllPlatforms"]
+            rcc_plats = rcc_dict["RccAllPlatforms"]
         except TypeError:
             raise ocpiutil.OCPIException("No RCC platforms found. Make sure the core project is " +
                                          "registered or in the OCPI_PROJECT_PATH.")
         plat_dict = {}
-        for plat in rccPlatforms:
+        for plat in rcc_plats:
             plat_dict[plat] = {}
-            plat_dict[plat]["target"] = rccDict["RccTarget_" + plat][0]
+            plat_dict[plat]["target"] = rcc_dict["RccTarget_" + plat][0]
+            proj_top = ocpiutil.get_project_package(rcc_dict["RccPlatDir_" + plat][0])
+            plat_dict[plat]["package_id"] = proj_top + ".platform." + plat
+            plat_dict[plat]["directory"] = proj_top
         return plat_dict
 
     @classmethod
+    def get_all_table(cls, plat_dict):
+        """
+        returns a table (but does not print it) with all the rcc platforms in it
+        """
+        row_1 = ["Platform", "Package-ID", "Target"]
+        rows = [row_1]
+        for plat in plat_dict:
+            rows.append([plat, plat_dict[plat]["package_id"], plat_dict[plat]["target"]])
+        return rows
+
+    @classmethod
     def show_all(cls, details):
-        plat_dict = cls._get_all_dict()
+        """
+        shows all of the rcc platforms in the format that is specified using details
+        (simple, table, or json)
+        """
+        plat_dict = cls.get_all_dict()
 
         if details == "simple":
             for plat in plat_dict:
                 print(plat + " ", end='')
             print()
         elif details == "table":
-            row_1 = ["Platform", "Target"]
-            rows = [row_1]
-            for plat in plat_dict:
-                rows.append([plat, plat_dict[plat]["target"]])
-            ocpiutil.print_table(rows, underline="-")
+            ocpiutil.print_table(cls.get_all_table(plat_dict), underline="-")
         elif details == "json":
             json.dump(plat_dict, sys.stdout)
             print()
 
 class RccTarget(object):
+    """
+    An OpenCPI Rcc software platform (mostly meaningless just a internal for make)
+    """
     def __init__(self, name, target):
+        """
+        Constructor for RccTarget no extra values from kwargs processed in this constructor
+        """
         self.name = name
         self.target = target
 
@@ -320,23 +417,30 @@ class RccTarget(object):
         return self.name
 
     @classmethod
-    def _get_all_dict(cls):
-        rccDict = ocpiutil.get_make_vars_rcc_targets()
+    def get_all_dict(cls):
+        """
+        returns a dictionary with all available rcc targets from the RccAllPlatforms make variable
+        """
+        rcc_dict = ocpiutil.get_make_vars_rcc_targets()
         try:
-          rccPlatforms = rccDict["RccAllPlatforms"]
+            rcc_plats = rcc_dict["RccAllPlatforms"]
 
         except TypeError:
             raise ocpiutil.OCPIException("No RCC platforms found. Make sure the core project is " +
                                          "registered or in the OCPI_PROJECT_PATH.")
         target_dict = {}
-        for plat in rccPlatforms:
+        for plat in rcc_plats:
             target_dict[plat] = {}
-            target_dict[plat]["target"] = rccDict["RccTarget_" + plat][0]
+            target_dict[plat]["target"] = rcc_dict["RccTarget_" + plat][0]
         return target_dict
 
     @classmethod
     def show_all(cls, details):
-        target_dict = cls._get_all_dict()
+        """
+        shows all of the rcc targets in the format that is specified using details
+        (simple, table, or json)
+        """
+        target_dict = cls.get_all_dict()
 
         if details == "simple":
             for plat in target_dict:
@@ -373,11 +477,22 @@ class HdlPlatform(Platform):
         >>> platform0.exactpart
         'exactpart0'
     """
-    def __init__(self, name, target, exactpart, built=False):
-        self.name = name
+    #TODO change to use kwargs too many arguments
+    def __init__(self, name, target, exactpart, directory, built=False, package_id=None):
+        """
+        HdlPlatform constructor
+        """
+        super().__init__(directory, name)
         self.target = target
         self.exactpart = exactpart
         self.built = built
+        self.dir = ocpiutil.rchop(directory, "/lib")
+        if self.dir and not package_id:
+            self.package_id = ocpiutil.set_vars_from_make(self.dir + "/Makefile",
+                                                          "ShellHdlPlatformVars=1 showpackage",
+                                                          "verbose")["Package"][0]
+        else:
+            self.package_id = ""
 
     def __str__(self):
         return self.name
@@ -397,8 +512,11 @@ class HdlPlatform(Platform):
         return self.target.toolset
 
     @classmethod
-    def _get_all_dict(cls):
-        all_plats= HdlToolFactory.get_or_create_all("hdlplatform")
+    def get_all_dict(cls):
+        """
+        returns a dictionary with all available hdl platforms from the HdlAllPlatforms make variable
+        """
+        all_plats = hdltargets.HdlToolFactory.get_or_create_all("hdlplatform")
         plat_dict = {}
         for plat in all_plats:
             plat_dict[plat.name] = {}
@@ -406,28 +524,41 @@ class HdlPlatform(Platform):
             plat_dict[plat.name]["target"] = plat.target.name
             plat_dict[plat.name]["part"] = plat.exactpart
             plat_dict[plat.name]["built"] = plat.built
+            plat_dict[plat.name]["directory"] = plat.dir
             plat_dict[plat.name]["tool"] = plat.target.toolset.name
+            plat_dict[plat.name]["package_id"] = plat.package_id
 
         return plat_dict
 
     @classmethod
+    def get_all_table(cls, plat_dict):
+        """
+        returns a table (but does not print it) with all the hdl platforms in it
+        """
+        row_1 = ["Platform", "Package-ID", "Target", "Part", "Vendor", "Toolset"]
+        rows = [row_1]
+        for plat in plat_dict:
+            built = ""
+            if not plat_dict[plat]["built"]:
+                built = "*"
+            rows.append([plat + built, plat_dict[plat]["package_id"], plat_dict[plat]["target"],
+                         plat_dict[plat]["part"], plat_dict[plat]["vendor"],
+                         plat_dict[plat]["tool"]])
+        return rows
+    @classmethod
     def show_all(cls, details):
-        plat_dict = cls._get_all_dict()
+        """
+        shows all of the hdl platforms in the format that is specified using details
+        (simple, table, or json)
+        """
+        plat_dict = cls.get_all_dict()
 
         if details == "simple":
             for plat in plat_dict:
                 print(plat + " ", end='')
             print()
         elif details == "table":
-            row_1 = ["Platform", "Target", "Part", "Vendor", "Toolset"]
-            rows = [row_1]
-            for plat in plat_dict:
-                built = ""
-                if plat_dict[plat]["built"] == False:
-                    built = "*"
-                rows.append([plat + built, plat_dict[plat]["target"], plat_dict[plat]["part"],
-                             plat_dict[plat]["vendor"], plat_dict[plat]["tool"]])
-            ocpiutil.print_table(rows, underline="-")
+            ocpiutil.print_table(cls.get_all_table(plat_dict), underline="-")
             print("* An asterisk indicates that the platform has not been built yet.\n" +
                   "  Assemblies and tests cannot be built until the platform is built.\n")
         elif details == "json":
@@ -467,10 +598,10 @@ class HdlTarget(object):
         # If the caller passed in a toolset instance instead of name, just assign
         # the instance (no need to construct or search for one). This is especially
         # useful for simple tests of this class (e.g. see doctest setup at end of file
-        if isinstance(toolset, HdlToolSet):
+        if isinstance(toolset, hdltargets.HdlToolSet):
             self.toolset = toolset
         else:
-            self.toolset = HdlToolFactory.factory("hdltoolset", toolset)
+            self.toolset = hdltargets.HdlToolFactory.factory("hdltoolset", toolset)
 
     def __str__(self):
         return self.name
@@ -484,35 +615,40 @@ class HdlTarget(object):
             return False
 
     @classmethod
-    def _get_all_dict(cls):
+    def get_all_dict(cls):
+        """
+        returns a dictionary with all available hdl targets from the HdlAllTargets make variable
+        """
         target_dict = {}
-        for vendor in HdlToolFactory.get_all_vendors():
-            targetDict = {}
-            for target in HdlToolFactory.get_all_targets_for_vendor(vendor):
-                targetDict[target.name] = {"parts": target.parts,
-                                           "tool": target.toolset.title}
-            target_dict[vendor] = targetDict
+        for vendor in hdltargets.HdlToolFactory.get_all_vendors():
+            vendor_dict = {}
+            for target in hdltargets.HdlToolFactory.get_all_targets_for_vendor(vendor):
+                vendor_dict[target.name] = {"parts": target.parts,
+                                            "tool": target.toolset.title}
+            target_dict[vendor] = vendor_dict
 
         return target_dict
 
     @classmethod
     def show_all(cls, details):
-        target_dict = cls._get_all_dict()
-
+        """
+        shows all of the hdl targets in the format that is specified using details
+        (simple, table, or json)
+        """
+        target_dict = cls.get_all_dict()
         if details == "simple":
             for vendor in target_dict:
                 for target in target_dict[vendor]:
                     print(target + " ", end='')
             print()
         elif details == "table":
-            row_1 = ["Target", "Parts", "Vendor", "Toolset"]
-            rows = [row_1]
+            rows = [["Target", "Parts", "Vendor", "Toolset"]]
             for vendor in target_dict:
                 for target in target_dict[vendor]:
                     rows.append([target,
-                                ", ".join(target_dict[vendor][target]["parts"]),
-                                vendor,
-                                target_dict[vendor][target]["tool"]])
+                                 ", ".join(target_dict[vendor][target]["parts"]),
+                                 vendor,
+                                 target_dict[vendor][target]["tool"]])
             ocpiutil.print_table(rows, underline="-")
         elif details == "json":
             json.dump(target_dict, sys.stdout)

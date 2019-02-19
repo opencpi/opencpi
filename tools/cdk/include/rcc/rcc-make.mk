@@ -50,13 +50,14 @@ ifdef RccHdlPlatforms
      ))
 endif
 
-ifdef RccPlatforms
+# Be careful to respect empty, but specified platform and target lists
+ifneq ($(origin RccPlatforms),undefined)
   # nothing here - we process later
-else ifdef RccPlatform
+else ifneq ($(origin RccPlatform),undefined)
   RccPlatforms:=$(RccPlatform)
-else ifdef RccTargets
+else ifneq ($(origin RccTargets),undefined)
   # nothing to do here
-else ifdef RccTarget
+else ifneq ($(origin RccTarget),undefined)
   RccTargets:=$(RccTarget)
 else ifeq ($(origin RccPlatforms),undefined)
   ifdef OCPI_TARGET_PLATFORM

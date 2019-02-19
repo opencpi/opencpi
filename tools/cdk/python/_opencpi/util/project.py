@@ -635,7 +635,7 @@ def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platfo
         asset = "components"
     elif noun in ["application", "applications"]:
         asset = "applications"
-    elif noun in ["hdl-primitive", "hdl-phdlrimitives"]:
+    elif noun in ["hdl-primitive", "hdl-primitives"]:
         asset = "hdl/primitives"
     elif noun == "hdl-platforms":
         asset = "hdl/platforms"

@@ -15,13 +15,12 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
+"""
+Definition of Test class
+"""
 
-from .abstract import *
-import os
-import sys
-import logging
-sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
 import _opencpi.util as ocpiutil
+from .abstract import RunnableAsset, HDLBuildableAsset, RCCBuildableAsset
 
 class Test(RunnableAsset, HDLBuildableAsset, RCCBuildableAsset):
     """

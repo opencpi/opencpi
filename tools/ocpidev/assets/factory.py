@@ -15,13 +15,13 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
+"""
+Defines the AssetFactory class
+"""
 
 
 from functools import partial
 import os
-import sys
-import logging
-sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
 import _opencpi.util as ocpiutil
 
 class AssetFactory():
@@ -96,18 +96,24 @@ class AssetFactory():
         (e.g. RccWorker or HdlLibraryWorker)
         """
         import _opencpi.assets.worker
-        if os.path.basename(directory).endswith(".hdl"):
+        if os.path.basename(ocpiutil.rchop(directory, '/')).endswith(".hdl"):
             return _opencpi.assets.worker.HdlLibraryWorker(directory, name, **kwargs)
-        elif os.path.basename(directory).endswith(".rcc"):
+        elif os.path.basename(ocpiutil.rchop(directory, '/')).endswith(".rcc"):
             return _opencpi.assets.worker.RccWorker(directory, name, **kwargs)
         else:
             raise ocpiutil.OCPIException("Unsupported authoring model for worker located at '" +
                                          directory + "'")
+    @classmethod
+    def remove_all(cls):
+        """
+        Removes all instancs from the static class variable __assets
+        """
+        cls.__assets = {}
 
     @classmethod
     def remove(cls, directory=None, instance=None):
         """
-        Removes an instance from the static class variable __assets by dierectory or the instance
+        Removes an instance from the static class variable __assets by directory or the instance
         itself.  Throws an exception if neither optional argument is provided.
         """
         if directory is not None:

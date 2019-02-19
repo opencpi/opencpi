@@ -33,7 +33,7 @@
   "Readable", "Writable", "Volatile", "Initial", "Padding", "Parameter"
 
 #define PROPERTY_ATTRIBUTES \
-  OCPI_UTIL_MEMBER_ATTRS, ACCESS_ATTRIBUTES, "IsTest", "Default"
+  OCPI_UTIL_MEMBER_ATTRS, ACCESS_ATTRIBUTES, "IsTest", "Default", "Hidden", "Debug"
 
 #define IMPL_ATTRIBUTES \
   ACCESS_ATTRIBUTES, \
@@ -44,8 +44,8 @@
   "ReadError",     /* impl says reading this can return an error */\
   "WriteError",    /* impl says writing this can return an error */\
   "Indirect",      /* impl is supplying an indirect address */	\
-  "Debug",         /* property is for debug only */		\
-  "ReadScalable",   /* property has scalable read behavior */	\
+  "ReadScalable",  /* property has scalable read behavior */	\
+  "Raw",           /* property access is raw in the implementation */ \
   "isimpl"
 
 namespace OCPI {
@@ -54,17 +54,17 @@ namespace OCPI {
       : m_readSync(false), m_writeSync(false), m_isWritable(false),
 	m_isReadable(false), m_readError(false), m_writeError(false),
 	m_isVolatile(false), m_isInitial(false), m_isIndirect(false),
-	m_indirectAddr(0)
+	m_isBuiltin(false), m_indirectAddr(0)
     {}
   }
   namespace Util {
     namespace OE = EzXml;
     namespace OA = OCPI::API;
     Property::Property()
-      : m_smallest(0), m_granularity(0), m_isDebug(false), m_isParameter(false),
-	m_isSub32(false), m_isImpl(false), m_isPadding(false), m_isTest(false), m_dataOffset(0),
-	m_paramOrdinal(0), m_hasValue(false), m_readBarrier(false), m_writeBarrier(false),
-	m_reduction(None) {
+      : m_smallest(0), m_granularity(0), m_isDebug(false), m_isHidden(false),
+	m_isParameter(false), m_isSub32(false), m_isImpl(false), m_isPadding(false), m_isRaw(false),
+	m_rawSet(false), m_isTest(false), m_dataOffset(0), m_paramOrdinal(0), m_hasValue(false),
+	m_readBarrier(false), m_writeBarrier(false), m_reduction(None) {
     }
     Property::~Property() {
     }
@@ -92,6 +92,7 @@ namespace OCPI {
 	  (err = OE::getBoolean(prop, "Initial", &m_isInitial, addAccess)) ||
 	  (err = OE::getBoolean(prop, "Volatile", &m_isVolatile, addAccess)) ||
 	  (err = OE::getBoolean(prop, "Parameter", &m_isParameter, addAccess)) ||
+	  (err = OE::getBoolean(prop, "Hidden", &m_isHidden, false)) ||
 	  (err = OE::getBoolean(prop, "Padding", &m_isPadding, false)))
 	return err;
       if (m_isInitial)
@@ -201,11 +202,14 @@ namespace OCPI {
 	  (err = OE::getBoolean(prop, "WriteBarrier", &m_writeBarrier)) ||
 	  (err = OE::getBoolean(prop, "ReadError", &m_readError)) ||
 	  (err = OE::getBoolean(prop, "WriteError", &m_writeError)) ||
-	  (err = OE::getBoolean(prop, "IsTest", &m_isTest)) ||
+	  (err = OE::getBoolean(prop, "Test", &m_isTest)) ||
+	  (err = OE::getBoolean(prop, "Raw", &m_isRaw, false, true, &m_rawSet)) ||
 	  (err = OE::getBoolean(prop, "Debug", &m_isDebug)) ||
 	  // FIXME: consider allowing this only for HDL somehow.
 	  (err = OE::getNumber(prop, "Indirect", &m_indirectAddr, &m_isIndirect, 0, true)))
 	return err;
+      if (m_isParameter && !m_isReadable && m_isRaw)
+	return esprintf("Property %s specified as both parameter and raw, which is invalid", cname());
       static const char *reduceNames[] = {
 #define OCPI_REDUCE(c) #c,	  
 	OCPI_REDUCTIONS
@@ -257,4 +261,3 @@ namespace OCPI {
     }
   }
 }
-

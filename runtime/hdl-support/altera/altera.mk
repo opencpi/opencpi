@@ -117,7 +117,7 @@ OcpiAlteraQuartusDir=$(strip\
             $(or $(shell for i in \
                         `shopt -s nullglob && echo $t/*  | tr ' ' '\n' | sort -n -r`; \
                        do \
-                         [ -d $$i -a -d $$i/quartus ] && echo `basename $$i` && break; \
+                         [ -d $$i -a -d $$i/quartus/bin ] && echo `basename $$i` && break; \
                        done),\
                  $(call $(or $1,error), No version directory under $t/*/q* for Altera tools))),\
         $(infox VV:$v)$t/$v)))/quartus,\

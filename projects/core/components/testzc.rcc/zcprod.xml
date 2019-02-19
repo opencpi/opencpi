@@ -1,4 +1,3 @@
-<RccImplementation Name="Producer" StaticMethods="%W%M">
+<RccWorker Name="Producer" StaticMethods="%W%M" spec="zcprod_spec.xml">
   <ControlInterface ControlOperations="initialize"/>
-  <xi:include href="zcprod_spec.xml"/>
-</RccImplementation>
+</RccWorker>

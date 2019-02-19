@@ -66,7 +66,7 @@ add to tree.
 #define OCPI_OPTIONS \
   CMD_OPTION  (verbose,   v,    Bool,   NULL, "Be verbose") \
   CMD_OPTION  (log_level, l,    ULong,  0,    "<log-level>\n" \
-                                              "set log level during execution, overriding OCPI_LOG_LEVEL")\
+	                                      "set log level during execution, overriding OCPI_LOG_LEVEL")\
   CMD_OPTION  (defs,      d,    Bool,   NULL, "Generate the definition file (used for instantiation)") \
   CMD_OPTION  (ents,      E,    Bool,   NULL, "Generate the VHDL entity declaration file (used for instantiation by some tools)") \
   CMD_OPTION  (impl,      i,    Bool,   NULL, "Generate the implementation header file (readonly)") \
@@ -97,6 +97,7 @@ add to tree.
   CMD_OPTION  (gentest,   T,    Bool,   NULL, "Generate unit testing files, assemblies, apps")  \
   CMD_OPTION  (gencases,  C,    Bool,   NULL, "Figure out which test cases to run on which platforms") \
   CMD_OPTION  (dynamic,   Z,    Bool,   NULL, "Whether the artifact should be dynamic") \
+  CMD_OPTION  (nworkers,  N,    Bool,   NULL, "Multiple workers are actually implemented here (rcc)") \
   CMD_OPTION  (comp,      G,    Bool,   NULL, "Generate component output for use with ocpidev") \
 
 #define OCPI_OPTION
@@ -110,7 +111,7 @@ main(int argc, const char **argv) {
     return 1;
   if (options.log_level())
     OCPI::OS::logSetLevel(options.log_level());
-  const char *outDir = NULL, *entName = NULL, *wksFile = NULL, *package = NULL;
+  const char *outDir = NULL, *wksFile = NULL, *package = NULL;
   bool
     doDefs = false, doEnts = false, doImpl = false, doSkel = false, doAssy = false, doWrap = false,
     doArt = false, doTopContainer = false, doTest = false, doCases = false, verbose = false,
@@ -118,22 +119,22 @@ main(int argc, const char **argv) {
   int doGenerics = -1;
   if (argc <= 1) {
     fprintf(stderr,
-            "Usage is: ocpigen [options] <owd>.xml\n"
-            " Code generation options that determine which files are created:\n"
-            " -d            Generate the definition/instantiation file: xyz-defs.[vh|vhd]\n"
-            " -E            Generate the VHDL entity declaration file: xyz-ents.vhd\n"
-            " -i            Generate the implementation include file: xyz_impl.[vh|vhd]\n"
-            " -s            Generate the skeleton file: xyz_skel.[c|v|vhd]\n"
-            " -a            Generate the assembly (composition) file: xyz.[v|vhd]\n"
-            " -b            Generate the BSV interface file\n"
-            " -A            Generate the UUID and artifact descriptor xml file for a container\n"
-            " -W <file>     Generate an assembly or container workers file: xyz.wks\n"
-            " Options for artifact XML and UUID source generation (-A):\n"
-            " -c <file>     The HDL container file to use for the artifact XML\n"
-            " -P <platform> The platform for the artifact (or cpu for rcc)\n"
-            " -O <os>       The OS for the artifact (rcc)\n"
-            " -V <version>  The OS version for the artifact (rcc)\n"
-            " -e <device>   The device for the artifact\n"
+	    "Usage is: ocpigen [options] <owd>.xml\n"
+	    " Code generation options that determine which files are created:\n"
+	    " -d            Generate the definition/instantiation file: xyz-defs.[vh|vhd]\n"
+	    " -E            Generate the VHDL entity declaration file: xyz-ents.vhd\n"
+	    " -i            Generate the implementation include file: xyz_impl.[vh|vhd]\n"
+	    " -s            Generate the skeleton file: xyz_skel.[c|v|vhd]\n"
+	    " -a            Generate the assembly (composition) file: xyz.[v|vhd]\n"
+	    " -b            Generate the BSV interface file\n"
+	    " -A            Generate the UUID and artifact descriptor xml file for a container\n"
+	    " -W <file>     Generate an assembly or container workers file: xyz.wks\n"
+	    " Options for artifact XML and UUID source generation (-A):\n"
+	    " -c <file>     The HDL container file to use for the artifact XML\n"
+	    " -P <platform> The platform for the artifact (or cpu for rcc)\n"
+	    " -O <os>       The OS for the artifact (rcc)\n"
+	    " -V <version>  The OS version for the artifact (rcc)\n"
+	    " -e <device>   The device for the artifact\n"
             " -p <package>  The package name for component specifications\n"
             " Other options:\n"
             " -B <lib>      The VHDL library name that <www>_defs.vhd will be placed in (-i)\n"
@@ -159,97 +160,100 @@ main(int argc, const char **argv) {
     if (ap[0][0] == '-')
       switch (ap[0][1]) {
       case 'v':
-        verbose = true;
-        break;
+	verbose = true;
+	break;
       case 'd':
-        doDefs = true;
-        break;
+	doDefs = true;
+	break;
       case 'E':
-        doEnts = true;
-        break;
+	doEnts = true;
+	break;
       case 'i':
-        doImpl = true;
-        break;
+	doImpl = true;
+	break;
       case 's':
-        doSkel = true;
-        break;
+	doSkel = true;
+	break;
       case 'a':
-        doAssy = true;
-        break;
+	doAssy = true;
+	break;
       case 'A':
-        doArt = true;
-        break;
+	doArt = true;
+	break;
       case 'w':
-        doWrap = true;
-        break;
+	doWrap = true;
+	break;
       case 'X':
-        doTopContainer = true;
-        break;
+	doTopContainer = true;
+	break;
       case 'Y':
-        doTopConfig = true;
-        break;
+	doTopConfig = true;
+	break;
       case 'T':
-        doTest = true;
-        break;
+	doTest = true;
+	break;
       case 'C':
-        doCases = true;
-        break;
+	doCases = true;
+	break;
+      case 'N':
+	g_multipleWorkers = true;
+	break;
       case 'g':
-        doGenerics = atoi(&ap[0][2]);
-        break;
+	doGenerics = atoi(&ap[0][2]);
+	break;
       case 'W':
-        wksFile = *++ap;
-        break;
+	wksFile = *++ap;
+	break;
       case 'M':
-        setDep(*++ap);
-        break;
+	setDep(*++ap);
+	break;
       case 'B':
-        err = addLibrary(ap[0][2] ? &ap[0][2] : *++ap);
-        break;
+	err = addLibrary(ap[0][2] ? &ap[0][2] : *++ap);
+	break;
       case 'I':
-        if (ap[0][2])
-          addInclude(&ap[0][2]);
-        else
-          addInclude(*++ap);
-        break;
+	if (ap[0][2])
+	  addInclude(&ap[0][2]);
+	else
+	  addInclude(*++ap);
+	break;
       case 'D':
-        outDir = *++ap;
-        break;
+	outDir = *++ap;
+	break;
       case 'S':
-        assembly = *++ap;
-        break;
+	assembly = *++ap;
+	break;
       case 'L':
-        if ((err = addLibMap(ap[0][2] ? &ap[0][2] : *++ap)))
-          err = OU::esprintf("Error processing -L (library map) option: %s", err);
-        break;
+	if ((err = addLibMap(ap[0][2] ? &ap[0][2] : *++ap)))
+	  err = OU::esprintf("Error processing -L (library map) option: %s", err);
+	break;
       case 'e':
-        g_device = *++ap;
-        break;
+	g_device = *++ap;
+	break;
       case 'P':
-        g_platform = *++ap;
-        break;
+	g_platform = *++ap;
+	break;
       case 'Z':
-        g_dynamic = (*++ap)[0] == '1';
-        break;
+	g_dynamic = (*++ap)[0] == '1';
+	break;
       case 'O':
-        g_os = *++ap;
-        break;
+	g_os = *++ap;
+	break;
       case 'V':
-        g_os_version = *++ap;
-        break;
+	g_os_version = *++ap;
+	break;
       case 'H':
-        g_arch = *++ap;
-        break;
+	g_arch = *++ap;
+	break;
       case 'p':
-        package = *++ap;
-        break;
+	package = *++ap;
+	break;
       case 'x':
-        attribute = *++ap;
-        break;
+	attribute = *++ap;
+	break;
       case 'r':
-        break;
+	break;
       case 'b':
-        break;
+	break;
       case 'F':
         platformDir = *++ap;
         break;
@@ -257,7 +261,7 @@ main(int argc, const char **argv) {
         doCompArt = true;
         break;
       default:
-        err = OU::esprintf("Unknown flag: %s\n", *ap);
+	err = OU::esprintf("Unknown flag: %s\n", *ap);
       }
     else
       try {
@@ -356,19 +360,15 @@ main(int argc, const char **argv) {
           case NoModel:
             ;
           }
-        }
-        else if (doCompArt) {
-            err = w->emitCompArtXML();
-            if (err)
-              err = OU::esprintf("%s: Error generating json file for ocpidev: %s", *ap, err);
-        }
+        } else if (doCompArt && (err = w->emitToolArtXML()))
+	  err = OU::esprintf("%s: Error generating json file for ocpidev: %s", *ap, err);
         delete w;
       } catch (std::string &e) {
-        fprintf(stderr, "Exception thrown: %s\n", e.c_str());
-        return 1;
+	fprintf(stderr, "Exception thrown: %s\n", e.c_str());
+	return 1;
       } catch (...) {
-        fprintf(stderr, "Unexpected/unknown exception thrown\n");
-        return 1;
+	fprintf(stderr, "Unexpected/unknown exception thrown\n");
+	return 1;
       }
   }
   if (!err)

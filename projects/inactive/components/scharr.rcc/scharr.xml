@@ -1,6 +1,5 @@
-<RccImplementation>
-  <xi:include href="scharr_spec.xml"/>
+<RccWorker spec="scharr_spec.xml">
   <Port Name="in" MinBuffers="3"/>
-</RccImplementation>
+</RccWorker>
 
 

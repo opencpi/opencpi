@@ -84,6 +84,7 @@ namespace OCPI {
 	Member();
       };
       typedef std::vector<Member> Members;
+      struct Connection;
       struct Port {
 	Launcher *m_launcher;
 	Container *m_container;
@@ -101,6 +102,8 @@ namespace OCPI {
 	std::string m_initial, m_final;
 	bool m_started; // the connection has passed its initial phase and initial info has been sent
 	bool m_done;
+	const Connection *m_otherConn; // a pointer to the other port's connection when a port depends another
+	                               // for buffer size.
 	Port();
       };
       struct Connection {
@@ -122,6 +125,7 @@ namespace OCPI {
       virtual bool
 	launch(Launcher::Members &members, Launcher::Connections &connections) = 0,
 	work(Launcher::Members &members, Launcher::Connections &connections) = 0;
+      virtual void appShutdown() = 0; // (the) app using this launcher has shutdown
     };
     // Concrete class that will be a singleton
     class LocalLauncher : public Launcher, public OCPI::Util::Singleton<LocalLauncher> {
@@ -130,6 +134,7 @@ namespace OCPI {
       virtual ~LocalLauncher();
       bool launch(Launcher::Members &members, Launcher::Connections &connections);
       bool work(Launcher::Members &members, Launcher::Connections &connections);
+      void appShutdown() {}
     };
   }
 }

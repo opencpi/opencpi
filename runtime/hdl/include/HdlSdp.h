@@ -217,6 +217,7 @@ namespace OCPI {
 	uint16_t segment_size;
 	// Changed by the worker to indicate messages too large
 	volatile uint8_t  overflow;
+	volatile uint32_t  local_buffers_ready; // must be ulong due to being a "flag"
 	uint8_t readsAllowed;
 	uint32_t role; // an enumeration 0:AM, 1:AFC, 2: passive
 	// Configured by software for remote side

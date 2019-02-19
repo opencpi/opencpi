@@ -17,6 +17,19 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Timestamper: View output data
+
+View args:
+1. Message size of input data to Timestamper / 4
+2. Output file used for view
+
+To test the Timestamper, a binary data file is generated containing real 
+32-bit samples with a configurable ampltiude and length.
+
+To validate the test, the timestamps are checked to ensure they are 
+incrementing.
+"""
 import struct
 import numpy as np
 import sys
@@ -25,7 +38,7 @@ import os.path
 OFILENAME = open(sys.argv[2], 'rb')
 odata = np.fromfile(OFILENAME, dtype=np.uint32, count=-1)
 OFILENAME.close()
-BLOCK_SIZE = int(sys.argv[1])
+MESSAGE_SIZE_WORDS = int(sys.argv[1])
 enable = os.environ.get("OCPI_TEST_enable")
 
 if(enable=="true"): # => NORMAL MODE
@@ -33,7 +46,7 @@ if(enable=="true"): # => NORMAL MODE
     timestamp_list = list();
     a = 0
     while a < len(odata):
-        if(a % (BLOCK_SIZE+2) == 0):
+        if(a % (MESSAGE_SIZE_WORDS+2) == 0):
             if(len(timestamp_list) and (timestamp_list[-1] > odata[a]+1.0*(odata[a+1])/0xFFFFFFFF)):
                 print "    Bad timestamp: " , timestamp_list[-1], " > ", odata[a]+1.0*(odata[a+1])/0xFFFFFFFF           
             timestamp_list.append(odata[a]+1.0*(odata[a+1])/0xFFFFFFFF)

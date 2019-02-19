@@ -28,8 +28,8 @@ if [ -z "$1" -o -z "$2" ]; then
 fi
 
 output_path="$1"
-platform="$2"
-specific_rcc="$3"
+hdl_platform="$2"
+hdl_rcc_platform="$3"
 if [ ! -d $output_path ]; then
   echo "Parameter given for output_path does not exist. Please make sure to run create-sw-deploy.sh before this script"
   exit 1
@@ -45,11 +45,9 @@ fi
 #   files needed for deployment
 #   pdfs
 #   system.xml
-echo "Adding files for hw platform: $platform"
+echo "Adding files for hw platform: $hdl_platform"
 # Get the rcc platform that corresponds with the hdl_platform
 # and put it in hdl_rcc_platform
-read -r hdl_platform hdl_platform_dir hdl_rcc_platform <<<$($OCPI_CDK_DIR/../tools/cdk/scripts/getHdlPlatform.sh $platform)
-[ -n "$specific_rcc" ] && hdl_rcc_platform=$specific_rcc
 [ "$hdl_rcc_platform" = - ] && hdl_rcc_platform=no_sw
 opencpi_output_path=$output_path/$hdl_platform/sdcard-$hdl_rcc_platform/opencpi
 mkdir -p $opencpi_output_path
@@ -63,12 +61,15 @@ if [ "$hdl_rcc_platform" != "no_sw" ]; then
       if [[ $item = **opencpi/$hdl_rcc_platform** ]]; then
         mv $opencpi_output_path/$hdl_rcc_platform/system.xml $opencpi_output_path
         mv $opencpi_output_path/$hdl_rcc_platform/*_*setup.sh $opencpi_output_path
-        mv $opencpi_output_path/$hdl_rcc_platform/*.conf $opencpi_output_path
+	( shopt -s nullglob &&
+	  for f in $opencpi_output_path/$hdl_rcc_platform/*.conf; do
+            mv $f $opencpi_output_path
+	  done)
       fi
     fi
   done
 fi
-file_list=($($OCPI_CDK_DIR/../packaging/prepare-package-list.sh deploy $platform))
+file_list=($($OCPI_CDK_DIR/../packaging/prepare-package-list.sh deploy $hdl_platform))
 for file in ${file_list[@]}; do
   edited_file=${file#"cdk/"}
   edited_file=${edited_file#"runtime/"}
@@ -88,10 +89,12 @@ mkdir -p $output_path/$hdl_platform/host-udev-rules
   && mv $opencpi_output_path/udev-rules/* $opencpi_output_path/../../host-udev-rules \
   && rmdir $opencpi_output_path/udev-rules
 [ -d $opencpi_output_path/$hdl_platform ] \
-  && ([ -d $opencpi_output_path/$hdl_platform/$hdl_rcc_platform ] && mv $opencpi_output_path/$hdl_platform/$hdl_rcc_platform/udev-rules/* $opencpi_output_path/../../host-udev-rules &&
-      rmdir $opencpi_output_path/$hdl_platform/$hdl_rcc_platform/udev-rules;
-      rmdir $opencpi_output_path/$hdl_platform/$hdl_rcc_platform
-      rm -rf $opencpi_output_path/$hdl_platform) \
+    && ([ -d $opencpi_output_path/$hdl_platform/$hdl_rcc_platform/udev-rules ] &&
+	    mv $opencpi_output_path/$hdl_platform/$hdl_rcc_platform/udev-rules/* \
+	       $opencpi_output_path/../../host-udev-rules &&
+	    rmdir $opencpi_output_path/$hdl_platform/$hdl_rcc_platform/udev-rules;
+	rmdir $opencpi_output_path/$hdl_platform/$hdl_rcc_platform
+	rm -rf $opencpi_output_path/$hdl_platform) \
 # Exit with 0 status so the script that calls this script does not complain
 exit 0
 # TODO Build pdfs for current platform AV-4538 AV-4817

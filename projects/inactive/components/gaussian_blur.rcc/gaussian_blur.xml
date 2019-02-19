@@ -1,6 +1,5 @@
-<RccImplementation>
-  <xi:include href="gaussian_blur_spec.xml"/>
+<RccWorker spec="gaussian_blur_spec.xml">
   <Port Name="in" MinBuffers="3"/>
-</RccImplementation>
+</RccWorker>
 
 

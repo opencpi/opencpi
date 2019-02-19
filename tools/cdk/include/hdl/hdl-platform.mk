@@ -23,6 +23,9 @@
 # get built elsewhere based on assemblies and configurations
 HdlMode:=platform
 Model:=hdl
+ifdef ShellHdlPlatformVars
+  	__ONLY_TOOL_VARS__:=1
+endif
 include $(OCPI_CDK_DIR)/include/util.mk
 $(OcpiIncludeAssetAndParent)
 
@@ -31,7 +34,7 @@ HdlLibraries+=platform
 # This means we can build this platform without it being
 # defined globally anywhere, whether in OCPI_HDL_PLATFORM_PATH
 # or in the core hdl/platforms dir.
-# Note "export" must appear BEFORE override because once 
+# Note "export" must appear BEFORE override because once
 # "override" is used, "export" doesn't apply.
 export OCPI_HDL_PLATFORM_PATH
 override OCPI_HDL_PLATFORM_PATH := $(call OcpiAbsDir,.)$(and $(OCPI_HDL_PLATFORM_PATH),:$(OCPI_HDL_PLATFORM_PATH))
@@ -143,8 +146,10 @@ ifndef HdlSkip
   exports:
   .PHONY: exports
   ifneq ($(MAKECMDGOALS),clean)
+  ifndef ShellHdlPlatformVars
     $(if $(wildcard base.xml)$(wildcard $(GeneratedDir)/base.xml),,\
       $(shell echo '<HdlConfig/>' > $(GeneratedDir)/base.xml))
+  endif
   endif
   ################################################################################
   # From here its about building the platform configuration cores
@@ -218,6 +223,10 @@ clean::
 	$(AT) rm -r -f config-* lib
 
 ifdef ShellHdlPlatformVars
-shellhdlplatformvars:
-$(info Configurations="$(Configurations)";)
+showinfo:
+	$(info Configurations="$(Configurations)";Package="$(Package)";)
+showconfigs:
+	$(info Configurations="$(Configurations)";)
+showpackage:
+	$(info Package="$(Package)";)
 endif

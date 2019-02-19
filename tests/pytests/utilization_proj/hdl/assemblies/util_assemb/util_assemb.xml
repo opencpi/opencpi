@@ -1,5 +1,0 @@
-<!-- The util_assemb HDL assembly xml file -->
-<HdlAssembly>
-  <!-- Remove this instance and replace it with real ones -->
-  <Instance Worker='nothing' name='nothing'/>
-</HdlAssembly>

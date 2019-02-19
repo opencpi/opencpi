@@ -79,7 +79,7 @@ parseConnection(OU::Assembly::Connection &aConn) {
   Connection &c = *new Connection(&aConn);
   m_connections.push_back(&c);
   //  findBool(aConn.m_parameters, "signal", c.m_isSignal);
-  // In case the connection has no count, we default it to the 
+  // In case the connection has no count, we default it to the
   // width of the narrowest attached port
   InstancePort *found;
   size_t minCount = 1000;
@@ -146,8 +146,7 @@ parseConnection(OU::Assembly::Connection &aConn) {
       return OU::esprintf("External connection %s for port %s of instance %s error: %s",
 			  c.m_name.c_str(), intPort.m_port->pname(), intPort.m_instance->cname(),
 			  err);
-    InstancePort *ip = new InstancePort;
-    ip->init(NULL, &p, &ext);
+    InstancePort *ip = new InstancePort(NULL, &p, &ext);
     if ((err = c.attachPort(*ip, 0)))
       return err;
   }
@@ -262,7 +261,7 @@ addParamConfigParameters(const ParamConfig &pc, const OU::Assembly::Properties &
 }
 
 const char *Instance::
-init(::Assembly &assy, const char *iName, const char *wName, ezxml_t ix, 
+init(::Assembly &assy, const char *iName, const char *wName, ezxml_t ix,
      OU::Assembly::Properties &xmlProperties) {
   //  m_instance = ai;
   m_xml = ix;
@@ -331,7 +330,7 @@ init(::Assembly &assy, const char *iName, const char *wName, ezxml_t ix,
     return err;
   if (w->m_paramConfig)
     assy.addParamConfigParameters(*w->m_paramConfig, xmlProperties, ipv);
-  m_properties.resize(ipv - &m_properties[0]);
+  m_properties.resize(OCPI_SIZE_T_DIFF(ipv, &m_properties[0]));
   // Initialize the instance ports
   m_ports.resize(m_worker->m_ports.size());
   InstancePort *ip = &m_ports[0];
@@ -358,7 +357,7 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
     return OU::esprintf("%s", e.c_str());
   }
   const char *err;
- 
+
   // Reserve for instances to include enough space to add an adapter for each connection
   m_instances.reserve(m_utilAssembly->nUtilInstances() + m_utilAssembly->m_connections.size());
   // Set the size for just the instances, before adapters
@@ -367,7 +366,7 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
   // Initialize our instances based on the generic assembly instances
   for (unsigned n = 0; n < m_utilAssembly->nUtilInstances(); n++, i++) {
     OU::Assembly::Instance &ai = m_utilAssembly->utilInstance(n);
-    if ((err = 
+    if ((err =
 	 i->init(*this, ai.m_name.c_str(), ai.m_implName.c_str(), ai.xml(), ai.m_properties)))
       return err;
     // If the instance in the OU::Assembly has "m_externals=true",
@@ -391,7 +390,7 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
 	    } else if (!strcasecmp((*pi)->m_name.c_str(), ip->m_port->pname())) {
 	      p = ip->m_port;
 	      break;
-	    } 
+	    }
 	  if (!p)
 	    ip->m_externalize = true;
 	  //	  if (!p && (err = externalizePort(*ip, ip->m_port->pname(), NULL)))
@@ -405,7 +404,7 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
   // Now we fill in the top-level worker stuff.
   ocpiCheck(asprintf((char**)&m_assyWorker.m_specName, "local.%s", m_assyWorker.m_implName) > 0);
   // Properties:  we only set the canonical hasDebugLogic property, which is a parameter.
-  if ((err = m_assyWorker.doProperties(xml, m_assyWorker.m_file.c_str(), true, false)))
+  if ((err = m_assyWorker.doProperties(xml, m_assyWorker.m_file.c_str(), true, false, NULL, false)))
     return err;
   // Parse the Connections, creating external ports for this assembly worker as needed.
   for (OU::Assembly::ConnectionsIter ci = m_utilAssembly->m_connections.begin();
@@ -449,11 +448,6 @@ externalizePort(InstancePort &ip, const char *name, size_t *ordinal) {
   Port &extPort = p.clone(m_assyWorker, extName, p.m_count, NULL, err);
   if (err)
     return err;
-  // If the port has its own clock, use it.
-  if (!ip.m_instance->m_clocks[ip.m_port->clock->ordinal] && ip.m_port->myClock) 
-    ip.m_instance->m_clocks[ip.m_port->clock->ordinal] = ip.m_port->clock;
-  c.m_clock = extPort.clock = ip.m_instance->m_clocks[ip.m_port->clock->ordinal];
-  assert(extPort.clock);
   OU::Assembly::External *ext = new OU::Assembly::External;
   ext->m_name = extPort.m_name;
   ext->m_role.m_provider = !p.m_master; // provisional
@@ -489,7 +483,7 @@ emitXmlConnections(FILE *) {
 }
 
 void Worker::
-emitXmlWorker(FILE *f) {
+emitXmlWorker(FILE *f, bool verbose) {
   fprintf(f, "<worker name=\"%s", m_implName);
   // FIXME - share this param-named implname with emitInstance
   if (m_paramConfig && m_paramConfig->nConfig)
@@ -503,7 +497,7 @@ emitXmlWorker(FILE *f) {
   if (m_ctl.controlOps) {
     bool first = true;
     for (unsigned op = 0; op < OU::Worker::OpsLimit; op++)
-      if (m_ctl.controlOps & (1 << op)) {
+      if (m_ctl.controlOps & (1u << op)) {
 	fprintf(f, "%s%s", first ? " controlOperations=\"" : ",",
 		OU::Worker::s_controlOpNames[op]);
 	first = false;
@@ -512,7 +506,6 @@ emitXmlWorker(FILE *f) {
       fprintf(f, "\"");
   }
   if (m_wci && m_wci->timeout())
-    //  if (m_ports.size() && m_ports[0]->type == WCIPort && m_ports[0]->u.wci.timeout)
     fprintf(f, " Timeout=\"%zu\"", m_wci->timeout());
   if (m_ctl.firstRaw)
     fprintf(f, " FirstRaw='%u'", m_ctl.firstRaw->m_ordinal);
@@ -520,6 +513,8 @@ emitXmlWorker(FILE *f) {
     fprintf(f, " Scalable='1'");
   if (m_requiredWorkGroupSize)
     fprintf(f, " requiredWorkGroupSize='%zu'", m_requiredWorkGroupSize);
+  if (m_version) // keep old distinction between zero and 1 even though they are really the same
+    fprintf(f, " version='%u'", m_version);
   fprintf(f, ">\n");
   if (m_scalable) {
     OU::Port::Scaling s;
@@ -533,13 +528,28 @@ emitXmlWorker(FILE *f) {
     fprintf(f, "  <slave worker='%s.%s'/>\n", (*it).second->m_implName,
                                               (*it).second->m_modelString);
   }
-  unsigned nn;
   std::string out;
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
     OU::Property *prop = *pi;
     prop->printAttrs(out, "property", 1, prop->m_isParameter); // suppress default values for parameters
     if (prop->m_isImpl)
       out += " isImpl='1'";
+    else if (verbose){
+      if (prop->m_specInitial)
+        out += " specinitial='1'";
+      if (prop->m_specReadable)
+        out += " specreadable='1'";
+      if (prop->m_specParameter)
+        out += " specparameter='1'";
+      if (prop->m_specWritable)
+        out += " specwritable='1'";
+      if (prop->m_isVolatile)  // if volitile is set it has to be done in the spec
+        out += " specvolitile='1'";
+    }
+    if (prop->m_isDebug)
+      out += " debug='1'";
+    if (prop->m_isHidden)
+      out += " hidden='1'";
     if (prop->m_isVolatile)
       out += " volatile='1'";
     else if (prop->m_isReadable)
@@ -556,13 +566,15 @@ emitXmlWorker(FILE *f) {
       out += " readError='1'";
     if (prop->m_writeError)
       out += " writeError='1'";
+    if (prop->m_isRaw)
+      out += " raw='1'";
     if (!prop->m_isReadable && !prop->m_isWritable && !prop->m_isParameter)
       out += " padding='1'";
     if (prop->m_isIndirect)
       OU::formatAdd(out, " indirect=\"%zu\"", prop->m_indirectAddr);
     if (prop->m_isParameter) {
       out += " parameter='1'";
-      OU::Value *v = 
+      OU::Value *v =
 	m_paramConfig && prop->m_paramOrdinal < m_paramConfig->params.size() &&
 	!m_paramConfig->params[prop->m_paramOrdinal].m_isDefault ?
 	&m_paramConfig->params[prop->m_paramOrdinal].m_value : prop->m_default;
@@ -579,6 +591,7 @@ emitXmlWorker(FILE *f) {
     }
     prop->printChildren(out, "property");
   }
+  unsigned nn;
   for (nn = 0; nn < m_ports.size(); nn++)
     m_ports[nn]->emitXML(out);
   for (nn = 0; nn < m_localMemories.size(); nn++) {

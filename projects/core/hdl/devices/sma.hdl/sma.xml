@@ -1,5 +1,4 @@
-<HdlImplementation Name="sma" Language="Verilog" Pattern="%w%M%0_">
-  <xi:include href="sma_spec.xml"/>
+<HdlWorker Name="sma" Language="Verilog" Pattern="%w%M%0_" spec="sma_spec.xml">
   <ControlInterface Sub32BitConfigProperties="true" SizeOfConfigSpace="4g" ControlOperations="initialize">
     <Property Name="mesgCount" Readable="true"/>
     <Property Name="abortCount" Readable="true"/>
@@ -24,6 +23,6 @@
   <StreamInterface Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256" MaxMessageValues="8191"/>
   <StreamInterface Name="out"  ImpreciseBurst="True" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"  MaxMessageValues="8191"/>
   <MessageInterface Name="message"  ByteWidth="8" PreciseBurst="True" MFlagWidth="32" DataWidth="32" TalkBack="true" Bidirectional="true" MaxMessageValues="8193" master='true'/>
-</HdlImplementation>
+</HdlWorker>
 
 

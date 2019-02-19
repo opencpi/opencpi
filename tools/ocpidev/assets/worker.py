@@ -15,25 +15,32 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
+"""
+Defintion of rcc and hdl workers and related classes
+"""
 
-from .abstract import *
 import os
 import sys
 import logging
-sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
+import json
+from abc import abstractmethod
+from xml.etree import ElementTree as ET
 import _opencpi.hdltargets as hdltargets
-import xml.etree.ElementTree as ET
+import _opencpi.util as ocpiutil
+from .abstract import HDLBuildableAsset, ReportableAsset
+from .component import ShowableComponent
 
-# Skeleton class
-class Worker(Asset):
+class Worker(ShowableComponent):
     """
     Any OpenCPI Worker. This class is authoring model agnostic and represents all workers of any
     type. In general, something is a worker if it has an OWD (OpenCPI Worker Description File),
     and implements an OCS (OpenCPI Component Specification).
     """
     def __init__(self, directory, name=None, **kwargs):
-        if name is None:
+        if name in [None, ""]:
             name = os.path.basename(directory).rsplit('.', 1)[0]
+        rchoped_name = ocpiutil.rchop(name, "." + self.get_authoring_model(directory))
+        self.ocpigen_xml = (directory + "/" + rchoped_name + ".xml")
         super().__init__(directory, name, **kwargs)
 
     @staticmethod
@@ -43,9 +50,52 @@ class Worker(Asset):
         """
         # Worker directories end in ".<authoring-model>", so use splitext to get the
         # directories extension
-        _, ext = os.path.splitext(os.path.realpath(directory))
+        _, ext = os.path.splitext(os.path.realpath(ocpiutil.rchop(directory, '/')))
         # Return the extension/model without the leading period
         return ext[1:]
+
+    def show(self, details, verbose, **kwargs):
+        """
+        Print out the ports, properties, and slaves of a given worker in the format that is
+        provided by the caller
+
+        Function attribtes:
+          details    - the mode to print out the informoton in table or simple are the only valid
+                       options
+          verbose    - integer for verbosity level 0 is default and lowest and anything above 1
+                       shows struct internals and hidden properties
+          kwargs     - no extra kwargs arguments expected
+        """
+        json_dict = self._get_show_dict(verbose)
+        # add worker specific stuff to the dictionary
+        prop_dict = json_dict["properties"]
+        for prop in self.property_list:
+            if verbose > 0 or prop.get("hidden", "0") == "0":
+                prop_dict[prop["name"]]["isImpl"] = prop.get("isImpl", "0")
+                access_dict = prop_dict[prop["name"]]["accessibility"]
+                if prop_dict[prop["name"]]["isImpl"] == "0":
+                    access_dict["specinitial"] = prop.get("specinitial", "0")
+                    access_dict["specparameter"] = prop.get("specparameter", "0")
+                    access_dict["specwritable"] = prop.get("specwritable", "0")
+                    access_dict["specreadable"] = prop.get("specreadable", "0")
+                    access_dict["specvolitile"] = prop.get("specvolitile", "0")
+        slave_dict = {}
+        for slave in self.slave_list:
+            slave_dict[slave] = {"name": slave}
+        json_dict["slaves"] = slave_dict
+
+        if details == "simple" or details == "table":
+            print("Component: " + json_dict["name"] + " Package ID: " + json_dict["package_id"])
+            print("Directory: " + json_dict["directory"])
+            self._show_ports_props(json_dict, details, verbose, True)
+            if json_dict.get("slaves"):
+                rows = [["Slave Name"]]
+                for slave in json_dict["slaves"]:
+                    rows.append([json_dict["slaves"][slave]["name"]])
+                ocpiutil.print_table(rows, underline="-")
+        else:
+            json.dump(json_dict, sys.stdout)
+            print()
 
 # Placeholder class
 class RccWorker(Worker):
@@ -93,7 +143,7 @@ class HdlCore(HDLBuildableAsset):
 #                 to init_platform_configs() since it now inherits init_build_configs().
 #                 Have HdlAssembly and/or its subclasses inherit from HdlWorker.
 
-# Skeleton class
+# pylint:disable=too-many-ancestors
 class HdlWorker(Worker, HdlCore):
     """
     This class represents a HDL worker.
@@ -110,7 +160,9 @@ class HdlWorker(Worker, HdlCore):
             (e.g. HdlLibraryWorker and HdlPlatformWorker)
         """
         raise NotImplementedError("HdlWorker.init_configs() is not implemented")
+# pylint:enable=too-many-ancestors
 
+# pylint:disable=too-many-ancestors
 class HdlLibraryWorker(HdlWorker, ReportableAsset):
     """
     An HDL Library worker is any HDL Worker that lives in a component/worker library.
@@ -130,6 +182,12 @@ class HdlLibraryWorker(HdlWorker, ReportableAsset):
         self.configs = {}
         self.init_configs(**kwargs)
 
+    def build(self):
+        """
+        This function will build the asset, must be implemented by the child class
+        """
+        raise NotImplementedError("HdlLibraryWorker.build() is not implemented")
+
     def init_configs(self, **kwargs):
         """
         Parse this worker's build XML and populate its "configs" dictionary
@@ -144,7 +202,7 @@ class HdlLibraryWorker(HdlWorker, ReportableAsset):
             # If neither is found, there is no build XML and so we assume there is only one config
             # and assign it index 0
             self.configs[0] = HdlLibraryWorkerConfig(directory=self.directory, name=self.name,
-                                                       config_index=0, **kwargs)
+                                                     config_index=0, **kwargs)
             return
 
         # Begin parsing the build XML
@@ -171,10 +229,10 @@ class HdlLibraryWorker(HdlWorker, ReportableAsset):
             # Initialize the config instance with this worker's dir and name, and the
             # configuration's ID and parameter dictionary
             self.configs[int(config_id)] = HdlLibraryWorkerConfig(directory=self.directory,
-                                                                    name=self.name,
-                                                                    config_index=int(config_id),
-                                                                    config_params=param_dict,
-                                                                    **kwargs)
+                                                                  name=self.name,
+                                                                  config_index=int(config_id),
+                                                                  config_params=param_dict,
+                                                                  **kwargs)
 
     def get_config_params_report(self):
         """
@@ -268,6 +326,7 @@ class HdlLibraryWorker(HdlWorker, ReportableAsset):
         """
         self.show_config_params_report()
         super().show_utilization()
+# pylint:enable=too-many-ancestors
 
 #TODO should implement HdlBuildableAsset
 class HdlLibraryWorkerConfig(HdlCore, ReportableAsset):
@@ -298,6 +357,14 @@ class HdlLibraryWorkerConfig(HdlCore, ReportableAsset):
         # The config_params will contain build parameters for this configuration
         # in the form: parameter-name -> value
         self.param_dict = kwargs.get("config_params", {})
+
+    def build(self):
+        """
+        This function will build the asset, must be implemented by the child class
+        """
+        raise NotImplementedError("build() is not implemented")
+
+
 
     def get_utilization(self):
         """

@@ -106,7 +106,7 @@ get(const char *a_name, const char *parentFile, Worker *parent, const char *&err
       err = OU::esprintf("Worker model for %s cannot be anything other than hdl here.", a_name);
       return NULL;
     }
-    name.assign(a_name, dot - a_name);
+    name.assign(a_name, OCPI_SIZE_T_DIFF(dot, a_name));
   } else
     name = a_name;
   // First look for the file assuming we are building a worker and the sought worker is in the
@@ -154,7 +154,7 @@ decodeSignal(std::string &name, std::string &base, size_t &index, bool &hasIndex
     index = strtoul(paren + 1, &end, 0);
     if (errno != 0 || end == paren + 1 || *end != ')')
       return OU::esprintf("Bad numeric format in signal index: %s", sname);
-    base.resize(paren - sname);
+    base.resize(OCPI_SIZE_T_DIFF(paren, sname));
     hasIndex = true;
   } else {
     hasIndex = false;
@@ -173,7 +173,7 @@ Device(Board &b, DeviceType &dt, const std::string &a_wname, ezxml_t xml, bool s
   std::string wname(a_wname);
   const char *cp = strchr(wname.c_str(), '.');
   if (cp)
-    wname.resize(cp - wname.c_str());
+    wname.resize(OCPI_SIZE_T_DIFF(cp, wname.c_str()));
   if (single)
     m_name = wname;
   else {

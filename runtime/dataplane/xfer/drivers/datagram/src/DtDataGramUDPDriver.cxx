@@ -78,7 +78,7 @@ namespace DataTransfer {
 	  m_ipAddress = ip_addr;
 	  const char* penv = getenv("OCPI_UDP_TRANSFER_PORT");
 	  if( !penv || (penv[0] == 0)) {
-	    ocpiDebug("Set the OCPI_TRANSFER_PORT environment variable to set socket IP address");
+	    ocpiDebug("Set the OCPI_TRANSFER_PORT environment variable to set socket IP port");
 	    m_portNum = 0;
 	  } else {
 	    static uint16_t s_port = 0;
@@ -204,4 +204,3 @@ namespace DataTransfer {
     RegisterTransferDriver<XferFactory> udpDatagramDriver;
   }
 }
-

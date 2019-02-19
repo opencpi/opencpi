@@ -143,7 +143,7 @@ $(foreach v,$(filter ExtraCompilerOptionsCC_%,$(.VARIABLES)),\
 # Prepare the parameters for compile-command-line injection into the worker compilation
 RccParams=\
   $(foreach n,$(WorkerParamNames),\
-	     '-DPARAM_$n()=$(Param_$(ParamConfig)_$n)')
+	     '-DOCPI_PARAM_$n()=$(Param_$(ParamConfig)_$n)')
 
 # Given flag name, target and language and flag name, prioritize the flags, as defined:
 # target and language

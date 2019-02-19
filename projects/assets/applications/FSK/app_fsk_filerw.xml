@@ -52,7 +52,6 @@
     <Property Name="fileName" Value="idata/Os.jpeg"/>
     <Property Name="messagesInFile" Value="false"/>
     <Property Name="opcode" Value="1"/>
-    <Property Name="messageSize" Value="8192"/>
     <Property Name="granularity" Value="1"/>
   </Instance>
   <!-- RX Chain -->

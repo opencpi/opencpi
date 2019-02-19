@@ -93,7 +93,10 @@ namespace OCPI {
     private:
       bool runInternal(uint32_t usecs = 0);
     public:
+      bool enabled() const { return m_enabled; }
       virtual Driver &driver() = 0;
+      virtual const std::string &name() const = 0;
+      const char *cname() const { return name().c_str(); }
       const std::string &platform() const { return m_platform; }
       const std::string &model() const { return m_model; }
       const std::string &os() const { return m_os; }

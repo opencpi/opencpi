@@ -116,15 +116,15 @@ begin
 
         case current_state is
           when INIT_s =>
-            if (in_in.som = '1' and in_in.eom = '1' and in_in.valid = '0') then
+            if (in_in.ready = '1' and in_in.som = '1' and in_in.eom = '1' and in_in.valid = '0') then
               current_state <= SEND_s;
-            elsif (in_in.som = '1' and in_in.valid = '0') then
+            elsif (in_in.ready = '1' and in_in.som = '1' and in_in.valid = '0') then
               current_state <= WAIT_s;
             end if;
           when WAIT_s =>
-            if (in_in.valid = '1') then
+            if (in_in.ready = '1' and in_in.valid = '1') then
               current_state <= INIT_s;
-            elsif (in_in.eom = '1') then
+            elsif (in_in.ready= '1' and in_in.eom = '1') then
               current_state <= SEND_s;
             end if;
           when SEND_s =>
@@ -153,7 +153,7 @@ begin
     if rising_edge(ctl_in.clk) then
       if(ctl_in.reset = '1' or force_eom = '1') then
         msg_cnt   <= (0 => '1', others => '0');
-      elsif (odata_vld = '1') then
+      elsif out_in.ready = '1' and ctl_in.is_operating = '1' and odata_vld = '1' then
         if(msg_cnt = max_sample_cnt) then
           msg_cnt <= (0 => '1', others => '0');
         else

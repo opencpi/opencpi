@@ -382,7 +382,7 @@ function do_registry {
     else
       [ -z "$verbose" ] || echo The project registry \"$1\" has been created
       mkdir $1
-      echo "OCPI:WARNING:To use this registry, run the following command and add it to "\
+      echo "OCPI:WARNING:To use this registry, run the following command and add it to"\
            "your ~/.bashrc:" >&2
       echo "export OCPI_PROJECT_REGISTRY_DIR=$(ocpiReadLinkE $1)" >&2
     fi
@@ -976,10 +976,6 @@ function do_library {
     return 0
   elif [ "$verb" == build ]; then
     [ -n "$1" ] || bad the library was not specified
-    if [ ! -d "${subdir}" -a -n "${missingOK}" ]; then
-      warn The library \(directory\) \"$subdir\" does not exist, but \"--ok-if-missing\" specified
-      return 0
-    fi
     [ -d "$subdir" ] || bad the library \(directory\) \"$subdir\" does not exist
     if [ -z "$buildRcc" -a -z "$buildHdl" -a -n "$buildClean" ]; then
       cleanTarget="clean"
@@ -1025,14 +1021,16 @@ function do_library {
       (*) bad unexpected contents of $libbase directory \($dirtype\);;
     esac
   fi
-  if [ "$subdir" != "$libbase" -a ! -d "$libbase"  -a "$libbase" != hdl ] ; then
-    mkdir -p $libbase
-    cat <<EOF > $libbase/Makefile
+  if [ "$subdir" != "$libbase" -a ! -d "$libbase"  -a "$libbase" != "hdl" ] ; then
+    if [ "$libbase" != "components" -o "$(basename $(pwd))" != "components" ] ; then
+      mkdir -p $libbase
+      cat <<EOF > $libbase/Makefile
 $CheckCDK
 # This is the Makefile for the $libbase directory when there are multiple
 # libraries in their own directories underneath this $libbase directory
 include \$(OCPI_CDK_DIR)/include/libraries.mk
 EOF
+    fi
   fi
   make_library $1 $subdir
 }
@@ -2402,7 +2400,6 @@ while [[ "${argv[0]}" != "" ]] ; do
       # OCPI_API_DEPRECATED 2.0 (AV-3457, specific search string)
       (--build-hdl-rcc-platform|--hdl-rcc-platform) warn "${argv[0]} is deprecated: use --rcc-hdl-platform to specify RCC platform using HDL name"; takeval hwswplat; hwswplats="${hwswplats[@]} $hwswplat";;
       (--create-build-files) OCPI_CREATE_BUILD_FILES=1;;
-      (--ok-if-missing) missingOK=1;;
       (*)
         error_msg="unknown option: ${argv[0]}"
         if [ -n "$verb" ]; then

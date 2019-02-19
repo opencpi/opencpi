@@ -43,6 +43,7 @@ module FIFO2X(CLK,
              D_IN,
              ENQ,
              FULL_N,
+             FULL1_N,
              D_OUT,
              DEQ,
              EMPTY_N,
@@ -59,6 +60,7 @@ module FIFO2X(CLK,
    input                 CLR ;
 
    output                FULL_N;
+   output                FULL1_N;
    output                EMPTY_N;
    output [width - 1 : 0] D_OUT;
 
@@ -67,9 +69,9 @@ module FIFO2X(CLK,
    reg [width - 1 : 0]    data0_reg;
    reg [width - 1 : 0]    data1_reg;
 
-   //assign                 FULL_N = full_reg ;
+   assign                 FULL_N = full_reg ;
    // pipelined full flag: will it be full in next cycle?
-   assign                 FULL_N = !((empty_reg && ENQ && !DEQ) || // 1 going to 2
+   assign                 FULL1_N = !((empty_reg && ENQ && !DEQ) || // 1 going to 2
 				     (!full_reg && !DEQ));         // 2 not going to 1
   
    assign                 EMPTY_N = empty_reg ;

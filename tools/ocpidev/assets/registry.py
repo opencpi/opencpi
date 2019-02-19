@@ -15,15 +15,18 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
+"""
+Defintion of Registery class
+"""
 
-from .abstract import *
-from .factory import *
 import os
 import sys
+import json
 from glob import glob
 import logging
-sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
-import _opencpi.util
+import _opencpi.util as ocpiutil
+from .abstract import ShowableAsset
+from .factory import AssetFactory
 
 # TODO: Should also extend CreatableAsset, ShowableAsset
 class Registry(ShowableAsset):
@@ -107,15 +110,15 @@ class Registry(ShowableAsset):
                 raise ocpiutil.OCPIException("Failure to register project with package '" + pid +
                                              "'.\nA project/link with that package qualifier " +
                                              "already exists and is registered in '" +
-                                             self.directory + "'.\nThe old registration is not being " +
-                                             "overwitten. To unregister the original project, " +
-                                             "call: 'ocpidev unregister project " +
+                                             self.directory + "'.\nThe old registration is not " +
+                                             "being overwitten. To unregister the original " +
+                                             "project, call: 'ocpidev unregister project " +
                                              self.__projects[pid].directory +
                                              "'.\nThen, run the command: 'ocpidev -d " +
                                              project.directory + " register project' or use the " +
                                              "'force' option")
             else:
-                 self.remove(package_id=pid)
+                self.remove(package_id=pid)
 
         # link will be created at <registry>/<package-ID>
         project_link = self.directory + "/" + pid
@@ -224,6 +227,9 @@ class Registry(ShowableAsset):
 
     @staticmethod
     def create(asset_dir="."):
+        """
+        Create a registry (which is essentially a folder) at the location specified by asset_dir
+        """
         print("making: " + asset_dir)
         os.mkdir(asset_dir)
         return AssetFactory.factory("registry", asset_dir)
@@ -276,31 +282,38 @@ class Registry(ShowableAsset):
         return project_registry_dir
 
     def _collect_workers_dict(self):
+        """
+        return a dictonary with all the workers in all the projects in the registry
+        """
         ret_dict = {}
         proj_dict = {}
         for proj in self.__projects:
             lib_dict = {}
-            #print(self.__projects[proj].name)
             for lib in self.__projects[proj].lib_list:
                 wkr_dict = {}
-                tests, wkrs= lib.get_valid_tests_workers()
+                # pylint:disable=unused-variable
+                tests, wkrs = lib.get_valid_tests_workers()
+                # pylint:enable=unused-variable
                 for wkr in wkrs:
-                     wkr_dict[os.path.basename(wkr)] = wkr
+                    wkr_dict[os.path.basename(wkr)] = wkr
                 if wkr_dict:
-                    wkrs_dict= {"workers":wkr_dict,
-                                "directory":lib.directory,
-                                "package_id": lib.package_id}
+                    wkrs_dict = {"workers":wkr_dict,
+                                 "directory":lib.directory,
+                                 "package_id": lib.package_id}
                     lib_dict[lib.package_id] = wkrs_dict
             if lib_dict:
-                libs_dict= {"libraries":lib_dict,
-                            "directory":self.__projects[proj].directory,
-                            "package_id": self.__projects[proj].package_id}
-                proj_dict[self.__projects[proj].package_id]= libs_dict
+                libs_dict = {"libraries":lib_dict,
+                             "directory":self.__projects[proj].directory,
+                             "package_id": self.__projects[proj].package_id}
+                proj_dict[self.__projects[proj].package_id] = libs_dict
 
         ret_dict["projects"] = proj_dict
         return ret_dict
 
     def _collect_components_dict(self):
+        """
+        return a dictonary with all the components in all the projects in the registry
+        """
         ret_dict = {}
         proj_dict = {}
         for proj in self.__projects:
@@ -315,30 +328,34 @@ class Registry(ShowableAsset):
                     comp_name = ocpiutil.rchop(os.path.basename(comp), "spec.xml")[:-1]
                     comp_dict[comp_name] = comp
                 if comp_dict:
-                    comps_dict= {"components":comp_dict,
-                                 "directory":lib.directory,
-                                 "package_id": lib.package_id}
+                    comps_dict = {"components":comp_dict,
+                                  "directory":lib.directory,
+                                  "package_id": lib.package_id}
                     lib_dict[lib.package_id] = comps_dict
             if lib_dict:
-                libs_dict= {"libraries":lib_dict,
-                            "directory":self.__projects[proj].directory,
-                            "package_id": self.__projects[proj].package_id}
+                libs_dict = {"libraries":lib_dict,
+                             "directory":self.__projects[proj].directory,
+                             "package_id": self.__projects[proj].package_id}
                 if top_comp_dict:
-                    libs_dict["components"]=top_comp_dict
-                proj_dict[self.__projects[proj].package_id]= libs_dict
+                    libs_dict["components"] = top_comp_dict
+                proj_dict[self.__projects[proj].package_id] = libs_dict
 
         ret_dict["projects"] = proj_dict
         return ret_dict
 
+    # pylint:disable=unused-argument
     def show_workers(self, details, verbose, **kwargs):
+        """
+        Show all the workers in all the projects in the registry
+        """
         reg_dict = self._collect_workers_dict()
-        if (details == "simple"):
+        if details == "simple":
             for proj in reg_dict["projects"]:
                 for lib in reg_dict["projects"][proj]["libraries"]:
                     for wkr in reg_dict["projects"][proj]["libraries"][lib]["workers"]:
-                        print (wkr + " ", end="")
+                        print(wkr + " ", end="")
             print()
-        elif (details == "table"):
+        elif details == "table":
             rows = [["Project", "Library Directory", "Worker"]]
             for proj in reg_dict["projects"]:
                 for lib in reg_dict["projects"][proj]["libraries"]:
@@ -346,21 +363,26 @@ class Registry(ShowableAsset):
                         lib_dict = reg_dict["projects"][proj]["libraries"][lib]
                         rows.append([proj, lib_dict["directory"], wkr])
             ocpiutil.print_table(rows, underline="-")
-        elif (details == "json"):
+        elif details == "json":
             json.dump(reg_dict, sys.stdout)
             print()
+    # pylint:enable=unused-argument
 
+    # pylint:disable=unused-argument
     def show_components(self, details, verbose, **kwargs):
+        """
+        Show all the components in all the projects in the registry
+        """
         reg_dict = self._collect_components_dict()
-        if (details == "simple"):
+        if details == "simple":
             for proj in reg_dict["projects"]:
                 for comp in reg_dict["projects"][proj].get("components", []):
-                    print (comp + " ", end="")
+                    print(comp + " ", end="")
                 for lib in reg_dict["projects"][proj]["libraries"]:
                     for comp in reg_dict["projects"][proj]["libraries"][lib]["components"]:
-                        print (comp + " ", end="")
-            print ()
-        elif (details == "table"):
+                        print(comp + " ", end="")
+            print()
+        elif details == "table":
             rows = [["Project", "Component Spec Directory", "Component"]]
             for proj in reg_dict["projects"]:
                 for comp in reg_dict["projects"][proj].get("components", []):
@@ -370,22 +392,30 @@ class Registry(ShowableAsset):
                         lib_dict = reg_dict["projects"][proj]["libraries"][lib]
                         rows.append([proj, lib_dict["directory"] + "/specs", comp])
             ocpiutil.print_table(rows, underline="-")
-        elif (details == "json"):
+        elif details == "json":
             json.dump(reg_dict, sys.stdout)
             print()
+    # pylint:enable=unused-argument
 
-    def _get_dict(self):
+    def get_dict(self):
+        """
+        return a dictonary with with information about the registry
+        """
         proj_dict = {}
         for proj in self.__projects:
             proj_dict[proj] = {"real_path":self.__projects[proj].directory,
                                "exists":(os.path.exists(self.__projects[proj].directory) and
-                               os.path.isdir(self.__projects[proj].directory))}
+                                         os.path.isdir(self.__projects[proj].directory))}
         json_dict = {"registry_location": self.directory}
         json_dict["projects"] = proj_dict
         return json_dict
 
     def show(self, details, verbose, **kwargs):
-        reg_dict = self._get_dict()
+        """
+        show information about the registry in the format specified by details
+        (simple, table, or json)
+        """
+        reg_dict = self.get_dict()
         if details == "simple":
             print(" ".join(sorted(reg_dict["projects"])))
         elif details == "table":
@@ -397,6 +427,6 @@ class Registry(ShowableAsset):
                 rows.append([proj, reg_dict["projects"][proj]["real_path"],
                              reg_dict["projects"][proj]["exists"]])
             ocpiutil.print_table(rows, underline="-")
-        elif (details == "json"):
+        elif details == "json":
             json.dump(reg_dict, sys.stdout)
             print()

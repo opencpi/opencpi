@@ -16,44 +16,40 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
-
+"""
+Main program that processes the show verb for ocpidev
+"""
 # TODO: integrate more inline with ocpirun -A to get information instead of metadata file
 
 import argparse
-import subprocess
 import os
-import sys
-import json
 import types
 import pydoc
-from xml.etree import ElementTree as ET
-sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
 import _opencpi.util as ocpiutil
 import _opencpi.assets.factory as ocpifactory
 import _opencpi.assets.registry as ocpiregistry
-from _opencpi.hdltargets import HdlToolFactory
-from _opencpi.assets.platform import * #TODO this probley shouldnt import from
-from _opencpi.assets.project import Project
+import _opencpi.assets.project as ocpiproj
+import _opencpi.assets.platform as ocpiplat
 
 # There is a top-level parser that parses FIRST_NOUNS
 # If the noun is a PLAIN_NOUN, it proceeds normally,
 # but if the noun is a SUB_PARSER_NOUN, then it
 # looks for a second noun from the SUBNOUNS list.
 PLAIN_NOUNS = ["registry", "projects", "workers", "components", "platforms", "targets", "tests",
-              "libraries", "project", "component"]
+               "libraries", "project", "component", "worker"]
 SUB_PARSER_NOUNS = ["hdl", "rcc"]
 FIRST_NOUNS = PLAIN_NOUNS + SUB_PARSER_NOUNS
 SUBNOUNS = {}
 SUBNOUNS['hdl'] = ["targets", "platforms"]
 SUBNOUNS['rcc'] = ["targets", "platforms"]
-NOUN_NON_PLURALS = ["component", "project"]
+NOUN_NON_PLURALS = ["component", "project", "worker"]
 
 # NOUNS is the list of all nouns, where noun-subparser nouns
 # are listed as <noun>-<subnoun>
 NOUNS = PLAIN_NOUNS
-for noun in SUB_PARSER_NOUNS:
-    for subnoun in SUBNOUNS[noun]:
-        NOUNS.append(noun + "-" + subnoun)
+for loop_noun in SUB_PARSER_NOUNS:
+    for subnoun in SUBNOUNS[loop_noun]:
+        NOUNS.append(loop_noun + "-" + subnoun)
 
 # Most nouns correspond to dirtypes, except nouns that represent 'all' or 'multiple' assets of a
 # certain type. For example 'workers' or 'tests' do not correspond to dirtypes, but to multiple
@@ -66,7 +62,11 @@ for noun in SUB_PARSER_NOUNS:
 NOUN_PLURALS = ["projects", "workers", "components", "platforms", "targets", "tests", "libraries"]
 DIR_TYPES = [noun for noun in NOUNS if noun not in NOUN_PLURALS]
 
-def parseCLVars():
+def parse_cl_vars():
+    """
+    Construct the argparse object and parse all the command line arguments into a dictionary to
+    return
+    """
     description = "Utility for showing the project registry, any " + \
                   "available projects (registered or in path), workers, " + \
                   "components, HDL/RCC Platforms and Targets available at built time."
@@ -74,11 +74,11 @@ def parseCLVars():
     # Print help screen and usage to pager. Code block adapted and inlined from from:
     # https://github.com/fmenabe/python-clg/blob/master/LICENSE#L6
     #     under MIT license
-    parser.print_help = types.MethodType(lambda self, _=None: pydoc.pager("\n" +
-                                         self.format_help()),
+    parser.print_help = types.MethodType(lambda self,
+                                                _=None: pydoc.pager("\n" + self.format_help()),
                                          parser)
-    parser.print_usage = types.MethodType(lambda self, _=None: pydoc.pager("\n" +
-                                          self.format_usage()),
+    parser.print_usage = types.MethodType(lambda self,
+                                                 _=None: pydoc.pager("\n" + self.format_usage()),
                                           parser)
     # This displays the error AND help screen when there is a usage error or no arguments provided
     parser.error = types.MethodType(
@@ -123,14 +123,10 @@ def parseCLVars():
     scope_group.add_argument("--local-scope", action="store_const", dest="scope", const="local",
                              default="global",
                              help="Only show assets in the local project")
-    #scope_group.add_argument("--available-scope", action="store_const", dest="scope", const="depend",
-    #                         default="global",
-    #                         help="Only show assets in the local project and the projects it " +
-    #                             "depends on")
     scope_group.add_argument("--global-scope", action="store_const", dest="scope", const="global",
                              default="global",
-                             help="show assets in all projects. This is the default if no "+
-                                  "scope mode is given")
+                             help="show assets in all projects. This is the default if no " +
+                             "scope mode is given")
 
     first_pass_args, remaining_args = parser.parse_known_args()
     if not remaining_args:
@@ -152,66 +148,77 @@ def parseCLVars():
         subparser = argparse.ArgumentParser(description=description)
         # finally, parse the actual name of the asset to act on
         subparser.add_argument("name", default=".", type=str, action="store", nargs='?',
-                            help="This is the name of the asset to show utilization for.")
+                               help="This is the name of the asset to show utilization for.")
         args = vars(subparser.parse_args(remaining_args, namespace=first_pass_args))
         noun = first_pass_args.noun
 
     return args, noun
 
 def check_scope_options(scope, noun):
-
+    """
+    Verify that the scope options passed in are valid given the noun
+    """
     if noun in NOUN_NON_PLURALS:
-        scope="local"
+        scope = "local"
 
-    valid_scope_dict = {}
-    valid_scope_dict["registry"] = ["global"]
-    valid_scope_dict["projects"] = ["global"]
-    valid_scope_dict["workers"] = ["global"]
-    valid_scope_dict["components"] = ["global"]
-    valid_scope_dict["component"] = ["local"]
-    valid_scope_dict["tests"] = ["local"]
-    valid_scope_dict["libraries"] = ["local"]
-    valid_scope_dict["project"] = ["local"]
-    valid_scope_dict["platforms"] = ["global"]
-    valid_scope_dict["targets"] = ["global"]
-    valid_scope_dict["rccplatforms"] = ["global"]
-    valid_scope_dict["rcctargets"] = ["global"]
-    valid_scope_dict["hdlplatforms"] = ["global"]
-    valid_scope_dict["hdltargets"] = ["global"]
+    valid_scope_dict = {
+        "registry":"global",
+        "projects":"global",
+        "workers":"global",
+        "components":"global",
+        "component":"local",
+        "worker":"local",
+        "tests":"local",
+        "libraries":"local",
+        "project":"local",
+        "platforms":"global",
+        "targets":"global",
+        "rccplatforms":"global",
+        "rcctargets":"global",
+        "hdlplatforms":"global",
+        "hdltargets":"global",
+    }
+
 
     if scope not in valid_scope_dict[noun]:
         raise ocpiutil.OCPIException("Invalid scope option '" + scope + "' for " + noun +
                                      ".  Valid options are: " + " ,".join(valid_scope_dict[noun]))
 
 def set_init_values(args, noun):
-    if (noun == "project" and args["verbose"] > 0):
-        args["init_apps_col"]= True
-        args["init_hdlplats"]= True
-        args["init_rccplats"]= True
+    """
+    based on the noun and verbocity level set the init variabes up for the classes so that the
+    right portions of the classes are constructed
+    """
+    if noun == "project" and args["verbose"] > 0:
+        args["init_apps_col"] = True
+        args["init_hdlplats"] = True
+        args["init_rccplats"] = True
         args["hdl_plats"] = ["local"]
         args["init_comps"] = True
-    if (noun == "project" and args["verbose"] > 1):
-        args["init_libs"]= True
+    if noun == "project" and args["verbose"] > 1:
+        args["init_libs"] = True
     #elif (noun == "project" and args["verbose"] > 2):
     #    args["init_wkr_config"]= True
     elif noun in ["tests", "workers", "components"]:
-        args["init_libs"]= True
-    elif noun == "component":
-        args["init_comp_details"]= True
+        args["init_libs"] = True
+    elif noun in ["component", "worker"]:
+        args["init_ocpigen_details"] = True
 
-def get_noun_from_plural(directory, args, noun, scope):
+def get_noun_from_plural(args, noun, scope):
+    """
+    deterimne what object type to create for a plural noun based on the noun and the scope
+    """
     action = ""
     class_dict = {
-                 None:           "Project",
-                 "projects":     "Project",
-                 "hdltargets":   "HdlTarget",
-                 "rcctargets":   "RccTarget",
-                 "targets":      "Target",
-                 "hdlplatforms": "HdlPlatform",
-                 "rccplatforms": "RccPlatform",
-                 "platforms":    "Platform",
-                 }
-
+        None:           "ocpiproj.Project",
+        "projects":     "ocpiproj.Project",
+        "hdltargets":   "ocpiplat.HdlTarget",
+        "rcctargets":   "ocpiplat.RccTarget",
+        "targets":      "ocpiplat.Target",
+        "hdlplatforms": "ocpiplat.HdlPlatform",
+        "rccplatforms": "ocpiplat.RccPlatform",
+        "platforms":    "ocpiplat.Platform",
+        }
     if args["noun"] in ["tests", "libraries", "workers", "components"]:
         action = "show_" + args["noun"]
         if scope == "global":
@@ -221,11 +228,13 @@ def get_noun_from_plural(directory, args, noun, scope):
     else:
         action = class_dict[noun] + '.show_all("' + args["details"] + '")'
         noun = None
-
     return noun, action
 
 def main():
-    (args, noun) = parseCLVars()
+    """
+    Function that is called if this module is called as a mian function
+    """
+    (args, noun) = parse_cl_vars()
     action = "show"
     try:
         cur_dir = args['cur_dir']
@@ -237,9 +246,7 @@ def main():
         # Now that we have grabbed name, delete it from the args that will be passed into the
         # AssetFactory because name is explicitly passed to AssetFactory as a separate argument
         del args['name']
-
         check_scope_options(args.get("scope", None), noun)
-
         if noun in ["registry", "projects"]:
             directory = ocpiregistry.Registry.get_registry_dir()
         elif noun not in ["libraries", "hdlplatforms", "hdltargets", "rccplatforms", "rcctargets",
@@ -272,17 +279,21 @@ def main():
         plural_noun_list = NOUN_PLURALS + ["hdlplatforms", "hdltargets", "rccplatforms",
                                            "rcctargets", "platforms", "targets"]
         if noun in plural_noun_list:
-            (noun, action) = get_noun_from_plural(directory, args, noun, args.get("scope", None))
+            (noun, action) = get_noun_from_plural(args, noun, args.get("scope", None))
         ocpiutil.logging.debug('Choose noun: "' + str(noun) + '" and action: "' + action +'"')
         if noun not in [None, "hdlplatforms", "hdltargets", "rccplatforms", "rcctargets",
                         "platforms", "targets", "projects"]:
-           my_asset = ocpifactory.AssetFactory.factory(noun, directory, "", **args)
-           action = ("my_asset." + action + '("' + args["details"] + '", ' +
-                    str(args["verbose"]) + ')')
+            # pylint:disable=unused-variable
+            my_asset = ocpifactory.AssetFactory.factory(noun, directory, "", **args)
+            action = ("my_asset." + action + '("' + args["details"] + '", ' +
+                      str(args["verbose"]) + ')')
+            # pylint:enable=unused-variable
 
         ocpiutil.logging.debug("running show action: '" + action + "'")
-        #not using anything that is user defined so eval is fine
+        # not using anything that is user defined so eval is fine
+        # pylint:disable=eval-used
         eval(action)
+        # pylint:enable=eval-used
     except ocpiutil.OCPIException as ex:
         ocpiutil.logging.error(ex)
 

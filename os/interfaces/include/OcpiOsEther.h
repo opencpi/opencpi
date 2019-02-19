@@ -58,14 +58,17 @@ namespace OCPI {
 	char m_pretty[s_size*3+1];
 	bool m_error, m_broadcast;
       public:
-	inline bool isEther() const { return m_isEther; }
-	bool isLoopback() const;
-	bool setString(const char *x); // return true on error
-	void set(const void *x);
-	void set(uint16_t, uint32_t);
-	void set64(uint64_t a) { m_addr64 = a; }
-	bool empty() { return m_addr64 == 0; }
-	Address(bool isUdp, uint16_t port = 0);
+        inline bool isEther() const { return m_isEther; }
+        bool isLoopback() const;
+        bool setString(const char *x); // return true on error
+        void set(const void *x);
+        void set(uint16_t, uint32_t);
+        void set64(uint64_t a) {
+          set(NULL); // initialize m_pretty, etc
+          m_addr64 = a;
+        }
+        bool empty() { return m_addr64 == 0; }
+        Address(bool isUdp, uint16_t port = 0);
 
 	inline explicit Address(const unsigned char *m = NULL) {
 	  set(m);

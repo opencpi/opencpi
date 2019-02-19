@@ -74,27 +74,13 @@ namespace OCPI {
         return *(OCPI::DataTransport::Port *)this;
       }
       void disconnect() {}
-      
-#if 0
-      OCPI::API::ExternalPort &
-      connectExternal(const char *extName = NULL, const OCPI::Util::PValue *extParams = NULL,
-		      const OCPI::Util::PValue *connectParams = NULL) {
-	(void)extName;(void)extParams;(void)connectParams;
-	return *(OCPI::API::ExternalPort*)NULL;
-      }
-#endif
+
     protected:
       bool hasName(const char *name);
     public:
       // Local (possibly among different containers) connection: 1 step operation on the user port
       void connect(OCPI::API::Port &other, const OCPI::API::PValue *myParams = NULL,
 		   const OCPI::API::PValue *otherParams = NULL);
-#if 0
-      void connect(Launcher::Connection &c);
-#endif
-
-      // Connect to a URL based port.  This is currently used for DDS but may also be used for CORBA etc.
-
     };
 
     extern const char *portBase;
@@ -128,14 +114,13 @@ namespace OCPI {
       bool canBeExternal() const { return true; }
     };
 
-    // This class is for objects that implement fan-in or fan-out connectivity for a 
-    // local member port.  E.g. is this local port is connected to 4 other member ports,
+    // This class is for objects that implement fan-in or fan-out connectivity for a
+    // local member port.  E.g. if this local port is connected to 4 other member ports,
     // this local port will have 4 local bridge ports.
-    // One class for both input and output, but with different constructors
     class BridgePort : public BasicPort {
       friend class LocalPort;
     protected:
-      BridgePort(LocalPort &port, bool provider, const OCPI::Util::PValue *params);
+      BridgePort(Container &c, const OCPI::Util::Port &mPort, bool provider, const OCPI::Util::PValue *params);
       ~BridgePort();
       bool canBeExternal() const { return true; }
     };

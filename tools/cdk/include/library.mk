@@ -42,7 +42,7 @@ generate:
 
 ifdef ShellLibraryVars
 showlib:
-	$(info Tests="$(TestImplementations); Workers="$(Implementations)";)
+	$(info Tests="$(TestImplementations); Workers="$(Implementations)"; Package="$(Package)";)
 	$(info Workers="$(Implementations)";)
 showtests:
 	$(info Tests="$(TestImplementations)";)

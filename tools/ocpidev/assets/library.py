@@ -15,16 +15,16 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
+"""
+Definition of Library and Library collection classes
+"""
 
-from .abstract import *
-from .factory import *
-from .worker import *
-from .component import *
 import os
-import sys
 import logging
-sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
-import _opencpi.util
+import _opencpi.util as ocpiutil
+from .abstract import RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ReportableAsset, Asset
+from .factory import AssetFactory
+from .worker import Worker, HdlWorker
 
 class Library(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ReportableAsset):
     """
@@ -37,29 +37,32 @@ class Library(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ReportableAss
         Initializes Library member data  and calls the super class __init__.  Throws an
         exception if the directory passed in is not a valid library directory.
         valid kwargs handled at this level are:
-            init_tests   (T/F) - Instructs the method weather to construct all test objects contained
-                                 in the library
-            init_workers (T/F) - Instructs the method weather to construct all worker objects contained
-                                 in the library
+            init_tests   (T/F) - Instructs the method weather to construct all test objects
+                                 contained in the library
+            init_workers (T/F) - Instructs the method weather to construct all worker objects
+                                 contained in the library
         """
         self.check_dirtype("library", directory)
         super().__init__(directory, name, **kwargs)
         self.test_list = None
-        if kwargs.get("init_tests", False) or kwargs.get("init_workers", False):
-           tests, wkrs = self.get_valid_tests_workers()
+        self.tests_names = None
+        self.wkr_names = None
+        self.package_id, self.tests_names, self.wkr_names = (
+            self.get_package_id_wkrs_tests(self.directory))
         if kwargs.get("init_tests", False):
             self.test_list = []
             logging.debug("Library constructor creating Test Objects")
-            for test_directory in tests:
+            for test_directory in self.tests_names:
                 self.test_list.append(AssetFactory.factory("test", test_directory, **kwargs))
 
+        kwargs["package_id"] = self.package_id
         self.worker_list = None
         if kwargs.get("init_workers", False):
             # Collect the list of workers and initialize Worker objects for each worker
             # of a supported authoring model
             self.worker_list = []
             logging.debug("Library constructor creating Worker Objects")
-            for worker_directory in wkrs:
+            for worker_directory in self.wkr_names:
                 auth = Worker.get_authoring_model(worker_directory)
                 if auth not in Asset.valid_authoring_models:
                     logging.debug("Skipping worker \"" + directory +
@@ -76,25 +79,47 @@ class Library(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ReportableAss
                 comp_name = ocpiutil.rchop(os.path.basename(comp_directory), "spec.xml")[:-1]
                 self.comp_list.append(AssetFactory.factory("component", comp_directory,
                                                            name=comp_name, **kwargs))
-        self.package_id = Library.get_package_id(self.directory)
 
     @staticmethod
     def get_package_id(directory='.'):
         lib_vars = ocpiutil.set_vars_from_make(mk_file=directory + "/Makefile",
-                                               mk_arg="ShellLibraryVars=1 showpackage",
+                                               mk_arg="ShellLibraryVars=1 showlib",
                                                verbose=True)
         return "".join(lib_vars['Package'])
+
+    def get_package_id_wkrs_tests(self, directory='.'):
+        """
+        Return the package id of the Library from the make variable that is returned
+        """
+        lib_vars = ocpiutil.set_vars_from_make(mk_file=directory + "/Makefile",
+                                               mk_arg="ShellLibraryVars=1 showlib",
+                                               verbose=True)
+        ret_package = "".join(lib_vars['Package'])
+        make_wkrs = lib_vars['Workers'] if lib_vars['Workers'] != [''] else []
+        make_tests = lib_vars['Tests'] if lib_vars['Tests'] != [''] else []
+        ret_tests = []
+        ret_wkrs = []
+        for name in make_tests:
+            if name != "":
+                ret_tests.append(self.directory + "/" + name)
+        for name in make_wkrs:
+            if name.endswith((".rcc", ".rcc/", ".hdl", ".hdl/")):
+                ret_wkrs.append(self.directory + "/" + name)
+        return ret_package, ret_tests, ret_wkrs
 
     def get_valid_tests_workers(self):
         """
         Probe make in order to determine the list of active tests in the library
         """
+        # If this function has alredy been called dont call make again because its very expencive
+        if self.tests_names is not None and self.wkr_names is not None:
+            return (self.tests_names, self.wkr_names)
         ret_tests = []
         ret_wkrs = []
         ocpiutil.logging.debug("Getting valid tests from: " + self.directory + "/Makefile")
         make_dict = ocpiutil.set_vars_from_make(mk_file=self.directory + "/Makefile",
-                                                 mk_arg="ShellLibraryVars=1 showlib",
-                                                 verbose=True)
+                                                mk_arg="ShellLibraryVars=1 showlib",
+                                                verbose=True)
         make_tests = make_dict["Tests"]
         make_wkrs = make_dict["Workers"]
 
@@ -104,6 +129,8 @@ class Library(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ReportableAss
         for name in make_wkrs:
             if name.endswith((".rcc", ".rcc/", ".hdl", ".hdl/")):
                 ret_wkrs.append(self.directory + "/" + name)
+        self.tests_names = ret_tests
+        self.wkr_names = ret_wkrs
         return (ret_tests, ret_wkrs)
 
     def run(self):

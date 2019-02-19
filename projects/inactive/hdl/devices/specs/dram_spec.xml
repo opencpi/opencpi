@@ -1,4 +1,4 @@
-<HdlImplementation Language="Verilog" >
+<HdlWorker Language="Verilog" >
   <ComponentSpec>
     <Properties>
       <property name="dramStatus" readable="true"/>
@@ -38,6 +38,6 @@
     </Properties>
   </ComponentSpec>
   <ControlInterface ControlOperations="initialize" Timeout="250000000"/>
-</HdlImplementation>
+</HdlWorker>
 
 

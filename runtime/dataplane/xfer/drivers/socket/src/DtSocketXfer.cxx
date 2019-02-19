@@ -73,10 +73,11 @@ public:
       // FIXME: we could do more parsing/checking on the ipaddress
       m_ipAddress.assign(protoInfo, colon - protoInfo);
     } else {
-      const char *env = getenv("OCPI_TRANSFER_IP_ADDRESS"); // alllow env for interface?
+      const char *env = getenv("OCPI_TRANSFER_IP_ADDRESS"); // allow env for interface?
       if (env && env[0])
 	m_ipAddress = env;
       else {
+	ocpiDebug("Set OCPI_TRANSFER_IP_ADDRESS environment variable to set socket IP address");
 	// Use the IP address of the first connected, up, interface with ether MAC address
 	// Cannot use host name since remote systems might not have DNS
 	static std::string myAddr;
@@ -107,8 +108,10 @@ public:
 	if (!s_port)
 	  s_port = (uint16_t)atoi(env);
 	m_portNum = s_port++;
-      } else
+      } else {
 	m_portNum = 0;
+	ocpiDebug("Set the OCPI_TRANSFER_PORT environment variable to set socket IP port");
+      }
       OU::format(m_protoInfo, "%s:%u", m_ipAddress.c_str(), m_portNum);
     }
     // Socket endpoints need an address space too in come cases, so we provide one by

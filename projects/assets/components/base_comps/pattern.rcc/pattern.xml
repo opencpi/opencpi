@@ -1,6 +1,5 @@
-<RccImplementation >
-  <xi:include href="pattern_spec.xml"/>
+<RccWorker spec="pattern_spec.xml">
   <property name="nextMeta" volatile='true'/>
   <property name="nextData" volatile='true'/>
-  <specProperty name='metadataCount' volatile='true'/>
-</RccImplementation>
+  <SpecProperty name='metadataCount' volatile='true'/>
+</RccWorker>

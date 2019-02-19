@@ -28,14 +28,20 @@
 #
 # This script is driven in part by the "places" file to find OpenCPI libraries and executables
 # (the built stuff).
+# Options are:
+# -v    verbose
+# -b    bootstrap - don't care about missing files
+# Positional arguments are: <rcc-platform> <rcc-platform-dir> <hdl-platform> <hdl-platform-dir>
+# Platform args will be a dash if not supplied
+# If there is an HDL platform, we are really focusing on exports for that platform
+# In that case the rcc platform supplied is the one that is being associated with the hdl platform
+# in this export.
 
 # The sorry state of POSIX/BSD/LINUX/MACOS command compatibility
 if [ `uname -s` = Darwin ]; then
   extended="-E ."
-  dylib=dylib
 else
   extended="-regextype posix-extended"
-  dylib=so
 fi
 if test "$*" = ""; then
   echo "Usage is: makeExportLinks.sh <target> <hyphen-if-not-exists-ok>"
@@ -51,32 +57,26 @@ if [ "$1" = "-v" -o "$OCPI_EXPORTS_VERBOSE" = 1 ]; then
   verbose=yes
   [ "$1" = "-v" ] && shift
 fi
-[ -n "$1" -a -n "$verbose" ] && echo Exporting for platform: $1
+[ "$1" = "-b" ] && bootstrap=1 && shift
+[ -n "$1" -a -n "$verbose" ] && echo Exporting for RCC platform: $1 "(HDL platform $3)".
 target=$1
-# If a specific sw platform is specified we must set some variables
-# specific_rcc so we no what rcc platform to use
-# target: hdl platform
-# target2: This variable is needed to help specify the target whenver target is
-# hdl
-[[ "$target" = *:* ]] \
-  && specific_rcc=$(echo $target | cut -d: -f2) \
-  && target=$(echo $target | cut -d: -f1) \
-  && target2="$target/$specific_rcc"
-bootstrap=$2
+rcc_platform=$1
+rcc_platform_dir=$2
+hdl_platform=$3
+hdl_platform_dir=$4
+target2=$target
+platform=$rcc_platform
+platform_dir=$rcc_platform_dir
+[ "$hdl_platform" = - ] && hdl_platform=
+[ -n "$hdl_platform" ] && {
+  target2=$hdl_platform/$rcc_platform
+  platform=$hdl_platform
+  platform_dir=$hdl_platform_dir
+}
 [ -z "$target" ] && target=$OCPI_TOOL_DIR
 export OCPI_CDK_DIR=`pwd`/bootstrap
-read -r hdl_platform hdl_platform_dir hdl_rcc_platform <<<$($OCPI_CDK_DIR/../tools/cdk/scripts/getHdlPlatform.sh $target 2>/dev/null)
-[ -n "$specific_rcc" ] && hdl_rcc_platform=$specific_rcc
-# Hdl targets need to specify the rcc platform path for when there are multiple
-# rcc platforms per hdl platform to prevent one object from stomping on another
-# To do this target2 is target appended with /<rcc-platform> for hdl and
-# just equal to target for an rcc platform
-[ "$hdl_platform" = "$target" -a -z "$target2" ] && target2="$target/$hdl_rcc_platform"
-[ "$hdl_platform" != "$target" -a -z "$target2" ] && target2="$target"
-# If a rcc platform was passed in unset all the variables set above.
-# These variables are only to be set if a hdl platform was passed in as target.
-[ "$hdl_platform" != "$target" ] && unset hdl_platform hdl_platform_dir hdl_rcc_platform
-[ $target = - -o -n "$hdl_platform" ] || source $OCPI_CDK_DIR/scripts/ocpitarget.sh
+# The only things we currently need from ocpitarget.sh is OcpiPlatformOs and OcpiPlatformPrerequisites
+[ $rcc_platform != - -a -z "$hdl_platform" ] && source $OCPI_CDK_DIR/scripts/ocpitarget.sh $rcc_platform
 
 # match_pattern: Find the files that match the pattern:
 #  - use default bash glob, and also
@@ -121,6 +121,10 @@ function match_filter {
 
 function make_relative_link {
   # echo make_relative_link $1 $2
+  if [ ! -e $1 -a -z "$bootstrap" ]; then
+    echo Warning: link source $1 does not '(yet?)' exist. >&2
+    return
+  fi
   # Figure out what the relative prefix should be
   local up
 #  [[ $1 =~ ^/ ]] || up=$(echo $2 | sed 's-[^/]*$--' | sed 's-[^/]*/-../-g')
@@ -187,13 +191,13 @@ function do_addition {
       *\<target\>*|*\<platform\>*|*\<platform_dir\>*) return;;
   esac
   rawsrc=${both[0]//<target>/$target2}
-  rawsrc=${rawsrc//<platform>/$OPCI_TARGET_PLATFORM}
-  rawsrc=${rawsrc/#<platform_dir>/$OCPI_TARGET_PLATFORM_DIR}
+  rawsrc=${rawsrc//<platform>/$platform}
+  rawsrc=${rawsrc/#<platform_dir>/$platform_dir}
   [ -n "$rcc_platform_dir" ] && rawsrc=${rawsrc/#<rcc_platform_dir>/$rcc_platform_dir}
   [ -n "$rcc_platform" ] && rawsrc=${rawsrc//<rcc_platform>/$rcc_platform}
   exp=${both[1]}
   [ -z "$exp" ] && bad unexpected empty second field
-  # If not deplyment(@) replace with just target else replace with deploy/target
+  # If not deployment(@) replace with just target else replace with deploy/target
   [ "$2" != "--" ] && exp=${exp//<target>/$target2} || exp=${exp//<target>/deploy/$target2}
   [ -n "$rcc_platform" ] && exp=${exp//<rcc_platform>/$rcc_platform}
   set +f
@@ -206,7 +210,7 @@ function do_addition {
       local srctmp=$src
       if [ -n "${both[2]}" ]; then  # a platform-specific export
         # dir=$target/
-        srctmp=${src=#$OCPI_TARGET_PLATFORM_DIR/=}
+        srctmp=${src=#$platform_dir/=}
       fi
       if [[ $exp = - ]]; then
         : # [[ $srctmp == */* ]] && dir+=$(dirname $srctmp)/
@@ -227,7 +231,7 @@ function do_addition {
       # Calling make_filtered_link for @ (deployment)
       [ -n "$2" ] && [ "$2" = "--" ] && make_filtered_link $src exports/$dir$base
     else
-      [ -z "$bootstrap" ] && echo Warning: link source $src does not '(yet?)' exist.
+      [ -z "$bootstrap" ] && echo Warning: link source $src does not '(yet?)' exist. >&2
     fi
   done
   set -f
@@ -264,9 +268,7 @@ mkdir -p exports
 #}
 set -f
 [ -f Project.exports ] || bad No Project.exports file found for framework.
-[ "$hdl_rcc_platform" != "-" ] && read -r OcpiPlatformOs OcpiPlatformOsVersion OcpiPlatformArch rcc_platform_full_name rcc_platform rcc_platform_dir <<<$($OCPI_CDK_DIR/../tools/cdk/scripts/getPlatform.sh $hdl_rcc_platform)
-[ -n "$hdl_platform" ] && OCPI_TARGET_PLATFORM_DIR=$hdl_platform_dir && OCPI_TARGET_PLATFORM=$hdl_platform
-platform_exports=$OCPI_TARGET_PLATFORM_DIR/$OCPI_TARGET_PLATFORM.exports
+platform_exports=$platform_dir/$platform.exports
 [ -f $platform_exports ] || platform_exports=
 [ -n "$verbose" ] && echo Collecting exclusions
 readExport exclusions - Project.exports
@@ -274,13 +276,15 @@ readExport exclusions - Project.exports
 [ -z "$hdl_platform" ] && readExport additions + Project.exports
 [ -z "$hdl_platform" ] && readExport runtimes = Project.exports
 [ -n "$platform_exports" ] && {
-  echo Using extra exports file for platform $OCPI_TARGET_PLATFORM: $platform_exports
+  echo Using extra exports file for platform $platform: $platform_exports
   readExport additions + $platform_exports -
   readExport runtimes = $platform_exports -
   readExport deployments @ $platform_exports -
   readExport exclusions - $platform_exports -
 }
 set +f
+[ "$target" != - ] && {
+[ -n "$verbose" ] && echo Processing framework source-code-based links
 while read path opts; do
   case "$path" in
     \#*|""|end-of-runtime-for-tools|prerequisites) continue;;
@@ -328,7 +332,8 @@ while read path opts; do
       fi
     done
     file=build/autotools/target-$target/staging/bin/$dir$p
-    [ -x $file -a "$dir" != internal/ ] && {
+#    [ -x $file -a "$dir" != internal/ ] && {
+    [ "$dir" != internal/ ] && {
 	make_filtered_link $file exports/$target/bin/$dir$p
         [ -z "$tools" -o -n "$runtime" ] &&
 	    make_filtered_link $file exports/runtime/$target/bin/$dir$p
@@ -358,34 +363,36 @@ while read path opts; do
       done
   }
 done < build/places
-
+}
 # Add the ad-hoc export links
 set -f
-[ -n "$verbose" ] && echo Processing additions
+[ -n "$verbose" ] && echo Processing cdk additions
 for a in $additions; do
   do_addition $a
 done
+[ -n "$verbose" ] && echo Processing runtime additions
 for a in $runtimes; do
   do_addition $a -
 done
+[ -n "$verbose" ] && echo Processing deployment additions
 for a in $deployments; do
   do_addition $a --
 done
 # After this are only exports done when targets exist
 [ -n "$hdl_platform" ] && exit 0
-[ "$1" = - ] && exit 0
+[ "$target" = - ] && exit 0
 set +f
 # Put the check file into the runtime platform dir
 # FIXME: make sure if/whether this is really required and why
-check=$OCPI_TARGET_PLATFORM_DIR/${OCPI_TARGET_PLATFORM}-check.sh
-[ -r "$check" ] && {
+check=$rcc_platform_dir/${rcc_platform}-check.sh
+[ -z "$hdl_platform" -a -r "$check" ] && {
   to=$(python -c "import os.path; print os.path.relpath('"$check"', '.')")
   make_relative_link $to exports/runtime/$target/$(basename $check)
-  cat <<-EOF > exports/runtime/$target/${OCPI_TARGET_PLATFORM}-init.sh
+  cat <<-EOF > exports/runtime/$target/${rcc_platform}-init.sh
 	# This is the minimal setup required for runtime
-	export OCPI_TOOL_PLATFORM=$OCPI_TARGET_PLATFORM
-	export OCPI_TOOL_OS=$OCPI_TARGET_OS
-	export OCPI_TOOL_DIR=$target
+	export OCPI_TOOL_PLATFORM=$rcc_platform
+	export OCPI_TOOL_OS=$OcpiPlatformOs
+	export OCPI_TOOL_DIR=$rcc_platform
 	EOF
 }
 # Put the minimal set of artifacts to support the built-in runtime tests or
@@ -460,12 +467,12 @@ shopt -u nullglob
 
 # If we are not building on the target platform do not pre-compile python AV-4850
 if [ "$OCPI_TOOL_DIR" = "$target" ]; then
-# Force precompilation of python files right here, but only if we are doing a target
+  # Force precompilation of python files right here, but only if we are doing a target
   py=python3
   command -v python3 > /dev/null || py=/opt/local/bin/python3
   dirs=
   for d in `find exports -name "*.py"|sed 's=/[^/]*$=='|sort -u`; do
-   $py -m compileall -q $d
-   $py -O -m compileall -q $d
+    $py -m compileall -q $d
+    $py -O -m compileall -q $d
   done
 fi

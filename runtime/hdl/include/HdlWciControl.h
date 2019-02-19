@@ -68,10 +68,10 @@ namespace OCPI {
       // the key members are "readVaddr" and "writeVaddr"
       virtual void prepareProperty(OCPI::Util::Property &md, 
 				   volatile uint8_t *&writeVaddr,
-				   const volatile uint8_t *&readVaddr);
+				   const volatile uint8_t *&readVaddr) const;
       // Map the control op numbers to structure members
       static const unsigned controlOffsets[];
-      void checkControlState();
+      void checkControlState() const;
       void controlOperation(OCPI::Util::Worker::ControlOperation op);
       bool controlOperation(OCPI::Util::Worker::ControlOperation op, std::string &err);
       inline uint32_t checkWindow(size_t offset, size_t nBytes) const {
@@ -115,6 +115,7 @@ namespace OCPI {
 	      /* the status register to be sure */			          \
 	      status = get32Register(status, OccpWorkerRegisters) &	          \
 		       OCCP_STATUS_READ_ERRORS;				          \
+	      /* falls thru */						          \
 	    default:							          \
 	      val = (uint##n##_t)val##wb;                                         \
             }								          \
@@ -203,7 +204,7 @@ OCPI_DATA_TYPES
       OCPI::Container::Port *findPort(const char *);
       const std::string &name() const;
       void
-      prepareProperty(OCPI::Util::Property &, volatile uint8_t *&, const volatile uint8_t *&);
+      prepareProperty(OCPI::Util::Property &, volatile uint8_t *&, const volatile uint8_t *&) const;
       OCPI::Container::Port &
       createPort(const OCPI::Util::Port &, const OCPI::Util::PValue *);
       OCPI::Container::Port &

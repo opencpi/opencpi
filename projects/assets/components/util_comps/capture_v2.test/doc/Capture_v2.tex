@@ -124,7 +124,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\end{tabular}
 \section*{Functionality}
 \begin{flushleft}
-The {\comp} component takes input port messages and stores their data in a buffer via the \texttt{data} property as 4 byte words. Metadata associated with each message is stored as a record in a metadata buffer via the \texttt{metadata} property. It captures four 4 byte words of metadata. The first metadata word is the opcode for the message and message size in bytes; opcode 8 MSB and message size 24 LSB. The second word is the fraction time stamp for the EOM. The third word is the fraction time stamp for the SOM. And the fourth word is the seconds timestamp for the SOM. So that the metadata can be read on a little-endian processor, the ordering of the metadata is as follows: \newline
+The {\comp} component takes input port messages and stores their data in a buffer via the \texttt{data} property as 4 byte words. Metadata associated with each message is stored as a record in a metadata buffer exposed by the \texttt{metadata} property. Each record contains four 4 byte words of metadata. The first word contains the opcode for the message and message size in bytes; opcode 8 MSB and message size 24 LSB. The second word contains the unsigned Q0.32 fractional portion of the timestamp for the End-Of-Message (EOM). The third word contains the fractional portion of the timestamp for the Start-Of-Message (SOM). The fourth word contains the unsigned Q32.0 integer portion of the timestamp for the SOM. All timestamps are provided by the worker's time service interface. So that the metadata can be read on a little-endian processor, the ordering of the metadata is as follows: \newline
 
 opcode (8-bit), \\
 message size (24-bit), \\
@@ -144,7 +144,7 @@ For example, if number of bytes is 5 and the last captured data buffer word is 0
 
 The {\comp} component keeps count of how many metadata records (\texttt{metadataCount}) have been captured and a count of how many data words have been captured (\texttt{dataCount}). It allows for the option to wrap around and continue to capture data and metadata once the buffers are full or to stop capturing data and metadata when the data and metadata buffers are full via the \texttt{stoponFull} property. \newline
 
-When \texttt{stopOnFull} is true, data and metadata will be captured as long as the data and metadata buffers are not full. If the data buffer is full before the metadata buffer, metadata will still be captured until the metadata buffer is full. If the metadata buffer is full before the data buffer, no more metadata and no more data will be captured. When \texttt{stopOnFull} is false, there will be a wrap around when the data and metadata buffers are full and data metadata will continue to be captured.  \newline
+When \texttt{stopOnFull} is true, data and metadata will be captured as long as the metadata buffer is not full. If the data buffer is full before the metadata buffer, metadata will still be captured until the metadata buffer is full. If the metadata buffer is full before the data buffer, no more metadata and no more data will be captured. When \texttt{stopOnFull} is false, there will be a wrap around when the data and metadata buffers are full and data metadata will continue to be captured.  \newline
 
 The component also has properties that keep track of whether or not the metadata and data buffers are full; \texttt{metaFull} and \texttt{dataFull}. \newline
 
@@ -207,7 +207,7 @@ It has an (optional) output port so that it can placed between two workers. The 
 		\hline
 		\verb+numDataWords+ & uLong & 1024 & - & - & - & true & - & Number of four byte data words stored in the data buffer. If stopOnFull is true, meaning no wrap around, no more data will be captured once the data buffer is full.  \\
 		\hline
-		\verb+numMetadataWords+ & uLong & 4 & - & - & - & true & - & Due to a limitation, cannot use constrained elements in unconstrained array declarations, so cannot directly set the second dimension for the metadata property to 4. The number of metadata words must always be 4, since there are four 4 byte words that are captured. The first metadata word is the opcode for the message and message size in bytes;opcode 8 MSB and message size 24 LSB. The second word is the fraction time stamp for the EOM. The third word is the fraction time stamp for the SOM. And the fourth word is the seconds timestamp for the SOM. So the default value must not be changed.  \\
+		\verb+numMetadataWords+ & uLong & 4 & - & - & - & true & - & Due to a limitation, cannot use constrained elements in unconstrained array declarations, so cannot directly set the second dimension for the metadata property to 4. The number of metadata words must always be 4, since there are four 4 byte words that are captured. The first metadata word is the opcode for the message and message size in bytes;opcode 8 MSB and message size 24 LSB. The second word is the fraction timestamp for the EOM. The third word is the fraction timestamp for the SOM. And the fourth word is the seconds timestamp for the SOM. So the default value must not be changed.  \\
 		\hline
 		\verb+metaFull+ & bool & false & - & - & - & false & Volatile, Initial & Metadata buffer full flag.  \\
 		\hline

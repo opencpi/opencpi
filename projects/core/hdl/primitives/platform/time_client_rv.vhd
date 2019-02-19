@@ -42,10 +42,13 @@ architecture rtl of time_client_rv is
       sRDY   : out std_logic);
   end component;
 
-  signal s_dSyncReg        : std_logic_vector(63 downto 0);
-  signal s_dSyncRegCmd     : std_logic_vector(66 downto 0);
-  signal wti_m_SThreadBusy : std_logic;
 begin
+
+  -- We have no support yet for the time not being valid.
+  -- Thus it is assumed that the time is valid before workers using time are out of reset
+  -- If the infrastructure changed to support this, we would conditionally drive MCmd.
+  -- When "allow unavailable" is supported, it would mean that the system could allow workers
+  -- to be enabled (out of reset, or started) even if the time was not available.
 
   syncReg : SyncRegister
     generic map (
@@ -57,25 +60,8 @@ begin
       sRST   => time_in.reset,
       sD_IN  => std_logic_vector(time_in.now),
       sEN    => '1',
-      dD_OUT => s_dSyncReg,
+      dD_OUT => wti_out.MData,
       sRDY   => open);
 
-  process(wti_in.Clk, wti_in.SReset_n)  --destination clk and destination rst 
-  begin
-    if (wti_in.SReset_n = '0') then
-      s_dSyncRegCmd     <= (others => '0');
-      wti_m_SThreadBusy <= '1';
-    elsif (rising_edge(wti_in.Clk)) then
-      s_dSyncRegCmd     <= "001" & s_dSyncReg;
-      wti_m_SThreadBusy <= wti_in.SThreadBusy(0);
-    end if;
-  end process;
-
-
-
-  wti_out.MCmd <= s_dSyncRegCmd(66 downto 64)
-                   when (wti_m_SThreadBusy = '0') else "000";
-  wti_out.MData <= s_dSyncRegCmd(63 downto 0)
-                   when (wti_m_SThreadBusy = '0') else x"AAAA_AAAA_AAAA_AAAA";
-  
+  wti_out.MCmd <= ocp.MCmd_WRITE; -- just for OCP compliance.
 end architecture rtl;

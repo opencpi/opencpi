@@ -15,17 +15,19 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
-
+"""
+assets module definition
+"""
 __all__ = [
-           "abstract",
-           "application",
-           "factory",
-           "test",
-           "registry",
-           "project",
-           "worker",
-           "platform",
-           "assembly",
-           "library",
-           "component",
-          ]
+    "abstract",
+    "application",
+    "factory",
+    "test",
+    "registry",
+    "project",
+    "worker",
+    "platform",
+    "assembly",
+    "library",
+    "component",
+    ]

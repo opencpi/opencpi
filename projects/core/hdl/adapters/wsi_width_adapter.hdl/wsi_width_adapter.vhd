@@ -122,7 +122,6 @@ begin
     signal last_word_in : owcount_t; -- the index of the last word of the incoming record
     signal last_be_in   : std_logic_vector(out_bytes_c-1 downto 0); -- BE for the last OW in IW
     signal on_last_word : bool_t;
-    signal byte_enable  : std_logic_vector(out_bytes_c-1 downto 0);
     -- State
     signal have_data_r  : bool_t;  -- we are holding on to some data
     signal index_r      : owcount_t; -- which outword is being presented from the inword now.
@@ -134,17 +133,22 @@ begin
     signal last_be_r    : std_logic_vector(out_bytes_c-1 downto 0); -- BE for last outword
     -- Compute the byte offset of the last outword in the inword.
     procedure find_extent(in_be : std_logic_vector(in_bytes_c-1 downto 0);
+                          in_valid : bool_t;
                           signal out_be : out std_logic_vector(out_bytes_c-1 downto 0);
                           signal out_word : out owcount_t) is
       variable bit : natural := 0;
       variable ow : owcount_t := (others => '0');
     begin
-      for i in 0 to last_c-1 loop
-        exit when in_be(bit+out_bytes_c-1 downto bit) /= ocpi.util.slv1(out_bytes_c); -- LE
-        bit := bit + out_bytes_c;
-        ow  := ow + 1;
-      end loop;
-      out_be   <= in_be(bit+out_bytes_c-1 downto bit);
+      if its(in_valid) then -- if no data is valid last byte is first byte
+        for i in 0 to last_c-1 loop
+          exit when in_be(bit+out_bytes_c-1 downto bit) /= ocpi.util.slv1(out_bytes_c); -- LE
+          bit := bit + out_bytes_c;
+          ow  := ow + 1;
+        end loop;
+        out_be   <= in_be(bit+out_bytes_c-1 downto bit);
+      else
+        out_be   <= (others => '0');
+      end if;
       out_word <= ow;
     end find_extent;
   begin
@@ -154,7 +158,7 @@ begin
       in_data(i) <= in_in.data(wout_c*i + wout_c-1 downto wout_c*i);
     end generate g0;
     -- Find out how many outwords we have and the BE of the last one.
-    find_extent(in_in.byte_enable, last_be_in, last_word_in);
+    find_extent(in_in.byte_enable, in_in.valid, last_be_in, last_word_in);
     -- Are we about to output the last word of data we have?
     on_last_word   <= to_bool(have_data_r and index_r = last_r);
     -- We can take if we can buffer the data or have buffered data and it will be given
@@ -194,8 +198,8 @@ begin
             data_r <= in_data;
             last_r <= last_word_in; -- remember the last word in the input
             last_be_r <= last_be_in;
-            som_r  <= in_in.som;
-            eom_r  <= in_in.eom;
+            som_r  <= in_in.som and in_in.ready;
+            eom_r  <= in_in.eom and in_in.ready;
             opcode_r <= in_in.opcode;
             -- If we are actually buffering any data (not passing through), set the indicator
             if take_now and (have_data_r or

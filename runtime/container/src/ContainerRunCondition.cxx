@@ -26,7 +26,8 @@ namespace OCPI { namespace API {
 
 RunCondition::
 RunCondition()
-  : m_portMasks(m_myMasks), m_timeout(false), m_usecs(0), m_inUse(false), m_allocated(NULL), m_hasRun(false), m_allMasks(0) {
+  : m_portMasks(m_myMasks), m_timeout(false), m_usecs(0), m_inUse(false), m_allocated(NULL),
+    m_hasRun(false), m_allMasks(0) {
   m_myMasks[0] = OCPI_ALL_PORTS; // all connected ports must be ready
   m_myMasks[1] = 0;
   m_allMasks = m_myMasks[0];
@@ -44,7 +45,8 @@ RunCondition(OcpiPortMask pm, ...) :
 }
 RunCondition::
 RunCondition(OcpiPortMask *rpm, uint32_t usecs, bool timeout)
-  : m_portMasks(NULL), m_timeout(timeout), m_usecs(usecs), m_inUse(false), m_allocated(NULL), m_hasRun(false), m_allMasks(0) {
+  : m_portMasks(NULL), m_timeout(timeout), m_usecs(usecs), m_inUse(false), m_allocated(NULL),
+    m_hasRun(false), m_allMasks(0) {
   setPortMasks(rpm);
 }
 RunCondition::
@@ -52,7 +54,7 @@ RunCondition::
   //? ocpiAssert(!m_inUse);
   delete [] m_allocated;
 }
-RunCondition& RunCondition::
+RunCondition &RunCondition::
 operator=(const RunCondition& other) {
   ocpiAssert(!m_inUse);
   setPortMasks(other.m_portMasks); // This handles all memory copies, etc.
@@ -61,7 +63,7 @@ operator=(const RunCondition& other) {
   m_hasRun = false; // Doesn't really matter since activate() resets
   return *this;
 }
-RunCondition& RunCondition::
+RunCondition &RunCondition::
 operator=(RunCondition&& other) {
   ocpiAssert(!m_inUse);
   ocpiAssert(!other.m_inUse);
@@ -163,7 +165,7 @@ shouldRun(OCPI::OS::Timer &timer, bool &timedOut, bool &bail) {
     return true;
   if (m_timeout && timer.expired()) {
     ocpiInfo("WORKER TIMED OUT, elapsed time = %u,%u",
-	     timer.getElapsed().seconds(), timer.getElapsed().nanoseconds());
+             timer.getElapsed().seconds(), timer.getElapsed().nanoseconds());
     timedOut = true;
     return true;
   }

@@ -64,8 +64,10 @@ namespace OCPI {
       Launcher::Connection c;
       c.m_in.m_port = isProvider() ? this : &other.containerPort(),
       c.m_out.m_port = isProvider() ? &other.containerPort() : this;
-      c.m_bufferSize = OU::Port::determineBufferSize(&c.m_in.m_port->m_metaPort, NULL,
-						     &c.m_out.m_port->m_metaPort, NULL, NULL);
+      assert(c.m_in.m_port->m_metaPort.m_bufferSizePort == SIZE_MAX &&
+	     c.m_out.m_port->m_metaPort.m_bufferSizePort == SIZE_MAX);
+      c.m_bufferSize = OU::Port::determineBufferSize(&c.m_in.m_port->m_metaPort, NULL, SIZE_MAX,
+						     &c.m_out.m_port->m_metaPort, NULL, SIZE_MAX, NULL);
       c.m_in.m_port->initialConnect(c);
       if (!c.m_out.m_done)
 	c.m_out.m_port->initialConnect(c);
@@ -113,8 +115,8 @@ namespace OCPI {
 
     // Bridge port constructor also does the equivalent of "startConnect" for itself.
     BridgePort::
-    BridgePort(LocalPort &port, bool provider, const OU::PValue *params)
-      : BasicPort(port.container(), port.metaPort(), provider, params)
+    BridgePort(Container &c, const OCPI::Util::Port &mPort, bool provider, const OU::PValue *params)
+      : BasicPort(c, mPort, provider, params)
     {
     }
 

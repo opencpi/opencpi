@@ -1,6 +1,7 @@
 <!-- This is the test xml for testing component "capture_v2" -->
 <Tests UseHDLFileIo='true'>
-  <input port='in' script='generate.py' messagesInFile='true'/>
+  <!-- message size must be big enough for the largest message in the input file -->
+  <input port='in' script='generate.py' messagesInFile='true' messagesize='4096'/>
   <output port='out' script='verify.py'/>
   <property name='stopOnFull' values='false, true'/>
   <property name='stopOnZLM' values='false, true'/>

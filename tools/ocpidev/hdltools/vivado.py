@@ -30,12 +30,12 @@ from . import _xilinx
 
 # ReportableItems specific to Vivado
 # Use a single regex for synthesis and implementation
-part_item = ReportableItem("Device", r"Loading part ([0-9a-zA-Z\-]+)")
+PART_ITEM = ReportableItem("Device", r"Loading part ([0-9a-zA-Z\-]+)")
 # Use a single regex for synthesis and implementation
-vrsn_item = ReportableItem("Version", r"Vivado v([0-9]{4}\.[0-9]).*")
+VRSN_ITEM = ReportableItem("Version", r"Vivado v([0-9]{4}\.[0-9]).*")
 
 # Custom function for vivado fmax
-def match_prd_ns_to_freq_MHz(target_file, regex):
+def match_prd_ns_to_freq(target_file, regex):
     """
     Find the first number match for the regex in the target file, and convert to frequency in MHz
     Assume the original number is in ns.
@@ -46,13 +46,13 @@ def match_prd_ns_to_freq_MHz(target_file, regex):
 # Here, Fmax is disabled for sythesis, and uses a custom matching function
 # for implementation to get the first number in the matched string and
 # convert from period to frequency. Uses a single regex for synth and impl.
-fmax_item = ReportableItem("Fmax (MHz) (Typ)", r"Path Delay.*", r"^\| Requirement.*",
+FMAX_ITEM = ReportableItem("Fmax (MHz) (Typ)", r"Path Delay.*", r"^\| Requirement.*",
                            match_and_transform_synth_function=\
                                lambda f, r: None,
-                           match_and_transform_impl_function=match_prd_ns_to_freq_MHz)
+                           match_and_transform_impl_function=match_prd_ns_to_freq)
 
 # Various special functions and their corresponding regexs
-spec_item = ReportableItem("Memory/Special Functions",
+SPEC_ITEM = ReportableItem("Memory/Special Functions",
                            {"DSP48E1":r"DSP48E1\s*\|\s*([0-9]+)\s*\|",
                             "RAM64M":r"\|\s+RAM64M only\s*\|\s+([0-9]+) \|\s+\|\s+\|\s+\|",
                             "RAMB36E1":r"\|\s+RAMB36E1 only\s*\|\s+([0-9]+) \|\s+\|\s+\|\s+\|",
@@ -63,9 +63,9 @@ spec_item = ReportableItem("Memory/Special Functions",
                             "BUFGCTRL":r"\|\s+BUFGCTRL\s+\|\s+([0-9]+) \|[^|]+\|"})
 
 # The item ordering of this list is the report order
-reportable_items = [vrsn_item, part_item, _xilinx.regs_item, _xilinx.luts_item,
-                    fmax_item, spec_item]
+REPORTABLE_ITEMS = [VRSN_ITEM, PART_ITEM, _xilinx.REGS_ITEM, _xilinx.LUTS_ITEM,
+                    FMAX_ITEM, SPEC_ITEM]
 
 # Synthesis and implementation files for utilization reporting.
-synth_files = ["*-vivado.out"]
-impl_files = ["bit.out"]
+SYNTH_FILES = ["*-vivado.out"]
+IMPL_FILES = ["bit.out"]

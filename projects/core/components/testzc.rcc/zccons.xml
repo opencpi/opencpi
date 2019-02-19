@@ -1,7 +1,6 @@
-<RccImplementation Name="Consumer" StaticMethods="%W%M">
+<RccWorker Name="Consumer" StaticMethods="%W%M" spec="zccons_spec.xml">
   <ControlInterface ControlOperations="initialize,afterConfigure,beforeQuery"/>
-  <xi:include href="zccons_spec.xml"/>
   <Port name="in" minBufferCount="4"/>
-</RccImplementation>
+</RccWorker>
 
 

@@ -6,10 +6,9 @@ Properties:
  messageSize: indicates the size of messages
  granularity: incidates that the last message will be truncated to be a multiple of this.
 -->
-<RccImplementation controloperations="start,release">
-  <xi:include href="file_read_spec.xml"/>
+<RccWorker controloperations="start,release" version='2' spec="file_read_spec.xml">
   <specproperty name="fileName" readable='true'/>
   <specproperty name="suppressEOF" readable='true'/>
   <specproperty name="messageSize" volatile='true'/>
-  <port name='out' buffersize='8k'/>
-</RccImplementation>
+  <port name='out'/>
+</RccWorker>

@@ -773,7 +773,7 @@ namespace OCPI {
       receiveXml(int fd, ezxml_t &rx, std::vector<char> &buf, bool &eof, std::string &error) {
 	ezxml_free(rx);
 	rx = NULL;
-	uint32_t len;
+	uint32_t len = 0;
 	eof = false;
 	ssize_t n = ::read(fd, (char *)&len, sizeof(len));
 	if (n != sizeof(len) || len > 256*1024) {
@@ -781,7 +781,7 @@ namespace OCPI {
 	    eof = true;
 	    error = "EOF on socket read";
 	  } else
-	    OU::format(error, "read error or XML message too large: %s (%zu, %zu)", strerror(errno), n, (size_t)len);
+	    OU::format(error, "read error or XML message too large: %s (%zd, %zu)", strerror(errno), n, (size_t)len);
 	  return true;
 	}
 	ssize_t total = len;

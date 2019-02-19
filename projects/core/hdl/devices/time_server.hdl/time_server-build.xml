@@ -1,0 +1,11 @@
+<build>
+  <configuration id='0'>
+    <parameter name='frequency'  value='100e6'/>
+  </configuration>
+  <configuration id='1'>
+    <parameter name='frequency'  value='50e6'/>
+  </configuration>
+  <configuration id='2'>
+    <parameter name='frequency'  value='200e6'/>
+  </configuration>
+</build>

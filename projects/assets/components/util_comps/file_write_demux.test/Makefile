@@ -29,6 +29,7 @@ ifneq (,)
   include $(OCPI_CDK_DIR)/include/test.mk
 endif
 
+ECHO=/bin/echo
 WORKER=file_write_demux
 ifneq (,$(filter testrun,$(MAKECMDGOALS)))
 ifeq (,$(VG))
@@ -42,7 +43,7 @@ endif
 RCCWORKER=$(WORKER).rcc
 space:=
 space+=
-ARTIFACT_DIRS=$(subst $(space),,$(foreach artdir,$(shell (cd $(OCPI_CDK_DIR) && find -type d -name artifacts )),\$${OCPI_CDK_DIR}/$(artdir):))
+ARTIFACT_DIRS=$(subst $(space),,$(foreach artdir,$(shell (cd $(OCPI_CDK_DIR) && find . -type d -name artifacts )),\$${OCPI_CDK_DIR}/$(artdir):))
 SUPPORT_PATH:=$(subst $(space),:,$(foreach worker, $(RCCWORKER) advanced_pattern.rcc,$(wildcard $(shell pwd)/../../$(worker)/target-*)))
 SUPPORT_PATH_REMOTE:=export OCPI_LIBRARY_PATH=$(ARTIFACT_DIRS):../../lib/rcc:../../../../exports/lib
 EXPORT_PATH := export OCPI_LIBRARY_PATH=:$(OCPI_LIBRARY_PATH):$(ARTIFACT_DIRS):../../lib/rcc:../../../../exports/lib:$(SUPPORT_PATH) && set -o pipefail && $(PRE_HOOK)
@@ -75,7 +76,7 @@ build: testgen_wrapper
 prepare: testgen_wrapper
 
 testgen_wrapper:
-	$(foreach tst, $(TESTS), echo -n "Generating $(tst): " && \
+	$(foreach tst, $(TESTS), $(ECHO) -n "Generating $(tst): " && \
 	  cat $(tst)/description && \
 	  $(MAKE) -f ../Makefile -sC $(tst) --no-print-directory testgen && \
 	  ) true
@@ -85,13 +86,13 @@ ifneq (,$(IP))
 	@echo "wrapper not written to handle remote!"
 	@false
 endif
-	$(foreach tst, $(TESTS), echo -n "Running $(tst): " && \
+	$(foreach tst, $(TESTS), $(ECHO) -n "Running $(tst): " && \
 	  cat $(tst)/description && \
 	  $(MAKE) -f ../Makefile -sC $(tst) --no-print-directory testrun OCPI_HDL_SIMULATORS= && \
 	  ) true
 
 testverify_wrapper:
-	$(foreach tst, $(TESTS), echo -n "Verifying $(tst): " && \
+	$(foreach tst, $(TESTS), $(ECHO) -n "Verifying $(tst): " && \
 	  cat $(tst)/description && \
 	  $(MAKE) -f ../Makefile -sC $(tst) --no-print-directory testverify && \
 	  ) true
@@ -131,7 +132,7 @@ testgen: generate.sh verify.sh
 testrun:
 # The 'bash -c' is needed to interpret the ${OCPI_CDK_DIR} that's there for embedded systems from ARTIFACT_DIRS
 ifeq (,$(REMOTE))
-	bash -c "$(EXPORT_PATH) time $(VG) ocpirun $(DEBUG) -m UUT=rcc -t -$(SIM_TIME) application.xml $(POST_HOOK)" > ocpirun.log 2>&1
+	bash -c "ulimit -n 300; $(EXPORT_PATH) time $(VG) ocpirun $(DEBUG) -m UUT=rcc -t -$(SIM_TIME) application.xml $(POST_HOOK)" > ocpirun.log 2>&1
 else
 	echo "Remotely run: \" ($(SUPPORT_PATH_REMOTE) && cd $(TEST) && $(PRE_HOOK) time ocpirun $(DEBUG) -m UUT=rcc -t -$(SIM_TIME) application.xml $(POST_HOOK) > ocpirun.log 2>&1) \""
 	read -p "Press Enter when ocpirun is finished: " x
@@ -151,14 +152,14 @@ endif
 
 tests: clean
 ifneq (,$(IP))
-	$(foreach tst, $(TESTS), echo -n "Executing $(tst): " && \
+	$(foreach tst, $(TESTS), $(ECHO) -n "Executing $(tst): " && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testgen && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testrun REMOTE=1 TEST=$(tst) && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testverify && \
 	  ) true
 else
 ifneq ($(RCC_CONTAINERS),0)
-	$(foreach tst, $(TESTS), echo -n "Executing ${tst}: " && \
+	$(foreach tst, $(TESTS), $(ECHO) -n "Executing ${tst}: " && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testgen && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testrun OCPI_HDL_SIMULATORS= && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testverify && \

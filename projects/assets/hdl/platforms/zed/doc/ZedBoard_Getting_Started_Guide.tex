@@ -45,14 +45,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \maketitle
 %\thispagestyle{fancy}
 
-% AV-4173 blurb start
-\begin{center}
-\framebox{\parbox{0.8\linewidth}{\centering
-\textcolor{red}{WARNING:}
-Applications (including XML-only ones) fail if there is not an IP address assigned to the ZedBoard, even when in ``standalone mode.'' To set a temporary IP address, the command ``\code{ifconfig eth0 192.168.244.244}'' can be used. This problem was found late within the 1.4 release cycle and should be addressed with the next major release.
-\PackageWarning{}{AV-4173} }}
-\end{center}
-% AV-4173 blurb end
 \newpage
 
 	\begin{center}
@@ -526,7 +518,7 @@ The setup of the platform can be verified by running an application that uses bo
 \subsection{Network Mode}
 The default setup script sets the \texttt{OCPI\_LIBRARY\_PATH} variable to include the RCC workers that are required to execute the application, but it must be updated to include to the assembly bitstream that was built.  After running the \texttt{mynetsetup.sh} script, navigate to  \texttt{/mnt/ocpi\_assets/applications}, then update the \texttt{OCPI\_LIBRARY\_PATH} variable:
 \begin{verbatim}
-$ cd /mnt/card/opencpi/applications
+$ cd /mnt/ocpi_assets/applications
 $ export OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:/mnt/ocpi_assets/artifacts
 \end{verbatim}
 Run the application using the following command:

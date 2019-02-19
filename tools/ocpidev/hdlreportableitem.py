@@ -29,7 +29,9 @@ Note on testing:
 
 import _opencpi.util as ocpiutil
 
+
 class ReportableItem(object):
+    #pylint:disable=anomalous-backslash-in-string
     """
     ReportableItem
 
@@ -73,7 +75,9 @@ class ReportableItem(object):
         >>> item1.match_and_transform_synth(os.path.realpath(__file__))
         '500.000'
     """
+    #pylint:enable=anomalous-backslash-in-string
 
+    #TODO change to use kwargs too many arguments
     def __init__(self, key, synth_regexs, impl_regexs=None,
                  match_and_transform_synth_function=None,
                  match_and_transform_impl_function=None):
@@ -139,7 +143,9 @@ class ReportableItem(object):
         if isinstance(self.synth_regexs, dict):
             results = []
             for key, rgx in self.synth_regexs.items():
-                match = ReportableItem.do_matching_multi_regexs(target_file, rgx, self.__synth_function)
+                match = ReportableItem.do_matching_multi_regexs(target_file,
+                                                                rgx,
+                                                                self.__synth_function)
                 if match is not None:
                     results.append(key + ": " + match)
 
@@ -166,7 +172,8 @@ class ReportableItem(object):
         if isinstance(self.impl_regexs, dict):
             results = []
             for key, rgx in self.impl_regexs.items():
-                match = ReportableItem.do_matching_multi_regexs(target_file, rgx, self.__impl_function)
+                match = ReportableItem.do_matching_multi_regexs(target_file, rgx,
+                                                                self.__impl_function)
                 if match is not None:
                     results.append(key + ": " + match)
             if len(results) <= 0:
@@ -175,7 +182,8 @@ class ReportableItem(object):
                 return results
         else:
             # impl_regexs is a single regexc or list of regexs
-            return ReportableItem.do_matching_multi_regexs(target_file, self.impl_regexs,
+            return ReportableItem.do_matching_multi_regexs(target_file,
+                                                           self.impl_regexs,
                                                            self.__impl_function)
 
 if __name__ == "__main__":

@@ -200,8 +200,8 @@ capture_vld <= ctl_in.is_operating and in_in.valid and ((in_in.ready and (not s_
 stopOnFull <= to_boolean(props_in.stopOnFull);
 
 
-eom <= (in_in.eom and (not s_eom_r)) or (in_in.eom and s_take_r);
-som <= (in_in.som and (not s_som_r)) or (in_in.som and s_take_r);
+eom <= in_in.eom and in_in.ready and (not s_eom_r or s_take_r);
+som <= in_in.som and in_in.ready and (not s_som_r or s_take_r);
 
 
 -- If som and eom occur a the same time, use the non latched seconds timestamp
@@ -388,8 +388,8 @@ begin
         s_in_ready_r <= '0';
       else
         s_is_read_r <= props_in.raw.is_read;
-        s_eom_r <= in_in.eom;
-        s_som_r <= in_in.som;
+        s_eom_r <= in_in.eom and in_in.ready;
+        s_som_r <= in_in.som and in_in.ready;
         s_take_r <= take;
         s_in_ready_r <= in_in.ready;
       end if;

@@ -74,5 +74,4 @@ begin
   out_out.data  <= in_in.data;
   out_out.byte_enable <= in_in.byte_enable;
   out_out.opcode <= in_in.opcode;
-
 end rtl;

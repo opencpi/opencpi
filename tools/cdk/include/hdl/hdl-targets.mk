@@ -143,7 +143,8 @@ HdlBuiltPlatforms:=
 
 override OCPI_HDL_PLATFORM_PATH:=$(subst $(Space),:,$(call Unique,\
   $(subst :, ,$(OCPI_HDL_PLATFORM_PATH)) \
-  $(foreach p,$(OcpiGetExtendedProjectPath),$(call OcpiExists,$p/lib/platforms))))
+  $(foreach p,$(OcpiGetExtendedProjectPath),\
+    $(or $(call OcpiExists,$p/exports/lib/platforms),$(call OcpiExists,$p/hdl/platforms)))))
 export OCPI_HDL_PLATFORM_PATH
 $(call OcpiDbgVar,OCPI_HDL_PLATFORM_PATH)
 ################################################################################
@@ -287,7 +288,7 @@ $(info HdlTopTargets="$(HdlTopTargets)";\
        HdlBuiltPlatforms="$(HdlBuiltPlatforms)";\
        HdlAllTargets="$(HdlAllTargets)";\
        HdlTargets="$(foreach t,$(HdlTopTargets),$(or $(HdlTargets_$t),$t))";\
-       $(foreach p,$(HdlAllPlatforms),HdlPart_$p=$(HdlPart_$p); )\
+       $(foreach p,$(HdlAllPlatforms),HdlPart_$p=$(HdlPart_$p); HdlPlatformDir_$p=$(HdlPlatformDir_$p);)\
        $(foreach p,$(HdlAllPlatforms),HdlAllRccPlatforms_$p=$(HdlAllRccPlatforms_$p); )\
        $(foreach f,$(HdlAllTargets),\
          $(if $(HdlTargets_$f),HdlTargets_$f="$(HdlTargets_$f)";)\
@@ -300,6 +301,8 @@ $(info HdlTopTargets="$(HdlTopTargets)";\
          $(eval include $(OCPI_CDK_DIR)/include/hdl/$t.mk)\
          HdlToolName_$t="$(or $(HdlToolName_$t),$t)";)\
        $(foreach p,$(HdlAllPlatforms),\
-         HdlFamily_$(HdlPart_$p)=$(call HdlGetFamily,$(HdlPart_$p));))
+         HdlFamily_$(HdlPart_$p)=$(call HdlGetFamily,$(HdlPart_$p));)\
+	   $(foreach p,$(HdlAllPlatforms),\
+  	     HdlPlatformDir_$(p)="$(realpath $(HdlPlatformDir_$(p)))";))
 endif
 endif

@@ -9,7 +9,7 @@
   <!-- Peak Detect Value -->
   <Property Name="peak" Type="short" Volatile="true"/>
 
-  <Property Name="messageSize" Type="ushort" Default="8192" Readable="true" Writable="true"/>
+  <Property Name="messageSize" Type="ushort" Default="0" Readable="true" Writable="true"/>
 
   <!-- tap values  Format: short[NUM_TAPS_p] -->
   <Property Name="taps" Type="short" ArrayLength="NUM_TAPS_p" Writable="true" Readable='true'/>

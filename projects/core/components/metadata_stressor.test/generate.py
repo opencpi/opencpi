@@ -33,10 +33,44 @@ if len(sys.argv) != 4:
 
 filename = sys.argv[3]
 num_samples = int(sys.argv[1])
-MiF = int(sys.argv[2])
+Mode = int(sys.argv[2])
 
-numDataWords = 1024
-numRecords = 256
+numDataWords = 24
+numRecords = 50
+
+def  ZLMOp4():
+
+    f = open(filename, 'wb')
+    f.write(struct.pack("I", 0)) # length
+    f.write(struct.pack("I", 4)) # opcode
+    f.close()
+
+def longZLMSWMs():
+    f = open(filename, 'wb')
+
+#msg 1
+    f.write(struct.pack("I", (15)*4))
+    f.write(struct.pack("I", 1))
+    for x in range(1, 16):
+        f.write(struct.pack("I", x))
+#msg 2
+    f.write(struct.pack("I", 0)) # length
+    f.write(struct.pack("I", 2)) # opcode
+
+#msg 3
+    for x in range(1, 16):
+        f.write(struct.pack("I", 4))
+        f.write(struct.pack("I", 3))
+        f.write(struct.pack("I", x))
+    f.close()
+
+def EightByteMsg():
+    f = open(filename, 'wb')
+    f.write(struct.pack("I", 8)) # length
+    f.write(struct.pack("I", 2)) # opcode
+    f.write(struct.pack("I", 0))
+    f.write(struct.pack("I", 140))
+    f.close()
 
 def noMessages():
     with open(filename, 'wb') as f:
@@ -49,11 +83,38 @@ def messagesInFile():
     f = open(filename, 'wb')
 
     # Send multiple ZLMs and SWMs
-    f.write(struct.pack("I", 0))
-    f.write(struct.pack("I", 1))
+    f.write(struct.pack("I", 0)) # length
+    f.write(struct.pack("I", 1)) # opcode
+
+    f.write(struct.pack("I", 4))
+    f.write(struct.pack("I", 2))
+    f.write(struct.pack("I", 2))
 
     f.write(struct.pack("I", 0))
-    f.write(struct.pack("I", 2))
+    f.write(struct.pack("I", 3))
+
+    f.write(struct.pack("I", 4))
+    f.write(struct.pack("I", 4))
+    f.write(struct.pack("I", 4))
+
+    f.write(struct.pack("I", 0)) # length
+    f.write(struct.pack("I", 5)) # opcode
+
+    f.write(struct.pack("I", 0))
+    f.write(struct.pack("I", 6))
+
+    f.write(struct.pack("I", 4))
+    f.write(struct.pack("I", 7))
+    f.write(struct.pack("I", 7))
+
+    f.write(struct.pack("I", 4))
+    f.write(struct.pack("I", 8))
+    f.write(struct.pack("I", 8))
+
+    f.write(struct.pack("I", 4))
+    f.write(struct.pack("I", 9))
+    f.write(struct.pack("I", 9))
+
 
     f.write(struct.pack("I", 0))
     f.write(struct.pack("I", 10))
@@ -61,40 +122,19 @@ def messagesInFile():
     f.write(struct.pack("I", 0))
     f.write(struct.pack("I", 11))
 
-    f.write(struct.pack("I", 4))
-    f.write(struct.pack("I", 3))
-    f.write(struct.pack("I", 0))
-
-    f.write(struct.pack("I", 0))
-    f.write(struct.pack("I", 4))
-
-    f.write(struct.pack("I", 4))
-    f.write(struct.pack("I", 3))
-    f.write(struct.pack("I", 0))
-
-    f.write(struct.pack("I", 0))
-    f.write(struct.pack("I", 5))
-
-    f.write(struct.pack("I", 4))
-    f.write(struct.pack("I", 3))
-    f.write(struct.pack("I", 0))
-
-    f.write(struct.pack("I", 0))
-    f.write(struct.pack("I", 6))
-
     # Send a single word message
     f.write(struct.pack("I", 4))
-    f.write(struct.pack("I", 3))
-    f.write(struct.pack("I", 0))
+    f.write(struct.pack("I", 12))
+    f.write(struct.pack("I", 12))
 
     f.write(struct.pack("I", 4))
-    f.write(struct.pack("I", 11))
-    f.write(struct.pack("I", 0))
+    f.write(struct.pack("I", 13))
+    f.write(struct.pack("I", 13))
 
 
     # Send another message to fill up data buffer
     f.write(struct.pack("I", (numDataWords-1)*4))
-    f.write(struct.pack("I", 0))
+    f.write(struct.pack("I", 14))
 
     for x in range(1, numDataWords):
         f.write(struct.pack("I", x))
@@ -104,35 +144,42 @@ def messagesInFile():
     f.write(struct.pack("I", 1))
 
     f.write(struct.pack("I", 4))
-    f.write(struct.pack("I", 3))
-    f.write(struct.pack("I", 0))
-
-    f.write(struct.pack("I", 0))
     f.write(struct.pack("I", 2))
+    f.write(struct.pack("I", 0))
 
-    f.write(struct.pack("I", 4))
+    f.write(struct.pack("I", 0))
     f.write(struct.pack("I", 3))
-    f.write(struct.pack("I", 0))
-
-    f.write(struct.pack("I", 0))
-    f.write(struct.pack("I", 4))
 
     f.write(struct.pack("I", 4))
-    f.write(struct.pack("I", 3))
+    f.write(struct.pack("I", 4))
+    f.write(struct.pack("I", 4))
+
     f.write(struct.pack("I", 0))
+    f.write(struct.pack("I", 5))
+
+    f.write(struct.pack("I", 4))
+    f.write(struct.pack("I", 6))
+    f.write(struct.pack("I", 6))
 
 
     # Fill up metadata buffer
-    for x in range(numDataWords, numDataWords+numRecords-19):
+    for x in range(numDataWords, numDataWords+numRecords-20):
         f.write(struct.pack("I", 4))
-        f.write(struct.pack("I", 0))
+        f.write(struct.pack("I", 1))
         f.write(struct.pack("I", x))
     f.close()
 
+
 def main():
-    if (MiF == 0):
+    if (Mode == 0):
         noMessages()
-    elif (MiF == 1):
+    elif (Mode == 1):
         messagesInFile()
+    elif (Mode == 2):
+        EightByteMsg()
+    elif (Mode == 3):
+        ZLMOp4()
+    elif (Mode == 4):
+        longZLMSWMs()
 
 main()

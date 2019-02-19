@@ -1,4 +1,3 @@
-<RccImplementation>
-  <xi:include href="framegate_spec.xml"/>
+<RccWorker spec="framegate_spec.xml">
   <ControlInterface SizeOfConfigSpace="1m" ControlOperations="initialize,start,stop,release" />
-</RccImplementation>
+</RccWorker>

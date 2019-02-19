@@ -35,14 +35,11 @@ Note on testing:
 """
 
 import os
-import sys
 import glob
 import importlib
 from functools import partial
-sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
 import _opencpi.util as ocpiutil
 import _opencpi.hdltools as hdltools
-import json
 
 class HdlToolFactory(object):
     """
@@ -79,16 +76,16 @@ class HdlToolFactory(object):
             # Initialize metadata for the tool
             __tool_reporting[tool_str] = {}
             # pylint:disable=bad-whitespace
-            __tool_reporting[tool_str]["synth_files"]      = tool_module.synth_files
-            __tool_reporting[tool_str]["impl_files"]       = tool_module.impl_files
-            __tool_reporting[tool_str]["reportable_items"] = tool_module.reportable_items
+            __tool_reporting[tool_str]["synth_files"]      = tool_module.SYNTH_FILES
+            __tool_reporting[tool_str]["impl_files"]       = tool_module.IMPL_FILES
+            __tool_reporting[tool_str]["reportable_items"] = tool_module.REPORTABLE_ITEMS
             # pylint:enable=bad-whitespace
         except ImportError as ex:
             ocpiutil.logging.error(str(ex))
             ocpiutil.logging.error("Could not import HDL ToolSet module \"" + tool_str + "\"")
 
     @classmethod
-    def factory(cls, asset_type, name=None):
+    def factory(cls, asset_type, name=None, package_id=None):
         """
         Class method that is the intended wrapper to create all instances of any Asset subclass.
         Returns a constructed object of the type specified by asset_type. Throws an exception for
@@ -102,7 +99,9 @@ class HdlToolFactory(object):
         # actions maps asset_type string to the function that creates objects of that type
         # Some types will use plain constructors,
         # and some will use __get_or_create with asset_cls set accordingly
+        # pylint:disable=redefined-outer-name
         import _opencpi.assets.platform as ocpiplat
+        # pylint:enable=redefined-outer-name
         actions = {"hdltoolset":  partial(cls.__get_or_create, HdlToolSet),
                    "hdltarget":   partial(cls.__get_or_create, ocpiplat.HdlTarget),
                    "hdlplatform": partial(cls.__get_or_create, ocpiplat.HdlPlatform)}
@@ -111,10 +110,10 @@ class HdlToolFactory(object):
             raise ocpiutil.OCPIException("Bad asset creation, \"" + asset_type + "\" not supported")
 
         # Call the action for this type and hand it the arguments provided
-        return actions[asset_type](name)
+        return actions[asset_type](name, package_id)
 
     @classmethod
-    def __get_or_create(cls, asset_cls, name):
+    def __get_or_create(cls, asset_cls, name, package_id=None):
         """
         Given an asset subclass type, check whether an instance of the
         subclass already exists for the provided directory. If so, return
@@ -130,7 +129,7 @@ class HdlToolFactory(object):
         # "dictionary" parameter? If so, just return that instance.
         if name not in asset_inst_dict:
             # If not, construct a new one, add it to the dictionary, and return it
-            asset_inst_dict[name] = cls.__init_hdltool_asset_from_dict(asset_cls, name)
+            asset_inst_dict[name] = cls.__init_hdltool_asset_from_dict(asset_cls, name, package_id)
         return asset_inst_dict[name]
 
     @classmethod
@@ -142,9 +141,12 @@ class HdlToolFactory(object):
             cls.__parse_hdltargets_from_make()
         asset_list = []
         if asset_type == "hdltarget":
-            # iterate through all target names, construct, and add to return list for tgt in cls.__tgt_dict:
+            # iterate through all target names, construct, and add to return list for tgt in
+            # cls.__tgt_dict
             for tgt in cls.__tgt_dict:
+                # pylint:disable=redefined-outer-name
                 import _opencpi.assets.platform as ocpiplat
+                # pylint:enable=redefined-outer-name
                 asset_list.append(cls.__get_or_create(ocpiplat.HdlTarget, tgt))
             return asset_list
         if asset_type == "hdlplatform":
@@ -176,7 +178,7 @@ class HdlToolFactory(object):
                        if target.vendor == vendor])
 
     @classmethod
-    def __init_hdltool_asset_from_dict(cls, asset_cls, name):
+    def __init_hdltool_asset_from_dict(cls, asset_cls, name, package_id):
         """
         Construct an asset instance using information from the static internal
         dictionaries that store hdltarget/tool/platform info.
@@ -210,7 +212,9 @@ class HdlToolFactory(object):
                 return asset_cls(name=name, title=cls.__tool_dict[name]["title"],
                                  is_simtool=cls.__tool_dict[name]["is_simtool"])
 
+        # pylint:disable=redefined-outer-name
         import _opencpi.assets.platform as ocpiplat
+        # pylint:enable=redefined-outer-name
         if asset_cls is ocpiplat.HdlTarget:
             # if tgt, name should be a key in tgt_dict
             if name not in cls.__tgt_dict:
@@ -221,7 +225,6 @@ class HdlToolFactory(object):
             return asset_cls(name=name, vendor=cls.__tgt_dict[name]["vendor"],
                              parts=cls.__tgt_dict[name]["parts"],
                              toolset=cls.__tgt_dict[name]["toolset"])
-        import _opencpi.assets.platform as ocpiplat
         if asset_cls is ocpiplat.HdlPlatform:
             # if plat, name should be a key in plat_dict
             if name not in cls.__plat_dict:
@@ -237,9 +240,11 @@ class HdlToolFactory(object):
             # construct and return the target
             return asset_cls(name=name, target=tgt_for_plat,
                              exactpart=cls.__plat_dict[name]["exactpart"],
-                             built=cls.__plat_dict[name]["built"])
+                             directory=cls.__plat_dict[name]["directory"],
+                             built=cls.__plat_dict[name]["built"],
+                             package_id=package_id)
 
-        asset_cls_name = "None" if asset_class is none else asset_cls.__name__
+        asset_cls_name = "None" if asset_cls is None else asset_cls.__name__
         raise ocpiutil.OCPIException("Bad initializion. Asset Class \"" + asset_cls_name +
                                      "\" not supported")
 
@@ -308,10 +313,14 @@ class HdlToolFactory(object):
             for platname in cls.__mk_dict['HdlAllPlatforms']:
                 cls.__plat_dict[platname] = {}
                 exactpart = cls.__mk_dict['HdlPart_' + platname][0]
+                dir_list = cls.__mk_dict['HdlPlatformDir_' + platname]
+                cls.__plat_dict[platname]['directory'] = dir_list[0] if dir_list else ""
                 cls.__plat_dict[platname]['exactpart'] = exactpart
                 cls.__plat_dict[platname]['targetname'] = cls.__mk_dict['HdlFamily_' + exactpart][0]
+
                 cls.__plat_dict[platname]['built'] = platname in cls.__mk_dict['HdlBuiltPlatforms']
 
+# pylint:disable=too-few-public-methods
 class HdlToolSet(object):
     """
     HdlToolSet
@@ -353,6 +362,7 @@ class HdlToolSet(object):
 
     def __lt__(self, other):
         return str(self) < str(other)
+# pylint:enable=too-few-public-methods
 
 class HdlReportableToolSet(HdlToolSet):
     """
@@ -382,13 +392,14 @@ class HdlReportableToolSet(HdlToolSet):
                               "LUTs (Typ)", "Fmax (MHz) (Typ)", "Memory/Special Functions"]
     __ordered_items = []
 
+    #TODO change to use kwargs too many arguments
     def __init__(self, name, title=None, is_simtool=False,
-                 synth_files=[], impl_files=[], reportable_items=[]):
+                 synth_files=None, impl_files=None, reportable_items=None):
         super().__init__(name, title, is_simtool)
         self.files = {}
-        self.files["synth"] = synth_files
-        self.files["impl"] = impl_files
-        self.reportable_items = reportable_items
+        self.files["synth"] = synth_files if synth_files else []
+        self.files["impl"] = impl_files if impl_files else []
+        self.reportable_items = reportable_items if reportable_items else []
         for item in reportable_items:
             if item.key not in HdlReportableToolSet.get_ordered_items():
                 raise ocpiutil.OCPIException("Item \"" + item.key + "\" is not recognized." +
@@ -456,8 +467,9 @@ class HdlReportableToolSet(HdlToolSet):
                                          "and \"impl\". Mode specified was \"" + mode + "\".")
 
         # pylint:disable=bad-continuation
+        target_plat_not_none = target is not None  and platform is not None
         if ((mode == "synth" and target is None) or (mode == "impl" and platform is None) or
-            (target is not None  and platform is not None)):
+           target_plat_not_none):
             raise ocpiutil.OCPIException("Synthesis reporting operates only on HDL targets.\n" +
                                          "Implementation reporting operates only on HDL platforms.")
         # pylint:enable=bad-continuation
@@ -493,6 +505,7 @@ class HdlReportableToolSet(HdlToolSet):
                 elem_dict[item.key] = None
         return elem_dict if non_empty else {}
 
+    #TODO change to use kwargs too many arguments
     def construct_report_item(self, directory, target=None, platform=None, mode="synth",
                               init_report=None):
         """
@@ -505,8 +518,9 @@ class HdlReportableToolSet(HdlToolSet):
                                          "and \"impl\". Mode specified was \"" + mode + "\".")
 
         # pylint:disable=bad-continuation
+        target_plat_not_none = target is not None  and platform is not None
         if ((mode == "synth" and target is None) or (mode == "impl" and platform is None) or
-            (target is not None  and platform is not None)):
+            target_plat_not_none):
             raise ocpiutil.OCPIException("Synthesis reporting operates only on HDL targets.\n" +
                                          "Implementation reporting operates only on HDL platforms.")
         # pylint:enable=bad-continuation
@@ -545,15 +559,14 @@ if __name__ == "__main__":
         except ValueError:
             pass
     # for testing, set an invalid projects dir
-    #os.environ['OCPI_CDK_DIR'] = os.path.realpath('.')
-    init_instances = {'tool1': HdlToolSet("mytool1"),
-                      'tool2': HdlToolSet("mytool2", "MyTool1", True)}
+    TEST_INST = {'tool1': HdlToolSet("mytool1"),
+                 'tool2': HdlToolSet("mytool2", "MyTool1", True)}
 
-    init_instances['target0'] = ocpiplat.HdlTarget("mytgt0", "vend1",
-                                          ["part0.1", "part0.2"],
-                                          init_instances['tool1'])
-    init_instances['target1'] = ocpiplat.HdlTarget("mytgt1", "vend1",
-                                           "part1", init_instances['tool1'])
-    init_instances['target2'] = ocpiplat.HdlTarget("mytgt2", "vend2",
-                                           "part2", init_instances['tool2'])
-    doctest.testmod(verbose=__VERBOSITY, optionflags=doctest.ELLIPSIS, extraglobs=init_instances)
+    TEST_INST['target0'] = ocpiplat.HdlTarget("mytgt0", "vend1",
+                                              ["part0.1", "part0.2"],
+                                              TEST_INST['tool1'])
+    TEST_INST['target1'] = ocpiplat.HdlTarget("mytgt1", "vend1",
+                                              "part1", TEST_INST['tool1'])
+    TEST_INST['target2'] = ocpiplat.HdlTarget("mytgt2", "vend2",
+                                              "part2", TEST_INST['tool2'])
+    doctest.testmod(verbose=__VERBOSITY, optionflags=doctest.ELLIPSIS, extraglobs=TEST_INST)

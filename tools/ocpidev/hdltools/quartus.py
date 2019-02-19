@@ -28,15 +28,15 @@ from _opencpi.hdlreportableitem import ReportableItem
 #       older versions.
 
 # Use a single regex for synthesis and implementation
-regs_item = ReportableItem("Registers (Typ)", r";\s*Total registers\s*; ([0-9,]+)")
+REGS_ITEM = ReportableItem("Registers (Typ)", r";\s*Total registers\s*; ([0-9,]+)")
 # Use a single regex for synthesis and implementation
-luts_item = ReportableItem("LUTs (Typ)", r"^;\s*Combinational ALUTs\s*; ([0-9,]+)")
+LUTS_ITEM = ReportableItem("LUTs (Typ)", r"^;\s*Combinational ALUTs\s*; ([0-9,]+)")
 # Use a single regex for synthesis and implementation
-part_item = ReportableItem("Device", r"; Device\s+;\s+([0-9a-zA-Z\-]+)\s+;")
+PART_ITEM = ReportableItem("Device", r"; Device\s+;\s+([0-9a-zA-Z\-]+)\s+;")
 # Use a single regex for synthesis and implementation
-vrsn_item = ReportableItem("Version", r";\s*Quartus Prime Version\s*; ([0-9\.]+) ")
+VRSN_ITEM = ReportableItem("Version", r";\s*Quartus Prime Version\s*; ([0-9\.]+) ")
 # Note: method for determining Fmax for Altera tools has not yet been determined
-spec_item = ReportableItem("Memory/Special Functions",
+SPEC_ITEM = ReportableItem("Memory/Special Functions",
                            {"DSP18":r"; DSP block 18-bit elements\s*;\s*([0-9]+)\s*(;|/)",
                             "Block Memory Bits":r"; Total block memory bits\s*;\s*([0-9]+)\s*(;|/)",
                             "GXB Receiver PCS":
@@ -51,8 +51,8 @@ spec_item = ReportableItem("Memory/Special Functions",
                             "DLL":r"; Total DLLs\s*;\s*([0-9]+)\s*(;|/)"})
 
 # The item ordering of this list is the report order
-reportable_items = [vrsn_item, part_item, regs_item, luts_item, spec_item]
+REPORTABLE_ITEMS = [VRSN_ITEM, PART_ITEM, REGS_ITEM, LUTS_ITEM, SPEC_ITEM]
 
 # Synthesis and implementation files for utilization reporting.
-synth_files = ["*.map.rpt"]
-impl_files = ["*.fit.rpt"]
+SYNTH_FILES = ["*.map.rpt"]
+IMPL_FILES = ["*.fit.rpt"]

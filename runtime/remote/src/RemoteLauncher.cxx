@@ -483,6 +483,16 @@ wait(unsigned remoteInstance, OCPI::OS::ElapsedTime timeout) {
     throw OU::Error("Error in control operation: %s", err);
   return ezxml_cattr(m_rx, "timeout") != NULL;
 }
+void Launcher::
+appShutdown() {
+  OU::format(m_request, "<appshutdown>\n");
+  send();
+  receive();
+  assert(!strcasecmp(OX::ezxml_tag(m_rx), "appshutdown"));
+  const char *err = ezxml_cattr(m_rx, "error");
+  if (err)
+    throw OU::Error("Error in control operation: %s", err);
+}
 
   }
 }

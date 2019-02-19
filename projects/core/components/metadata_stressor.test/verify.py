@@ -61,24 +61,20 @@ class color:
     UNDERLINE = '\033[4m'
     END = '\033[0m'
 
-if len(sys.argv) != 4:
-    print("Invalid arguments:  usage is: verify.py <messages in file? T=1/F=0> <output-file> <input-file>")
+if len(sys.argv) != 3:
+    print("Invalid arguments:  usage is: verify.py  <output-file> <input-file>")
     sys.exit(1)
 print "    VALIDATE (binary data file):"
 
 bypass = os.environ.get("OCPI_TEST_bypass")
-MiF = sys.argv[1]
 
 # Read all output data as complex int16 samples
-ofilename = open(sys.argv[2], 'rb')
+ofilename = open(sys.argv[1], 'rb')
 odata = np.fromfile(ofilename, dtype=np.uint32, count=-1)
 ofilename.close()
 
 # Read all input data as complex int16 samples
-if (MiF == '1'):
-    ifilename = open('../../golden', 'rb')
-else:
-    ifilename = open(sys.argv[3], 'rb')
+ifilename = open(sys.argv[2], 'rb')
 idata = np.fromfile(ifilename, dtype=np.uint32, count=-1)
 ifilename.close()
 

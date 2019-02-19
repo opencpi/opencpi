@@ -22,8 +22,8 @@
  * Abstract:
  *   This file defines the PValue class for types property value lists
  *
- * Revision History: 
- * 
+ * Revision History:
+ *
  *    Author: Jim Kulp
  *    Date: 7/2009
  *    Revision Detail: Created
@@ -41,7 +41,6 @@
 
 
 namespace OCPI {
-  
   namespace Util {
     typedef OCPI::API::PValue PValue;
     extern PValue allPVParams[];
@@ -56,6 +55,7 @@ namespace OCPI {
       findAssignNext(const PValue *p, const char *name, const char *var, const char *&val,
 		     unsigned &next);
       const PValue *find(const PValue *p, const char *name);
+      PValue *find(PValue *p, const char *name);
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
     typedef OCPI::API::PV##pretty PV##pretty;
   OCPI_PROPERTY_DATA_TYPES
@@ -75,11 +75,11 @@ namespace OCPI {
       PValueList &operator=(const PValueList & p);
       inline const PValue *list() const { return m_list; }
       inline operator const PValue*() const { return m_list; }
-      const char 
+      const char
 	*addXml(ezxml_t x),
 	*parse(ezxml_t x, ...),
 	*parse(const PValue *p, ezxml_t x, ...),
-	*add(const char *name, const char *value);
+	*add(const char *name, const char *value, bool override = false);
       void
 	add(const PValue *params, const PValue *override = NULL),
 	add(const PValue &param);

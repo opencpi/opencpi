@@ -70,6 +70,7 @@ component dc_offset_cancellation
     TC         : in  signed(7 downto 0);
     DIN        : in  signed(DATA_WIDTH-1 downto 0);
     DIN_VLD    : in  std_logic;
+    DOUT_RDY   : in  std_logic := '1'; -- take the valid output even if no input, like AXI READY
     DOUT       : out signed(DATA_WIDTH-1 downto 0);
     DOUT_VLD   : out std_logic);
 end component;

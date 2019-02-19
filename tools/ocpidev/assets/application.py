@@ -15,14 +15,14 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
+"""
+Definition of Application and ApplicationCollection classes
+"""
 
-from .abstract import *
-from .factory import *
-import os
-import sys
 import logging
-sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
 import _opencpi.util as ocpiutil
+from .factory import AssetFactory
+from .abstract import RunnableAsset, RCCBuildableAsset
 
 class Application(RunnableAsset, RCCBuildableAsset):
     """
@@ -82,11 +82,11 @@ class ApplicationsCollection(RunnableAsset, RCCBuildableAsset):
         self.run_arg = kwargs.get("run_arg", None)
 
     def get_valid_apps(self):
-       """
-       Gets a list of all directories of type applications in the project and puts that
-       applications directory and the basename of that directory into a dictionary to return
-       """
-       return ocpiutil.get_subdirs_of_type("application", self.directory)
+        """
+        Gets a list of all directories of type applications in the project and puts that
+        applications directory and the basename of that directory into a dictionary to return
+        """
+        return ocpiutil.get_subdirs_of_type("application", self.directory)
 
     def run(self):
         """

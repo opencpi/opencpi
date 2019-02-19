@@ -61,13 +61,13 @@ class RunCondition {
   friend class OCPI::OCL::Worker;
 public: // Should these be protected with friends reading?
   OcpiPortMask *m_portMasks;  // the masks used for checking
-  OcpiBoolean  m_timeout;    // is timeout enabled?
-  uint32_t     m_usecs;      // usecs of timeout, zero is valid
-  bool         m_inUse;      // Are we currently registered? (AV-4722)
+  OcpiBoolean   m_timeout;    // is timeout enabled?
+  uint32_t      m_usecs;      // usecs of timeout, zero is valid
+  bool          m_inUse;      // Are we currently registered? (AV-4722)
  private:
   OcpiPortMask  m_myMasks[3]; // non-allocated masks used almost all the time
   OcpiPortMask *m_allocated;  // NULL or allocated
-  bool         m_hasRun;     // Have we run since being activated?
+  bool          m_hasRun;     // Have we run since being activated?
  protected:
   OcpiPortMask  m_allMasks;   // summary of all masks in the list
  public:
@@ -90,7 +90,9 @@ public: // Should these be protected with friends reading?
   // preserve it until 2.0.  It has no effect unless the supplied nPorts is in fact less than
   // the actual number of ports of the worker.
   inline void initDefault(unsigned nPorts)
-    OCPI_API_DEPRECATED("2.0", "Default constructor now defaults to all ports. Use constructor call with proper port mask if you need non-default.")
+    OCPI_API_DEPRECATED("2.0",
+			"Default constructor now defaults to all ports. Use constructor call with "
+			"proper port mask if you need non-default.")
   {
     m_myMasks[0] = (OcpiPortMask)~(-1 << nPorts);
     m_myMasks[1] = 0;
