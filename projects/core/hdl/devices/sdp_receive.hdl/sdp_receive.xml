@@ -1,4 +1,6 @@
-<HdlDevice language="vhdl" spec='sdp-spec' version='2'>
+<HdlDevice language="vhdl" version='2'>
+  <componentspec/>
+  <xi:include href='sdp-properties.xml'/>
   <sdp name='sdp'/>
   <streaminterface implname='out' producer='1'
 		   datawidth='sdp_width*32' numberofopcodes='256' datavaluewidth='8'

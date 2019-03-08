@@ -270,9 +270,6 @@ emitWorkerEntitySignals(FILE *f, std::string &last, unsigned maxPropName) {
 	  (int)maxPropName, typeNameIn.c_str(), typeNameIn.c_str(),
 	  (int)maxPropName, typeNameOut.c_str(), typeNameOut.c_str());
   last = ";\n";
-#if 0
-  if (w.m_ctl.writables || w.m_ctl.readbacks || w.m_ctl.rawProperties)
-#endif
     {
     fprintf(f, 
 	    "%s"
@@ -392,7 +389,6 @@ emitRecordSignal(FILE *f, std::string &last, const char *aprefix, bool inRecord,
     OcpPort::emitRecordSignal(f, last, aprefix, inRecord, inPackage, inWorker, NULL,
 			      inWorker ? "(done=>btrue, others=>bfalse)" : NULL);
     if (inWorker) {
-      //      if (w.m_ctl.writables || w.m_ctl.readbacks || w.m_ctl.rawProperties) 
       {
 	emitLastSignal(f, last, VHDL, false);
 	OU::format(last,
@@ -471,7 +467,8 @@ emitSkelSignals(FILE *f) {
     for (PropertiesIter pi = m_worker->m_ctl.properties.begin();
 	 pi != m_worker->m_ctl.properties.end(); pi++) {
       const OU::Property &pr = **pi;
-      if (!pr.m_isBuiltin && (pr.m_isVolatile || (pr.m_isReadable && !pr.m_isWritable))) {
+      if (!pr.m_isBuiltin && !pr.m_isParameter &&
+	  (pr.m_isVolatile || (pr.m_isReadable && !pr.m_isWritable))) {
 	if (pr.m_isSequence)
 	  fprintf(f,
 		  "  -- zero length sequence output, data values are not driven here yet\n"

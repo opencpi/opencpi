@@ -70,13 +70,34 @@ namespace OCPI {
       ExternalPort &getPort(unsigned index, std::string &name);
       size_t getPortCount();
 #endif
+      // Use top level names or instance.property
+      // Updated interfaces, consistent with worker, property, slave, string or const char *
+      void setProperty(const char* prop_name, const char *value, AccessList &list = emptyList);
+      void setProperty(const std::string &prop_name, const std::string &value, AccessList &list = emptyList) {
+	setProperty(prop_name.c_str(), value.c_str(), list);
+      }
+      // return const char* for use by both std::streams and printf
+      const char *getProperty(const char *prop_name, std::string &value,
+			      AccessList &list = emptyList,
+			      PropertyOptionList &options = noPropertyOptions,
+			      PropertyAttributes *attributes = NULL) const;
+      const char *getProperty(const std::string &a_name, std::string &value,
+			      AccessList &list = emptyList,
+			      PropertyOptionList &options = noPropertyOptions,
+			      PropertyAttributes *attributes = NULL) const {
+	return getProperty(a_name.c_str(), value, list, options, attributes);
+      }
+      // Returns NULL when ordinal is invalid.  The const char* return value is to be
+      // consistent with other getProperty methods (workers, properties, slaves). For this
+      // application level, where the name is also being retrieved, it is not really useful
+      // since you need to call this method to get the name anyway (in the *attributes).
+      const char *getProperty(unsigned ordinal, std::string &value, AccessList &list = emptyList,
+			      PropertyOptionList &options = noPropertyOptions,
+			      PropertyAttributes *attributes = NULL) const;
+      // Secondary or deprecated property accessors
       bool getProperty(unsigned ordinal, std::string &name, std::string &value,
 		       bool hex = false, bool *parameterp = NULL, bool *cachedp = NULL,
 		       bool uncached = false, bool *hiddenp = NULL);
-      // Use top level names or instance:property
-      void getProperty(const char* prop_name, std::string &value, bool hex = false);
-      void setProperty(const char* prop_name, const char *value);
-      // Access properties by instance name and property name
       void getProperty(const char* instance_name, const char* prop_name, std::string &value,
 		       bool hex = false);
       void setProperty(const char* instance_name, const char* prop_name, const char *value);
@@ -111,6 +132,10 @@ namespace OCPI {
       template <typename T>
       T getPropertyValue(const char *w, AccessList &list = emptyList) const {
 	return getPropertyValue<T>(w, NULL, list);
+      }
+      template <typename T>
+      T getPropertyValue(const std::string &p, AccessList &list = emptyList) const {
+	return getPropertyValue<T>(p.c_str(), NULL, list);
       }
       // extra convenience allowing std::string names
       template <typename T>

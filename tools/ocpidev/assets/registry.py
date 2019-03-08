@@ -261,8 +261,8 @@ class Registry(ShowableAsset):
 
         Return the exists boolean and the path to the project registry directory.
         """
-        if ocpiutil.is_path_in_project(directory) and \
-           os.path.isdir(ocpiutil.get_path_to_project_top(directory) + "/imports"):
+        if (ocpiutil.is_path_in_project(directory) and
+            os.path.isdir(ocpiutil.get_path_to_project_top(directory) + "/imports")):
             # allow imports to be a link OR a dir (needed for deep copies of exported projects)
             project_registry_dir = os.path.realpath(ocpiutil.get_path_to_project_top(directory) +
                                                     "/imports")
@@ -403,9 +403,11 @@ class Registry(ShowableAsset):
         """
         proj_dict = {}
         for proj in self.__projects:
-            proj_dict[proj] = {"real_path":self.__projects[proj].directory,
-                               "exists":(os.path.exists(self.__projects[proj].directory) and
-                                         os.path.isdir(self.__projects[proj].directory))}
+            if self.__projects[proj]:
+                proj_dict[proj] = {"real_path":self.__projects[proj].directory,
+                                   "exists":(os.path.exists(self.__projects[proj].directory) and
+                                             os.path.isdir(self.__projects[proj].directory))}
+
         json_dict = {"registry_location": self.directory}
         json_dict["projects"] = proj_dict
         return json_dict

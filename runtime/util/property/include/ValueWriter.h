@@ -39,15 +39,15 @@ class ValueWriter : public Writer {
 public:
   ValueWriter(Value **v, size_t nArgs);
 private:
-  void newItem(Member &m);
+  void newItem(const Member &m);
 public:
-  void beginSequence(Member &m, size_t nElements);
-  void beginStruct(Member &m);
-  void endStruct(Member &);
-  void beginType(Member &m);
-  void endType(Member &);
-  void writeString(Member &m, WriteDataPtr p, size_t strLen, bool start, bool /*top*/);
-  void writeData(Member &m, WriteDataPtr p, size_t nBytes, size_t );
+  void beginSequence(const Member &m, size_t nElements);
+  void beginStruct(const Member &m);
+  void endStruct(const Member &);
+  void beginType(const Member &m);
+  void endType(const Member &);
+  void writeString(const Member &m, WriteDataPtr p, size_t strLen, bool start, bool /*top*/);
+  void writeData(const Member &m, WriteDataPtr p, size_t nBytes, size_t );
 };
   }
 }

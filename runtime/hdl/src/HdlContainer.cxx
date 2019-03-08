@@ -314,46 +314,46 @@ namespace OCPI {
 
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)     	    \
       void								    \
-      set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *m, \
+      set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member &m, \
 			    size_t off, const run val, unsigned idx) const { \
         WciControl::set##pretty##Property(info, m, off, val, idx);	\
       }									    \
       void								    \
-      set##pretty##SequenceProperty(const OA::Property &p, const run *vals, \
+      set##pretty##SequenceProperty(const OA::PropertyInfo &info, const run *vals, \
 				    size_t length) const {		    \
-	WciControl::set##pretty##SequenceProperty(p, vals, length);	    \
+	WciControl::set##pretty##SequenceProperty(info, vals, length);	    \
       }									    \
       run								    \
-      get##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *m, \
+      get##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member &m, \
 			    size_t off, unsigned idx) const {		\
 	return WciControl::get##pretty##Property(info, m, off, idx); \
       }									    \
       unsigned								    \
-      get##pretty##SequenceProperty(const OA::Property &p, run *vals,	    \
+      get##pretty##SequenceProperty(const OA::PropertyInfo &info, run *vals,	    \
 				    size_t length) const {		    \
-	return WciControl::get##pretty##SequenceProperty(p, vals, length);  \
+	return WciControl::get##pretty##SequenceProperty(info, vals, length);  \
       }
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)
 OCPI_DATA_TYPES
       void
-      setStringProperty(const OCPI::API::PropertyInfo &info, const Util::Member *m, size_t off,
+      setStringProperty(const OCPI::API::PropertyInfo &info, const Util::Member &m, size_t off,
 			const char* val, unsigned idx) const {
         WciControl::setStringProperty(info, m, off, val, idx);
       }
       void
-      setStringSequenceProperty(const OA::Property &p, const char * const *val,
+      setStringSequenceProperty(const OA::PropertyInfo &info, const char * const *val,
 				size_t n) const {
-	WciControl::setStringSequenceProperty(p, val, n);
+	WciControl::setStringSequenceProperty(info, val, n);
       }
       void
-      getStringProperty(const OCPI::API::PropertyInfo &info, const Util::Member *m, size_t off,
+      getStringProperty(const OCPI::API::PropertyInfo &info, const Util::Member &m, size_t off,
 			char *val, size_t length, unsigned idx) const {
 	WciControl::getStringProperty(info, m, off, val, length, idx);
       }
       unsigned
-      getStringSequenceProperty(const OA::Property &p, char * *cp,
+      getStringSequenceProperty(const OA::PropertyInfo &info, char * *cp,
 				size_t n ,char*pp, size_t nn) const {
-	return WciControl::getStringSequenceProperty(p, cp, n, pp, nn);
+	return WciControl::getStringSequenceProperty(info, cp, n, pp, nn);
       }
 #define PUT_GET_PROPERTY(n)						         \
       void setProperty##n(const OA::PropertyInfo &info, size_t off, uint##n##_t val, unsigned idx) const { \
@@ -361,7 +361,7 @@ OCPI_DATA_TYPES
       }									         \
       inline uint##n##_t getProperty##n(const OA::PropertyInfo &info, size_t off, unsigned idx) const { \
 	return WciControl::getProperty##n(info, off, idx);		\
-      }									         
+      }
       PUT_GET_PROPERTY(8)
       PUT_GET_PROPERTY(16)
       PUT_GET_PROPERTY(32)

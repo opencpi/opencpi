@@ -1,11 +1,5 @@
-<tests timeout='100' useHDLFileIo='true'>
- <case ExcludeWorkers='mfsk_mapper2.hdl'>
+<tests timeout='200' useHDLFileIo='true'>
   <input port='in' stressorMode='full' script='generate.py 3'/>
   <output port='out' script='verify.py' view='view.sh'/>
- </case>
- <case ExcludeWorkers='mfsk_mapper.hdl'>
-  <input port='in' script='generate.py 3'/>
-  <output port='out' script='verify.py' view='view.sh'/>
- </case>
   <property name='symbols' generate='gen_symbols.py'/>
 </tests>

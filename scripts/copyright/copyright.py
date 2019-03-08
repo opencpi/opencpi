@@ -1,4 +1,5 @@
-#!/bin/env python
+#!/usr/bin/env python2
+# pylint: skip-file
 """Inserts copyright into files, replacing old ones found (AV-2759, AV-2912)"""
 # For copyright information concerning THIS script; see build_copyright below.
 
@@ -40,7 +41,7 @@ except NameError:
 
 
 # Set up colors LUT
-class color:
+class color(object):
     if use_color:
         CLS = '\033[2J\033[;H'
         GREEN = '\033[92m'
@@ -51,8 +52,11 @@ class color:
         CLS = GREEN = RED = BOLD = END = ''
 
 
-# Set up copyright notice for various source languages
 def build_copyright(comment, pre='', post=''):
+    """
+    Function that builds the copyright notice when given single line comment
+    prefix, block prefix, and block postfix.
+    """
     if len(comment):
         comment += ' '
     if len(pre):
@@ -172,13 +176,13 @@ other_regexs = (
     re.compile(r'Downloaded.*opencores'),
     re.compile(r'OpenSplice\s+DDS'),
     re.compile(r'This file is part of CommPy'),
-    # re.compile(r'Boost Software License'),
     re.compile(r'The Khronos Group Inc.'),
     re.compile(r'Copyright \(C\)[\s\d ,-]+Massachusetts Institute of Technology', re.IGNORECASE),
     re.compile(r'Copyright.*Intel Corp'),
     re.compile(r'Copyright \(c\) Internet2'),  # Fasttime
     re.compile(r'Copyright[\s\d ,-]+Aaron Voisine'),  # ezxml
     re.compile(r'^#\s*Doxyfile\s+[.\d]+$'),  # Doxygen config files
+    re.compile(r'Copyright \(c\).*Google,?\s+Inc'),  # Some Eclipse things
 )
 bad_paths = (
     '/.git/',
@@ -208,12 +212,14 @@ bad_paths = (
     '/xilinx-zynq-binary-release-',
 )
 bad_path_globs = (
+    '*/configurations*.inc', '*/utilization*.inc',  # LaTeX include files for utilization
     '*/idata/*',  # Unit test data source
     '*/MANIFEST.MF',  # Java packaging
     '*/notes',  # Misc notes
     '*/odata/*',  # Unit test data destination
     '*/package-name',
     '*/package-id',
+    '*/project-registry/*',  # Don't scan registered projects outside this source tree
     '*/__pycache__/*',
     '*/*.sh.example',
     '*/snippets/*',
@@ -222,7 +228,8 @@ bad_path_globs = (
     '*.test/test*/*.input',
     '*.test/golden*',
     '*.test/test*/golden*',
-    '*/configurations*.inc', '*/utilization*.inc',  # LaTeX include files for utilization
+    '*/xilinx*/release/*',  # Symlinked versions of things in bad_paths above
+    '*/vivado_ila/*',
 )
 
 
@@ -242,8 +249,7 @@ def scanfunc_skip():
                     logging.debug('%s: Found copyrighted regex "%s". Skipping.', filename, str(reg.pattern))
                     return True
         ext = os.path.splitext(filename)[1][1:]
-        if gbuff[0].strip().startswith('<?xml') and \
-           ext not in extensions['xml']:
+        if gbuff[0].strip().startswith('<?xml') and ext not in extensions['xml']:
             return True
     return False
 
@@ -353,7 +359,7 @@ def smart_scan():
                                              '#include',
                                              '#warning',
                                              '#error',
-                                             )]):
+                                            )]):
         start += 1
     # Check the first 40 lines
     end = start
@@ -437,16 +443,16 @@ def process():
             # Delete the old
             del gbuff[start-1:end]
             fast_insert = True
-        else: # Not "already"
+        else:  # Not "already"
             print_highlighted()
             print(color.BOLD + "\nLine to insert block (or '.' for auto)? " + color.END, end='')
             start = input()
             if start == '.':  # "fast insert" which means 1,n,y,save
                 start = 1
                 # Check for shell shebang, LaTeX document class, or XML header
-                if gbuff[0].startswith("#!") or \
-                   gbuff[0].strip().startswith(r'\documentclass') or \
-                   gbuff[0].startswith("<?xml"):
+                if (gbuff[0].startswith("#!") or 
+                    gbuff[0].strip().startswith(r'\documentclass') or 
+                    gbuff[0].startswith("<?xml")):
                     start = 2
                 fast_insert = True
                 logging.warning('%s: User-requested fast insert at line %d.', filename, start)
@@ -491,7 +497,7 @@ if len(sys.argv) < 2:
         print("No file(s) given on command line. Attempting auto-scan.")
         logging.warning("No file(s) given on command line. Attempting auto-scan.")
     # Use extend to keep first value (the script name)
-    myargv.extend(subprocess.check_output(['find', '.', '-type', 'f']).rstrip().split('\n'))
+    myargv.extend(subprocess.check_output(['find', '-L', '.', '-type', 'f']).rstrip().split('\n'))
 for filename in sorted(myargv[1:]):
     try:
         gbuff = []

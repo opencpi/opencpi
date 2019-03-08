@@ -167,8 +167,6 @@ namespace OCPI {
        * This method causes the buffer to be transfered to the
        * inputs if a transfer can take place.  If not, the circuit 
        * manager is responsible for queing the request.
-       *
-       * This method returns -1 if an error occurs.
        *********************************/
       void startBufferTransfer( Buffer* src_buf );
 

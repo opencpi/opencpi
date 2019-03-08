@@ -2,11 +2,11 @@
 
   <!-- 'true'  : MSB of lfsr-15 drives the 'take'.
        'false' : use enable_count to set the enable duty-cycle -->
-  <Property Name="enable_select" Type="bool" Readable="true" Writable="true" Default="false"/>
+  <Property Name="enable_select" Type="bool" Writable="true" Default="false"/>
 
   <!-- Set the duty cycle for 'take'
        1 - constant, 2 (toggle off/on), 3 (1/on, 2/off), 4 (1/on, 3/off)-->
-  <Property Name="enable_duty_cycle" Type="ushort" Readable="true" Writable="true" Default="1"/>
+  <Property Name="enable_duty_cycle" Type="ushort" Writable="true" Default="1"/>
 
   <DataInterfaceSpec Name="in" Producer="false"/>
   <!-- Set the output buffer size to match the input, which may be connected to a port with a protocol-->

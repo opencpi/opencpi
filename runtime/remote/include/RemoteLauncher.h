@@ -33,7 +33,7 @@
 #include "ContainerLauncher.h"
 namespace OCPI {
   namespace Remote {
-    class Launcher : public OCPI::Container::Launcher {
+    class Launcher : public OCPI::Container::Launcher, virtual public OCPI::Util::SelfMutex {
       int m_fd;              // socket fd
       bool m_sending;        // Is next phase to send something?
       std::string m_request; // xml text request being constructed
@@ -73,9 +73,12 @@ namespace OCPI {
       void
 	appShutdown(),
 	controlOp(unsigned remoteInstance, OU::Worker::ControlOperation),
-	setPropertyValue(unsigned remoteInstance, size_t propN, std::string &v),
-	getPropertyValue(unsigned remoteInstance, size_t propN, std::string &v, bool hex,
-			 bool add);
+	setPropertyValue(unsigned remoteInstance, size_t propN, const char *v,
+			 const std::vector<uint8_t> &path, size_t offset, size_t dimension),
+	getPropertyValue(unsigned remoteInstance, size_t propN, std::string &v,
+			 const std::vector<uint8_t> &path, size_t offset, size_t dimension,
+			 OCPI::API::PropertyOptionList &options,
+			 OCPI::API::PropertyAttributes *a_attributes = NULL);
     };
   }
 }

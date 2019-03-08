@@ -284,7 +284,7 @@ namespace OCPI {
 	unpacker.getBoolean (bo);
 	unpacker.byteorder (bo);
         unpacker.getULong (desc.type);
-        unpacker.getLong (desc.role);
+        unpacker.getULong (desc.role);
         unpacker.getULong (desc.options);
 	OR::Desc_t & d = desc.desc;
 	unpacker.getULong     (d.nBuffers);
@@ -349,7 +349,7 @@ namespace OCPI {
 	  pOptions |= (1 << OCPI::RDT::FlagIsMeta);
 	  uOptions |= (1 << OCPI::RDT::FlagIsMeta);
 	} else
-	  uOptions &= ~(1 << OCPI::RDT::FlagIsMeta);
+	  uOptions &= ~(1u << OCPI::RDT::FlagIsMeta);
       } else if (pOptions & (1 << OCPI::RDT::FlagIsMeta))
 	return "Incompatible Metadata mode: output side cannot do flag-is-meta, input must";
       if (pOptions & (1 << OR::MandatedRole)) {

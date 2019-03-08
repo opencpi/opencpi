@@ -24,6 +24,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <cfloat>
 #include <string.h>
 #include <pthread.h>
 #include "OcpiOsAssert.h"
@@ -1032,25 +1033,31 @@ unparseChar(std::string &s, char argVal, bool hex) const {
   }
   return argVal == 0;
 }
-bool Unparser::
-unparseDouble(std::string &s, double val, bool) const {
+static void
+doFloat(std::string &s, double val, unsigned digits) {
   char *cp;
-  ocpiCheck(asprintf(&cp, "%g", val) > 0);
+  ocpiCheck(asprintf(&cp, "%.*g", digits, val) > 0);
   for (char *p = cp; *p; p++)
     if (*p == 'e' || *p == 'E') {
       while (p > cp && p[-1] == '0') {
 	strcpy(p - 1, p); // FIXME valgrind overlap
 	p--;
       }
+      if (p[1] && p[1] == '0' && !p[2])
+	*p = '\0';
       break;
     }
   s += cp;
   free(cp);
+}
+bool Unparser::
+unparseDouble(std::string &s, double val, bool) const {
+  doFloat(s, val, 17 /*DBL_DECIMAL_DIG*/);
   return *(uint64_t *)&val == 0;
 }
 bool Unparser::
-unparseFloat(std::string &s, float val, bool hex) const {
-  unparseDouble(s, (double)val, hex);
+unparseFloat(std::string &s, float val, bool) const {
+  doFloat(s, val, 9 /* FLT_DECIMAL_DIG*/);
   return *(uint32_t*)&val == 0;
 }
 bool Unparser::

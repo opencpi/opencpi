@@ -94,10 +94,10 @@ namespace OCPI {
 			    m_downloadBuf.size() : OCPI_UTRUNCATE(size_t, length));
 	if (nr <= 0)
 	  return "reading from socket";
-	length -= nr;
+	length -= (size_t)nr;
 	ssize_t nw;
 	for (char *cp = &m_downloadBuf[0]; nr; nr -= nw, cp += nw)
-	  if ((nw = ::write(wfd, cp, nr)) <= 0)
+	  if ((nw = ::write(wfd, cp, (size_t)nr)) <= 0)
 	    return "writing to file";
       } while (length);
       return NULL;
@@ -332,7 +332,8 @@ namespace OCPI {
 	}
 	if (slaves.length()) {
 	  for (OU::TokenIter li(slaves.c_str()); li.token(); li.next()) {
-	    unsigned slave = atoi(li.token());
+	    size_t slave;
+	    ocpiCheck(sscanf(li.token(), "%zu", &slave) == 1);
 	    assert(slave < m_members.size());
 	    i->m_slaves.push_back(&m_members[n]);
 	    i->m_slaves.back()->m_hasMaster = true;
@@ -485,14 +486,34 @@ namespace OCPI {
 	return OU::eformat(error, "Control message error: %s", err);
       m_response = "<control>";
       OC::Worker &w = *m_members[inst].m_worker;
-
       try {
 	if (get || set) {
 	  OU::Property &p = w.properties()[n];
-	  if (get)
-	    w.getPropertyValue(p, m_response, hex, true);
-	  else
-	    w.setPropertyValue(p, m_response.c_str());
+	  size_t offset, dimension;
+	  if ((err = OX::getNumber(m_rx, "offset", &offset)) ||
+	      (err = OX::getNumber(m_rx, "dimension", &dimension)))
+	    return OU::eformat(error, "Get/set property control message error: %s", err);
+	  OU::Member *m = &p;
+	  for (const char *path = ezxml_cattr(m_rx, "path");
+	       path && path[0] && path[1]; path += 2) {
+	    size_t ordinal;
+	    ocpiCheck(sscanf(path, "%2zx", &ordinal) == 1);
+	    if (m->m_baseType == OA::OCPI_Struct) {
+	      if (ordinal >= m->m_nMembers)
+		return OU::eformat(error, "Get/set struct member index error");
+	      m = &m->m_members[ordinal];
+	    } else if (m->m_baseType == OA::OCPI_Type) {
+	      if (ordinal != 0)
+		return OU::eformat(error, "Get/set typedef index error");
+	      m = m->m_type;
+	    }
+	  }
+	  if (get) {
+	    OA::PropertyAttributes a;
+	    w.getProperty(p, m_response, *m, offset, dimension,
+			  OA::PropertyOptionList({ hex ? OA::HEX : OA::NONE, OA::APPEND }), &a);
+	  } else
+	    w.setProperty(p, ezxml_txt(m_rx), *m, offset, dimension);
 	} else if (op)
 	  w.controlOp((OU::Worker::ControlOperation)n);
 	else if (wait)

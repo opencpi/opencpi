@@ -44,15 +44,15 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         Initializes Project member data  and calls the super class __init__.  Throws an
         exception if the directory passed in is not a valid project directory.
         valid kwargs handled at this level are:
-            init_libs        (T/F) - Instructs the method whether to construct all library objects
-                                     contained in the project
-            init_apps        (T/F) - Instructs the method whether to construct all application
-                                     objects contained in the project
-            init_hdl_plats   (T/F) - Instructs the method whether to construct all HdlPlatformWorker
-                                     objects contained in the project (at least those with a
-                                     corresponding build platform listed in self.hdl_platforms)
-            init_hdl_assembs (T/F) - Instructs the method whether to construct all
-                                     HdlApplicationAssembly objects contained in the project
+            init_libs       (T/F) - Instructs the method whether to construct all library objects
+                                    contained in the project
+            init_apps       (T/F) - Instructs the method whether to construct all application
+                                    objects contained in the project
+            init_hdl_plats  (T/F) - Instructs the method whether to construct all HdlPlatformWorker
+                                    objects contained in the project (at least those with a
+                                    corresponding build platform listed in self.hdl_platforms)
+            init_hdlassembs (T/F) - Instructs the method whether to construct all
+                                    HdlApplicationAssembly objects contained in the project
         """
         self.check_dirtype("project", directory)
         super().__init__(directory, name, **kwargs)
@@ -143,8 +143,8 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         """
         #TODO: do we need realpath too? remove the abs/realpaths if we instead call
         # them in the Asset constructor
-        return other is not None and \
-                os.path.realpath(self.directory) == os.path.realpath(other.directory)
+        return (other is not None and
+                os.path.realpath(self.directory) == os.path.realpath(other.directory))
 
     def delete(self, force=False):
         """
@@ -179,8 +179,8 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
             project_vars = ocpiutil.set_vars_from_make(mk_file=self.directory + "/Makefile",
                                                        mk_arg="projectpackage ShellProjectVars=1",
                                                        verbose=True)
-            if not project_vars is None and 'ProjectPackage' in project_vars and \
-               len(project_vars['ProjectPackage']) > 0:
+            if (not project_vars is None and 'ProjectPackage' in project_vars and
+               len(project_vars['ProjectPackage']) > 0):
                 # There is only one value associated with ProjectPackage, so get element 0
                 project_package = project_vars['ProjectPackage'][0]
             else:
@@ -232,7 +232,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
 
     def get_show_test_dict(self):
         """
-        Generate the dictoary that is used to show all the tests in this project
+        Generate the dictionary that is used to show all the tests in this project
         """
         json_dict = {}
         project_dict = {}
@@ -439,6 +439,16 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         proj_dict["project"] = top_dict
         return proj_dict
 
+    def _get_very_verbose_assemblies_dict(self):
+        """
+        Generate the dictonary of assemblies within a project that is used with verbocity level 2
+        """
+        assys_dict = {}
+        if self.hdlassemblies:
+            for assy in self.hdlassemblies.assembly_list:
+                assys_dict[assy.name] = assy.directory
+        return assys_dict
+
     def _get_very_verbose_prims_dict(self):
         """
         Generate the dictonary of primatives within a project that is used with verbocity level 2
@@ -514,6 +524,9 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         prims_dict = self._get_very_verbose_prims_dict()
         if prims_dict:
             top_dict["primitives"] = prims_dict
+        assys_dict = self._get_very_verbose_assemblies_dict()
+        if assys_dict:
+            top_dict["assemblies"] = assys_dict
         proj_depends = project_vars['ProjectDependencies']
         if not proj_depends:
             proj_depends.append("None")
@@ -585,6 +598,11 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
             print("  HDL Primitives: " + self.directory + "/hdl/primitives")
         for prim in prim_dict:
             print("    Primitive: " + prim)
+        assembly_dict = proj_dict["project"].get("assemblies", [])
+        if assembly_dict:
+            print("  HDL Assemblies: " + self.directory + "/hdl/assemblies")
+        for assy in assembly_dict:
+            print("    Assembly: " + assy)
         lib_dict = proj_dict["project"].get("libraries", [])
         for lib in lib_dict:
             print("  Library: " + lib_dict[lib]["directory"])
@@ -627,6 +645,13 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
             rows = [["Primitive Directory", "Primitive"]]
             for prim in prim_dict:
                 rows.append([self.directory + "/hdl/primitives", prim])
+            ocpiutil.print_table(rows, underline="-")
+        assembly_dict = proj_dict["project"].get("assemblies", [])
+        if assembly_dict:
+            print("Assemblies:")
+            rows = [["Assembly Directory", "Assembly"]]
+            for assy in assembly_dict:
+                rows.append([self.directory + "/hdl/assemblies", assy])
             ocpiutil.print_table(rows, underline="-")
         lib_dict = proj_dict["project"].get("libraries", [])
         if lib_dict:
@@ -828,7 +853,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
             raise ocpiutil.OCPIException("Before (un)setting the registry for the project at \"" +
                                          self.directory + "\", you must unregister the project.\n" +
                                          "This can be done by running 'ocpidev unregister project" +
-                                         " " + self.package_id + "'.")
+                                         " -d " + self.directory)
 
         imports_link = self.directory + "/imports"
         if os.path.islink(imports_link):

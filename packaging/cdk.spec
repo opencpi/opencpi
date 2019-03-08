@@ -125,10 +125,6 @@ done
   %{__ln_s} -f %{prefix0}/cdk/scripts/ocpidev_bash_complete %{buildroot}%{prefix1}/$dir/$file
   echo %%{prefix1}/$dir/$file >> %{_builddir}/devel-files
 
-  # A very special case that will go away at some point
-  cp packaging/dist/projects/{new_project_source,README} %{buildroot}%{prefix0}/projects
-  echo %%{prefix0}/projects/new_project_source >> %{_builddir}/devel-files
-  echo %%{prefix0}/projects/README >> %{_builddir}/devel-files
 %endif
 
 ##########################################################################################

@@ -260,8 +260,7 @@ class HdlToolFactory(object):
             cls.__mk_dict = ocpiutil.set_vars_from_make(os.environ["OCPI_CDK_DIR"] +
                                                         "/include/hdl/hdl-targets.mk",
                                                         "ShellHdlTargetsVars=1 " +
-                                                        "ShellGlobalProjectsVars=1",
-                                                        "verbose")
+                                                        "ShellGlobalProjectsVars=1")
         # Top targets are general groups that likely contain multiple child targets/families
         if 'HdlTopTargets' in cls.__mk_dict:
             # we call TopTargets "vendors" because that is a more readable term
@@ -298,8 +297,8 @@ class HdlToolFactory(object):
                         cls.__tool_dict[toolname] = {}
                         # Get the title for this tool via HdlToolName
                         if 'HdlToolName_' + toolname in cls.__mk_dict:
-                            cls.__tool_dict[toolname]["title"] = \
-                                    cls.__mk_dict['HdlToolName_' + toolname][0]
+                            cls.__tool_dict[toolname]["title"] = (
+                                    cls.__mk_dict['HdlToolName_' + toolname][0])
 
                         # Determine if this tool is one of the HdlSimTools. Set the is_simtool
                         # entry in __tool_dict accordingly
@@ -469,7 +468,7 @@ class HdlReportableToolSet(HdlToolSet):
         # pylint:disable=bad-continuation
         target_plat_not_none = target is not None  and platform is not None
         if ((mode == "synth" and target is None) or (mode == "impl" and platform is None) or
-           target_plat_not_none):
+            target_plat_not_none):
             raise ocpiutil.OCPIException("Synthesis reporting operates only on HDL targets.\n" +
                                          "Implementation reporting operates only on HDL platforms.")
         # pylint:enable=bad-continuation

@@ -26,6 +26,7 @@
 #include <math.h>
 #include "OcpiApi.hh"
 
+namespace OA=OCPI::API;
 double EPSILON = 0.00000001;
 
 inline bool isAlmostEqual(double a, double b)
@@ -35,26 +36,23 @@ inline bool isAlmostEqual(double a, double b)
 
 std::string checkWkr1Values(OCPI::API::Application* app, std::string comp_name)
 {
-  std::string ret_val;
   std::string temp_string;
   std::string expected_str;
 
   app->getProperty(comp_name.c_str(), "my_string", temp_string);
   if (temp_string != "test_string"){
-    ret_val = comp_name + ".my_string is not set correctly";
-    return ret_val;
+    return comp_name + ".my_string is not set correctly:" + temp_string;
   }
 
   app->getProperty(comp_name.c_str(), "my_enum", temp_string);
   if (temp_string != "third_enum"){
-    ret_val = comp_name + ".my_enum is not set correctly. Was :" + temp_string +
+    return comp_name + ".my_enum is not set correctly. Was :" + temp_string +
               " and should be : third_enum" ;
-    return ret_val;
   }
   expected_str = "struct_bool true,struct_ulong 10,struct_char K";
   app->getProperty(comp_name.c_str(), "test_struct", temp_string);
   if (temp_string != expected_str){
-      ret_val = comp_name + ".test_struct is not set correctly.  Was :" +
+      return comp_name + ".test_struct is not set correctly.  Was :" +
                 temp_string + "\n should be : " + expected_str;
   }
   expected_str = "{struct_bool true,struct_ulong 20,struct_char D},"
@@ -66,25 +64,50 @@ std::string checkWkr1Values(OCPI::API::Application* app, std::string comp_name)
                  "{struct_bool true,struct_ulong 26,struct_char J}";
   app->getProperty(comp_name.c_str(), "test_seq_of_structs", temp_string);
   if (temp_string != expected_str){
-      ret_val = comp_name + ".test_seq_of_structs is not set correctly.  Was :" +
+      return comp_name + ".test_seq_of_structs is not set correctly.  Was :" +
+                temp_string + "\n should be : " + expected_str;
+  }
+  expected_str = "struct_bool true,struct_ulong 23,struct_char G";
+  app->getProperty(comp_name + ".test_seq_of_structs", temp_string, OA::AccessList({3}));
+  if (temp_string != expected_str){
+      return comp_name + ".test_seq_of_structs[3] is not set correctly.  Was :" +
+                temp_string + "\n should be : " + expected_str;
+  }
+  expected_str = "23";
+  {
+    OA::Property p(*app, comp_name + ".test_seq_of_structs");
+    OA::ULong ul = p.getValue<OA::ULong>(OA::AccessList({3, "struct_ulong"}));
+    if (ul != 23)
+      return comp_name + ".test_seq_of_structs[3].struct_ulong is not set correctly.  Was :" +
+	std::to_string((unsigned long long)ul) + "\n should be : " + expected_str;
+  }
+  app->getProperty(comp_name + ".test_seq_of_structs", temp_string, OA::AccessList({3, "struct_ulong"}));
+  if (temp_string != expected_str){
+      return comp_name + ".test_seq_of_structs[3].struct_ulong is not set correctly.  Was :" +
                 temp_string + "\n should be : " + expected_str;
   }
   expected_str = "struct_char M,struct_ulong_seq {1,2,3}";
   app->getProperty(comp_name.c_str(), "test_struct_of_seq", temp_string);
   if (temp_string != expected_str){
-      ret_val = comp_name + ".test_struct_of_seq is not set correctly.  Was :" +
+      return comp_name + ".test_struct_of_seq is not set correctly.  Was :" +
+                temp_string + "\n should be : " + expected_str;
+  }
+  expected_str = "1,2,3";
+  app->getProperty(comp_name + ".test_struct_of_seq", temp_string, OA::AccessList({ "struct_ulong_seq" }));
+  if (temp_string != expected_str) {
+      return comp_name + ".test_struct_of_seq.struct_ulong_seq is not set correctly.  Was :" +
                 temp_string + "\n should be : " + expected_str;
   }
   expected_str = "that,that,that,that,that,that,that,that,that,that";
   app->getProperty(comp_name.c_str(), "test_array_of_str", temp_string);
   if (temp_string != expected_str){
-      ret_val = comp_name + ".test_array_of_str is not set correctly.  Was :" +
+      return comp_name + ".test_array_of_str is not set correctly.  Was :" +
                 temp_string + "\n should be : " + expected_str;
   }
   expected_str = "0,10,20,30,40,50,60,70,80,90";
   app->getProperty(comp_name.c_str(), "test_array_ulong", temp_string);
   if (temp_string != expected_str){
-      ret_val = comp_name + ".test_array_ulong is not set correctly.  Was :" +
+      return comp_name + ".test_array_ulong is not set correctly.  Was :" +
                 temp_string + "\n should be : " + expected_str;
   }
   expected_str = "{test_ulong 10,test_bool true,test_char A},"
@@ -99,30 +122,48 @@ std::string checkWkr1Values(OCPI::API::Application* app, std::string comp_name)
                  "{test_ulong 19,test_bool true,test_char J}";
   app->getProperty(comp_name.c_str(), "test_array_of_struct", temp_string);
   if (temp_string != expected_str){
-      ret_val = comp_name + ".test_array_of_struct is not set correctly.  Was :" +
+      return comp_name + ".test_array_of_struct is not set correctly.  Was :" +
                 temp_string + "\n should be : " + expected_str;
   }
   expected_str = "1,2,3,4,6,7,8,100";
   app->getProperty(comp_name.c_str(), "test_seq_ulong", temp_string);
   if (temp_string != expected_str){
-      ret_val = comp_name + ".test_seq_ulong is not set correctly.  Was :" +
+      return comp_name + ".test_seq_ulong is not set correctly.  Was :" +
                 temp_string + "\n should be : " + expected_str;
   }
   expected_str = "one,two,three,four,five";
   app->getProperty(comp_name.c_str(), "test_seq_str", temp_string);
   if (temp_string != expected_str){
-      ret_val = comp_name + ".test_seq_str is not set correctly.  Was :" +
+      return comp_name + ".test_seq_str is not set correctly.  Was :" +
                 temp_string + "\n should be : " + expected_str;
   }
-  expected_str = "{1,2,3,4,6,7,8,100,0},{1,2,3,4,6,7,8,100,0},{1,2,3,4,6,7,8,100,0},"
-                 "{1,2,3,4,6,7,8,100,0},{1,2,3,4,6,7,8,100,0},{1,2,3,4,6,7,8,100,0},"
-                 "{1,2,3,4,6,7,8,100,0},{1,2,3,4,6,7,8,100,0}";
+  expected_str = "{1,2,3,4,6,7,8,101,0},{1,2,3,4,6,7,8,102,0},{1,2,3,4,6,7,8,103,0},"
+                 "{1,2,3,4,6,7,8,104,0},{1,2,3,4,6,7,8,105,0},{1,2,3,4,6,7,8,106,0},"
+                 "{1,2,3,4,6,7,8,107,0},{1,2,3,4,6,7,8,108,0}";
   app->getProperty(comp_name.c_str(), "test_seq_of_ulong_arrays", temp_string);
   if (temp_string != expected_str){
-      ret_val = comp_name + ".test_seq_of_ulong_arrays is not set correctly.  Was :" +
+      return comp_name + ".test_seq_of_ulong_arrays is not set correctly.  Was :" +
                 temp_string + "\n should be : " + expected_str;
   }
-  return ret_val;
+  expected_str = "1,2,3,4,6,7,8,105,0";
+  app->getProperty(comp_name + ".test_seq_of_ulong_arrays", temp_string, OA::AccessList({4}));
+  if (temp_string != expected_str){
+      return comp_name + ".test_seq_of_ulong_arrays[4] is not set correctly.  Was :" +
+                temp_string + "\n should be : " + expected_str;
+  }
+  expected_str = "105";
+  app->getProperty(comp_name + ".test_seq_of_ulong_arrays", temp_string, OA::AccessList({4,7}));
+  if (temp_string != expected_str){
+      return comp_name + ".test_seq_of_ulong_arrays[4][7] is not set correctly.  Was :" +
+                temp_string + "\n should be : " + expected_str;
+  }
+  app->getProperty(comp_name + ".my_debug1", temp_string);
+  if (temp_string != "123")
+    return comp_name + ".my_debug1 not set to 123";
+  if (app->getPropertyValue<OA::ULong>(comp_name + ".my_debug1") != 123)
+    return comp_name + ".my_debug1 not set to 123";
+  app->setProperty(comp_name + ".my_debug1", "34");
+  return "";
 }
 
 std::string checkValues(OCPI::API::Application* app, std::string comp_name)
@@ -143,7 +184,7 @@ std::string checkValues(OCPI::API::Application* app, std::string comp_name)
 
   app->getPropertyValue(comp_name, "test_double", temp_double);
   if (!isAlmostEqual(temp_double, 5.0)){
-    ret_val = comp_name + ".test_double is not set correctly";
+    ret_val = comp_name + ".test_double is not set correctly:" + std::to_string((long double)temp_double) ;
     return ret_val;
   }
   app->getPropertyValue(comp_name, "test_ulong", temp_ulong);
@@ -199,20 +240,46 @@ std::string checkValues(OCPI::API::Application* app, std::string comp_name)
               " and should be : 16" ;
     return ret_val;
   }
-
+  bool caught = false;
+  bool shouldFail = comp_name == "comp3";
+  try { app->setProperty(comp_name + ".my_debug1", "123"); } catch(...) { caught = true; }
+  if (caught) {
+    if (!shouldFail)
+      return "setting debug property " + comp_name + "in a debug worker failed";
+    std::cout << "app->setProperty(" + comp_name + ".my_debug1 failed as expected\n";
+  } else {
+    if (shouldFail)
+      return "setting debug property " + comp_name + "in a non-debug worker did not fail";
+    std::cout << "app->setProperty(" + comp_name + ".my_debug1 succeeded as expected\n";
+  }
+  caught = false;
+  try { app->getPropertyValue<OA::ULong>(comp_name + ".my_debug1"); } catch(...) { caught = true; }
+  if (caught) {
+    if (!shouldFail)
+      return "setting debug property " + comp_name + "in a debug worker failed";
+    std::cout << "app->getPropertyValue(" + comp_name + ".my_debug1 failed as expected\n";
+  } else {
+    if (shouldFail)
+      return "setting debug property " + comp_name + "in a non-debug worker did not fail";
+    std::cout << "app->getPropertyValue(" + comp_name + ".my_debug1 succeeded as expected\n";
+  }
   return ret_val;
 }
 
-int main(int argc, char **argv)
+int main(int /*argc*/, char **/*argv*/)
 {
   // Reference OpenCPI_Application_Development document for an explanation of the ACI
   try
   {
-    OCPI::API::Application app("multislave_test.xml");
+    OA::PValue pvs[] = { OA::PVBool("verbose", true),
+			 OA::PVBool("dump", true),
+			 OA::PVBool("hidden", true),
+			 OA::PVEnd };
+    OCPI::API::Application app("multislave_test.xml", pvs);
     app.initialize(); // all resources have been allocated
     app.start();      // execution is started
     app.wait();       // wait until app is "done"
-
+    app.finish();
     //app.dumpProperties();
     std::string err;
     err = checkValues(&app, "comp1");

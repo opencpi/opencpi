@@ -867,7 +867,6 @@ emitVhdlPropMember(FILE *f, OU::Property &pr, unsigned maxPropName, bool in2work
     } else if (pr.m_isParameter)
       // This is redundant with generics on purpose.
       emitVhdlPropMemberData(f, pr, maxPropName);
-    //    if (pr.m_isVolatile || pr.m_isReadable && !pr.m_isWritable)
     if (pr.m_isReadable && !pr.m_isParameter)
       fprintf(f, "    %s : Bool_t;\n", tempName(temp, maxPropName, "%s_read",
 						pr.m_name.c_str()));
@@ -978,9 +977,6 @@ emitVhdlWorkerPackage(FILE *f, unsigned maxPropName) {
 	  "use work.%s_constants.all, work.%s_defs.all;\n"
 	  "package %s_worker_defs is\n",
 	  m_implName, m_implName, m_implName);
-#if 0
-  if (m_ctl.writables || m_ctl.readbacks || m_ctl.rawProperties)
-#endif
     {
     fprintf(f,"\n"
 	    "  -- The following record is for the writable properties of worker \"%s\"\n"

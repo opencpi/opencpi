@@ -1,6 +1,6 @@
 <HdlWorker Name="bias" Language="Verilog" Pattern="%w%M%0_">
   <xi:include href="bias_spec.xml"/>
-  <specproperty name='biasValue' readable='true'/>
+  <specproperty name='biasValue' readback='true'/>
   <ControlInterface SizeOfConfigSpace="4g" Sub32BitConfigProperties="true" ControlOperations="initialize" Timeout="444"/>
   <StreamInterface 
       Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"

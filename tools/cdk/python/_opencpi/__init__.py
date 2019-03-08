@@ -15,11 +15,16 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
+"""
+ocpiutil module definition file
+"""
 
+# pylint:disable=undefined-all-variable
 __all__ = [
-           "util",
-           "assets",
-           "hdltools",
-           "hdltargets",
-           "hdlreportableitem",
-          ]
+    "util",
+    "assets",
+    "hdltools",
+    "hdltargets",
+    "hdlreportableitem",
+    ]
+# pylint:disable=undefined-all-variable

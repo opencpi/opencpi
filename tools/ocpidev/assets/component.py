@@ -216,7 +216,7 @@ class ShowableComponent(ShowableAsset):
         for member in struct:
             name = member.attrib["name"]
             ret_dict[name] = {}
-            if member.attrib["type"] == "Struct":
+            if member.attrib.get("type", "ULong") == "Struct":
                 ret_dict[name]["Struct"] = self.get_struct_dict_from_xml(member.findall("member"))
             ret_dict[name]["type"] = member.attrib.get("type", "ULong")
             ret_dict[name]["name"] = name
@@ -246,7 +246,7 @@ class ShowableComponent(ShowableAsset):
             base_type = "Enum " + str(is_enum)
         elif is_string:
             base_type = "String[" + is_string + "]"
-        #add sequence tor array information on to the front of the output string where applicable
+        #add sequence or array information on to the front of the output string where applicable
         if is_seq and is_array:
             prop_type = "Sequence{" + is_seq + "} of Array[" + is_array +"] of " + base_type
         elif is_seq:

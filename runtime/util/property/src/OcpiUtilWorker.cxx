@@ -26,6 +26,7 @@
 #include "OcpiOsAssert.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
+#include "OcpiUtilValue.h"
 #include "OcpiUtilWorker.h"
 
 namespace OCPI {
@@ -34,7 +35,7 @@ namespace OCPI {
     namespace OE = OCPI::Util::EzXml;
     Worker::Worker()
       : m_attributes(NULL), m_ports(NULL), m_memories(NULL), m_nPorts(0), m_nMemories(0), m_version(0),
-        m_totalPropertySize(0), m_isSource(false), m_nProperties(0), m_properties(NULL),
+        m_totalPropertySize(0), m_isSource(false), m_isDebug(false), m_nProperties(0), m_properties(NULL),
 	m_firstRaw(NULL), m_xml(NULL), m_ordinal(0) {
     }
 
@@ -73,12 +74,15 @@ namespace OCPI {
       const char *err;
       assert(m_firstRaw == NULL);
       Property *p = m_properties;
-      for (unsigned n = 0; n < m_nProperties; n++, p++)
+      for (unsigned n = 0; n < m_nProperties; n++, p++) {
 	if (p->m_isRaw) {
 	  if (!m_firstRaw)
 	    m_firstRaw = p;
 	} else if ((err = p->offset(offset, totalSize, resolver)))
 	  return err;
+	if (!strcasecmp("ocpi_debug", p->cname()) && p->m_default && p->m_default->m_Bool)
+	  m_isDebug = true;
+      }
       if (m_firstRaw) {
 	offset = roundUp(offset, 4);
 	p = m_properties;

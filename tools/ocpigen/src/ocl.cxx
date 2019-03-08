@@ -209,9 +209,10 @@ emitImplOCL() {
     size_t offset = 0;
     bool isLastDummy = false;
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
-      if (!(*pi)->m_isParameter || (*pi)->m_isReadable) {
+      if (!(*pi)->m_isParameter || (*pi)->m_isReadable || (*pi)->m_isWritable) {
 	std::string type;
-	rccMember(type, **pi, 2, offset, pad, m_implName, true, isLastDummy, false, false);
+	rccMember(type, **pi, 2, offset, pad, m_implName, true, isLastDummy, false, 0,
+		  !(*pi)->m_isReadable); // if app cannot read it, no value can be set
 	fputs(type.c_str(), f);
       }
     fprintf(f, "} %c%sProperties;\n\n", toupper(m_implName[0]), m_implName + 1);

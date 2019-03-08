@@ -15,17 +15,17 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
+"""
+definitions for utility functions that have to do with opencpi project layout
+"""
 
-#import ocpiutil
 import os
-import sys
+import os.path
 import logging
-import datetime
 from glob import glob
 import subprocess
 import re
-import os.path
-from .file import *
+from .file import cd, set_vars_from_make
 from _opencpi.util import OCPIException
 
 def get_make_vars_rcc_targets():
@@ -225,7 +225,9 @@ def get_paths_from_project_top(origin_path, dest_paths):
     """
     origin_top = get_path_to_project_top(origin_path, False)
     if origin_top is None:
+        # pylint:disable=undefined-variable
         raise OCPIException("origin_path \"" + str(origin_path) + "\" is not in a project")
+        # pylint:enable=undefined-variable
     paths_from_top = []
     for dest_p in dest_paths:
         paths_from_top.append(get_path_from_given_project_top(origin_top, dest_p))
@@ -240,7 +242,9 @@ def get_paths_through_project_top(origin_path, dest_paths):
     origin_top = get_path_to_project_top(origin_path, False)
     origin_top_rel = get_path_to_project_top(origin_path, True)
     if origin_top is None:
+        # pylint:disable=undefined-variable
         raise OCPIException("origin_path \"" + str(origin_path) + "\" is not in a project")
+        # pylint:enable=undefined-variable
     paths_through_top = []
     for dest_p in dest_paths:
         paths_through_top.append(
@@ -275,8 +279,8 @@ def get_project_package(origin_path="."):
         if project_package is None or project_package == "":
             project_vars = set_vars_from_make("Makefile",
                                               "projectpackage ShellProjectVars=1", "verbose")
-            if not project_vars is None and 'ProjectPackage' in project_vars and \
-               len(project_vars['ProjectPackage']) > 0:
+            if (not project_vars is None and 'ProjectPackage' in project_vars and
+                len(project_vars['ProjectPackage']) > 0):
                 # There is only one value associated with ProjectPackage, so get element 0
                 project_package = project_vars['ProjectPackage'][0]
             else:
@@ -355,8 +359,8 @@ def get_project_registry_dir(directory="."):
 
     Return the exists boolean and the path to the project registry directory.
     """
-    if is_path_in_project(directory) and \
-       os.path.isdir(get_path_to_project_top(directory) + "/imports"):
+    if (is_path_in_project(directory) and
+        os.path.isdir(get_path_to_project_top(directory) + "/imports")):
         # allow imports to be a link OR a directory (needed for deep copies of exported projects)
         project_registry_dir = os.path.realpath(get_path_to_project_top(directory) + "/imports")
     else:
@@ -404,6 +408,8 @@ COLLECTION_DIRTYPES = ["project", "applications", "library", "libraries", "hdl-l
                        "hdl-platform", "hdl-platforms", "hdl-assemblies", "hdl-primitives",
                        "rcc-platforms", "component"]
 
+# pylint:disable=too-many-arguments
+# pylint:disable=too-many-branches
 def get_ocpidev_working_dir(origin_path=".", noun="", name=".",
                             library=None, hdl_library=None, hdl_platform=None):
     """
@@ -457,10 +463,11 @@ def get_ocpidev_working_dir(origin_path=".", noun="", name=".",
         origin_path = origin_path + "/" + name
         name = "."
 
-    #from _opencpi.util import OCPIException
     if not is_path_in_project(origin_path):
+        # pylint:enable=undefined-variable
         raise OCPIException("Path \"" + os.path.realpath(origin_path) + "\" is not in a project, " +
                             "so this command is invalid.")
+        # pylint:enable=undefined-variable
 
     # if this is a collection type, we care about the current directory's dirtype,
     # otherwise we want the current asset's containing collection's dirtype
@@ -482,11 +489,15 @@ def get_ocpidev_working_dir(origin_path=".", noun="", name=".",
 
     # error checking
     if (library is not None or hdl_library is not None) and dirtype in ["library", "hdl-library"]:
+        # pylint:disable=undefined-variable
         raise OCPIException("[hdl-]library option cannot be provided when operating in a " +
                             "directory of [hdl-]library type.")
+        # pylint:enable=undefined-variable
     if (hdl_platform is not None) and dirtype in "hdl_platform":
+        # pylint:disable=undefined-variable
         raise OCPIException("hdl-platform option cannot be provided when operating in a " +
                             "directory of hdl-platform type.")
+        # pylint:enable=undefined-variable
 
     working_basename = os.path.basename(os.path.realpath(working_dir))
 
@@ -538,9 +549,15 @@ def get_ocpidev_working_dir(origin_path=".", noun="", name=".",
     if os.path.exists(asset_dir):
         return asset_dir
     else:
+        # pylint:disable=undefined-variable
         raise OCPIException("Determined working directory of \"" + asset_dir + "\" that does " +
                             "not exist.")
+        # pylint:enable=undefined-variable
+# pylint:enable=too-many-arguments
+# pylint:enable=too-many-branches
 
+# pylint:disable=too-many-statements
+# pylint:disable=too-many-branches
 def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platform=None):
     """
     Given a noun, a name, and library directives
@@ -621,11 +638,12 @@ def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platfo
     #TODO if i do show project in a lower level dir it should use find project top to locate the
     # directory of the project
     if noun == "test" and not name.endswith((".test", ".test/")):
-      name += ".test"
+        name += ".test"
     # library-directives are mutually exclusive
     if library is not None and hdl_library is not None:
-        #raise OCPIException("library, hdl_library, and hdl_platform options are " +
+        # pylint:disable=undefined-variable
         raise OCPIException("library and hdl_library are mutually exclusive.")
+        # pylint:enable=undefined-variable
 
     # asset types that live inside a library
     library_assets = ["worker", "test"]
@@ -643,20 +661,22 @@ def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platfo
         asset = "hdl/assemblies"
     elif noun == "component":
         if hdl_library:
-            asset= "hdl/" +  hdl_library + "/specs/" + name
+            asset = "hdl/" +  hdl_library + "/specs/" + name
         elif library:
-            asset= library + "/specs/" + name
+            asset = library + "/specs/" + name
         elif hdl_platform:
-            asset= "hdl/platforms/" +  hdl_platform + "/devices/specs/" + name
+            asset = "hdl/platforms/" +  hdl_platform + "/devices/specs/" + name
         else:
-            asset= "specs/" + name
+            asset = "specs/" + name
     elif noun == "hdl-platform" or hdl_platform is not None:
         # hdl platform is specified in some way
 
         # cannot have a platform noun AND directive
         if noun == "hdl-platform" and name is not "." and hdl_platform is not None:
+            # pylint:disable=undefined-variable
             raise OCPIException("Could not choose between two HDL platform directories: '" +
                                 name + "' and '" + hdl_platform + "'.")
+            # pylint:enable=undefined-variable
         # default hdl platform if needed
         hdl_platform = name if hdl_platform is None else hdl_platform
         # hdl_platform location directive or noun implies directories
@@ -664,7 +684,9 @@ def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platfo
         if noun in library_assets + ["library", "workers", "tests"]:
             # can only specify library as 'devices' in a platform directory
             if noun == "library" and name not in [".", "devices", "devices/"]:
-               raise OCPIException("Only valid library in an HDL platform is 'devices'")
+                # pylint:disable=undefined-variable
+                raise OCPIException("Only valid library in an HDL platform is 'devices'")
+                # pylint:enable=undefined-variable
             # if the hdl_platform location directive is used and a library-asset is being
             # located, drill down into the platform's devices library
             asset = "hdl/platforms/" + hdl_platform + "/devices"
@@ -676,8 +698,10 @@ def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platfo
 
         # cannot have a library noun AND directive
         if noun == "library" and name is not "." and library is not None:
+            # pylint:disable=undefined-variable
             raise OCPIException("Could not choose between two library directories: '" +
                                 name + "' and '" + library + "'.")
+            # pylint:enable=undefined-variable
         # default library if needed
         library = name if library is None else library
         if library == "components" or "/" in library:
@@ -692,8 +716,10 @@ def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platfo
 
         # cannot have a library noun AND directive
         if noun == "hdl-library" and name is not "." and hdl_library is not None:
+            # pylint:disable=undefined-variable
             raise OCPIException("Could not choose between two hdl_library directories: '" +
                                 name + "' and '" + hdl_library + "'.")
+            # pylint:enable=undefined-variable
         # default hdl library if needed
         hdl_library = name if hdl_library is None else hdl_library
         # hdl libraries live in the hdl/ subtree
@@ -714,7 +740,9 @@ def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platfo
         # asset, assume the top-level of the project
         asset = "."
     else:
+        # pylint:disable=undefined-variable
         raise OCPIException("Invalid noun provided: " + str(noun))
+        # pylint:enable=undefined-variable
 
     # If the asset-type/noun is a collection-type, then we already know its location.
     #     E.g. If the noun is 'library' (a collection-type) and the name is 'dsp_comps',
@@ -727,6 +755,8 @@ def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platfo
         return asset
     else:
         return asset + "/" + name
+# pylint:disable=too-many-statements
+# pylint:disable=too-many-branches
 
 if __name__ == "__main__":
     import doctest

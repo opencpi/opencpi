@@ -356,6 +356,8 @@ namespace OCPI {
 		     bool onlyIfDifferent = false, bool makeExecutable = false),
 	*evsprintf(const char *fmt, va_list ap),
 	*esprintf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+      void
+	ewprintf(const char *fmt, ...) __attribute__((format(printf, 1, 2))); // for warnings
       inline const char *file2String(std::string &out, const std::string &file,
 				     char replaceNewLine = 0) {
 	return file2String(out, file.c_str(), replaceNewLine);

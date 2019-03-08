@@ -448,11 +448,12 @@ begin
           output_state <= late_eom;
         end if;
   -- if allow_zlms = true, randomly chose single message zlm or split zlm
+  -- or if a zlm is detected on input, pass it through
       when zlm_z =>
-        if EOF_flush = '1' or (EOF = '1' and out_in.ready = '1') then
-          output_state <= zlm_eof;
-          state <= zlm_z;
-        elsif (take_en = '1' and uut_ready = '1' and lfsr(1) = '1') then
+        if output_state = zlm_eof and out_in.ready = '1' then
+          state <= init_s;
+          output_state <= nil;
+        elsif EOF_flush = '1' or (EOF = '1' and out_in.ready = '1') then
           output_state <= zlm;
           state <= start_es_a;
         elsif (take_en = '1' and  uut_ready = '1' and lfsr(1) = '0') then
@@ -467,7 +468,7 @@ begin
        end if;
   -- send no-op
       when nil_s =>
-       if ((out_in.ready = '1' and EOF = '1')) then
+       if ((out_in.ready = '1' and (EOF = '1' or (EOF_flush = '1' and out_eom and data_ready_for_out_port)))) then
          state <= zlm_z;
          output_state <= zlm_eof;
        elsif (uut_ready = '1') then

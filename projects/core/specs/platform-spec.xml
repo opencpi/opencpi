@@ -9,8 +9,9 @@
 <ComponentSpec package='ocpi.core'>
   <!-- ======================================================
        === 1. Platform parameters======== -->
-  <!-- Name of this platform -->
-  <property name='platform' type='string' parameter='1' stringlength="31"/>
+  <!-- Name of this platform: default is here until we can remove "parameter", but that requires
+       all platforms to put parameter=1 in their <specproperty> -->
+  <property name='platform' type='string' parameter='1' stringlength="31" default="unknown"/>
   <!-- Width of data plane in DWORDS -->
   <property name='sdp_width' type='uchar' parameter='1' default='1'/>
   <!-- PCI Device ID for PCI devices
@@ -22,9 +23,9 @@
        === 2. Required first non-parameters - fixed/known in bootstrapping code -->
   <!-- UUID of this platform: MUST BE FIRST for bootstrapping purposes ========= -->
   <!-- **********MUST BE FIRST non-parameter for bootstrapping purposes -->
-  <property name="UUID" arraylength='16' readable='true'/>
+  <property name="UUID" arraylength='16'/>
   <!-- padding for backwards compatibility -->
-  <property name="oldtime" type='ulonglong' padding='true'/>
+  <property name="oldtime" type='ulonglong' volatile='true'/>
   <!-- This could be better if we had the option for array or sequence properties to
        be individually raw or support addressible reads -->
   <property name="romAddr" type='ushort' writable='true'/>
@@ -32,9 +33,9 @@
   <!-- ======================================================
        === 3. properties that could (and usually should) be parameters, but may not be -->
   <!-- Number of switches -->
-  <property name="nSwitches" readable='true'/>
+  <property name="nSwitches"/>
   <!-- Number of LEDs -->
-  <property name="nLEDs" readable='true'/>
+  <property name="nLEDs"/>
   <!-- The memory regions that may be used by various other elements, which indicates
        aliasing etc.
        The values describing each region are:
@@ -43,16 +44,16 @@
        Bit  13:0 - Size of this memory (4KB units)
        FIXME: this should be a sequence or parameterized-length array
        Note:  these may be defined as parameters in platforms -->
-  <property name="memories_length" readable='true'/>
-  <property name="memories" arrayLength='4' readable='true'/>
+  <property name="memories_length"/>
+  <property name="memories" arrayLength='4'/>
   <!-- ======================================================
        === 4. required non-parameter properties -->
   <!-- DNA (unique chip serial number) of this platform.-->
-  <property name="dna" type="ULongLong" readable='true'/>
+  <property name="dna" type="ULongLong"/>
   <!-- current value of any switches in the platform -->
   <property name="switches" volatile='true'/>
   <!-- setting of leds in the platform, with readback -->
-  <property name="LEDS" writable='true' readable='true'/>
+  <property name="LEDS" writable='true'/>
   <property name="nSlots" type="ULong" parameter="true" default="0"/>
   <!-- A sequence of strings, where each index contains a description of the given index's slot. For an indication of whether a card is plugged into a given index's slot, see the same index in the slotCardIsPresent property. Example index contents are "FMC_LPC", "FMC_HPC", "HSMC", "HMSC_A", "HSMC_B". It is recommended that the index contents correspond to the PCB silk screen description near the intended slot. -->
   <property name="slotNames" type="string" stringlength="32" parameter="true" default=""/> <!-- TODO / FIXME make this a sequencelength of nslots -->

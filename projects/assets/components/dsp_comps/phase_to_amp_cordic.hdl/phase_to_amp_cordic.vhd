@@ -209,10 +209,12 @@ begin
       if(ctl_in.reset = '1') then
         scnt     <= 0;
         hold_off <= '0';
-      elsif (scnt = STAGES_c+1) then
-        hold_off <= '1';
       elsif (enable = '1') then
-        scnt <= scnt + 1;
+        if (scnt = STAGES_c+1) then
+          hold_off <= '1';
+        else
+          scnt <= scnt + 1;
+        end if;
       end if;
     end if;
   end process;

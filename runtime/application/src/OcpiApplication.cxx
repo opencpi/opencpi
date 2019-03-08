@@ -50,8 +50,8 @@ namespace OCPI {
 	  const char *eq = strchr(li.token(), '=');
 	  if (!eq)
 	    ocpiBad("OCPI_APPLICATION_PARAMS value \"%s\" is invalid", env);
-	  std::string name(li.token(), OCPI_SIZE_T_DIFF(eq, li.token()));
-	  tempParams.add(name.c_str(), eq + 1);
+	  std::string l_name(li.token(), OCPI_SIZE_T_DIFF(eq, li.token()));
+	  tempParams.add(l_name.c_str(), eq + 1);
 	}
 	envParams.add(params, tempParams);
 	params = envParams;
@@ -206,7 +206,8 @@ namespace OCPI {
       // Proxies can only operate in the base container.
       // FIXME:  allow proxies to be in any container collocate with the base container.
       if (i->m_bestDeployment.m_impls[0]->m_metadataImpl.slaves().size()) {
-        i->m_usedContainer = getUsedContainer(OC::Container::baseContainer().ordinal());
+	assert(bestMap == (1u << OC::Container::baseContainer().ordinal()));
+	i->m_usedContainer = getUsedContainer(OC::Container::baseContainer().ordinal());
         return;
       }
       // bestMap is bitmap of best available containers that the implementation can be mapped to
@@ -459,13 +460,15 @@ namespace OCPI {
       const OU::Assembly::Properties &aProps = m_assembly.instance(nInstance).properties();
       // Prepare all the property values in the assembly, avoiding those in parameters.
       for (unsigned p = 0; p < aProps.size(); p++) {
-        const char *pName = aProps[p].m_name.c_str();
         if (aProps[p].m_dumpFile.size()) {
           // findProperty throws on error if bad name
+#if 0
+	  const char *pName = aProps[p].m_name.c_str();
           OU::Property &uProp = impl.m_metadataImpl.findProperty(pName);
-          if (!uProp.m_isReadable && !uProp.m_isParameter)
+          if (!uProp.m_isReadable && !uProp.m_isParameter) // all is readable now
             throw OU::Error("Cannot dump property '%s' for instance '%s'. It is not readable.",
                             pName, m_assembly.instance(nInstance).name().c_str());
+#endif
         }
         if (!aProps[p].m_hasValue)
           continue;
@@ -749,11 +752,13 @@ namespace OCPI {
           OL::Candidate &c = li.m_candidates[m];
           ocpiDebug("doInstance %u %u %u", instNum, score, m);
           if (connectionsOk(c, instNum)) {
-            ocpiDebug("doInstance connections ok");
+	    unsigned base = OC::Container::baseContainer().ordinal();
+            ocpiDebug("doInstance connections ok: %u", base);
             for (unsigned cont = 0; cont < OC::Manager::s_nContainers; cont++) {
               ocpiDebug("doInstance container: cont %u feasible 0x%x", cont,
                         i.m_feasibleContainers[m]);
-              if (i.m_feasibleContainers[m] & (1u << cont) &&
+	      if ((c.impl->m_metadataImpl.slaves().empty() || cont == base) &&
+		  i.m_feasibleContainers[m] & (1u << cont) &&
                   bookingOk(m_bookings[cont], c, instNum)) {
                 deployInstance(instNum, score + c.score, 1, &cont, &c.impl,
                                i.m_feasibleContainers[m]);
@@ -1114,6 +1119,12 @@ namespace OCPI {
           lc.m_in.m_container != lc.m_out.m_container &&
           (!lc.m_in.m_container->portsInProcess() ||
            !lc.m_out.m_container->portsInProcess())) {
+        ocpiInfo("Negotiating connection from instance %s port %s to instance %s port %s "
+                 "(buffer size is %zu/0x%zx)",
+                 lc.m_out.m_member ? lc.m_out.m_member->m_name.c_str() : "<external>",
+                 lc.m_out.m_name,
+                 lc.m_in.m_member ? lc.m_in.m_member->m_name.c_str() : "<external>",
+                 lc.m_in.m_name, lc.m_bufferSize, lc.m_bufferSize);
         ocpiDebug("Input container: %s, output container: %s",
                   lc.m_in.m_container->name().c_str(), lc.m_out.m_container->name().c_str());
         OC::BasicPort::
@@ -1468,22 +1479,33 @@ namespace OCPI {
                 "Application established: containers, workers, connections all created\n"
                 "Communication with the application established\n");
     }
+    static void addAttr(std::string &out, bool attr, const char *string, bool last = false) {
+      if (attr)
+	OU::formatAdd(out, "%s%s", out.empty() ? " (" : ", ", string);
+      if (last && out.size())
+	out += ")";
+    }
     void ApplicationI::
     dumpProperties(bool printParameters, bool printCached, const char *context) const {
-      std::string l_name, value;
-      bool isParameter, isCached, isHidden;
+      std::string value;
       if (m_verbose)
         fprintf(stderr, "Dump of all %s%sproperty values:\n",
                 context ? context : "", context ? " " : "");
-      for (unsigned n = 0;
-	   getProperty(n, l_name, value, m_hex, &isParameter, &isCached, m_uncached, &isHidden);
-	   n++)
-	if ((printParameters || !isParameter) &&
-	    (m_hidden || !isHidden) &&
-	    (printCached || !isCached))
-	  fprintf(stderr, "Property %2u: %s = \"%s\"%s%s\n", n, l_name.c_str(), value.c_str(),
-		  isParameter ? " (parameter)" : (isCached ? " (cached)" : ""),
-		  isHidden ? " (hidden)" : "");
+      PropertyAttributes attrs;
+      for (unsigned n = 0; getProperty(n, value, AccessList({}),
+				       PropertyOptionList({UNREADABLE_OK}), &attrs); ++n)
+	if ((printParameters || (!attrs.isParameter && !attrs.isInitial)) &&
+	    (m_hidden || !attrs.isHidden) && (printCached || !attrs.isCached)) {
+	  fprintf(stderr, "Property %2u: %s = \"%s\"", n, attrs.name.c_str(), value.c_str());
+	  std::string out;
+	  addAttr(out, attrs.isParameter, "parameter");
+	  addAttr(out, attrs.isCached, "cached");
+	  addAttr(out, attrs.isDebug, "debug");
+	  addAttr(out, attrs.isHidden, "hidden");
+	  addAttr(out, attrs.isHidden, "worker");
+	  addAttr(out, attrs.isUnreadable, "unreadable", true);
+	  fprintf(stderr, "%s\n", out.c_str());
+	}
     }
     void ApplicationI::
     startMasterSlave(bool isMaster, bool isSlave, bool isSource) {
@@ -1532,7 +1554,6 @@ namespace OCPI {
 	OU::Assembly::Delay now = 0;
 	for (auto it = m_delayedPropertyValues.begin();
 	     it != m_delayedPropertyValues.end(); ++it) {
-             // fprintf(stderr, "Iterating on delayed properties: %u.\n", it->first);
 	  if (it->first > now) {
 	    usleep(it->first - now);
 	    now = it->first;
@@ -1548,7 +1569,7 @@ namespace OCPI {
 	  }
 	  // FIXME: fan out of value to crew, and stash instance ptr, not index...
 	  m_launchMembers[m_instances[it->second.m_instance].m_firstMember].m_worker->
-	    setPropertyValue(*it->second.m_property, it->second.m_value);
+	    setProperty(it->second.m_property->m_ordinal, it->second.m_value);
 	}
 	m_delayedPropertyValues.clear();
       }
@@ -1612,13 +1633,18 @@ namespace OCPI {
         for (unsigned n = 0; n < m_nContainers; n++)
           m_containers[n]->dump(false, m_hex);
       if (m_dumpFile.size()) {
-	std::string l_name, value, dump;
+	std::string value, dump;
+	PropertyAttributes attrs;
 	for (unsigned n = 0;
-	     getProperty(n, l_name, value, m_hex, NULL, NULL, m_uncached, NULL); n++) {
-	  for (unsigned i = 0; i < l_name.size(); i++)
-	    if (l_name[i] == '.')
-	      l_name[i] = ' ';
-	  OU::formatAdd(dump, "%s %s\n", l_name.c_str(), value.c_str());
+	     getProperty(n, value, AccessList({}),
+			 PropertyOptionList({OA::UNREADABLE_OK,
+			       m_hex ? OA::HEX : OA::NONE, m_uncached ? OA::UNCACHED : OA::NONE}),
+			 &attrs);
+	     ++n) {
+	  auto pos = attrs.name.find('.');
+	  if (pos != std::string::npos)
+	    attrs.name[pos] = ' ';
+	  OU::formatAdd(dump, "%s %s\n", attrs.name.c_str(), value.c_str());
 	}
 	if ((err = OU::string2File(dump, m_dumpFile)))
 	  throw OU::Error("error when dumping properties to a file: %s", err);
@@ -1685,16 +1711,18 @@ namespace OCPI {
     // FIXME:  avoid the double lookup since the first one gets us the ordinal
     Property::Property(const Application &app, const char *aname, const char *pname)
       : m_worker(app.getPropertyWorker(aname, pname)),
-        m_readVaddr(0), m_writeVaddr(0),
         m_info(m_worker.setupProperty(pname ? pname : maybePeriod(aname), m_writeVaddr,
-                                      m_readVaddr)),
-        m_ordinal(m_info.m_ordinal),
-        m_readSync(false), m_writeSync(false)
-    {
-      m_readSync = m_info.m_readSync;
-      m_writeSync = m_info.m_writeSync;
+				      m_readVaddr)),
+        m_member(m_info) {
+      init();
     }
-
+    Property::Property(const Application &app, const std::string &iname, const char *pname)
+      : m_worker(app.getPropertyWorker(iname.c_str(), pname)),
+        m_info(m_worker.setupProperty(pname ? pname : maybePeriod(iname.c_str()),
+				      m_writeVaddr, m_readVaddr)),
+        m_member(m_info) {
+      init();
+    }
     const OU::Property *ApplicationI::property(unsigned ordinal, std::string &a_name) const {
       if (ordinal >= m_nProperties)
         return NULL;
@@ -1705,27 +1733,53 @@ namespace OCPI {
         m_worker->property(p.m_property);
     }
 
+    const char *ApplicationI::
+    getProperty(const char *prop_name, std::string &value, AccessList &list,
+		PropertyOptionList &options, PropertyAttributes *attributes) const {
+      Property &p = findProperty(prop_name);
+      return m_launchMembers[m_instances[p.m_instance].m_firstMember].m_worker->
+        getProperty(p.m_property, value, list, options, attributes);
+    }
+
+    const char *ApplicationI::
+    getProperty(unsigned ordinal, std::string &value, AccessList &list,
+		PropertyOptionList &options, PropertyAttributes *attributes) const {
+      if (ordinal >= m_nProperties)
+        return NULL;
+      Property &p = m_properties[ordinal];
+      OC::Worker &w = *m_launchMembers[m_instances[p.m_instance].m_firstMember].m_worker;
+      w.getProperty(p.m_property, value, list, options, attributes);
+      if (attributes)
+	attributes->name = p.m_name.c_str(); // override the worker-level name
+      return value.c_str();
+    }
     bool ApplicationI::getProperty(unsigned ordinal, std::string &a_name, std::string &value,
 				   bool hex, bool *parp, bool *cachedp, bool uncached,
 				   bool *hiddenp) const {
-      if (ordinal >= m_nProperties)
-        return false;
-      Property &p = m_properties[ordinal];
-      a_name = p.m_name;
-      OC::Worker &w = *m_launchMembers[m_instances[p.m_instance].m_firstMember].m_worker;
-      bool unreadable;
-      std::string dummy;
-      w.getProperty(p.m_property, dummy, value, &unreadable, hex, cachedp, uncached, hiddenp);
-      if (unreadable)
-        value = "<unreadable>";
+      PropertyAttributes attrs;
+      if (!getProperty(ordinal, value, {},
+		       OA::PropertyOptionList({ hex ? HEX : NONE, uncached ? UNCACHED : NONE }),
+		       &attrs))
+	return false;
       if (parp)
-        *parp = w.property(p.m_property).m_isParameter;
+	*parp = attrs.isParameter;
+      if (cachedp)
+	*cachedp = attrs.isCached;
+      if (hiddenp)
+	*hiddenp = attrs.isHidden;
+      if (attrs.isUnreadable)
+        value = "<unreadable>";
+      a_name = attrs.name;
       return true;
     }
 
     ApplicationI::Property &ApplicationI::
-    findProperty(const char * worker_inst_name, const char * prop_name) {
+    findProperty(const char * worker_inst_name, const char * prop_name) const {
       std::string nm;
+      if (!prop_name) {
+	prop_name = worker_inst_name;
+	worker_inst_name = NULL;
+      }
       if (worker_inst_name) {
         nm = worker_inst_name;
         nm += ".";
@@ -1753,10 +1807,11 @@ namespace OCPI {
     }
 
     void ApplicationI::
-    setProperty(const char * worker_inst_name, const char * prop_name, const char *value) {
+    setProperty(const char * worker_inst_name, const char * prop_name, const char *value,
+		OA::AccessList &list) {
       Property &p = findProperty(worker_inst_name, prop_name);
       m_launchMembers[m_instances[p.m_instance].m_firstMember].m_worker->
-        setProperty(p.m_property, value);
+        setProperty(p.m_property, value, list);
     }
 
     void ApplicationI::
@@ -1943,15 +1998,16 @@ namespace OCPI {
       OCPI_EMIT_STATE_NR( pegp, 0 );
 
     }
-
-    void Application::
-    getProperty(const char* w, std::string &value, bool hex) {
-      OCPI_EMIT_STATE_NR( pegp, 1 );
-      m_application.getProperty(NULL, w, value, hex);
-      OCPI_EMIT_STATE_NR( pegp, 0 );
-
+    const char *Application::
+    getProperty(unsigned ordinal, std::string &value, AccessList &list, PropertyOptionList &options,
+		PropertyAttributes *attributes) const {
+      return m_application.getProperty(ordinal, value, list, options, attributes);
     }
-
+    const char *Application::
+    getProperty(const char *prop_name, std::string &value, AccessList &list,
+		PropertyOptionList &options, PropertyAttributes *attributes) const {
+      return m_application.getProperty(prop_name, value, list, options, attributes);
+    }
     void Application::
     setProperty(const char* w, const char* p, const char *value) {
       OCPI_EMIT_STATE_NR( pesp, 1 );
@@ -1960,9 +2016,9 @@ namespace OCPI {
 
     }
     void Application::
-    setProperty(const char* p, const char *value) {
+    setProperty(const char* p, const char *value, AccessList &list) {
       OCPI_EMIT_STATE_NR( pesp, 1 );
-      m_application.setProperty(NULL, p, value);
+      m_application.setProperty(NULL, p, value, list);
       OCPI_EMIT_STATE_NR( pesp, 0 );
 
     }
@@ -1991,9 +2047,9 @@ namespace OCPI {
     }
     OCPI_PROPERTY_DATA_TYPES
     #undef OCPI_DATA_TYPE
-    template <> void Application::                                      \
-    setPropertyValue<std::string>(const char *w, const char *p, const std::string value, \
-                                  AccessList &l) const {                        \
+    template <> void Application::
+    setPropertyValue<std::string>(const char *w, const char *p, const std::string value,
+                                  AccessList &l) const {
       Property prop(*this, w, p);
       prop.setValue<OA::String>(value.c_str(), l);
     }

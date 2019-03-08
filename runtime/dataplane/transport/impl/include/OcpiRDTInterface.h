@@ -99,7 +99,7 @@ namespace OCPI {
 
     struct Descriptors {
       uint32_t  type;
-      int32_t   role;    // signed to suppress compiler warnings vs. enums
+      uint32_t  role;    // signed to suppress compiler warnings vs. enums (NOT)
       uint32_t  options; // bit fields based on role.
       Desc_t    desc;
       Descriptors();

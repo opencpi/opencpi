@@ -21,5 +21,6 @@
 # All workers created here will be built automatically
 # If you want to limit the workers that actually get built, set the Workers= variable
 Tests=test_worker.test
+ExcludeWorkers=atest_errors.rcc # this will be built explicit to check that errors are occurring
 include $(OCPI_CDK_DIR)/include/library.mk
 

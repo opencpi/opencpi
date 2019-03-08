@@ -235,7 +235,7 @@ namespace OCPI {
       DataTransfer::Offset m_startOffset;
 
       // Buffer length
-      OCPI::OS::int32_t m_length;
+      OCPI::OS::uint32_t m_length;
 
       // Our port
       OCPI::DataTransport::Port*          m_port;
@@ -249,7 +249,7 @@ namespace OCPI {
       //      void* opaque;
 
       // temporal id
-      OCPI::OS::int32_t m_tid;
+      OCPI::OS::uint32_t m_tid;
 
       // Indicates if there is already a pull transfer in process
       Buffer* m_pullTransferInProgress;

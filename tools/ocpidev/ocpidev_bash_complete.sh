@@ -71,16 +71,16 @@ _ocpidev()
     # valid nouns in third slot
     nouns3="library core"
     #valid build options
-    bopts="-h --help -v -d -l -h -P --rcc --hdl --no-assemblies --hdl-assembly --hdl-target \
-           --hdl-platform --rcc-platform --rcc-hdl-platform --worker --clean-all"
+    bopts="--help -v -d -l -P --rcc --hdl --no-assemblies --hdl-assembly --hdl-target \
+           --hdl-platform --rcc-platform --rcc-hdl-platform --worker --clean-all --hdl-library"
     utilopts="--help -v -d --library --hdl-library -P --hdl-target --hdl-platform --format=latex --format=table"
     # show verb has different options and nouns
     showopts="-h --help -v -d --table --json --local-scope --global-scope --simple"
     runopts="-h --help -v --verbose --keep-simulations --accumulate-errors -G --only-platform -Q \
 	--exclude-platform --rcc-platform --hdl-platform -d -l --case --before --after --run-args \
 	--mode --remotes --view"
-    copts="--help -v -f -d -s -p -t -n -l -h -F -D -K -N -S -P -L -V -E -W -R -r -g -q -u -I -A -O -C -Y -y \
-	-T -Z -G -Q -U -M -B -H -J -X -x"
+    copts="--help -v -f -d -s -p -t -n -l -F -D -K -N -S -P -L -V -E -W -R -r -g -q -u -I -A -O -C -Y -y \
+	-T -Z -G -Q -U -M -B -H -J -X -x --version"
     # for project noun, add the --register option
     if [[ ${noun1} == project ]]; then
       copts="${copts} --register"

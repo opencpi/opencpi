@@ -51,14 +51,14 @@ class Proxy1Worker : public Proxy1WorkerBase {
     slaves.first_wkr1.set_my_string("test_string");
     slaves.first_wkr1.setProperty_test_seq_ulong("1,2,3,4,6,7,8,100");
     slaves.first_wkr1.setProperty_test_seq_str("\"one\",\"two\",\"three\",\"four\",\"five\"");
-    slaves.first_wkr1.setProperty_test_seq_of_ulong_arrays("{1,2,3,4,6,7,8,100},"
-                                                           "{1,2,3,4,6,7,8,100},"
-                                                           "{1,2,3,4,6,7,8,100},"
-                                                           "{1,2,3,4,6,7,8,100},"
-                                                           "{1,2,3,4,6,7,8,100},"
-                                                           "{1,2,3,4,6,7,8,100},"
-                                                           "{1,2,3,4,6,7,8,100},"
-                                                           "{1,2,3,4,6,7,8,100}");
+    slaves.first_wkr1.setProperty_test_seq_of_ulong_arrays("{1,2,3,4,6,7,8,101},"
+                                                           "{1,2,3,4,6,7,8,102},"
+                                                           "{1,2,3,4,6,7,8,103},"
+                                                           "{1,2,3,4,6,7,8,104},"
+                                                           "{1,2,3,4,6,7,8,105},"
+                                                           "{1,2,3,4,6,7,8,106},"
+                                                           "{1,2,3,4,6,7,8,107},"
+                                                           "{1,2,3,4,6,7,8,108}");
     slaves.first_wkr1.setProperty_test_struct("struct_bool true,struct_ulong 10,struct_char K");
     slaves.first_wkr1.setProperty_test_struct_of_seq("struct_char M, struct_ulong_seq {1,2,3}");
     slaves.first_wkr1.setProperty_test_array_of_struct(
@@ -101,14 +101,14 @@ class Proxy1Worker : public Proxy1WorkerBase {
     slaves.second_wkr1.set_my_string("test_string");
     slaves.second_wkr1.setProperty_test_seq_ulong("1,2,3,4,6,7,8,100");
     slaves.second_wkr1.setProperty_test_seq_str("\"one\",\"two\",\"three\",\"four\",\"five\"");
-    slaves.second_wkr1.setProperty_test_seq_of_ulong_arrays("{1,2,3,4,6,7,8,100},"
-                                                            "{1,2,3,4,6,7,8,100},"
-                                                            "{1,2,3,4,6,7,8,100},"
-                                                            "{1,2,3,4,6,7,8,100},"
-                                                            "{1,2,3,4,6,7,8,100},"
-                                                            "{1,2,3,4,6,7,8,100},"
-                                                            "{1,2,3,4,6,7,8,100},"
-                                                            "{1,2,3,4,6,7,8,100}");
+    slaves.second_wkr1.setProperty_test_seq_of_ulong_arrays("{1,2,3,4,6,7,8,101},"
+                                                            "{1,2,3,4,6,7,8,102},"
+                                                            "{1,2,3,4,6,7,8,103},"
+                                                            "{1,2,3,4,6,7,8,104},"
+                                                            "{1,2,3,4,6,7,8,105},"
+                                                            "{1,2,3,4,6,7,8,106},"
+                                                            "{1,2,3,4,6,7,8,107},"
+                                                            "{1,2,3,4,6,7,8,108}");
     slaves.second_wkr1.setProperty_test_struct("struct_bool true,struct_ulong 10,struct_char K");
     slaves.second_wkr1.setProperty_test_struct_of_seq("struct_char M, struct_ulong_seq {1,2,3}");
     slaves.second_wkr1.setProperty_test_array_of_struct(
@@ -232,6 +232,10 @@ class Proxy1Worker : public Proxy1WorkerBase {
     cout << "slaves.second_wkr1.get_test_ulong_param: "
          << slaves.second_wkr1.get_test_ulong_param() << endl;
 
+    cout << "slaves.first_wkr1.get_test_my_param1(): " << slaves.first_wkr1.get_my_param1() << endl;
+    cout << "slaves.first_wkr1.get_test_my_param2(): " << slaves.first_wkr1.get_my_param1() << endl;
+    slaves.first_wkr1.set_my_debug1(34);
+    cout << "slaves.first_wkr1.get_test_my_debug1(): " << slaves.first_wkr1.get_my_debug1() << endl;
     cout << "slaves.wkr2.set_test_double(5.0): " << slaves.wkr2.get_test_double() << endl;
     cout << "slaves.wkr2.set_test_ulong(10): " << slaves.wkr2.get_test_ulong() << endl;
     cout << "slaves.wkr2.set_test_bool(true): " << slaves.wkr2.get_test_bool() << endl;
@@ -243,7 +247,30 @@ class Proxy1Worker : public Proxy1WorkerBase {
     cout << "slaves.wkr2.set_test_uchar('G'): " << slaves.wkr2.get_test_uchar() << endl;
     cout << "slaves.wkr2.set_test_ulonglong(350): " << slaves.wkr2.get_test_ulonglong() << endl;
     cout << "slaves.wkr2.set_test_ushort(16): " << slaves.wkr2.get_test_ushort() << endl;
+    bool caught = false;
+    try { slaves.wkr2.set_my_debug1(123); } catch(...) { caught = true; }
+    if (!caught)
+      return setError("setting debug property in a non-debug worker did not fail");
+    cout << "slaves.wkr2.set_my_debug1(123) failed as expected\n";
+    caught = false;
+    try { slaves.wkr2.get_my_debug1(); } catch(...) { caught = true; }
+    if (!caught)
+      return setError("getting debug property in a non-debug worker did not fail");
+    cout << "slaves.wkr2.get_my_debug2() failed as expected\n";
 
+    if(isOperating()) {
+      cout << "proxy1 its operating" << endl;
+    }
+
+    if (slaves.first_wkr1.isOperating()) {
+      cout << "first_wkr1 its operating" << endl;
+    }
+    if (slaves.second_wkr1.isOperating()) {
+      cout << "first_wkr1 its operating" << endl;
+    }
+    if (slaves.wkr2.isOperating()) {
+      cout << "first_wkr1 its operating" << endl;
+    }
     return RCC_DONE; // change this as needed for this worker to do something useful
     //return RCC_ADVANCE; //when all inputs/outputs should be advanced each time "run" is called.
     // return RCC_ADVANCE_DONE; when all inputs/outputs should be advanced, and there is nothing more to do.

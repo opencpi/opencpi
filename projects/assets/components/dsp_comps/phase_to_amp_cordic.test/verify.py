@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -90,7 +90,7 @@ else:
 # Test #2 - Check that output data is the expected amount
 if len(odata) != int(NUM_SAMPLES-STAGES-2):
     print '    ' + color.RED + color.BOLD + 'FAIL, output file length is unexpected' + color.END
-    print '    ' + color.RED + color.BOLD + 'Length ofilename = ', len(odata), 'while expected length is = ' + color.END, len(idata)
+    print '    ' + color.RED + color.BOLD + 'Length ofilename = ', len(odata), 'while expected length is = ' + color.END, int(NUM_SAMPLES-STAGES-2)
     sys.exit(1)
 else:
     print '    PASS - Input and output file lengths match'

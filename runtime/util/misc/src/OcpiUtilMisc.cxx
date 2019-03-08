@@ -655,6 +655,16 @@ string2File(const std::string &in, const char *file, bool leaveExisting, bool on
   return err;
 }
 
+void
+ewprintf(const char *fmt, ...) {
+  va_list ap;
+  fputs("Warning: ", stderr);
+  va_start(ap, fmt);
+  vfprintf(stderr, fmt, ap);
+  va_end(ap);
+  fputs("\n", stderr);
+}
+
 const char *
 esprintf(const char *fmt, ...) {
   va_list ap;

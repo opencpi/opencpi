@@ -79,8 +79,12 @@ PKGS_D+=(hardlink)
 # docker container missing this	libXdmcp.i686=/lib/libXdmcp.so.6) # AV-3645
 #    for bash completion - a noarch package  (AV-2398)
 PKGS_D+=(bash-completion=/etc/profile.d/bash_completion.sh)
-#    Needed to cross-build gdb for embedded platforms
-PKGS_D+=(bison flex)
+#    Needed to build gdb
+PKGS_D+=(bison)
+#    Needed to build gdb
+PKGS_D+=(flex)
+#    Needed to build gpsd
+PKGS_D+=(scons)
 ##########################################################################################
 # S. yum-installed and but not rpm-required - conveniences or required for source environment
 # While some manual installations require git manually installed before this,

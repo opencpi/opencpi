@@ -552,8 +552,8 @@ emitXmlWorker(FILE *f, bool verbose) {
       out += " hidden='1'";
     if (prop->m_isVolatile)
       out += " volatile='1'";
-    else if (prop->m_isReadable)
-      out += " readable='1'";
+    else if (prop->m_isReadback)
+      out += " readback='1'";
     if (prop->m_isInitial)
       out += " initial='1'";
     else if (prop->m_isWritable)
@@ -569,6 +569,8 @@ emitXmlWorker(FILE *f, bool verbose) {
     if (prop->m_isRaw)
       out += " raw='1'";
     if (!prop->m_isReadable && !prop->m_isWritable && !prop->m_isParameter)
+      assert(prop->m_isPadding);
+    if (prop->m_isPadding)
       out += " padding='1'";
     if (prop->m_isIndirect)
       OU::formatAdd(out, " indirect=\"%zu\"", prop->m_indirectAddr);

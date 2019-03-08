@@ -184,6 +184,7 @@ addProperty(ezxml_t prop, bool includeImpl, bool anyIsBad, bool isRaw, bool isBu
   OU::Property &p = *new OU::Property;
   const char *err;
 
+  p.m_name = ezxml_cattr(prop, "name"); // do this redundantly to enable error messages
   do { // break from block on error
     if ((err = p.parse(prop, includeImpl, (unsigned)(m_ctl.ordinal++), this)))
       break;
@@ -212,12 +213,14 @@ addProperty(ezxml_t prop, bool includeImpl, bool anyIsBad, bool isRaw, bool isBu
     ocpiDebug("Adding property %s isParam %u", p.cname(), p.m_isParameter);
     m_ctl.properties.push_back(&p);
     p.m_isImpl = includeImpl;
+#if 0 // this is now done in parseAccess to keep it all in one place
     if (!p.m_isImpl) {
       p.m_specInitial = p.m_isInitial;
       p.m_specReadable = p.m_isReadable;
       p.m_specParameter = p.m_isParameter;
       p.m_specWritable = p.m_isWritable;
     }
+#endif
     m_ctl.summarizeAccess(p);
     return NULL;
   } while(0);
@@ -234,9 +237,15 @@ struct PropInfo {
   const char *m_parent;
   const char *m_firstRaw;
   bool m_raw;
+  std::list<std::string> m_errors;
   PropInfo(Worker *worker, bool isImpl, bool anyIsBad, const char *parent, const char *firstRaw, bool raw)
     : m_worker(worker), m_isImpl(isImpl), m_anyIsBad(anyIsBad), m_top(true), m_parent(parent),
       m_firstRaw(firstRaw), m_raw(raw) {}
+  const char *addError(const char *e) {
+    if (e)
+      m_errors.push_back(e);
+    return NULL; // fake an error return
+  }
 };
 
 // process something that might be a property, either at spec time or at impl time
@@ -277,16 +286,16 @@ doMaybeProp(ezxml_t maybe, void *vpinfo) {
     return 0;
   bool isSpec = !strcasecmp(eName, "SpecProperty");
   if (isSpec && !pinfo.m_isImpl)
-    return "SpecProperty elements not allowed in component specification";
+    return pinfo.addError("SpecProperty elements not allowed in component specification");
   if (!isSpec && strcasecmp(eName, "Property")) {
     if (pinfo.m_top)
       return 0;
     else
-      return OU::esprintf("Invalid child element '%s' of a 'Properties' element", eName);
+      return pinfo.addError(OU::esprintf("Invalid child element '%s' of a 'Properties' element", eName));
   }
   const char *name = ezxml_cattr(maybe, "Name");
   if (!name)
-    return "Property or SpecProperty has no \"Name\" attribute";
+    return pinfo.addError("Property or SpecProperty has no \"Name\" attribute");
   OU::Property *p = NULL;
   for (PropertiesIter pi = w->m_ctl.properties.begin(); pi != w->m_ctl.properties.end(); pi++) {
     if (!strcasecmp((*pi)->m_name.c_str(), name)) {
@@ -298,19 +307,20 @@ doMaybeProp(ezxml_t maybe, void *vpinfo) {
   if (isSpec) {
     // FIXME mark a property as "impled" so we reject doing it more than once
     if (!p)
-      return OU::esprintf("Existing spec property named \"%s\" not found", name);
+      return pinfo.addError(OU::esprintf("Existing spec property named \"%s\" not found", name));
     if (strcmp(p->m_name.c_str(), name))
-      return OU::esprintf("SpecProperty name (%s) and Property name (%s) differ in case",
-                          name, p->m_name.c_str());
+      return pinfo.addError(OU::esprintf("SpecProperty name (%s) and Property name (%s) differ in case",
+					 name, p->m_name.c_str()));
     // So simply add impl info to the existing property, and re-summarize access
     if ((err = p->parseImpl(maybe, w)))
-      return err;
+      return pinfo.addError(err);
     if (firstRaw) {
       if (p->m_isParameter)
-	return OU::esprintf("The property designated as firstRaw (%s), cannot be a parameter property",
-			    name);
+	return pinfo.addError(OU::esprintf("The property designated as firstRaw (%s), cannot be a "
+					   "parameter property", name));
       if (p->m_rawSet && !p->m_isRaw)
-	return OU::esprintf("The property designated as firstRaw (%s), is set to not-raw?", name);
+	return pinfo.addError(OU::esprintf("The property designated as firstRaw (%s), is set to "
+					   "not-raw?", name));
 
       // So a spec property is the first raw one, which means all non-parameter spec properties AFTER
       // it are also raw, and all non-parameter impl properties are also raw.
@@ -334,13 +344,21 @@ doMaybeProp(ezxml_t maybe, void *vpinfo) {
     return OU::esprintf("Property named \"%s\" conflicts with existing/previous property", name);
   if (firstRaw)
     pinfo.m_raw = true; // this does in fact allow an impl parameter property to be tagged by firstRaw...
-  return w->addProperty(maybe, pinfo.m_isImpl, pinfo.m_anyIsBad, pinfo.m_raw, false);
+  return pinfo.addError(w->addProperty(maybe, pinfo.m_isImpl, pinfo.m_anyIsBad, pinfo.m_raw, false));
 }
 
 const char *Worker::
 doProperties(ezxml_t top, const char *parent, bool impl, bool anyIsBad, const char *firstRaw, bool allRaw) {
   PropInfo pi(this, impl, anyIsBad, parent, firstRaw, allRaw);
-  return OE::ezxml_children(top, doMaybeProp, &pi);
+  const char *err = OE::ezxml_children(top, doMaybeProp, &pi);
+  if (err)
+    return err;
+  if (pi.m_errors.empty())
+    return NULL;
+  if (pi.m_errors.size() > 1)
+    for (auto it = pi.m_errors.begin(); ++it != pi.m_errors.end();)
+      std::cerr << *it << std::endl;
+  return OU::esprintf("%s", pi.m_errors.front().c_str());
 }
 
 const char *parseControlOp(const char *op, void *arg) {
@@ -424,7 +442,6 @@ parseImplControl(ezxml_t &xctl) {
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
       OU::Property &p = **pi;
       if (!strcasecmp(p.cname(), firstRaw)) {
-	assert(!p.m_isImpl);
 	if (p.m_isParameter)
 	  return OU::esprintf("The property designated as firstRaw (%s), cannot be a parameter property",
 			      firstRaw);
@@ -644,7 +661,8 @@ parseSpec(const char *a_package) {
   std::string dummy;
   if ((err = tryOneChildInclude(spec, m_file, "PropertySummary", &ps, dummy, true)))
     return err;
-  if ((err = doProperties(spec, m_file.c_str(), false, ps != NULL || m_noControl, NULL, false)) ||
+  if ((err = doProperties(spec, m_file.c_str(), m_file == m_specFile, ps != NULL || m_noControl,
+			  NULL, false)) ||
       (!m_emulate && (err = addBuiltinProperties())))
     return err;
   if (m_noControl) {
@@ -953,7 +971,7 @@ initAccess() {
   writables = nonRawWritables = rawWritables = false;
   readables = nonRawReadables = rawReadables = false;
   sub32Bits = nonRawSub32Bits = volatiles = nonRawVolatiles = false;
-  readbacks = nonRawReadbacks = rawReadbacks = rawProperties = builtinReadbacks = false;
+  nonRawReadbacks = rawReadbacks = rawProperties = builtinReadbacks = false;
   nRunProperties = nNonRawRunProperties = nParameters = 0;
 }
 
@@ -978,7 +996,7 @@ summarizeAccess(OU::Property &p, bool isSpecProperty) {
       }
     } else
       p.m_paramOrdinal = nParameters++;
-    if (!p.m_isReadable)
+    if (!p.m_isReadback)
       return;
   } else if (!isSpecProperty)
     nRunProperties++;
@@ -990,8 +1008,6 @@ summarizeAccess(OU::Property &p, bool isSpecProperty) {
     sub32Bits = true;
   if (p.m_isVolatile)
     volatiles = true;
-  if (p.m_isVolatile || (p.m_isReadable && !p.m_isWritable && !p.m_isParameter))
-    readbacks = true;
   if (p.m_isRaw) {
     rawProperties = true;
     if (!firstRaw)

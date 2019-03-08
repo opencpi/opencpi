@@ -1,12 +1,6 @@
-<tests useHDLFileIo='true'>
+<tests timeout='1000' useHDLFileIo='true'>
  <property name='ref' value='0x1B26'/>
  <property name='mu' value='0x144E'/>
- <case ExcludeWorkers='agc_real2.hdl'>
-  <input port='in' stressorMode='full' script='generate.py 32768'/>
-  <output port='out' script='verify.py 32768' view='view.sh'/>
- </case>
- <case ExcludeWorkers='agc_real.hdl'>
-  <input port='in' script='generate.py 32768'/>
-  <output port='out' script='verify.py 32768' view='view.sh'/>
- </case>
+ <input port='in' stressorMode='full' script='generate.py 32768'/>
+ <output port='out' script='verify.py 32768' view='view.sh'/>
 </tests>

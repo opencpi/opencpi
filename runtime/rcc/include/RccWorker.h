@@ -82,18 +82,18 @@ namespace OCPI {
       // return errors.
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
-      void set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *, \
+      void set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member &, \
 				 size_t off, const run val, unsigned idx) const; \
-      void set##pretty##SequenceProperty(const OCPI::API::Property &p, const run *vals, \
+      void set##pretty##SequenceProperty(const OCPI::API::PropertyInfo &p, const run *vals, \
 					 size_t length) const;
       // Set a string property value
       // ASSUMPTION:  strings always occupy at least 4 bytes, and
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this.
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)	\
-      void set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *, \
+      void set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member &, \
 				 size_t offset, const run val, unsigned idx) const;     \
-      void set##pretty##SequenceProperty(const OCPI::API::Property &p, const run *vals, \
+      void set##pretty##SequenceProperty(const OCPI::API::PropertyInfo &p, const run *vals, \
 					 size_t length) const;
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE_S
@@ -101,18 +101,18 @@ namespace OCPI {
       // Get Scalar Property
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)	             \
 	run get##pretty##Property(const OCPI::API::PropertyInfo &info,	\
-				  const OCPI::Util::Member *m, size_t offset, \
+				  const OCPI::Util::Member &m, size_t offset, \
 				  unsigned idx) const;			\
-        unsigned get##pretty##SequenceProperty(const OCPI::API::Property &p, \
+        unsigned get##pretty##SequenceProperty(const OCPI::API::PropertyInfo &p, \
 					       run *vals, size_t length) const;
       // ASSUMPTION:  strings always occupy at least 4 bytes, and
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this.
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)	      \
-	void get##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *, \
+	void get##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member &, \
 				   size_t off, char *cp, size_t length, unsigned idx) const; \
       unsigned get##pretty##SequenceProperty                                  \
-	(const OCPI::API::Property &p, char **vals, size_t length, char *buf, \
+	(const OCPI::API::PropertyInfo &p, char **vals, size_t length, char *buf, \
 	 size_t space) const;
 
       OCPI_PROPERTY_DATA_TYPES

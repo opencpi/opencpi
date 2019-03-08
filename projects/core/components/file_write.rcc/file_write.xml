@@ -4,6 +4,5 @@ Properties:
  messagesInFile: indicates that messages, including length and opcode, should be written in the file
 -->
 <RccWorker controloperations="start,release" spec="file_write_spec.xml">
-  <specproperty name="fileName" readable='true'/>
   <port name='in' buffersize='8k'/>
 </RccWorker>

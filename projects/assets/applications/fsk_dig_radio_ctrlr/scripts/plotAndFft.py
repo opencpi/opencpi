@@ -1,1 +1,1 @@
-../../FSK/scripts/plotAndFft.py
+../../../scripts/plotAndFft.py

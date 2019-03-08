@@ -47,7 +47,7 @@ def match_prd_ns_to_freq(target_file, regex):
 # for implementation to get the first number in the matched string and
 # convert from period to frequency. Uses a single regex for synth and impl.
 FMAX_ITEM = ReportableItem("Fmax (MHz) (Typ)", r"Path Delay.*", r"^\| Requirement.*",
-                           match_and_transform_synth_function=\
+                           match_and_transform_synth_function=
                                lambda f, r: None,
                            match_and_transform_impl_function=match_prd_ns_to_freq)
 

@@ -5,7 +5,7 @@
   <property name="CWD_MAX_LENGTH" type="ULong" default="256" parameter="true"/>
   <property name="cwd" type='string' stringlength='CWD_MAX_LENGTH' volatile='true'/>
 
-  <specproperty name="fileName" readable='true'/>
-  <specproperty name="suppressEOF" readable='true'/>
+  <specproperty name="fileName" readback='true'/>
+  <specproperty name="suppressEOF" readback='true'/>
   <streaminterface name="out" datawidth='32'/>
 </HdlWorker>

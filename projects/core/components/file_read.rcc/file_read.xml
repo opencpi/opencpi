@@ -7,8 +7,6 @@ Properties:
  granularity: incidates that the last message will be truncated to be a multiple of this.
 -->
 <RccWorker controloperations="start,release" version='2' spec="file_read_spec.xml">
-  <specproperty name="fileName" readable='true'/>
-  <specproperty name="suppressEOF" readable='true'/>
   <specproperty name="messageSize" volatile='true'/>
   <port name='out'/>
 </RccWorker>

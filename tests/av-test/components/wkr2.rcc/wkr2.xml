@@ -1,4 +1,3 @@
 <RccWorker language='c++' spec='comp2-spec'>
-
-
+    <property name='my_debug1' writable='1' debug='1'  default='33'/>
 </RccWorker>

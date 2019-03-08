@@ -52,7 +52,7 @@ ifndef LibName
 LibName=$(CwdName)
 endif
 ifeq ($(origin Implementations),undefined)
-Implementations=$(foreach m,$(Models),$(wildcard *.$m))
+Implementations=$(filter-out $(ExcludeWorkers),$(foreach m,$(Models),$(wildcard *.$m)))
 endif
 ifeq ($(filter clean%,$(MAKECMDGOALS)),)
 $(shell mkdir -p lib; \

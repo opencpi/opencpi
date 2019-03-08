@@ -1,11 +1,5 @@
-<tests useHDLFileIo='true'>
+<tests timeout='1000' useHDLFileIo='true'>
  <property name='enable' values='0,1'/>
- <case ExcludeWorkers='timestamper2.hdl'>
-  <input port='in' stressorMode='full' script='generate.py 1024 16'/>
-  <output port='out' script='verify.py 512' view='view.py 2048'/> <!-- Argument to script/view must be messagesize/4-->
- </case>
- <case ExcludeWorkers='timestamper.hdl'>
-  <input port='in' script='generate.py 1024 16'/>
-  <output port='out' script='verify.py 512' view='view.py 2048'/> <!-- Argument to script/view must be messagesize/4-->
- </case>
+ <input port='in' stressorMode='full' script='generate.py 1024 16'/>
+ <output port='out' script='verify.py 512' view='view.py 2048'/> <!-- Argument to script/view must be messagesize/4-->
 </tests>

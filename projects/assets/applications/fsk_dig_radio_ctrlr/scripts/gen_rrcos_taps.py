@@ -1,1 +1,1 @@
-../../FSK/scripts/gen_rrcos_taps.py
+../../../scripts/gen_rrcos_taps.py

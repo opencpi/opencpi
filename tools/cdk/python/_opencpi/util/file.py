@@ -15,11 +15,13 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
+"""
+definitions for utility functions that have to do with the filesystem
+"""
 
-import os.path
 import subprocess
 import os
-import sys
+import os.path
 from contextlib import contextmanager
 import logging
 import re
@@ -29,7 +31,6 @@ from _opencpi.util import OCPIException
 # Utility functions for extracting variables and information from and calling
 # Makefiles
 ###############################################################################
-
 def execute_cmd(settings, directory, action=None):
     """
     This command is a wrapper around any calls to make in order to encapsulate the use of make to a
@@ -73,8 +74,10 @@ def execute_cmd(settings, directory, action=None):
             else:
                 debug_string += " " + settings_dict[setting] + '='  + ' '.join(value)
         else:
+            # pylint:disable=undefined-variable
             raise OCPIException("Invalid setting data-type passed to execute_cmd().  Valid data-" +
                                 "types are bool and list")
+            # pylint:enable=undefined-variable
 
     logging.debug("running make command: " + debug_string)
     #shell=True is bad dont set it here running the following command was able to execute
@@ -86,9 +89,14 @@ def execute_cmd(settings, directory, action=None):
         child.wait()
     except KeyboardInterrupt:
         child.kill()
+        # pylint:disable=undefined-variable
         raise OCPIException("Received Keyboard Interrupt - Exiting")
+        # pylint:enable=undefined-variable
     return child.returncode
 
+#TODO fix these problems with the function instead of just disabling them
+# pylint:disable=too-many-locals
+# pylint:disable=too-many-branches
 def set_vars_from_make(mk_file, mk_arg="", verbose=None):
     """
     Collect a dictionary of variables from a makefile
@@ -104,7 +112,7 @@ def set_vars_from_make(mk_file, mk_arg="", verbose=None):
                        print both stdout and stderr for user to see
     """
     with open(os.devnull, 'w') as fnull:
-        make_exists = subprocess.Popen(["which", "make"],\
+        make_exists = subprocess.Popen(["which", "make"],
                       stdout=subprocess.PIPE, stderr=fnull).communicate()[0]
         if make_exists is None or make_exists == "":
             if verbose != None and verbose != "":
@@ -139,7 +147,9 @@ def set_vars_from_make(mk_file, mk_arg="", verbose=None):
             if mk_err:
                 logging.error("STDERR output from Make (set_vars_from_make):\n" + str(mk_err))
             if child.returncode != 0:
+                # pylint:disable=undefined-variable
                 raise OCPIException("The following make command returned an error:\n" + make_cmd)
+                # pylint:enable=undefined-variable
 
         try:
             grep_str = re.search(r'(^|\n)[a-zA-Z_][a-zA-Z_]*=.*',
@@ -159,6 +169,8 @@ def set_vars_from_make(mk_file, mk_arg="", verbose=None):
                 assignment_value = var_val.strip('"').strip().split(' ')
             make_vars[var_name] = assignment_value
         return make_vars
+# pylint:enable=too-many-locals
+# pylint:enable=too-many-branches
 
 ###############################################################################
 # String, number and dictionary manipulation utility functions
@@ -224,6 +236,9 @@ def isint(value):
         return False
 
 def str_to_num(num_str):
+    """
+    converts a sting to a numerical value of type int or float based on the string value
+    """
     num_str_stripped = num_str.replace(",", "")
     return int(num_str_stripped) if isint(num_str_stripped) else float(num_str_stripped)
 
@@ -260,7 +275,7 @@ def freq_from_str_period(prd_string):
     ms_prd = re.sub('ms', '', prd_string)
     us_prd = re.sub('us', '', prd_string)
     # Make sure 's' is only detected if 's' directly follows a digit
-    s_prd = re.sub(r'([0-9])s', '\g<1>', prd_string)
+    s_prd = re.sub(r'([0-9])s', r'\g<1>', prd_string)
     # Choose the numerator based on which units were detected
     if ps_prd != prd_string:
         prd = ps_prd
@@ -276,13 +291,12 @@ def freq_from_str_period(prd_string):
         numerator = 1E3
     else:
         prd = s_prd
-        numerator = 1
+        numerator = 1.0
     if isfloat(prd):
         period = float(prd)
     if period != 0:
         freq = numerator/float(period)
         return freq
-        #return '{0:.3f}'.format(freq)
     return None
 
 def first_num_in_str(parse_string):
@@ -311,6 +325,7 @@ def first_num_in_str(parse_string):
         return None
 
 def match_regex(target_file, regex):
+    # pylint:disable=anomalous-backslash-in-string
     """
     Parse the target file for a regex and return the first group/element
     of the first match
@@ -322,10 +337,13 @@ def match_regex(target_file, regex):
     >>> match_regex(os.path.realpath(__file__), "#.*This text right.*\((.*)ns\)!!!!.*")
     '2.000'
     """
+    # pylint:anomalous-backslash-in-string
     if isinstance(regex, str):
         regex = re.compile(regex)
     elif not isinstance(regex, type(re.compile(''))):
+        # pylint:disable=undefined-variable
         raise OCPIException("Error: regular expression invalid")
+        # pylint:enable=undefined-variable
 
     # Have to use encoding/errors flags here to avoid failure when file has non-ASCII
     with open(target_file, encoding="utf8", errors="ignore") as tgt_file:
@@ -354,7 +372,9 @@ def match_regex_get_first_num(target_file, regex):
         # if regex is a string, compile to regex
         regex = re.compile(regex)
     elif not isinstance(regex, type(re.compile(''))):
+        # pylint:disable=undefined-variable
         raise OCPIException("Error: regular expression invalid")
+        # pylint:enable=undefined-variable
 
     # Have to use encoding/errors flags here to avoid failure when file has non-ASCII
     with open(target_file, encoding="utf8", errors='ignore') as tgt_file:
@@ -418,6 +438,10 @@ def get_ok(prompt="", default=False):
         if ok_input.lower() == '':
             return default
 def rchop(thestring, ending):
+    """
+    chop off the substring ending from thestring if it ends with the substring ending and returns
+    the result
+    """
     if thestring.endswith(ending):
         return thestring[:-len(ending)]
     return thestring

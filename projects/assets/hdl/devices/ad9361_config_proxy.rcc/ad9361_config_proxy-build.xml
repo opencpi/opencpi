@@ -1,3 +1,13 @@
+<!-- This worker's source code use to have limited logging when ocpi_debug is
+     set to false. This logging was changed to be the same regardless of
+     ocpi_debug value, but the build configurations were left unchanged:
+     1) in order to allow for limited logging in the future, and
+     2) to maintain compatibility of applications based on this worker (number
+        of build configuration IDs cannot be reduced without breaking
+        application compatibility of the OAS instance element's worker
+        attribute, which is currently formatted as 'worker-N' for non-zero
+        configuration IDs, where N is the build ID [currently
+        undocumented/erroneous behavior, ref AV-4904]). -->
 <build>
   <configuration id='0'>
     <parameter name='ocpi_debug' value='false'/>

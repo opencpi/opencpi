@@ -215,7 +215,6 @@ namespace OCPI {
 	if (get_trail() && read(recvFd, junk, get_trail(), err))
 	  return OU::eformat(error, "Bad SDP response padding to read request: %s", err.c_str());
 	return false;
-	
       }
       bool Header::
       endRequest(int recvFd, uint8_t *data, std::string &error) {

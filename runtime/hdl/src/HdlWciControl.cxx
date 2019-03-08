@@ -245,7 +245,7 @@ namespace OCPI {
     void WciControl::
     setPropertyBytes(const OA::PropertyInfo &info, size_t offset,
 		     const uint8_t *data, size_t nBytes, unsigned idx) const {
-      offset = checkWindow(offset + idx * info.m_elementBytes, nBytes);
+      offset = checkWindow(info.m_offset + offset + idx * info.m_elementBytes, nBytes);
       uint32_t status = 0;
       if (m_properties.registers()) {
 	if (!info.m_writeError ||
@@ -265,7 +265,7 @@ namespace OCPI {
     void WciControl::
     getPropertyBytes(const OA::PropertyInfo &info, size_t offset, uint8_t *buf,
 		     size_t nBytes, unsigned idx, bool string) const {
-      offset = checkWindow(offset + idx * info.m_elementBytes, nBytes);
+      offset = checkWindow(info.m_offset + offset + idx * info.m_elementBytes, nBytes);
       uint32_t status = 0;
 
       if (m_properties.registers()) {
@@ -346,7 +346,7 @@ namespace OCPI {
 	if (!status) {
 	  if (nBytes > n)
 	    throwPropertySequenceError();
-	  m_properties.accessor()->getBytes(m_properties.base() + offset + p.m_align, 
+	  m_properties.accessor()->getBytes(m_properties.base() + offset + p.m_align,
 					    buf, nBytes, p.m_elementBytes, &status);
 	}
       }
@@ -356,23 +356,23 @@ namespace OCPI {
     }
 
     void WciControl::
-    setStringProperty(const OCPI::API::PropertyInfo &info, const Util::Member *, size_t offset,
+    setStringProperty(const OCPI::API::PropertyInfo &info, const Util::Member &, size_t offset,
 		      const char* val, unsigned idx) const {
       size_t n = strlen(val) + 1;
       setPropertyBytes(info, info.m_offset + offset, (const uint8_t*)val, n, idx);
     }
     void WciControl::
-    setStringSequenceProperty(const OA::Property &, const char * const *,
+    setStringSequenceProperty(const OA::PropertyInfo &, const char * const *,
 			      size_t ) const {
       throw OU::Error("No support for properties that are sequences of strings");
     }
     void WciControl::
-    getStringProperty(const OCPI::API::PropertyInfo &info, const Util::Member *, size_t offset,
+    getStringProperty(const OCPI::API::PropertyInfo &info, const Util::Member &, size_t offset,
 		      char *val, size_t length, unsigned idx) const {
       getPropertyBytes(info, info.m_offset + offset, (uint8_t*)val, length, idx, true);
     }
     unsigned WciControl::
-    getStringSequenceProperty(const OA::Property &, char * *,
+    getStringSequenceProperty(const OA::PropertyInfo &, char * *,
 			      size_t ,char*, size_t) const {
       throw OU::Error("No support for properties that are sequences of strings");
       return 0;

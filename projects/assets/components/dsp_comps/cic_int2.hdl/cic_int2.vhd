@@ -66,7 +66,7 @@ begin
   -----------------------------------------------------------------------------
   -- enable_out (when data can move, either at "begin" or during interpolation
   -----------------------------------------------------------------------------
-  enable_out <= out_in.ready;
+  enable_out <= '1' when out_in.ready and (in_in.valid or (in_in.eof and int_cnt /= 0)) else '0';
   -----------------------------------------------------------------------------
   -- Take when in at "begin", otherwise wait for next begin
   -- "Take" will actually happen when data is available

@@ -67,9 +67,9 @@ def parse_cl_vars():
     Construct the argparse object and parse all the command line arguments into a dictionary to
     return
     """
-    description = "Utility for showing the project registry, any " + \
-                  "available projects (registered or in path), workers, " + \
-                  "components, HDL/RCC Platforms and Targets available at built time."
+    description = ("Utility for showing the project registry, any " +
+                   "available projects (registered or in path), workers, " +
+                   "components, HDL/RCC Platforms and Targets available at built time.")
     parser = argparse.ArgumentParser(description=description)
     # Print help screen and usage to pager. Code block adapted and inlined from from:
     # https://github.com/fmenabe/python-clg/blob/master/LICENSE#L6
@@ -108,25 +108,32 @@ def parse_cl_vars():
                         "performed.")
     parser.add_argument("-P", dest="hdl_plat_dir", default=None,
                         help="Specify the hdl platform subdirectory to operate in.")
-    details_group = parser.add_mutually_exclusive_group()
+    details_group_top = parser.add_argument_group("details arguments",
+                                                  "mutually exclusive arguments to specify how " +
+                                                  "the output is formated, the default is " +
+                                                  "--table if nothing is specified.")
+    details_group = details_group_top.add_mutually_exclusive_group()
     details_group.add_argument("--table", action="store_const", dest="details", const="table",
                                default="table",
                                help="Pretty-print details in a table associated with the chosen " +
-                               "noun.  This is the default if no print mode is specified")
+                               "noun.")
     details_group.add_argument("--json", action="store_const", dest="details", const="json",
                                default="table",
                                help="Print information in a json format")
     details_group.add_argument("--simple", action="store_const", dest="details", const="simple",
                                default="table",
                                help="Print information in a simple format ")
-    scope_group = parser.add_mutually_exclusive_group()
+    scope_group_top = parser.add_argument_group("scope arguments",
+                                                "mutually exclusive arguments to specify how to " +
+                                                "search for assets to be output, the default is " +
+                                                "--golobal-scope if nothing is specified.")
+    scope_group = scope_group_top.add_mutually_exclusive_group()
     scope_group.add_argument("--local-scope", action="store_const", dest="scope", const="local",
                              default="global",
                              help="Only show assets in the local project")
     scope_group.add_argument("--global-scope", action="store_const", dest="scope", const="global",
                              default="global",
-                             help="show assets in all projects. This is the default if no " +
-                             "scope mode is given")
+                             help="show assets in all projects.")
 
     first_pass_args, remaining_args = parser.parse_known_args()
     if not remaining_args:
@@ -162,21 +169,21 @@ def check_scope_options(scope, noun):
         scope = "local"
 
     valid_scope_dict = {
-        "registry":"global",
-        "projects":"global",
-        "workers":"global",
-        "components":"global",
-        "component":"local",
-        "worker":"local",
-        "tests":"local",
-        "libraries":"local",
-        "project":"local",
-        "platforms":"global",
-        "targets":"global",
-        "rccplatforms":"global",
-        "rcctargets":"global",
-        "hdlplatforms":"global",
-        "hdltargets":"global",
+        "registry":["global"],
+        "projects":["global"],
+        "workers":["global"],
+        "components":["global"],
+        "component":["local"],
+        "worker":["local"],
+        "tests":["local"],
+        "libraries":["local"],
+        "project":["local"],
+        "platforms":["global"],
+        "targets":["global"],
+        "rccplatforms":["global"],
+        "rcctargets":["global"],
+        "hdlplatforms":["global"],
+        "hdltargets":["global"],
     }
 
 
@@ -197,8 +204,7 @@ def set_init_values(args, noun):
         args["init_comps"] = True
     if noun == "project" and args["verbose"] > 1:
         args["init_libs"] = True
-    #elif (noun == "project" and args["verbose"] > 2):
-    #    args["init_wkr_config"]= True
+        args["init_hdlassembs"] = True
     elif noun in ["tests", "workers", "components"]:
         args["init_libs"] = True
     elif noun in ["component", "worker"]:
@@ -284,6 +290,8 @@ def main():
         if noun not in [None, "hdlplatforms", "hdltargets", "rccplatforms", "rcctargets",
                         "platforms", "targets", "projects"]:
             # pylint:disable=unused-variable
+            ocpiutil.logging.debug("constructing asset noun: " + noun + " directory: " + directory +
+                                   "args : " + str(args))
             my_asset = ocpifactory.AssetFactory.factory(noun, directory, "", **args)
             action = ("my_asset." + action + '("' + args["details"] + '", ' +
                       str(args["verbose"]) + ')')

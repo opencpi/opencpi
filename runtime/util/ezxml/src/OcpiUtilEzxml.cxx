@@ -604,7 +604,7 @@ namespace OCPI {
 	  if (parseBool(a, NULL, &val))
 	    return esprintf("parsing value \"%s\" as type Bool", a);
 	  if (trueOnly && !val)
-	    return "can only set the value to true in this context";
+	    return esprintf("can only set the \"%s\" attribute value to true in this context", name);
 	  if (found)
 	    *found = true;
 	  *b = val;

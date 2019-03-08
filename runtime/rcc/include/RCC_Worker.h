@@ -280,7 +280,7 @@ typedef struct {
    inline size_t getLength() const { return m_rccBuffer->length_; } // same as STL-style length() but complements setLength
    inline RCCOpCode opCode() const { return m_rccBuffer->opCode_; }
    inline RCCOpCode getOpCode() const { return m_rccBuffer->opCode_; } // same as opCode() but complements setOpCode
-   inline bool eof() const { return m_rccBuffer->eof_; } 
+   inline bool eof() const { return m_rccBuffer->eof_; }
    inline bool getEOF() const { return eof(); }
    // For output buffers
    void setLength(size_t a_length) {
@@ -291,7 +291,7 @@ typedef struct {
    }
    void setOpCode(RCCOpCode op);
    void setDirect(size_t direct) {m_rccBuffer->direct_ = direct; }
-   void setEOF() { m_rccBuffer->eof_ = true; } 
+   void setEOF() { m_rccBuffer->eof_ = true; }
    void setInfo(RCCOpCode op, size_t len) {
      setOpCode(op);
      setLength(len);
@@ -393,11 +393,9 @@ typedef struct {
  class Worker;
  class RCCUserWorker;
  class RCCUserTask {
-   //   bool m_done;
  public:
    RCCUserTask();
    virtual void run() = 0;
-   //   void done() const { return m_done; }
    void spawn();
  private:
    Worker & m_worker;
@@ -406,6 +404,7 @@ typedef struct {
  class RCCUserWorker {
    friend class Worker;
    friend class RCCUserTask;
+   friend class RCCUserSlave;
    Worker &m_worker;
    RCCUserPort *m_ports; // array of C++ port objects
  public:
@@ -432,10 +431,10 @@ typedef struct {
    RCCUserPort &getPort(unsigned n) const { return m_ports[n]; }
    inline bool firstRun() const { return m_first; };
    bool isInitialized() const;
-   bool isOperating() const;
    bool isSuspended() const;
    bool isFinished() const;
    bool isUnusable() const;
+   bool isOperating() const;
    // access the current run condition
    const RunCondition *getRunCondition() const;
    // Change the current run condition - if NULL, revert to the default run condition
@@ -462,15 +461,22 @@ typedef struct {
  protected:
    OCPI::API::Worker &m_worker;
    RCCUserSlave(unsigned n = 0);
-   //   virtual ~RCCUserSlave();
  public:
+   inline bool isOperating() const { return m_worker.isOperating(); }
    inline void start() { m_worker.start(); }
    inline void stop() { m_worker.stop(); }
    inline void beforeQuery() { m_worker.beforeQuery(); }
    inline void afterConfigure() { m_worker.afterConfigure(); }
    // Untyped property setting - slowest but convenient
-   inline void setProperty(const char *name, const char *value) {
-     m_worker.setProperty(name, value);
+   inline void setProperty(const char *name, const char *value,
+			   OCPI::API::AccessList &list = OCPI::API::emptyList) {
+     m_worker.setProperty(name, value, list);
+   }
+   inline const char *getProperty(unsigned ordinal, std::string &value,
+				  OCPI::API::AccessList &list,
+				  OCPI::API::PropertyOptionList &options,
+				  OCPI::API::PropertyAttributes *attributes) const {
+     return m_worker.getProperty(ordinal, value, list, options, attributes);
    }
    // Untyped property list setting - slow but convenient
    inline void setProperties(const char *props[][2]) {

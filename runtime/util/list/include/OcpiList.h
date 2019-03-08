@@ -42,26 +42,26 @@
 struct list_
 {
   void **entries;  /* Array of pointers to list entries */
-  int nentries;   /* Number of active entries in the list */
-  int nspaces;    /* Number of allocated slots for entries */
+  unsigned nentries;   /* Number of active entries in the list */
+  unsigned nspaces;    /* Number of allocated slots for entries */
   int no_shuffle;
 
-  inline list_(){entries=0;nentries=nspaces=no_shuffle=0;};
+  inline list_(){entries=0;nentries=nspaces=0;no_shuffle=0;};
 };
 
 typedef struct list_ List;
 
 
 /* External functions */
-extern int insert_to_list(List *, void *, int, int);
+extern int insert_to_list(List *, void *, unsigned, unsigned);
 extern int insert_to_list(List *, void *);
-extern int prepend_to_list(List *, void *, int, int);
+extern int prepend_to_list(List *, void *, unsigned, unsigned);
 extern int remove_from_list(List *, void *);
-extern int get_nentries(List *);
+extern unsigned get_nentries(List *);
 extern int validate(List *, void *);
 extern void destroy_list(List *);
-extern void *get_entry(List *, int);
-extern void insert_to_position(List*, void*, int pos);
+extern void *get_entry(List *, unsigned);
+extern void insert_to_position(List*, void*, unsigned pos);
 
 
 namespace OCPI {
@@ -76,14 +76,14 @@ namespace OCPI {
       void  shuffle(int s);
       void  destroyList();
       void  insert(void* element);
-      void  insertToPosition( void* element, int pos);
+      void  insertToPosition( void* element, unsigned pos);
       void  push_back(void* element);
       void  prepend(void* element);
       void  remove(void* element);
       unsigned int getElementCount();
       unsigned int size();
-      void* getEntry(int index);
-      void* operator[](int);
+      void* getEntry(unsigned index);
+      void* operator[](unsigned);
     private:
       List m_list;
     };
@@ -94,15 +94,15 @@ namespace OCPI {
     inline VList::~VList(){destroy_list(&m_list);}
     inline void VList::destroyList(){destroy_list(&m_list);}
     inline void VList::insert(void* element){insert_to_list(&m_list,element);}
-    inline void VList::insertToPosition( void* element, int pos)
+    inline void VList::insertToPosition( void* element, unsigned pos)
     {insert_to_position(&m_list, element, pos);}
     inline void VList::push_back(void* element){insert(element);}
     inline void VList::prepend(void* element){prepend_to_list(&m_list,element,64,8);}
     inline void VList::remove(void* element){remove_from_list(&m_list,element);}
     inline unsigned int VList::getElementCount(){return get_nentries( &m_list );}
     inline unsigned int VList::size(){return get_nentries( &m_list );}
-    inline void* VList::getEntry( int index){return get_entry(&m_list, index);}
-    inline         void* VList::operator[](int n){return getEntry(n);}
+    inline void* VList::getEntry(unsigned index){return get_entry(&m_list, index);}
+    inline         void* VList::operator[](unsigned n){return getEntry(n);}
 
   }
 

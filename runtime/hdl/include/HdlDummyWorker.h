@@ -39,7 +39,7 @@ namespace OCPI {
 	assert("not called"==0);
 	return *(OCPI::Container::Port*)this;
       }
-      OCPI::Container::Port &createOutputPort(OCPI::Util::PortOrdinal, size_t, size_t, 
+      OCPI::Container::Port &createOutputPort(OCPI::Util::PortOrdinal, size_t, size_t,
 					      const OCPI::Util::PValue*)
 	throw (OCPI::Util::EmbeddedException)
       {

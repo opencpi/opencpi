@@ -70,7 +70,7 @@ finalizeHDL() {
       assert(p.m_default->m_vt == &p);
       p.m_stringLength = p.m_default->maxStringLength();
     }
-    if (!p.m_isParameter || p.m_isReadable) {
+    if (!p.m_isParameter || p.m_isReadable) { // if worker has a value beyond generics
       if (p.m_isRaw) {
 	if (p.m_isWritable)
 	  m_ctl.rawWritables = true;

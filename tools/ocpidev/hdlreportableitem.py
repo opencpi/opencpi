@@ -69,8 +69,8 @@ class ReportableItem(object):
 
         # Next, we override the default match_and_transform_synth_function with a function
         # from a period to a frequency.
-        >>> item1 = ReportableItem("Item0", "#.*This text right.*!!!!.*",\
-                                   match_and_transform_synth_function=\
+        >>> item1 = ReportableItem("Item0", "#.*This text right.*!!!!.*",
+                                   match_and_transform_synth_function=
                                        ocpiutil.match_regex_get_first_num_freq)
         >>> item1.match_and_transform_synth(os.path.realpath(__file__))
         '500.000'
@@ -97,10 +97,10 @@ class ReportableItem(object):
         # This is the function that will be used to parse a file for each regex and
         # potentially transform the result in some way. By default the functionality is:
         #     Return the first match for the regex in the target file
-        self.__synth_function = ocpiutil.match_regex if match_and_transform_synth_function is None\
-                                                     else match_and_transform_synth_function
-        self.__impl_function = self.__synth_function if match_and_transform_impl_function is None\
-                                                     else match_and_transform_impl_function
+        self.__synth_function = (ocpiutil.match_regex if match_and_transform_synth_function is None
+                                                      else match_and_transform_synth_function)
+        self.__impl_function = (self.__synth_function if match_and_transform_impl_function is None
+                                                      else match_and_transform_impl_function)
 
     @staticmethod
     def do_matching_multi_regexs(target_file, regexs, matching_funct):

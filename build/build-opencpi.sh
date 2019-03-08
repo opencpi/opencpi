@@ -37,7 +37,7 @@ if [ -n "$OcpiCrossCompile" -a -z "$OcpiKernelDir" ]; then
   echo I.e. the OcpiKernelDir variable is not set in the software platform definition.
   echo Thus building the OpenCPI kernel device driver for $OCPI_TARGET_PLATFORM is skipped.
 else
-  echo Next, we will built the OpenCPI kernel device driver for $OCPI_TARGET_PLATFORM
+  echo Next, we will build the OpenCPI kernel device driver for $OCPI_TARGET_PLATFORM
   make driver
 fi
 echo ================================================================================

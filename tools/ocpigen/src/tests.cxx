@@ -612,8 +612,9 @@ namespace {
       const char *err, *a;
       if ((a = ezxml_cattr(x, "name")))
         m_name = a;
-      else
+      else {
         OU::format(m_name, "case%02zu", ordinal);
+      }
       if ((err = OE::checkAttrs(x, "duration", "timeout", "onlyplatforms", "excludeplatforms",
                                 "onlyworkers", "excludeworkers", NULL)) ||
           (err = OE::checkElements(x, "property", "input", "output", NULL)) ||

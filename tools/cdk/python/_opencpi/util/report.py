@@ -15,15 +15,17 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
+"""
+definitions for utility functions that have to do with the utilization reports
+"""
 
-#Simport ocpiutil
 import os
 import logging
 import datetime
 from functools import reduce
 import operator
 import curses
-from .file import *
+from .file import str_to_num, isint, isfloat
 from _opencpi.util import OCPIException
 
 # This function first finds the max-length of each 'column' and then iterates
@@ -36,8 +38,8 @@ def normalize_column_lengths(lists):
     the same column have the same length.
 
     For example (doctest):
-    >>> list1, list2 = normalize_column_lengths([["15 chr long str",\
-                                                  "this is a longgg string"],\
+    >>> list1, list2 = normalize_column_lengths([["15 chr long str",
+                                                  "this is a longgg string"],
                                                  ["< 15", "pretty short"]])
     >>> print (str(list1))
     ['15 chr long str', 'this is a longgg string']
@@ -62,25 +64,41 @@ def snip_widest_column(rows, forced_screen_width=None):
     your table that is super wide. It is not smart enough to handle the case of
     having a LOT of columns, where more than one would need to be trimmed.
 
-    >>> table = [['this is a pretty long cell'] * 2]
-    >>> snip_widest_column(table, forced_screen_width=40)
-    [['this...', 'this is a pretty long cell']]
-    >>>
-
-    >>> table = [['this is a pretty long cell'] * 2]
+    Do nothing if we have screen space:
+    >>> table =     [['Header              '] * 2]
+    >>> table.append(['20 characters long!!'] * 2)
     >>> snip_widest_column(table, forced_screen_width=80)
-    [['this is a pretty long cell', 'this is a pretty long cell']]
+    [['Header              ', 'Header              '], ['20 characters long!!', '20 characters long!!']]
     >>>
 
-    >>> table = [['this is a pretty long cell'] * 2]
-    >>> snip_widest_column(table, forced_screen_width=10)
-    [['this is a pretty long cell', 'this is a pretty long cell']]
+    Trim a column as appropriate:
+    >>> table =     [['Header              '] * 2]
+    >>> table.append(['20 characters long!!'] * 2)
+    >>> snip_widest_column(table, forced_screen_width=33)
+    [['Header', 'Header              '], ['20 ...', '20 characters long!!']]
     >>>
 
-    >>> table = [['cel'] * 2]
-    >>> snip_widest_column(table, forced_screen_width=40)
-    [['cel', 'cel']]
+    But not if the header will be trimmed:
+    >>> table =     [['Header              '] * 2]
+    >>> table.append(['20 characters long!!'] * 2)
+    >>> snip_widest_column(table, forced_screen_width=32)
+    [['Header              ', 'Header              '], ['20 characters long!!', '20 characters long!!']]
     >>>
+
+    Do nothing if trim > cell-width:
+    >>> table =     [['H                   '] * 2]
+    >>> table.append(['20 characters long!!'] * 2)
+    >>> snip_widest_column(table, forced_screen_width=30)
+    [['H                   ', 'H                   '], ['20 characters long!!', '20 characters long!!']]
+    >>>
+
+    Double-check trim > cell-width test:
+    >>> table =     [['H                   '] * 2]
+    >>> table.append(['20 characters long!!'] * 2)
+    >>> snip_widest_column(table, forced_screen_width=31)
+    [['H   ', 'H                   '], ['2...', '20 characters long!!']]
+    >>>
+
     """
     # forced_screen_width is really just for unit testing. If
     # it's set, then we don't even try to figure out what the user's
@@ -90,50 +108,67 @@ def snip_widest_column(rows, forced_screen_width=None):
         screen_width = forced_screen_width
     else:
         try:
-            stdscr = curses.initscr()
+            curses.initscr()
+            # pylint:disable=no-member
             screen_width = curses.COLS
+            # pylint:enable=no-member
             curses.endwin()
-        except Exception as ex:
+        except curses.error as ex:
             logging.error(ex)
             return rows
 
     # Take a nice guess at the final width of the table to be displayed.
-    # Just add 3 to each column width to account for their spacing, 
+    # Just add 3 to each column width to account for their spacing,
     # plus 1 table border char.
-    table_width = max([ sum([ len(col)+3 for col in row ]) for row in rows]) + 1
+    table_width = max([sum([len(col)+3 for col in row]) for row in rows]) + 1
 
-    if table_width <= screen_width:
+    if table_width <= screen_width or len(rows) < 2:
         return rows
-    
+
     trim_amount = abs(screen_width - table_width)
 
-    # Find the column index with the widest cell.
+    # Find the widest cell.
     max_cell_len = 0
     widest_col_index = 0
+    header_of_trim_col = ''
     for i_row, row in enumerate(rows):
         for i_col, cell in enumerate(row):
             if len(cell) > max_cell_len:
                 max_cell_len = len(cell)
                 widest_col_index = i_col
-    
-    # Do nothing if it looks like we'll try to trim a column more than
-    # its width. This will happen if we have LOTS of tiny columns, where
-    # we'd need to be smarter and trim more than just one column.
-    if trim_amount + len('...') >= max_cell_len:
+                header_of_trim_col = str(rows[0][widest_col_index])
+
+    # Do nothing if:
+    #
+    # * We'll trim a column more than its width. This will happen
+    #   if we have LOTS of tiny columns, where we'd need to be
+    #   smarter and trim more than just one column.
+    #
+    # OR
+    #
+    # * We'll trim a column header.
+    if (trim_amount + len('...') >= max_cell_len or
+            len(header_of_trim_col) - trim_amount < len(header_of_trim_col.strip())):
         return rows
-    
+
     # Now edit.
     for i_row, row in enumerate(rows):
         for i_col, cell in enumerate(row):
             if i_col == widest_col_index:
-                # Snip all the cells in the wide column
+                # Snip all the cells in the wide column if we have more than 1 row.
                 rows[i_row][i_col] = rows[i_row][i_col][:(-trim_amount)]
-                if not rows[i_row][i_col][-1].isspace() and len(rows[i_row][i_col]) > len('...'):
+                # pylint:disable=bad-continuation
+                if (len(rows[i_row][i_col]) > len('...') and
+                    not rows[i_row][i_col][-len('...'):].isspace() and
+                    i_row != 0):
                     # Replace the last few chars with ... when appropriate.
                     rows[i_row][i_col] = rows[i_row][i_col][:-len('...')] + '...'
+                # pylint:enable=bad-continuation
 
     return rows
 
+#TODO change to kwargs too many aruments
+# pylint:disable=too-many-arguments
 def format_table(rows, col_delim='|', row_delim=None, surr_cols_delim='|', surr_rows_delim='-',
                  underline=None):
     """
@@ -144,7 +179,7 @@ def format_table(rows, col_delim='|', row_delim=None, surr_cols_delim='|', surr_
     determine the border of the table.
     """
 
-    rows_norm = snip_widest_column( normalize_column_lengths(rows) )
+    rows_norm = snip_widest_column(normalize_column_lengths(rows))
 
     # If an underline character was provided, insert a row containing this character repeated
     # at position 1 (right below the header)
@@ -188,14 +223,17 @@ def format_table(rows, col_delim='|', row_delim=None, surr_cols_delim='|', surr_
         table_str += surr_rows_delim * max_row_len + "\n"
 
     return table_str
+# pylint:enable=too-many-arguments
 
+#TODO change to kwargs too many aruments
+# pylint:disable=too-many-arguments
 def print_table(rows, col_delim='|', row_delim=None, surr_cols_delim='|', surr_rows_delim='-',
                 underline=None):
     """
     Wrapper for "format_table()" that prints the returned table
     """
     print(format_table(rows, col_delim, row_delim, surr_cols_delim, surr_rows_delim, underline))
-
+# pylint:enable=too-many-arguments
 
 class Report(object):
     """
@@ -204,12 +242,14 @@ class Report(object):
     via the "ordered_headers" list which determines the ordering each data-point's items when
     presented.
     """
+    # pylint:disable=dangerous-default-value
     def __init__(self, ordered_headers=[], sort_priority=[]):
         # User can initialize with the list of ordered headers
         self.ordered_headers = ordered_headers
         # User can initialize with the list of headers to sort by
         self.sort_priority = sort_priority
         self.data_points = []
+    # pylint:enable=dangerous-default-value
 
     def __bool__(self):
         """
@@ -232,7 +272,9 @@ class Report(object):
         if not isinstance(other, Report):
         """
         if not isinstance(other, Report):
+            # pylint:disable=undefined-variable
             raise OCPIException("Can only add another Report object to a Report.")
+            # pylint:enable=undefined-variable
         # Headers are unchanged on addition unless headers are empty in which case,
         # user other's headers
         if not self.ordered_headers:
@@ -247,6 +289,32 @@ class Report(object):
         """
         for point in self.data_points:
             point[key] = value
+
+    @staticmethod
+    def _format_elem(elem, none_str):
+        """
+        returns the formated string to be appended to to the row based on the datatype of the
+        variable that is passed in in elem.
+        """
+        if elem is None:
+            ret_val = none_str
+        elif isinstance(elem, str):
+            # element is a string, just append to row
+            ret_val = elem
+        elif isinstance(elem, list):
+            # element is a list, join its contents with comma and append to row
+            ret_val = ", ".join(elem)
+        else:
+            # Unsupported element type (not a string or list)
+            try:
+                ret_val = str(elem)
+            except Exception as ex:
+                logging.error(ex)
+                # pylint:disable=undefined-variable
+                raise OCPIException("Element in Report is not a string and could not" +
+                                    " be cast to a string.")
+                # pylint:enable=undefined-variable
+        return ret_val
 
     def print_table(self, none_str="N/A"):
         """
@@ -266,23 +334,7 @@ class Report(object):
                 row = []
                 for header in self.ordered_headers:
                     elem = point[header]
-                    if elem is None:
-                        row.append(none_str)
-                    elif isinstance(elem, str):
-                        # element is a string, just append to row
-                        row.append(elem)
-                    elif isinstance(elem, list):
-                        # element is a list, join its contents with comma and append to row
-                        row.append(", ".join(elem))
-                    else:
-                        # Unsupported element type (not a string or list)
-                        try:
-                            row.append(str(elem))
-                        except Exception as ex:
-                            logging.error(ex)
-                            raise OCPIException("Element in Report is not a string and could not" +
-                                                " be cast to a string.")
-
+                    row.append(self._format_elem(elem, none_str))
                 rows.append(row)
             # Sort the rows by each header listed in sort_priority. Do this in reverse order
             # so the last sort key (and therefore the most significant) is the first element
@@ -328,7 +380,7 @@ class Report(object):
             rows[0][-1] += " \\\\"
 
             # The string below is the LaTeX table template. It is filled out before being returned
-            latex_table_tmplt = \
+            latex_table_tmplt = (
 """%% %s
 
 %% It is best to wrap this table in \\begin{landscape} and \\end{landscape} in its including doc
@@ -340,7 +392,7 @@ class Report(object):
         \\rowcolor{blue}
 %s        \end{longtable}
 \end{tiny}
-"""
+""")
 
             for point in self.data_points:
                 latex_row = []
@@ -353,14 +405,11 @@ class Report(object):
                     elif isinstance(elem, list):
                         # If the value for this cell is a list, create a sub-table
                         # with a row for each entry
-                        elem_str = "\\begin{tabular}{@{}l@{}}" + \
-                                   " \\\\ ".join(elem) + \
-                                   "\end{tabular}"
+                        elem_str = ("\\begin{tabular}{@{}l@{}}" +
+                                    " \\\\ ".join(elem) +
+                                    "\end{tabular}")
                     elif isint(elem) or isfloat(elem):
-                        if isinstance(elem, str):
-                            elem_str = str_to_num(elem)
-                        else:
-                            elem_str = elem
+                        elem_str = str_to_num(elem) if isinstance(elem, str) else elem
                     else:
                         # loop above ensures that all elements are lists or strings,
                         # so this is a str

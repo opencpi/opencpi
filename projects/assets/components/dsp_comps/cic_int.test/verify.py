@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -98,7 +98,7 @@ ifile_nbytes = int(os.stat(sys.argv[3]).st_size)
 ofile_nbytes = int(os.stat(sys.argv[2]).st_size)
 #print 'DBG: Output filesize:\t', sys.argv[2],"/",ofile_nbytes,"bytes","/",ofile_nbytes / 4,"samples"
 if ((ifile_nbytes * R - bytes_lost_at_startup) != ofile_nbytes):
-    print '    FAIL - Output file is not the correct size'
+    print '    FAIL - Output file is not the correct size.  Expected: ', ifile_nbytes * R - bytes_lost_at_startup, ", Got: ", ofile_nbytes;
     sys.exit(1)
 else:
     print '    PASS - Output file is the correct size'

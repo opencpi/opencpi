@@ -1,6 +1,7 @@
+./bootstrap/include/xm/fortran.h
+./bootstrap/include/xm/xmpfc.cnf
 ./doc/av/tex/generator/pdfmarks
 ./platforms/zynq/ntpclient
-./projects/assets/components/dsp_comps/complex_mixer.hdl/vivado_ila/vivado_ila.dcp
 ./projects/assets/hdl/platforms/matchstiq_z1/ise_constraints/matchstiq_z1.ut
 ./projects/assets/hdl/platforms/matchstiq_z1/sd_card/iveia-atlas-i-z7e.dtb
 ./projects/assets/hdl/platforms/ml605/mk605.xst-annotate

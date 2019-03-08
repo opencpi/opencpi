@@ -991,9 +991,8 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE_S
       // Set a scalar property value
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
-      void set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *mp, \
+      void set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member &m, \
 				 size_t offset, const run val, unsigned idx) const { \
-        const OU::Member &m = mp ? *mp : info; \
         if (info.m_writeError ) \
           throw; /*"worker has errors before write */ \
         volatile store *pp = (volatile store *)(m_properties + info.m_offset + \
@@ -1008,12 +1007,12 @@ namespace OCPI {
         if (info.m_writeError) \
           throw; /*"worker has errors after write */ \
       } \
-      void set##pretty##SequenceProperty(const OA::Property &p,const run *vals, size_t length) const { \
-        if (p.m_info.m_writeError) \
+      void set##pretty##SequenceProperty(const OA::PropertyInfo &info,const run *vals, size_t length) const { \
+        if (info.m_writeError) \
           throw; /*"worker has errors before write */ \
-        memcpy((void *)(m_properties + p.m_info.m_offset + p.m_info.m_align), vals, length * sizeof(run)); \
-        *(volatile uint32_t *)(m_properties + p.m_info.m_offset) = (uint32_t)length; \
-        if (p.m_info.m_writeError) \
+        memcpy((void *)(m_properties + info.m_offset + info.m_align), vals, length * sizeof(run)); \
+        *(volatile uint32_t *)(m_properties + info.m_offset) = (uint32_t)length; \
+        if (info.m_writeError) \
           throw; /*"worker has errors after write */ \
       }
       // Set a string property value FIXME redundant length check???
@@ -1022,9 +1021,8 @@ namespace OCPI {
       // and structure padding are assumed to do this.
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                         \
       virtual void							                 \
-      set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *mp, \
+      set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member &m,  \
 			    size_t offset, const run val, unsigned idx) const {          \
-        const OU::Member &m = mp ? *mp : info;				                 \
         size_t ocpi_length;						                 \
         if (!val || (ocpi_length = strlen(val)) > m.m_stringLength)                      \
           throw; /*"string property too long"*/;			                 \
@@ -1041,21 +1039,21 @@ namespace OCPI {
         if (info.m_writeError)						                 \
           throw; /*"worker has errors after write */                                     \
       } \
-      void set##pretty##SequenceProperty(const OA::Property &p, const run *vals, \
+      void set##pretty##SequenceProperty(const OA::PropertyInfo &info, const run *vals, \
                                          size_t length) const {			 \
-        if (length > p.m_info.m_sequenceLength) \
+        if (length > info.m_sequenceLength) \
           throw; \
-        if (p.m_info.m_writeError) \
+        if (info.m_writeError) \
           throw; /*"worker has errors before write */ \
-        char *cp = (char *)(m_properties + p.m_info.m_offset + 32/CHAR_BIT); \
+        char *cp = (char *)(m_properties + info.m_offset + 32/CHAR_BIT); \
         for (size_t i = 0; i < length; i++) { \
           size_t len = strlen(vals[i]); \
-          if (len > p.m_info.m_sequenceLength) \
+          if (len > info.m_sequenceLength) \
             throw; /* "string in sequence too long" */ \
           memcpy(cp, vals[i], len+1); \
         } \
-        *(uint32_t *)(m_properties + p.m_info.m_offset) = (uint32_t)length; \
-        if (p.m_info.m_writeError) \
+        *(uint32_t *)(m_properties + info.m_offset) = (uint32_t)length; \
+        if (info.m_writeError) \
           throw; /*"worker has errors after write */ \
       }
       OCPI_PROPERTY_DATA_TYPES
@@ -1064,9 +1062,8 @@ namespace OCPI {
       // Get Scalar Property
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
       virtual run \
-      get##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *mp, \
+      get##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member &m, \
 			    size_t offset, unsigned idx) const { \
-        const OU::Member &m = mp ? *mp : info;			 \
         if (info.m_readError) \
           throw; /*"worker has errors before read "*/ \
         uint32_t *pp = (uint32_t *)(m_properties + info.m_offset + offset + \
@@ -1082,15 +1079,15 @@ namespace OCPI {
           throw; /*"worker has errors after read */ \
         return u.r; \
       } \
-      unsigned get##pretty##SequenceProperty(const OA::Property &p, run *vals, size_t length) const { \
-        if (p.m_info.m_readError) \
+      unsigned get##pretty##SequenceProperty(const OA::PropertyInfo &info, run *vals, size_t length) const { \
+        if (info.m_readError) \
           throw; /*"worker has errors before read "*/ \
-        uint32_t n = *(uint32_t *)(m_properties + p.m_info.m_offset); \
+        uint32_t n = *(uint32_t *)(m_properties + info.m_offset); \
         if (n > length) \
           throw; /* sequence longer than provided buffer */ \
-        memcpy(vals, (void*)(m_properties + p.m_info.m_offset + p.m_info.m_align), \
+        memcpy(vals, (void*)(m_properties + info.m_offset + info.m_align), \
                n * sizeof(run)); \
-        if (p.m_info.m_readError) \
+        if (info.m_readError) \
           throw; /*"worker has errors after read */ \
         return n; \
       }
@@ -1100,9 +1097,8 @@ namespace OCPI {
       // and structure padding are assumed to do this. FIXME redundant length check
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store) \
       virtual void \
-      get##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *mp, \
+      get##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member &m, \
 			    size_t off, char *cp, size_t length, unsigned idx) const { \
-        const OU::Member &m = mp ? *mp : info;				   \
         size_t stringLength = m.m_stringLength;                           \
         if (length < stringLength + 1) \
           throw; /*"string buffer smaller than property"*/; \
@@ -1117,14 +1113,14 @@ namespace OCPI {
           throw; /*"worker has errors after write */ \
       } \
       unsigned get##pretty##SequenceProperty \
-      (const OA::Property &p, char **vals, size_t length, char *buf, size_t space) const { \
-        if (p.m_info.m_readError) \
+      (const OA::PropertyInfo &info, char **vals, size_t length, char *buf, size_t space) const { \
+        if (info.m_readError) \
           throw; /*"worker has errors before read */ \
-        uint32_t n = *(uint32_t *)(m_properties + p.m_info.m_offset);	       \
-        size_t wlen = p.m_info.m_stringLength + 1;		       \
+        uint32_t n = *(uint32_t *)(m_properties + info.m_offset);	       \
+        size_t wlen = info.m_stringLength + 1;		       \
         if (n > length) \
           throw; /* sequence longer than provided buffer */ \
-        char *cp = (char *)(m_properties + p.m_info.m_offset + 32/CHAR_BIT); \
+        char *cp = (char *)(m_properties + info.m_offset + 32/CHAR_BIT); \
         for (unsigned i = 0; i < n; i++) { \
           if (space < wlen) \
             throw; \
@@ -1135,7 +1131,7 @@ namespace OCPI {
           buf += slen; \
           space -= slen; \
         } \
-        if (p.m_info.m_readError) \
+        if (info.m_readError) \
           throw; /*"worker has errors after read */ \
         return n; \
       }
@@ -1617,3 +1613,4 @@ namespace OCPI {
   } // End: namespace OCL
 
 } // End: namespace OCPI
+

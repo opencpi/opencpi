@@ -78,7 +78,7 @@ namespace OCPI {
         PortSetMetaData* psMetaData;
 
         // Number of ports
-        OCPI::OS::int32_t portCount;
+        OCPI::OS::uint32_t portCount;
 
         // Sparse list of ports, index-able via the port ordinal
         OCPI::Util::VList ports;
@@ -133,7 +133,7 @@ namespace OCPI {
       /**********************************
        * Get the port 
        *********************************/
-      Port* getPortFromIndex( OCPI::OS::int32_t idx );
+      Port* getPortFromIndex( OCPI::OS::uint32_t idx );
 
       /**********************************
        * Get the number of buffers

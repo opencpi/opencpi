@@ -267,7 +267,7 @@ function get_subdir {
         ;;
       (library)
         if [ -n "$liboptset" -o -n "$hdlliboptset" -o -n "$platform" -o -n "$project" ] ; then
-          bad cannot specify \"-l, -h, -P, or -p\" \(library/platform/project\) from within a library.
+          bad cannot specify \"-l, --hdl-library, -P, or -p\" \(library/platform/project\) from within a library.
         else
           subdir=.
         fi
@@ -472,8 +472,8 @@ function do_project {
             ${hwswplats:+RccHdlPlatforms="${hwswplats[@]}"} \
             $OCPI_MAKE_OPTS
     if [ -n buildClean -a -z "$hardClean" ] ; then
-      make ${verbose:+AT=} imports
-      make ${verbose:+AT=} exports
+      make -C $subdir/$1 ${verbose:+AT=} imports
+      make -C $subdir/$1 ${verbose:+AT=} exports
     fi
     return 0
   fi
@@ -497,7 +497,7 @@ function do_project {
 all
 EOF
   cat <<EOF > Project.mk
-# This Makefile fragment is for the "$1" project created at `pwd`
+# This Makefile fragment is for the "$1" project
 
 # Package identifier is used in a hierarchical fashion from Project to Libraries....
 # The PackageName, PackagePrefix and Package variables can optionally be set here:
@@ -926,12 +926,18 @@ EOF
 
 function do_library {
   set -e
-  odirtype=$dirtype
-  [ -z "$library" ] || bad The -l and -h options are invalid when deleting or adding a library
-  subdir=$1
+  if [ $libbase == "hdl" -a -n "$library" ]; then
+    one=$(basename $library)
+  else
+    one=$1
+  fi
+  [ -z "$library" -o "$verb" != "delete" ] || bad The -l and --hdl_library options are invalid when deleting a library
+  subdir=$one
   if [ -n "$standalone" ] ; then
     libbase=.
-    subdir=$1
+    subdir=$one
+  #elif [  ]; then
+
   elif [ -z "$libbase" ] ; then
     libbase=components
   fi
@@ -944,13 +950,13 @@ function do_library {
         [ "$1" == devices ] || bad can only create the devices library under a platform
         subdir=hdl/platforms/$platform/devices
       else
-        subdir=$libbase/$1
+        subdir=$libbase/$one
       fi
       ;;
     (libraries)
       [ -z "$platform" ] || bad cannot specify a platform from within a libraries collection.
 
-      subdir=$1
+      subdir=$one
       ;;
     (library)
       if [ "$(basename $subdir)" == "components" ] ; then
@@ -961,6 +967,9 @@ function do_library {
       ;;
     (*) bad this command can only be issued in a project directory or a components directory
   esac
+  if [ "$verb" == "create" -a "$(realpath $subdir)" == "hdl" ]; then
+      1=$(basename $subdir)
+  fi
   if [ "$verb" == delete ]; then
     [ "$subdir" == "$libbase" ] && check_components deleted $libbase
     [ -e "$subdir" ] || bad the library \(directory\) \"$subdir\" does not exist
@@ -972,10 +981,10 @@ function do_library {
     if [ "$odirtype" == project -a "$subdir" != "$libbase" -a "$(ls $libbase 2> /dev/null)" == Makefile ] ; then
       rm -r -f $libbase
     fi
-    [ -z "$verbose" ] || echo The library named \"$1\" \(directory \"$subdir/\"\) has been deleted.
+    [ -z "$verbose" ] || echo The library named \"$one\" \(directory \"$subdir/\"\) has been deleted.
     return 0
   elif [ "$verb" == build ]; then
-    [ -n "$1" ] || bad the library was not specified
+    [ -n "$one" ] || bad the library was not specified
     [ -d "$subdir" ] || bad the library \(directory\) \"$subdir\" does not exist
     if [ -z "$buildRcc" -a -z "$buildHdl" -a -n "$buildClean" ]; then
       cleanTarget="clean"
@@ -997,7 +1006,7 @@ function do_library {
             $OCPI_MAKE_OPTS
     return 0
   fi
-  [ -e "$subdir" ] && bad the library \"$1\" \(directory $subdir/\) already exists
+  [ -e "$subdir" ] && bad the library \"$one\" \(directory $subdir/\) already exists
   get_dirtype .
   if [ "$dirtype" == "libraries" -a  "$(basename $(pwd))" == "components" -a "$subdir" == "components" ]; then
     bad a sub library named components is not supported, try another library name
@@ -1032,7 +1041,7 @@ include \$(OCPI_CDK_DIR)/include/libraries.mk
 EOF
     fi
   fi
-  make_library $1 $subdir
+  make_library $one $subdir
 }
 
 
@@ -1098,7 +1107,7 @@ function do_worker {
   if [ -n "$standalone" ] ; then
     libdir=.
   elif [ "$dirtype" == library ]; then
-    [ -z $library ] || bad the -l or -h "(library)" option is not valid in a "library's" directory
+    [ -z $library ] || bad the -l or --hdl-library "(library)" option is not valid in a "library's" directory
   elif [ -z "$libdir" ]; then
     [ "$dirtype" == project ] || bad workers can only be created in project or library directories
   fi
@@ -1378,9 +1387,9 @@ EOF
        Use Test='true' to create a test-exclusive property. -->
 </Tests>
 EOF
-    #   create generate.py: #!/usr/bin/env python
+    #   create generate.py: #!/usr/bin/env python2
     cat <<EOF > $testdir/generate.py
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 """
 Use this file to generate your input data.
@@ -1388,9 +1397,9 @@ Args: <list-of-user-defined-args> <input-file>
 """
 EOF
     chmod +x $testdir/generate.py
-    #   create verify.py: #!/usr/bin/env python
+    #   create verify.py: #!/usr/bin/env python2
     cat <<EOF > $testdir/verify.py
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 """
 Use this script to validate your output data against your input data.
@@ -1925,9 +1934,11 @@ Options for the create|delete verbs:
   -n                 This spec has no lifecycle/configuration interface (no runtime properties)
 
  == create|delete component|protocol|test|worker|{hdl device} ==
-  -l <library>       Component library to add the asset to {when there is more than one library}
-  -h <hdl-library>   For BSPs: A library underneath hdl/ to add assets to.  Default is "devices"
-                               Valid <hdl-library> options are "devices", "cards" and "adapters"
+  -l <library>                  Component library to add the asset to {when there is more than one
+                                library}
+  --hdl-library <hdl-library>   For BSPs: A library underneath hdl/ to add assets to.  Default is
+                                "devices".  Valid <hdl-library> options are "devices", "cards" and
+                                "adapters"
 
  == create worker|{hdl device} ==
   -S <spec>          The component spec that this worker implements (default is <worker>[-_]spec)
@@ -2249,6 +2260,8 @@ Verb descriptions:
   refresh        Regenerate any project metadata
   run            Run unit-tests and applications
 
+'ocpidev --version' will show the released version of OpenCPI
+
 'ocpidev --help <verb>' will show help for the specified verb
 
 ---------------------------------------------------------------------------------------------------
@@ -2323,7 +2336,7 @@ while [[ "${argv[0]}" != "" ]] ; do
         liboptset=1    # the library variable can be set elsewhere (ie card option)
                        # This variable lets us keep track of whether the -l option
         ;;             # was used
-      (-h)
+      (-h | --hdl-library)
         libbase=hdl
         takeval hdllibrary
         library=hdl/$hdllibrary
@@ -2400,6 +2413,7 @@ while [[ "${argv[0]}" != "" ]] ; do
       # OCPI_API_DEPRECATED 2.0 (AV-3457, specific search string)
       (--build-hdl-rcc-platform|--hdl-rcc-platform) warn "${argv[0]} is deprecated: use --rcc-hdl-platform to specify RCC platform using HDL name"; takeval hwswplat; hwswplats="${hwswplats[@]} $hwswplat";;
       (--create-build-files) OCPI_CREATE_BUILD_FILES=1;;
+      (--version) ocpirun --version; exit 0;;
       (*)
         error_msg="unknown option: ${argv[0]}"
         if [ -n "$verb" ]; then
@@ -2501,7 +2515,7 @@ fi
 [ -z $verb ] && bad missing verb, nothing to do
 [ -z "$noun" -a "$verb" != build ] && help
 # option testing dependent on noun and verb
-[ -z "$args" -a "$noun" != primitives -a "$noun" != assemblies  -a "$noun" != applications  -a "$noun" != platforms -a "$verb" != build -a "$verb" != register -a "$verb" != unregister -a "$verb" != refresh -a "$verb" != set -a "$verb" != unset -a \( "$verb" != delete -a "$noun" != registry \) ] && bad there must be a name argument after: $verb $hdl$noun
+[ -z "$args" -a "$noun" != primitives -a "$noun" != assemblies  -a "$noun" != applications -a "$noun" != platforms -a "$verb" != build -a "$verb" != register -a "$verb" != unregister -a "$verb" != refresh -a "$verb" != set -a "$verb" != unset -a \( "$verb" != delete -a "$noun" != registry \) -a \( "$verb" != create -a "$noun" != library -a \( -n "$liboptset" -o -n "$hdlliboptset" -o -n "$platform" \) \) ] && bad there must be a name argument after: $verb $hdl$noun
 # force
 [ -n "$force" -a "$verb" != delete -a "$verb" != unregister -a "$verb" != register ] &&
   bad the -f '(force)' option is only valid when deleting or \(un\)registering an asset
@@ -2513,13 +2527,14 @@ fi
   bad the -t '(create test)' option is only valid when creating a component spec
 # nocontrol=true
 [ -n "$nocontrol" -a \( "$noun" != spec \) ] &&
+[ -n "$nocontrol" -a \( "$noun" != spec \) ] &&
   bad the -n '(nocontrol)' option is only valid when creating a component spec
 # card
 [ -n "$card" -a \( "$noun" != card -a "$noun" != slot -a "$noun" != worker -a "$noun" != spec -a "$noun" != protocol -a "$noun" != properties -a "$noun" != signals -a "$noun" != device -a "$noun" != test \) ] &&
   bad can only operate in hdl/cards when creating/deleting an HDL device worker, test, worker, spec, protocol, properties or signals
 # library
-[ \( -n "$liboptset" -o -n "$hdlliboptset" \) -a \( -n "$platform" -o \( "$noun" != worker -a "$noun" != spec -a "$noun" != protocol -a "$noun" != properties -a "$noun" != signals -a "$noun" != device -a "$noun" != test \) \) ] &&
-  bad the -l or -h '(library within project)' options are only valid when creating a spec, protocols, properties, signals, worker, device or test
+[ \( -n "$liboptset" -o -n "$hdlliboptset" \) -a \( -n "$platform" -o \( "$noun" != worker -a "$noun" != spec -a "$noun" != protocol -a "$noun" != properties -a "$noun" != signals -a "$noun" != library -a "$noun" != device -a "$noun" != test \) \) ] &&
+  bad the -l or --hdl-library '(library within project)' options are only valid when creating a spec, protocols, properties, signals, library, worker, device or test
 # standalone
 [ -n "$standalone" -a \( "$noun" != library -a "$noun" != worker -a "$noun" != device \) ] &&
   bad the -s '(standalone - outside a project)' option is only valid when creating a library, a worker or a device

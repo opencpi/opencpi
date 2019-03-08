@@ -110,7 +110,7 @@ namespace OCPI {
       Booking *m_bookings;
       // This class represents a mapping from an externally visible property of the assembly
       // to an individual property of an instance. It must be at this layer
-      // (not util::assembly or library::assembly) because it potentially depends on the 
+      // (not util::assembly or library::assembly) because it potentially depends on the
       // implementation specific properties of the implementations selected.
       struct Property {
 	std::string m_name;     // qualified name (instance[.:=]property) or mapped name
@@ -202,7 +202,7 @@ namespace OCPI {
       bool bookingOk(Booking &b, OCPI::Library::Candidate &c, unsigned n);
       void policyMap( Instance * i, CMap & bestMap);
       void setPolicy(const OCPI::API::PValue *params);
-      Property &findProperty(const char * worker_inst_name, const char * prop_name);
+      Property &findProperty(const char * worker_inst_name, const char * prop_name = NULL) const;
       void dumpDeployment(unsigned score);
       void doScaledInstance(unsigned instNum, unsigned score);
       void deployInstance(unsigned instNum, unsigned score, size_t scale,
@@ -243,10 +243,17 @@ namespace OCPI {
       size_t nProperties() const { return m_nProperties; }
       const OCPI::Util::Property *property(unsigned ordinal, std::string &name) const;
       Worker &getPropertyWorker(const char *name, const char *&pname) const;
+      const char *getProperty(unsigned ordinal, std::string &value, AccessList &list = emptyList,
+			      PropertyOptionList &options = noPropertyOptions,
+			      PropertyAttributes *attributes = NULL) const;
+      const char *getProperty(const char *pname, std::string &value, AccessList &list = emptyList,
+			      PropertyOptionList &options = noPropertyOptions,
+			      PropertyAttributes *attributes = NULL) const;
       bool getProperty(unsigned ordinal, std::string &name, std::string &value, bool hex,
 		       bool *parp, bool *cachedp, bool uncached, bool *hiddenp) const;
       void getProperty(const char * wname, const char * pname, std::string &value, bool hex);
-      void setProperty(const char* worker_name, const char* prop_name, const char *value);
+      void setProperty(const char* worker_name, const char* prop_name, const char *value,
+		       OCPI::API::AccessList &list = OCPI::API::emptyList);
       void dumpDeployment(const char *appFile, const std::string &file);
       void dumpProperties(bool printParameters, bool printCached, const char *context) const;
       void genScaPrf(const char *outDir) const;

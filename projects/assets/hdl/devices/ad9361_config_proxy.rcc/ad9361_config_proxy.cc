@@ -29,6 +29,8 @@
 #include <sstream> // needed for std::ostringstream
 #include <unistd.h> // usleep()
 #include "ad9361_config_proxy-worker.hh"
+#include "AD9361ConfigProxy.hh" // AD9361ConfigProxy class
+#include "OcpiOsDebugApi.hh" // OCPI_LOG_DEBUG
 
 extern "C" {
 #include "config.h" // ALTERA_PLATFORM
@@ -74,8 +76,13 @@ using namespace Ad9361_config_proxyWorkerTypes;
 
 class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
   RunCondition m_aRunCondition;
+  OCPIProjects::AD9361ConfigProxy<Slave1> m_ad9361_config_proxy; /// @todo / FIXME - Eventually all OpenCPI AD9361 functionality, No-OS or otherwise, will be moved inside the AD9361ConfigProxy class
+
 public:
-  Ad9361_config_proxyWorker() : m_aRunCondition(RCC_NO_PORTS) {
+  Ad9361_config_proxyWorker() : m_aRunCondition(RCC_NO_PORTS),
+    m_ad9361_config_proxy(ad9361_phy, slave, 40e6) /// @todo / FIXME - Eventually all OpenCPI AD9361 functionality, No-OS or otherwise, will be moved inside the AD9361ConfigProxy class, when that happens, the passing ad9361_phy will no longer be necessary
+    {
+
     //Run function should never be called
     setRunCondition(&m_aRunCondition);
 
@@ -125,12 +132,8 @@ private:
     std::string functionStdStr(functionStr);
     if(functionStdStr[0] == '&') functionStdStr.erase(functionStdStr.begin());
 
-    if(AD9361_CONFIG_PROXY_OCPI_DEBUG)
-    {
-      printf("DEBUG: ad9361_config_proxy: libad9361 API call: ");
-      // we don't know how to parameters for this function, so just printing ...
-      printf("%s(...)\n", functionStdStr.c_str());
-    }
+    // we don't know how to parameters for this function, so just printing ...
+    log(OCPI_LOG_DEBUG, "No-OS API call: %s(...)\n", functionStdStr.c_str());
   }
 
   template<typename T> void
@@ -139,21 +142,17 @@ private:
     // typical use results in leading '&' on functionStr, erase for prettiness
     std::string functionStdStr(functionStr);
     if(functionStdStr[0] == '&') functionStdStr.erase(functionStdStr.begin());
-    if(AD9361_CONFIG_PROXY_OCPI_DEBUG)
+    std::ostringstream paramStr;
+    paramStr << (long long) param;
+    if(chan != 255)
     {
-      std::ostringstream paramStr;
-      paramStr << (long long) param;
-      printf("DEBUG: ad9361_config_proxy: libad9361 API call: ");
-      if(chan != 255)
-      {
-        printf("%s(ad9361_phy, %i, %s)\n", functionStdStr.c_str(),
-               chan, paramStr.str().c_str());
-      }
-      else
-      {
-        printf("%s(ad9361_phy, %s)\n", functionStdStr.c_str(),
-               paramStr.str().c_str());
-      }
+      log(OCPI_LOG_DEBUG, "No-OS API call: %s(ad9361_phy, %i, %s)\n",
+          functionStdStr.c_str(), chan, paramStr.str().c_str());
+    }
+    else
+    {
+      log(OCPI_LOG_DEBUG, "No-OS API call: %s(ad9361_phy, %s)\n",
+          functionStdStr.c_str(), paramStr.str().c_str());
     }
   }
 
@@ -314,55 +313,29 @@ private:
     // sub-device
     param->gpio_resetb = GPIO_RESET_PIN;
 
-    if(AD9361_CONFIG_PROXY_OCPI_DEBUG)
-    {
-      std::cout << "DEBUG: ad9361_config_proxy: param->pp_tx_swap_enable = "            <<
-                      (int)param->pp_tx_swap_enable                << std::endl;
-      std::cout << "DEBUG: ad9361_config_proxy: param->pp_rx_swap_enable = "            <<
-                      (int)param->pp_rx_swap_enable                << std::endl;
-      std::cout << "DEBUG: ad9361_config_proxy: param->tx_channel_swap_enable = "       <<
-                      (int)param->tx_channel_swap_enable           << std::endl;
-      std::cout << "DEBUG: ad9361_config_proxy: param->rx_channel_swap_enable = "       <<
-                      (int)param->rx_channel_swap_enable           << std::endl;
-      std::cout << "DEBUG: ad9361_config_proxy: param->rx_frame_pulse_mode_enable = "   <<
-                      (int)param->rx_frame_pulse_mode_enable       << std::endl;
-      std::cout << "DEBUG: ad9361_config_proxy: param->two_t_two_r_timing_enable = "    <<
-                      (int)param->two_t_two_r_timing_enable        << std::endl;
-      std::cout << "DEBUG: ad9361_config_proxy: param->invert_data_bus_enable = "       <<
-                      (int)param->invert_data_bus_enable           << std::endl;
-      std::cout << "DEBUG: ad9361_config_proxy: param->invert_data_clk_enable = "       <<
-                      (int)param->invert_data_clk_enable           << std::endl;
-      std::cout << "DEBUG: ad9361_config_proxy: param->fdd_alt_word_order_enable = "    <<
-                      (int)param->fdd_alt_word_order_enable        << std::endl;
-      std::cout << "DEBUG: ad9361_config_proxy: param->invert_rx_frame_enable = "       <<
-                      (int)param->invert_rx_frame_enable           << std::endl;
-      std::cout << "DEBUG: ad9361_config_proxy: param->fdd_rx_rate_2tx_enable = "       <<
-                      (int)param->fdd_rx_rate_2tx_enable           << std::endl;
-      std::cout << "DEBUG: ad9361_config_proxy: param->swap_ports_enable = "            <<
-                      (int)param->swap_ports_enable                << std::endl;
-      std::cout << "DEBUG: ad9361_config_proxy: param->single_data_rate_enable = "      <<
-                      (int)param->single_data_rate_enable          << std::endl;
-      std::cout << "DEBUG: ad9361_config_proxy: param->lvds_mode_enable = "             <<
-                      (int)param->lvds_mode_enable                 << std::endl;
-      std::cout << "DEBUG: ad9361_config_proxy: param->half_duplex_mode_enable = "      <<
-                      (int)param->half_duplex_mode_enable          << std::endl;
-      std::cout << "DEBUG: ad9361_config_proxy: param->single_port_mode_enable = "      <<
-                      (int)param->single_port_mode_enable          << std::endl;
-      std::cout << "DEBUG: ad9361_config_proxy: param->full_port_enable = "             <<
-                      (int)param->full_port_enable                 << std::endl;
-      std::cout << "DEBUG: ad9361_config_proxy: param->full_duplex_swap_bits_enable = " <<
-                      (int)param->full_duplex_swap_bits_enable     << std::endl;
-      std::cout << "DEBUG: ad9361_config_proxy: param->delay_rx_data = "                <<
-                      (int)param->delay_rx_data                    << std::endl;
-      std::cout << "DEBUG: ad9361_config_proxy: param->rx_data_clock_delay = "          <<
-                      (int)param->rx_data_clock_delay              << std::endl;
-      std::cout << "DEBUG: ad9361_config_proxy: param->rx_data_delay = "                <<
-                      (int)param->rx_data_delay                    << std::endl;
-      std::cout << "DEBUG: ad9361_config_proxy: param->tx_fb_clock_delay= "             <<
-                      (int)param->tx_fb_clock_delay                << std::endl;
-      std::cout << "DEBUG: ad9361_config_proxy: param->tx_data_delay = "                <<
-                      (int)param->tx_data_delay                    << std::endl;
-    }
+    log(OCPI_LOG_DEBUG, "param->pp_tx_swap_enable = %i", (int)param->pp_tx_swap_enable);
+    log(OCPI_LOG_DEBUG, "param->pp_rx_swap_enable = %i", (int)param->pp_rx_swap_enable);
+    log(OCPI_LOG_DEBUG, "param->tx_channel_swap_enable = %i", (int)param->tx_channel_swap_enable);
+    log(OCPI_LOG_DEBUG, "param->rx_channel_swap_enable = %i", (int)param->rx_channel_swap_enable);
+    log(OCPI_LOG_DEBUG, "param->rx_frame_pulse_mode_enable = %i", (int)param->rx_frame_pulse_mode_enable);
+    log(OCPI_LOG_DEBUG, "param->two_t_two_r_timing_enable = %i", (int)param->two_t_two_r_timing_enable);
+    log(OCPI_LOG_DEBUG, "param->invert_data_bus_enable = %i", (int)param->invert_data_bus_enable);
+    log(OCPI_LOG_DEBUG, "param->invert_data_clk_enable = %i", (int)param->invert_data_clk_enable);
+    log(OCPI_LOG_DEBUG, "param->fdd_alt_word_order_enable = %i", (int)param->fdd_alt_word_order_enable);
+    log(OCPI_LOG_DEBUG, "param->invert_rx_frame_enable = %i", (int)param->invert_rx_frame_enable);
+    log(OCPI_LOG_DEBUG, "param->fdd_rx_rate_2tx_enable = %i", (int)param->fdd_rx_rate_2tx_enable);
+    log(OCPI_LOG_DEBUG, "param->swap_ports_enable = %i", (int)param->swap_ports_enable);
+    log(OCPI_LOG_DEBUG, "param->single_data_rate_enable = %i", (int)param->single_data_rate_enable);
+    log(OCPI_LOG_DEBUG, "param->lvds_mode_enable = %i", (int)param->lvds_mode_enable);
+    log(OCPI_LOG_DEBUG, "param->half_duplex_mode_enable = %i", (int)param->half_duplex_mode_enable);
+    log(OCPI_LOG_DEBUG, "param->single_port_mode_enable = %i", (int)param->single_port_mode_enable);
+    log(OCPI_LOG_DEBUG, "param->full_port_enable = %i", (int)param->full_port_enable);
+    log(OCPI_LOG_DEBUG, "param->full_duplex_swap_bits_enable = %i", (int)param->full_duplex_swap_bits_enable);
+    log(OCPI_LOG_DEBUG, "param->delay_rx_data = %i", (int)param->delay_rx_data);
+    log(OCPI_LOG_DEBUG, "param->rx_data_clock_delay = %i", (int)param->rx_data_clock_delay);
+    log(OCPI_LOG_DEBUG, "param->rx_data_delay = %i", (int)param->rx_data_delay);
+    log(OCPI_LOG_DEBUG, "param->tx_fb_clock_delay= %i", (int)param->tx_fb_clock_delay);
+    log(OCPI_LOG_DEBUG, "param->tx_data_delay = %i", (int)param->tx_data_delay);
 
     slave.set_force_two_r_two_t_timing(param->two_t_two_r_timing_enable);
 
@@ -443,8 +416,8 @@ private:
 
   /*! @brief Function that should be used to make channel-agnostic libad9361 API
    *         calls with 1 parameter with most common return type of int32_t.
-   *         Also performs debug printing of function call and passed parameters
-   *         when AD9361_CONFIG_PROXY_OCPI_DEBUG defined.
+   *         Also performs debug printing of function call and passed
+   *         parameters.
    *  @param[in]   function    libad9361 API function pointer
    *  @param[in]   param       second and last parameter for ad9361 API function
    *  @param[in]   functionStr Stringified function name
@@ -462,8 +435,7 @@ private:
    *  @param[in]   param       second and last parameter for ad9361 API function
    *  @param[in]   functionStr Stringified function name
    *  @param[in]   doPrint     Enables debugging printing of function call and
-   *                           passed parameters (when
-   *                           AD9361_CONFIG_PROXY_OCPI_DEBUG is defined).
+   *                           passed parameters.
    *                           Default is true.
    ****************************************************************************/
   template<typename T> RCCResult
@@ -489,8 +461,7 @@ private:
 
   /*! @brief Function that should be used to make channel-agnostic libad9361 API
    *         calls with 1 parameter with return type of void. Also performs
-   *         debug printing of function call and passed parameters when
-   *         AD9361_CONFIG_PROXY_OCPI_DEBUG defined.
+   *         debug printing of function call and passed parameters.
    *  @param[in]   function    libad9361 API function pointer
    *  @param[in]   param       second and last parameter for ad9361 API function
    *  @param[in]   functionStr Stringified function name
@@ -509,8 +480,7 @@ private:
 
   /*! @brief Function that should be used to make channel-agnostic libad9361 API
    *         calls with 2 parameters. Also performs debug printing of function
-   *         call and passed parameters when AD9361_CONFIG_PROXY_OCPI_DEBUG
-   *         defined.
+   *         call and passed parameters.
    *  @param[in]   function    libad9361 API function pointer
    *  @param[in]   param1      second parameter for ad9361 API function
    *  @param[in]   param2      third and last parameter for ad9361 API function
@@ -540,7 +510,7 @@ private:
 
   /*! @brief Function that should be used to make channel-dependent libad9361
    *         API get calls. Also performs debug printing of function call and
-   *         passed parameters when AD9361_CONFIG_PROXY_OCPI_DEBUG defined.
+   *         passed parameters.
    *  @param[in]   function    libad9361 API function pointer
    *  @param[in]   param       Reference to variable sent as second and last
    *                           parameter for ad9361 API function
@@ -576,7 +546,7 @@ private:
 
   /*! @brief Function that should be used to make channel-dependent libad9361
    *         API set calls. Also performs debug printing of function call and
-   *         passed parameters when AD9361_CONFIG_PROXY_OCPI_DEBUG defined.
+   *         passed parameters.
    *  @param[in]   function    libad9361 API function pointer
    *  @param[in]   param       Constant Reference to variable sent as second and
    *                           last parameter for ad9361 API function
@@ -1048,38 +1018,46 @@ private:
   }
   // notification that rx_fir_config property will be read
   RCCResult rx_fir_config_read_read() {
-    AD9361_RXFIRConfig config[AD9361_CONFIG_PROXY_RX_NCHANNELS];
-    RCCResult res = LIBAD9361_API_CHAN_GET(&ad9361_get_rx_fir_config, &(config[0]));
-    if(res != RCC_OK) return res;
+    AD9361_RXFIRConfig cfg[AD9361_CONFIG_PROXY_RX_NCHANNELS];
+
     // explicitly copying struct members so as to avoid potential
     // memory corruption due to the fact that OpenCPI sometimes adds
     // additional "padding" members
-    for(uint8_t chan=0; chan<AD9361_CONFIG_PROXY_RX_NCHANNELS; chan++) {
-      // rx is a member of the struct but the information conveyed is redundant
-      //m_properties.rx_fir_config_read[chan].rx = config[chan].rx;
-      
-      m_properties.rx_fir_config_read[chan].rx_gain = config[chan].rx_gain;
-      m_properties.rx_fir_config_read[chan].rx_dec = config[chan].rx_dec;
-      for(uint8_t idx=0; idx<128; idx++) {
-        m_properties.rx_fir_config_read[chan].rx_coef[idx] =
-            config[chan].rx_coef[idx];
+    for(uint8_t ch=0; ch<AD9361_CONFIG_PROXY_RX_NCHANNELS; ch++) {
+
+      int32_t res;
+      res = m_ad9361_config_proxy.ad9361_get_rx_fir_config(ch, &(cfg[ch]));
+      if(res != 0) {
+        std::ostringstream oss;
+        oss << "ad9361_get_rx_fir_en_dis() returned non-zero value: " << res;
+        return setError(oss.str().c_str());
       }
-      m_properties.rx_fir_config_read[chan].rx_coef_size =
-          config[chan].rx_coef_size;
+
+      // rx is a member of the struct but the information conveyed is redundant
+      //m_properties.rx_fir_config_read[ch].rx = config[ch].rx;
+      
+      m_properties.rx_fir_config_read[ch].rx_gain = cfg[ch].rx_gain;
+      m_properties.rx_fir_config_read[ch].rx_dec = cfg[ch].rx_dec;
+      for(uint8_t idx=0; idx<128; idx++) {
+        m_properties.rx_fir_config_read[ch].rx_coef[idx] =
+            cfg[ch].rx_coef[idx];
+      }
+      m_properties.rx_fir_config_read[ch].rx_coef_size =
+          cfg[ch].rx_coef_size;
 
       // rx_path_clocks is a member of the struct but ad9361_set_rx_fir_config
       // ignores this value, commented it out to avoid the scenario where end
-      // user thinks they are setting this value when they really aren't
+      // user thinks they are reading a meaningful value
       //for(uint8_t idx=0; idx<6; idx++) {
-      //  m_properties.rx_fir_config_read[chan].rx_path_clks[idx] =
-      //      config[chan].rx_path_clks[idx];
+      //  m_properties.rx_fir_config_read[ch].rx_path_clks[idx] =
+      //      cfg[ch].rx_path_clks[idx];
       //}
 
       // rx_bandwidth is a member of the struct but ad9361_set_rx_fir_config
       // ignores this value, commented it out to avoid the scenario where end
-      // user thinks they are setting this value when they really aren't
-      //m_properties.rx_fir_config_read[chan].rx_bandwidth =
-      //    config[chan].rx_bandwidth;
+      // user thinks they are reading a meaningful value
+      //m_properties.rx_fir_config_read[ch].rx_bandwidth =
+      //    cfg[ch].rx_bandwidth;
     }
     return RCC_OK;
   }
@@ -1090,8 +1068,14 @@ private:
   }
   // notification that rx_fir_en_dis property will be read
   RCCResult rx_fir_en_dis_read() {
-    return LIBAD9361_API_1PARAM(&ad9361_get_rx_fir_en_dis,
-                                &(m_properties.rx_fir_en_dis));
+    uint8_t* en_dis = &m_properties.rx_fir_en_dis;
+    int32_t res = m_ad9361_config_proxy.ad9361_get_rx_fir_en_dis(en_dis);
+    if(res != 0) {
+      std::ostringstream oss;
+      oss << "ad9361_get_rx_fir_en_dis() returned non-zero value: " << res;
+      return setError(oss.str().c_str());
+    }
+    return RCC_OK;
   }
   // notification that rx_rfdc_track_en_dis property has been written
   RCCResult rx_rfdc_track_en_dis_written() {
@@ -1567,12 +1551,8 @@ private:
     if(ret != RCC_OK) return ret;
     ret           = CHECK_IF_POINTER_IS_NULL(ad9361_phy->pdata);
     if(ret != RCC_OK) return ret;
-    if(AD9361_CONFIG_PROXY_OCPI_DEBUG)
-    {
-      printf("DEBUG: ad9361_config_proxy: libad9361 API call: ");
-      // we don't know how to parameters for this function, so just printing ...
-      printf("ad9361_bist_tone(...)\n");
-    }
+    // we don't know how to parameters for this function, so just printing ...
+    log(OCPI_LOG_DEBUG, "No-OS API call: ad9361_bist_tone(...)\n");
     const int32_t res = ad9361_bist_tone(ad9361_phy,
                                   (ad9361_bist_mode)m_properties.bist_tone.mode,
                                   m_properties.bist_tone.freq_Hz,
@@ -3163,11 +3143,14 @@ private:
   // notification that DATA_CLK_P_rate_Hz property will be read
   RCCResult DATA_CLK_P_rate_Hz_read() {
 
-    //! @TODO / FIXME - replace this with nominal in-situ calculation for maximum precision
+    /* @todo / FIXME - replace this with AD9361ConfigProxy class's
+     *                 get_clkrf_freq_Hz for maximum precision*/
     uint32_t rx_sampling_freq;
     RCCResult res = LIBAD9361_API_1PARAM(&ad9361_get_rx_sampling_freq,
                                          &rx_sampling_freq);
 
+    /* @todo / FIXME - move this functionality into get_data_clk_p_rate_Hz()
+     *                 method in AD9361ConfigProxy class */
     if(res != RCC_OK) { return res; }
     res = CHECK_IF_POINTER_IS_NULL(ad9361_phy);
     if(res != RCC_OK) { return res; }
@@ -3254,7 +3237,37 @@ private:
     m_properties.BIST_Mask_Channel_1_I_data = (reg & D2_BITMASK) == D2_BITMASK;
     return RCC_OK;
   }
+  // notification that digital_rx_block_delay_sec property will be read
+  RCCResult digital_rx_block_delay_sec_read() {
 
+    m_properties.digital_rx_block_delay_sec.resize(0);
+
+    std::vector<uint8_t> rx_chs;
+    rx_chs.push_back(RX1);
+    rx_chs.push_back(RX2);
+    for(auto it = rx_chs.begin(); it != rx_chs.end(); ++it) {
+      const size_t len = m_properties.digital_rx_block_delay_sec.length;
+      double delay;
+      try {
+        delay = m_ad9361_config_proxy.get_digital_rx_block_delay_sec(*it);
+      }
+      catch(std::string& err) {
+        continue;
+      }
+      m_properties.digital_rx_block_delay_sec.resize(len+1);
+      Rf_port port;
+      if(*it == RX1) {
+        port = DIGITAL_RX_BLOCK_DELAY_SEC_RF_PORT_RX1;
+      }
+      else { // *it == RX2
+        port = DIGITAL_RX_BLOCK_DELAY_SEC_RF_PORT_RX2;
+      }
+      m_properties.digital_rx_block_delay_sec.data[len].rf_port = port;
+      m_properties.digital_rx_block_delay_sec.data[len].delay_sec = delay;
+    }
+
+    return RCC_OK;
+  }
   RCCResult run(bool /*timedout*/) {
     return RCC_DONE;
   }

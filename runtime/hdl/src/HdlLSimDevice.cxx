@@ -240,7 +240,7 @@ protected:
     // We do not clean this up - it is created on demand.
     const char *slash = strrchr(m_simDir.c_str(), '/');
     assert(slash);
-    size_t len = slash - m_simDir.c_str();
+    size_t len = OCPI_SIZE_T_DIFF(slash, m_simDir.c_str());
     std::string parent;
     parent.assign(m_simDir.c_str(), len);
     // This is created on demand and not removed.
@@ -628,12 +628,16 @@ protected:
 	  send2sdp(h, data, true, "DMA read response", error);
 	}
       } else {
-	myassert(!m_respQueue.empty());
-	Request &r = *m_respQueue.front();
-	if (r.header.endRequest(h, m_resp.m_rfd, r.data, error))
+	Request *r;
+	{
+	  OU::AutoMutex m(m_sdpSendMutex);
+	  myassert(!m_respQueue.empty());
+	  r = m_respQueue.front();
+	  m_respQueue.pop();
+	}
+	if (r->header.endRequest(h, m_resp.m_rfd, r->data, error))
 	  return true;
-	r.sem.post();
-	m_respQueue.pop();
+	r->sem.post();
       }
       return false;
     }
@@ -718,7 +722,9 @@ public:
       m_firstRun = false;
     }
     std::string error;
-    if (!m_exited && !m_stopped && m_cumTicks < m_simTicks) {
+    if (m_state == EMULATING)
+      error = "simulator is no longer running";
+    else if (!m_exited && !m_stopped && m_cumTicks < m_simTicks) {
       if (m_cumTicks - m_lastTicks > 1000) {
 	ocpiDebug("Spin credit at: %20" PRIu64, m_cumTicks);
 	m_lastTicks = m_cumTicks;
@@ -827,8 +833,8 @@ public:
       const char *dot = strchr(suff + 1, '.');
       if (!dot)
 	return OU::eformat(error, "simulator file name %s is not formatted properly", file);
-      m_file.assign(slash, dot - slash);
-      m_app.assign(slash, suff - slash);
+      m_file.assign(slash, OCPI_SIZE_T_DIFF(dot, slash));
+      m_app.assign(slash, OCPI_SIZE_T_DIFF(suff, slash));
     } else
       m_file = m_app = slash;
     char date[100];
@@ -965,8 +971,10 @@ public:
       return;
     }
     Request r(read, offset, length, data);
-    if (read)
+    if (read) {
+      OU::AutoMutex m(m_sdpSendMutex);
       m_respQueue.push(&r);
+    }
     send2sdp(r.header, data, false, "control", r.error);
     if (read) {
       r.sem.wait();
@@ -1221,7 +1229,7 @@ open(const char *name, const OA::PValue *params, std::string &err) {
   for (cp = name; *cp && !isdigit(*cp); cp++)
     ;
   std::string platform;
-  platform.assign(name, cp - name);
+  platform.assign(name, OCPI_SIZE_T_DIFF(cp, name));
   bool verbose = false;
   OU::findBool(params, "verbose", verbose);
   const char *dir = "simulations";

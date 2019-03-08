@@ -78,8 +78,12 @@ PKGS_D+=(glibc.i686=/lib/ld-linux.so.2
 PKGS_D+=(libpng)
 #    to cleanup multiple copies of Linux kernel, etc. (AV-4802)
 PKGS_D+=(hardlink)
-#    Needed to cross-build gdb for embedded platforms
-PKGS_D+=(bison flex)
+#    Needed to build gdb
+PKGS_D+=(bison)
+#    Needed to build gdb
+PKGS_D+=(flex)
+#    Needed to build gpsd
+PKGS_D+=(scons)
 # docker container missing this	libXdmcp.i686=/lib/libXdmcp.so.6) # AV-3645
 #    for bash completion - a noarch package  (AV-2398)
 # in epel for centos6 - see below PKGS_D+=(bash-completion=/etc/profile.d/bash_completion.sh)

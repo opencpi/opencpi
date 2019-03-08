@@ -25,10 +25,10 @@ namespace OA = OCPI::API;
 namespace OCPI {
   namespace Util {
 
-// Class to "write" demarshalled data into "Value" data structure.
+// Class to "write" marshalled/serialized data into "Value" data structure.
 
 void ValueWriter::
-newItem(Member &m) {
+newItem(const Member &m) {
   if (!m_parent) {
     assert(m_n < m_nArgs);
     m_values[m_n++] = m_v = new Value(m, NULL);
@@ -59,13 +59,13 @@ ValueWriter(Value **v, size_t nArgs)
     m_nArgs(nArgs) {
 }
 void ValueWriter::
-beginSequence(Member &m, size_t nElements) {
+beginSequence(const Member &m, size_t nElements) {
   m_nElements = nElements;
   if (!nElements)
     newItem(m);
 }
 void ValueWriter::
-beginStruct(Member &m) {
+beginStruct(const Member &m) {
   newItem(m);
   if (m.m_isSequence || m.m_arrayRank)
     for (unsigned n = 0; n < m_v->m_nTotal; n++)
@@ -75,11 +75,11 @@ beginStruct(Member &m) {
   m_parent = m_v;
 }
 void ValueWriter::
-endStruct(Member &) {
+endStruct(const Member &) {
   m_parent = m_parent->m_parent;
 }
 void ValueWriter::
-beginType(Member &m) {
+beginType(const Member &m) {
   newItem(m);
   if (m.m_isSequence || m.m_arrayRank)
     for (unsigned n = 0; n < m_v->m_nTotal; n++)
@@ -89,11 +89,11 @@ beginType(Member &m) {
   m_parent = m_v;
 }
 void ValueWriter::
-endType(Member &) {
+endType(const Member &) {
   m_parent = m_parent->m_parent;
 }
 void ValueWriter::
-writeString(Member &m, WriteDataPtr p, size_t strLen, bool start, bool /*top*/) {
+writeString(const Member &m, WriteDataPtr p, size_t strLen, bool start, bool /*top*/) {
   if (start)
     newItem(m);
   // We are in charge of managing string space here, which is ugly
@@ -123,7 +123,7 @@ writeString(Member &m, WriteDataPtr p, size_t strLen, bool start, bool /*top*/) 
   // autoexpand.
 }
 void ValueWriter::
-writeData(Member &m, WriteDataPtr p, size_t nBytes, size_t ) {
+writeData(const Member &m, WriteDataPtr p, size_t nBytes, size_t ) {
   newItem(m);
   assert(nBytes <= m_v->m_length);
   memcpy((void *)(m.m_isSequence || m.m_arrayRank ? m_v->m_pULong : &m_v->m_ULong),

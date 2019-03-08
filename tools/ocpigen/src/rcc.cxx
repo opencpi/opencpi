@@ -539,8 +539,8 @@ emitCppTypesNamespace(FILE *f, std::string &nsName, const std::string &slaveName
     else {
       std::string type;
       rccMember(type, **pi, 2, offset, pad, NULL, true, isLastDummy, false, 0,
-                !(*pi)->m_isPadding && !(*pi)->m_isVolatile &&
-                ((*pi)->m_isWritable || !(*pi)->m_isReadable));
+		// it is const if the worker should not set it.
+		(*pi)->m_isWritable && !(*pi)->m_isVolatile);
       fputs(type.c_str(), f);
     }
   fprintf(f, "  };\n");
@@ -753,7 +753,7 @@ emitImplRCC() {
                 "  /*\n"
                 "   * This class defines the properties of a slave for convenient access.\n"
                 "   */\n"
-                "  class Slave%u : OCPI::RCC::RCCUserSlave {\n"
+                "  class Slave%u : public OCPI::RCC::RCCUserSlave {\n"
                 "  private:\n"
                 "    std::string dont_care_temp;\n"
                 "  public:\n"
@@ -801,8 +801,9 @@ emitImplRCC() {
             comma = ", ";
           } else
             offset = ", 0";
-          if (p.m_isReadable || p.m_isParameter) {
+          if (!p.m_isPadding) {
             // always expose the string based interface to the property
+#if 0
             fprintf(f,
                     "    inline std::string & getProperty_%s(std::string &val) {\n"
                     "      // get the string value of the property based on the ordinal\n"
@@ -810,17 +811,32 @@ emitImplRCC() {
                     "      return val;\n"
                     "    }\n",
                     p.m_name.c_str(),  p.m_ordinal);
+#else
+            fprintf(f,
+                    "    inline const char *getProperty_%s(std::string &val,\n"
+		    "                                      OCPI::API::AccessList &list = "
+		    "OCPI::API::emptyList,\n"
+		    "                                      OCPI::API::PropertyOptionList &options = "
+		    "OCPI::API::noPropertyOptions,\n"
+		    "                                      OCPI::API::PropertyAttributes *attrs = "
+		    "NULL) {\n"
+                    "      // get the string value of the property based on the ordinal\n"
+                    "      m_worker.getProperty(%uu, val, list, options, attrs);\n"
+                    "      return val.c_str();\n"
+                    "    }\n",
+                    p.cname(),  p.m_ordinal);
+#endif
             // expose the faster/typed non-string based interface if it exists
             if (p.m_baseType == OA::OCPI_String && !p.m_isSequence)
               fprintf(f,
                       "    inline char *get_%s(%s%schar *buf, size_t length) {\n"
-                      "      m_worker.get%s%s(%u, buf, length%s%s);\n"
+                      "      m_worker.get%s%s(%uu, buf, length%s%s);\n"
                       "      return buf;\n"
                       "    }\n"
                       "    std::string &get_%s(%s%sstd::string &s) {\n"
                       "      size_t len = getLength_%s() + 1;\n"
                       "      char *buf = new char[len];\n"
-                      "      m_worker.get%s%s(%u, buf, len%s%s);\n"
+                      "      m_worker.get%s%s(%uu, buf, len%s%s);\n"
                       "      s = buf;\n"
                       "      delete [] buf;\n"
                       "      return s;\n"
@@ -843,18 +859,24 @@ emitImplRCC() {
           if (p.m_isWritable) {
             // always expose the string interface to the property
             fprintf(f,
-                    "    inline void setProperty_%s(const char* val) {\n"
-                    "      m_worker.setProperty(\"%s\", val);\n",
-                    p.m_name.c_str(), p.m_name.c_str());
+                    "    inline void setProperty_%s(const char* val, OCPI::API::AccessList &list "
+		    "= OCPI::API::emptyList) {\n"
+                    "      m_worker.setProperty(\"%s\", val, list);\n",
+                    p.cname(), p.cname());
             fprintf(f,
                     "#if !defined(NDEBUG)\n"
-                    "      OCPI::OS::logPrint(OCPI_LOG_DEBUG, \"Setting slave.set_string_%s",
-                    p.m_name.c_str());
+		    "      OCPI::OS::logPrint(OCPI_LOG_DEBUG, \"Setting slave.setProperty_%s",
+                    p.cname());
             fprintf(f,
-                      ": 0x%%llx\", (unsigned long long)val);\n");
+		    ": %%p\", val);\n");
             fprintf(f,
                     "#endif\n"
-                    "    }\n");
+                    "    }\n"
+                    "    inline void setProperty_%s(const std::string &val, OCPI::API::AccessList "
+		    "&list  = OCPI::API::emptyList) {\n"
+                    "      setProperty_%s(val.c_str(), list);\n"
+                    "    }\n",
+		    p.cname(), p.cname());
             // expose the faster/typed non-string based interface to the property
             if (p.m_baseType != OA::OCPI_Struct && !p.m_isSequence) {
               fprintf(f,
@@ -1034,7 +1056,7 @@ emitImplRCC() {
       bool isLastDummy = false;
       std::string type;
       for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
-        if (!(*pi)->m_isParameter || (*pi)->m_isReadable)
+        if (!(*pi)->m_isParameter || (*pi)->m_isReadable || (*pi)->m_isWritable)
           rccMember(type, **pi, 0, offset, pad, m_implName, true, isLastDummy, false, UINT_MAX-1,
                     !(*pi)->m_isPadding && !(*pi)->m_isVolatile &&
                     ((*pi)->m_isWritable || !(*pi)->m_isReadable));

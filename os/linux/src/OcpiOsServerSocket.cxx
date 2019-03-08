@@ -155,7 +155,7 @@ accept (Socket &sock) throw (std::string) {
 }
 
 bool
-ServerSocket::wait (unsigned long msecs)
+ServerSocket::wait (long msecs)
   throw (std::string)
 {
   ocpiAssert (o2fd (m_osOpaque) != -1);
@@ -178,7 +178,7 @@ ServerSocket::wait (unsigned long msecs)
   FD_ZERO (&readfds);
   FD_SET (pfd, &readfds);
 
-  if (msecs != static_cast<unsigned long> (-1)) {
+  if (msecs >= 0) {
     timeout.tv_sec = (msecs >= 1000) ? 1 : 0;
     timeout.tv_usec = (msecs % 1000) * 1000;
   }
@@ -200,9 +200,8 @@ ServerSocket::wait (unsigned long msecs)
      * Timeout expired.
      */
 
-    if (msecs == static_cast<unsigned long> (-1)) {
+    if (msecs < 0)
       goto again;
-    }
     else if (msecs > 1999) {
       msecs = 1000 * ((msecs/1000) - 1);
       goto again;
@@ -237,7 +236,7 @@ ServerSocket::close ()
 // NOTE THIS CODE IS REPLICATED IN THE SOCKET CODE FOR DATAGRAMS
 // FIXME SHARE CODE AT THE RIGHT LEVEL
 size_t ServerSocket::
-sendmsg (const void * iovect, unsigned int flags  ) throw (std::string) {
+sendmsg (const void * iovect, int flags  ) throw (std::string) {
   const struct msghdr * iov = static_cast<const struct msghdr *>(iovect);
   ssize_t ret = ::sendmsg (o2fd (m_osOpaque), iov, flags);
   if (ret == -1)
@@ -249,8 +248,8 @@ size_t ServerSocket::
 sendto (const char * data, size_t amount, int flags,  char * src_addr, size_t addrlen)
   throw (std::string) {
   struct sockaddr * si_other = reinterpret_cast< struct sockaddr *>(src_addr);
-  size_t ret = ::sendto (o2fd (m_osOpaque), data, amount, flags, si_other, (socklen_t)addrlen );
-  if (ret == static_cast<size_t> (-1))
+  ssize_t ret = ::sendto (o2fd (m_osOpaque), data, amount, flags, si_other, (socklen_t)addrlen );
+  if (ret == -1)
     throw Posix::getErrorMessage(errno);
   return static_cast<size_t>(ret);
 }

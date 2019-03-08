@@ -129,8 +129,8 @@ namespace OCPI {
       uint8_t m_version;  // version of the model-specific API this worker is written to
     private: // FIXME: make more of this stuff private
       size_t m_totalPropertySize;
-      bool   m_isSource;
-      //      Test &findTest(unsigned int testId) const;
+      bool   m_isSource; // is this worker a source of data (no inputs)
+      bool   m_isDebug;  // is this worker in debug mode?
     public:
       unsigned m_nProperties;
       Property *m_properties;
@@ -152,6 +152,7 @@ namespace OCPI {
       inline const std::vector<const char *> &slaves() const { return m_slaves; }
       inline const Attributes &attributes() const { return *m_attributes; }
       inline bool isSource() const { return m_isSource; }
+      inline bool isDebug() const { return m_isDebug; }
       const char *parse(ezxml_t xml, Attributes *attr = NULL);
       virtual const char
 	*getNumber(ezxml_t x, const char *attr, size_t *np, bool *found = NULL,

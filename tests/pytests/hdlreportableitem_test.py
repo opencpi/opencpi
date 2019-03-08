@@ -86,9 +86,9 @@ class TestReportableItem(unittest.TestCase):
         item0_ns_functs = ReportableItem("Item0",
                                          synth_regexs=r"#.*This text right.*\((.*)ns\)!!!!.*",
                                          impl_regexs=r"#.*This impl text right.*\((.*ns)\)!!!!.*",
-                                         match_and_transform_synth_function=\
+                                         match_and_transform_synth_function=
                                                  lambda f, r: float(ocpiutil.match_regex(f, r)),
-                                         match_and_transform_impl_function=\
+                                         match_and_transform_impl_function=
                                                  lambda f, r: float(ocpiutil.match_regex(f, r)[:-2]))
         match0_ns_synth = item0_ns_functs.match_and_transform_synth(os.path.realpath(__file__))
         logging.info("Assert that synth match for item0_ns_functs is a float: 2.000")
@@ -100,7 +100,7 @@ class TestReportableItem(unittest.TestCase):
         # This line should have matches for multiple keys underneath the Item0 header
         # This complex text right here contains a number (8 DSPs) and another (2 BRAMs)!!!!
         item0_dict = ReportableItem("Item0",
-                                    synth_regexs={\
+                                    synth_regexs={
                                             "DSPs": r"#.*This complex text.*\((.*) DSPs\).*!!!!$",
                                             "BRAMs": r"#.*This complex text.*\((.*) BRAMs\)!!!!$"})
         match0_dict_synth = item0_dict.match_and_transform_synth(os.path.realpath(__file__))

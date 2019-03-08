@@ -217,7 +217,7 @@ class TestHdlToolSet(unittest.TestCase):
     def test_toolset_inits(self):
         logging.info("********************************************")
         logging.info("Testing initialization of toolsets")
-        for tgt, name in [(tgt, TGT_DICT['HdlToolSet_' + tgt][0])\
+        for tgt, name in [(tgt, TGT_DICT['HdlToolSet_' + tgt][0])
                              for tgt in TGT_DICT['HdlAllFamilies']]:
             logging.info("--------------------------------------------")
             logging.info("Target: \"" + tgt + "\" should have toolset: " + name)

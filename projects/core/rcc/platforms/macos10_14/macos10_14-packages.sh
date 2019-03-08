@@ -27,7 +27,7 @@ if ! PORT=`command -v port`; then
     exit 1
   }
 fi
-PKGS="python37 coreutils gsed py37-numpy"
+PKGS="python37 coreutils gsed py37-numpy swig swig-python py27-numpy"
 echo Using $PORT to install packages required by OpenCPI for $OCPI_TOOL_PLATFORM: $PKGS
 sudo $PORT install $PKGS
 # FIXME: somehow automate the required path additions?

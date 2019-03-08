@@ -153,7 +153,7 @@ begin
     if rising_edge(ctl_in.clk) then
       if(ctl_in.reset = '1' or force_eom = '1') then
         msg_cnt   <= (0 => '1', others => '0');
-      elsif out_in.ready = '1' and ctl_in.is_operating = '1' and odata_vld = '1' then
+      elsif out_in.ready = '1' and ctl_in.is_operating = '1' and (odata_vld = '1' or missed_odata_vld = '1') then
         if(msg_cnt = max_sample_cnt) then
           msg_cnt <= (0 => '1', others => '0');
         else
@@ -163,9 +163,9 @@ begin
     end if;
   end process messageSize_count;
 
-  out_out.som <= '1' when ((out_in.ready = '1' and odata_vld = '1' and
+  out_out.som <= '1' when ((out_in.ready = '1' and (odata_vld = '1' or missed_odata_vld = '1') and
                            msg_cnt = 1) or force_som = '1') else '0';
-  out_out.eom <= '1' when ((out_in.ready = '1' and odata_vld = '1' and
+  out_out.eom <= '1' when ((out_in.ready = '1' and (odata_vld = '1' or missed_odata_vld = '1') and
                            msg_cnt = max_sample_cnt) or
                            force_eom = '1') else '0';
 

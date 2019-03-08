@@ -108,19 +108,19 @@ class TestPathFunctions(unittest.TestCase):
         os.environ['OCPI_PROJECT_REGISTRY_DIR'] = os.path.realpath('./project-registry')
         ocpidev_command = "set -e; set -o pipefail && rm -r -f project-registry; " + SET_X
         ocpidev_command += OCPIDEV_CMD + " create registry project-registry; "
-        ocpidev_command += "export OCPI_PROJECT_REGISTRY_DIR=" + \
-                           os.path.realpath('./project-registry') + " ; "
+        ocpidev_command += ("export OCPI_PROJECT_REGISTRY_DIR=" +
+                            os.path.realpath('./project-registry') + " ; ")
         # Create PROJECT0 and fill it with assets of many types
-        ocpidev_command += "ln -s " + OCPI_CDK_DIR + \
-                           "/../project-registry/ocpi.core project-registry/ocpi.core; "
+        ocpidev_command += ("ln -s " + OCPI_CDK_DIR +
+                            "/../project-registry/ocpi.core project-registry/ocpi.core; ")
         ocpidev_command += OCPIDEV_CMD + " --register create project " + PROJECT0 + "; "
         ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create library mylibrary; "
         ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create -l mylibrary spec myspec; "
         ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create -l mylibrary test myspec; "
-        ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + \
-                           " create -l mylibrary worker myworker0.rcc -S myspec-spec.xml; "
-        ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + \
-                           " create -l mylibrary worker myworker1.hdl -S myspec-spec.xml; "
+        ocpidev_command += (OCPIDEV_CMD + " -d " + PROJECT0 +
+                            " create -l mylibrary worker myworker0.rcc -S myspec-spec.xml; ")
+        ocpidev_command += (OCPIDEV_CMD + " -d " + PROJECT0 +
+                            " create -l mylibrary worker myworker1.hdl -S myspec-spec.xml; ")
         ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create hdl primitive core mycore; "
         ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create hdl primitive library mylib; "
         ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create hdl platform myplat; "
@@ -386,7 +386,7 @@ class TestPathFunctions(unittest.TestCase):
                             self.assertTrue(ocpiutil.does_project_with_package_exist(".."))
                             self.assertFalse(ocpiutil.does_project_with_package_exist(package="INVALID"))
         logging.info("---------------------------")
-        logging.info("If project package is invalid," + \
+        logging.info("If project package is invalid," +
                      "does_project_with_package_exist should return False.\n" +
                      "If project package is blank" +
                      "and the specified or current directory is not within a\n" +

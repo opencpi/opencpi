@@ -11,7 +11,7 @@
        The value is the time delta between when Step one occurred at the time service (t0),
        and when step 2 occurred at the time service (t1). -->
   <property name='delta' type='ulonglong' writable='1' volatile='1'/>
-  <property name='frequency' type='float' parameter='1' readable='1' default='1e6'/>
+  <property name='frequency' type='float' parameter='1' readback='1' default='1e6'/>
   <!-- Control of time service - writable with readback
        Bit 31:   clearSticky   - Clear the sticky status bits (ppsLost, gpsIn, ppsIn, timeset)
        Bit  4:   disableServo  - Suppress discipline of local timebase by CP, PPS, or GPS
@@ -21,7 +21,7 @@
                                  1: output is copy of input PPS (with some propagation delay)
                                  2: output is local reference clock /2 (e.g. 100MHz for 200Mhz)
 				 3: output is disabled (0) -->
-  <property name='control' writable='1' readable='1'/>
+  <property name='control' writable='1' readback='1'/>
   <!-- Status of time service - readonly, volatile
        Bit 31:   ppsLost    - An active PPS fell outside the +/- 0.1% (1000 PPM) window
        Bit 30:   gpsIn      - At least one valid GPS time has updated timeNow

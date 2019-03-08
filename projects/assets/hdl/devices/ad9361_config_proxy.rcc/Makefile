@@ -21,4 +21,11 @@ RccStaticPrereqLibs=ad9361
 # Our "platform" functions that the ADI library calls
 SourceFiles=ad9361_platform.cc
 
+RccIncludeDirs+=./supporting/include/OCPIProjects/
+RccIncludeDirs+=./supporting/src/OCPIProjects/
+
 include $(OCPI_CDK_DIR)/include/worker.mk
+
+# if someone happened to run doxygen, this will clean it up
+clean::
+	rm -rf supporting/html/ supporting/latex/

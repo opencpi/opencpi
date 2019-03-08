@@ -337,7 +337,7 @@ class Control {
   bool readables, nonRawReadables, rawReadables; // readables does NOT include parameters
   bool sub32Bits, nonRawSub32Bits;
   bool volatiles, nonRawVolatiles;
-  bool readbacks, nonRawReadbacks, rawReadbacks, builtinReadbacks;
+  bool nonRawReadbacks, rawReadbacks, builtinReadbacks;
   bool rawProperties;
   unsigned nRunProperties, nNonRawRunProperties, nParameters;
   Control();

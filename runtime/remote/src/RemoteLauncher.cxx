@@ -151,7 +151,7 @@ emitSide(const Launcher::Members &members, Launcher::Port &p, bool input, size_t
   if (p.m_name)
     OU::formatAdd(m_request, " name='%s'", p.m_name);
   if (p.m_member && p.m_launcher == this)
-    OU::formatAdd(m_request, " member='%u'", m_instanceMap[p.m_member - &members[0]]);
+    OU::formatAdd(m_request, " member='%u'", m_instanceMap[OCPI_SIZE_T_DIFF(p.m_member, &members[0])]);
   if (p.m_url)
     OU::formatAdd(m_request, " url='%s'", p.m_url);
   if (p.m_initial.length()) {
@@ -217,21 +217,23 @@ loadArtifact(ezxml_t ax) {
     throw OU::Error("Artifact \"%s\" has changed since this application was started.",
 		    l.name().c_str());
   char buf[64*1024];
-  ssize_t nr, nw;
+  ssize_t r;
   uint64_t length = l.length();
-  while ((nr = read(rfd, buf, sizeof(buf))) > 0) {
+  while ((r = read(rfd, buf, sizeof(buf))) > 0) {
+    size_t nr = (size_t)r;
     while (nr) {
-      if ((size_t)nr > length)
+      if (nr > length)
 	throw OU::Error("Artifact \"%s\" has grown in size during download?",
 			l.name().c_str());
-      if ((nw = write(m_fd, buf, nr)) <= 0)
+      if ((r = write(m_fd, buf, nr)) <= 0)
 	throw OU::Error("Error sending artifact file \"%s\" to container server: %s (%d)",
 			l.name().c_str(), strerror(errno), errno);
+      size_t nw = (size_t)r;
       nr -= nw;
       length -= nw;
     }
   }
-  if (nr < 0)
+  if (r < 0)
     throw OU::Error("Error reading artifact file \"%s\" for container server: %s (%d)",
 		    l.name().c_str(), strerror(errno), errno);
 }
@@ -325,9 +327,9 @@ launch(Launcher::Members &instances, Launcher::Connections &connections) {
 	crewN = (*crewi).second;
       std::string slaves;
       if (i->m_slaves.size())
-	for (unsigned n = 0; n < i->m_slaves.size(); ++n)
-	  OU::formatAdd(slaves, "%s%u", n ? " " : "",
-			m_instanceMap[i->m_slaves[n] - &instances[0]]);
+	for (unsigned nn = 0; nn < i->m_slaves.size(); ++nn)
+	  OU::formatAdd(slaves, "%s%u", nn ? " " : "",
+			m_instanceMap[OCPI_SIZE_T_DIFF(i->m_slaves[nn], &instances[0])]);
       emitMember(i->m_name.c_str(), contN, artN, crewN, *i, slaves.c_str());
     }
   m_artifacts.resize(nArtifacts);
@@ -408,16 +410,21 @@ work(Launcher::Members &instances, Launcher::Connections &connections) {
 					     i->m_hasMaster,
 					     i->m_member, i->m_crew ? i->m_crew->m_size : 1,
 					     pv);
-	}    
+	}
     }
     m_sending = true;
   }
   return m_more;
 }
 void Launcher::
-setPropertyValue(unsigned remoteInstance, size_t propN, std::string &v) {
-  OU::format(m_request, "<control id='%u' set='%zu'>\n%s",
-	     remoteInstance, propN, v.c_str());
+setPropertyValue(unsigned remoteInstance, size_t propN, const char *v,
+		 const std::vector<uint8_t> &path, size_t offset, size_t dimension) {
+  std::string s;
+  for (unsigned n = 0; n < path.size(); ++n)
+    OU::formatAdd(s, "%02x", path[n]);
+  OU::SelfAutoMutex guard(this);
+  OU::format(m_request, "<control id='%u' set='%zu' path='%s' offset='%zu' dimension='%zu'>%s",
+	     remoteInstance, propN, s.c_str(), offset, dimension, v);
   send();
   receive();
   assert(!strcasecmp(OX::ezxml_tag(m_rx), "control"));
@@ -427,24 +434,35 @@ setPropertyValue(unsigned remoteInstance, size_t propN, std::string &v) {
 }
 
 void Launcher::
-getPropertyValue(unsigned remoteInstance, size_t propN, std::string &v,
-		 bool hex, bool add) {
-  OU::format(m_request, "<control id='%u' get='%zu' hex='%d'>\n",
-	     remoteInstance, propN, hex ? 1 : 0);
+getPropertyValue(unsigned remoteInstance, size_t propN, std::string &v, const std::vector<uint8_t> &path,
+		 size_t offset, size_t dimension, OA::PropertyOptionList &options,
+		 OA::PropertyAttributes *a_attributes) {
+  std::string s;
+  for (unsigned n = 0; n < path.size(); ++n)
+    OU::formatAdd(s, "%02x", path[n]);
+  OU::SelfAutoMutex guard(this);
+  OU::format(m_request, "<control id='%u' get='%zu' path='%s' offset='%zu' dimension='%zu' hex='%d'>\n",
+	     remoteInstance, propN, s.c_str(), offset, dimension,
+	     OC::Worker::hasOption(options, OA::PropertyOption::HEX) ? 1 : 0);
   send();
   receive();
   assert(!strcasecmp(OX::ezxml_tag(m_rx), "control"));
   const char *err = ezxml_cattr(m_rx, "error");
   if (err)
     throw OU::Error("Error getting property: %s", err);
-  if (add)
+  if (OC::Worker::hasOption(options, OA::PropertyOption::APPEND))
     v += ezxml_txt(m_rx);
   else
     v = ezxml_txt(m_rx);
+  if (a_attributes) {
+    OX::getBoolean(m_rx, "cached", &a_attributes->isCached);
+    OX::getBoolean(m_rx, "unreadable", &a_attributes->isUnreadable);
+  }
 }
 
 void Launcher::
 controlOp(unsigned remoteInstance, OU::Worker::ControlOperation op) {
+  OU::SelfAutoMutex guard(this);
   OU::format(m_request, "<control id='%u' op='%u'>\n",
 	     remoteInstance, op);
   send();
@@ -457,6 +475,7 @@ controlOp(unsigned remoteInstance, OU::Worker::ControlOperation op) {
 
 OU::Worker::ControlState Launcher::
 getState(unsigned remoteInstance) {
+  OU::SelfAutoMutex guard(this);
   OU::format(m_request, "<control id='%u' getState=''>\n", remoteInstance);
   send();
   receive();
@@ -471,6 +490,7 @@ getState(unsigned remoteInstance) {
 
 bool Launcher::
 wait(unsigned remoteInstance, OCPI::OS::ElapsedTime timeout) {
+  OU::SelfAutoMutex guard(this);
   OU::format(m_request, "<control id='%u' wait='%" PRIu32 "'>\n", remoteInstance,
 	     timeout != 0 ?
 	     timeout.seconds() + (timeout.nanoseconds() >= 500000000 ? 1 : 0)
@@ -485,6 +505,7 @@ wait(unsigned remoteInstance, OCPI::OS::ElapsedTime timeout) {
 }
 void Launcher::
 appShutdown() {
+  OU::SelfAutoMutex guard(this);
   OU::format(m_request, "<appshutdown>\n");
   send();
   receive();

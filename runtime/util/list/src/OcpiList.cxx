@@ -48,17 +48,17 @@
 
 // This wiil either replace the element at "pos" or create a list that is at least "pos"
 // int to add it, filling in all the extra pointers to NULL;
-void insert_to_position(List* list, void* element, int pos)
+void insert_to_position(List* list, void* element, unsigned pos)
 {
 
   ocpiAssert( list->no_shuffle==1 );
 
-  int length = get_nentries(list);
+  unsigned length = get_nentries(list);
   if ( pos < length ) {
     list->entries[pos] = element;
   }
   else {
-    for ( int n=0; n<=(pos-length); n++ ) {
+    for ( unsigned n=0; n<=(pos-length); n++ ) {
       insert_to_list(list,NULL);
     }
     list->entries[pos] = element;
@@ -73,7 +73,7 @@ insert_to_list(List *list, void *item )
 }
 
 int
-insert_to_list(List *list, void *item, int isize, int incr)
+insert_to_list(List *list, void *item, unsigned isize, unsigned incr)
 {
   /* Check to see if the list has been initialized */
   if (list->nspaces == 0) {
@@ -107,7 +107,7 @@ insert_to_list(List *list, void *item, int isize, int incr)
 
 
 int
-prepend_to_list(List *list, void *item, int isize, int incr)
+prepend_to_list(List *list, void *item, unsigned isize, unsigned incr)
 {
   /* Check to see if the list has been initialized */
   if (list->nspaces == 0) {
@@ -134,7 +134,7 @@ prepend_to_list(List *list, void *item, int isize, int incr)
   }
 
   // Shift everyone down
-  for ( int u=0; u<list->nentries; u++ ) {
+  for ( unsigned u=0; u<list->nentries; u++ ) {
     list->entries[(list->nentries-1)-u+1] = list->entries[(list->nentries-1)-u];
   }
 
@@ -156,7 +156,7 @@ remove_from_list(List *list, void *item)
     return 1;
 
   /* Check to see if the item is in the list */
-  for (int i=0; i < list->nentries; i++) {
+  for (unsigned i=0; i < list->nentries; i++) {
     /* Check for the item */
     if (list->entries[i] == item) { /* Found it */
 
@@ -164,7 +164,7 @@ remove_from_list(List *list, void *item)
         /* See if we need to shuffle the rest of the list */
         if (i != (list->nentries - 1)) {
           /* Shuffle the rest of the list */
-          for (int j=i; j < (list->nentries - 1); j++) {
+          for (unsigned j=i; j < (list->nentries - 1); j++) {
             list->entries[j] = list->entries[j+1];
           }
         }
@@ -186,7 +186,7 @@ remove_from_list(List *list, void *item)
 int
 validate(List *list, void *entity)
 {
-  for (int i=0; i < list->nentries; i++) {
+  for (unsigned i=0; i < list->nentries; i++) {
     if (list->entries[i] == entity)
       return 0;
   }
@@ -194,14 +194,14 @@ validate(List *list, void *entity)
   return 1;
 }
 
-int
+unsigned
 get_nentries(List *list)
 {
   return list->nentries;
 }
 
 void *
-get_entry(List *list, int index)
+get_entry(List *list, unsigned index)
 {
   if ( list && list->nentries ) {
     return list->entries[index];

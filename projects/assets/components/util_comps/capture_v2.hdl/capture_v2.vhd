@@ -69,7 +69,7 @@
 
 -------------------------------------------------------------------------------
 -- TODO - Add a "trigger" capability that will allow the capture of data based on
--- on a condition, i.e, "start capturing when you a second zlm has occurred or
+-- on a condition, i.e, "start capturing when a second zlm has occurred or
 -- start capturing when an opcode of 5 has been seen"
 -------------------------------------------------------------------------------
 
@@ -90,13 +90,13 @@ signal dataFull         : boolean := false;
 signal bytes            : integer := 0; -- Number of bytes decoded from byte enable
 signal last_bytes       : integer := 0; -- Stores previous value of bytes signal to use for trailing eom logic
 signal valid_bytes      : std_logic_vector(31 downto 0) := (others => '0'); -- Valid bytes determined from byte enable
-signal msgLen           : unsigned(23 downto 0) := (others => '0'); -- Used to get the number of data stored for each message and then is multiplied by "bytes" to get the message length in bytes
-signal last_msgLen      : unsigned(23 downto 0) := (others => '0'); -- Stores previous value of msgLen signal to use for trailing eom logic
+signal messageSize      : unsigned(23 downto 0) := (others => '0'); -- Used to get the number of data stored for each message and then is multiplied by "bytes" to get the message length in bytes
+signal last_messageSize : unsigned(23 downto 0) := (others => '0'); -- Stores previous value of messageSize signal to use for trailing eom logic
 signal total_bytes      : std_logic_vector(23 downto 0) := (others => '0'); -- Total number of bytes sent during a message
 signal som_seconds      : std_logic_vector(31 downto 0) := (others => '0'); -- Seconds time stamp captured for som
 signal som_fraction     : std_logic_vector(31 downto 0) := (others => '0'); -- Fraction time stamp captured for som
-signal som_seconds_r    : std_logic_vector(31 downto 0) := (others => '0'); -- Latched value of seconds time stamp captured for som
-signal som_fraction_r   : std_logic_vector(31 downto 0) := (others => '0'); -- Latched value of fraction time stamp captured for som
+signal s_in_seconds_r   : std_logic_vector(31 downto 0) := (others => '0'); -- Latched value of seconds time stamp captured for som
+signal s_in_fraction_r  : std_logic_vector(31 downto 0) := (others => '0'); -- Latched value of fraction time stamp captured for som
 signal finished         : std_logic := '0';   -- Used to drive ctl_out.finished
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- Signals for combinatorial logic
@@ -105,14 +105,16 @@ signal dataDisable       : std_logic := '0'; -- When stopOnFull is true, used to
 signal metadataDisable   : std_logic := '0'; -- When stopOnFull is true, used to disable writing to metadata BRAM and data BRAM when metadata is full
 signal eom               : std_logic := '0'; -- Used for counting eoms
 signal som               : std_logic := '0'; -- Used for counting soms
-signal zlm               : std_logic := '0'; -- Used for counting zlms
+signal zlm               : std_logic := '0'; -- Used for zlms
 signal s_is_read_r       : std_logic := '0'; -- Register to aid in incrementing the BRAM read side addresses
-signal s_eom_r           : std_logic := '0'; -- Register to aid in detecting multi clock cycle eom. Used for combinatorial logic to drive eom signal
-signal s_som_r           : std_logic := '0'; -- Register to aid in detecting multi clock cycle som. Used for combinatorial logic to drive som signal
+signal s_in_eom_r        : std_logic := '0'; -- Register to aid in detecting multi clock cycle eom. Used for combinatorial logic to drive eom signal
+signal s_in_som_r        : std_logic := '0'; -- Register to aid in detecting multi clock cycle som. Used for combinatorial logic to drive som signal
 signal s_take_r          : std_logic := '0'; -- Register used for combinatorial logic to drive eom and som signals
 signal s_in_ready_r      : std_logic := '0'; -- Register used for combinatorial logic to drive capture_vld signal
 signal capture_vld       : std_logic := '0'; -- Used to determine if data being captured is valid
 signal outNotConnected   : std_logic := '0';
+signal take              : std_logic := '0';
+signal give              : std_logic := '0';
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- Data BRAM constants and signals
 -- Writing to the BRAM B side and then reading from the BRAM A side
@@ -120,10 +122,10 @@ signal outNotConnected   : std_logic := '0';
 constant data_memory_depth_c  : natural := to_integer(numDataWords);
 constant data_addr_width_c    : natural := width_for_max(data_memory_depth_c - 1);
 constant data_bram_dsize_c    : natural := 32; -- Size in bytes of the data for data bram
-signal data_bramW_in          : std_logic_vector(31 downto 0) := (others => '0');
+signal data_bramW_in          : std_logic_vector(data_bram_dsize_c-1 downto 0) := (others => '0');
 signal data_bramR_addr        : unsigned(data_addr_width_c-1 downto 0) := (others => '0');
 signal data_bramW_write       : std_logic := '0';
-signal data_bramR_out         : std_logic_vector(31 downto 0) := (others => '0');
+signal data_bramR_out         : std_logic_vector(data_bram_dsize_c-1 downto 0) := (others => '0');
 signal data_bramW_addr        : unsigned(data_addr_width_c-1 downto 0) := (others => '0');
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- Metadata BRAM constants and signals
@@ -132,8 +134,8 @@ signal data_bramW_addr        : unsigned(data_addr_width_c-1 downto 0) := (other
 constant metadata_memory_depth_c  : natural := to_integer(numRecords);
 constant metadata_addr_width_c    : natural := width_for_max(metadata_memory_depth_c - 1);
 constant metadata_bram_dsize_c    : natural := 128; -- Size in bytes of the data for metadata bram
-signal metadata_bramW_in          : std_logic_vector(127 downto 0) := (others => '0');
-signal metadata_bramR_out         : std_logic_vector(127 downto 0) := (others => '0');
+signal metadata_bramW_in          : std_logic_vector(metadata_bram_dsize_c-1 downto 0) := (others => '0');
+signal metadata_bramR_out         : std_logic_vector(metadata_bram_dsize_c-1 downto 0) := (others => '0');
 signal metadata_bramW_write       : std_logic := '0';
 signal metadata_bramR_addr        : unsigned(metadata_addr_width_c-1 downto 0) := (others => '0');
 signal metadata_bramW_addr        : unsigned(metadata_addr_width_c-1 downto 0) := (others => '0');
@@ -152,7 +154,6 @@ signal out_meta_is_reserved    : std_logic := '0';
 signal out_som                 : std_logic := '0';
 signal out_eom                 : std_logic := '0';
 signal out_valid               : std_logic := '0';
-signal take                    : std_logic := '0';
 
 begin
 
@@ -167,8 +168,11 @@ take <= ctl_in.is_operating and in_in.ready and
 -- Mandatory output port logic, (note that
 -- data_ready_for_out_port MUST be clock-aligned with out_out.data)
 -- (note that reserved messages will be DROPPED ON THE FLOOR)
-out_out.give <= ctl_in.is_operating and out_in.ready and
+out_out.give <= give;
+
+give <= ctl_in.is_operating and out_in.ready and
               (not out_meta_is_reserved) and data_ready_for_out_port;
+
 out_meta_is_reserved <= (not out_som) and (not out_valid) and (not out_eom);
 out_out.som   <= out_som;
 out_out.eom   <= out_eom;
@@ -188,7 +192,6 @@ out_out.data <= in_in.data;
 out_out.byte_enable <= in_in.byte_enable;
 out_out.opcode   <= in_in.opcode;
 
-ctl_out.finished  <= finished;
 props_out.metadataCount <= metadataCount;
 props_out.dataCount <= dataCount;
 props_out.metaFull <= to_bool(metaFull);
@@ -200,20 +203,21 @@ capture_vld <= ctl_in.is_operating and in_in.valid and ((in_in.ready and (not s_
 stopOnFull <= to_boolean(props_in.stopOnFull);
 
 
-eom <= in_in.eom and in_in.ready and (not s_eom_r or s_take_r);
-som <= in_in.som and in_in.ready and (not s_som_r or s_take_r);
+eom <= in_in.eom and in_in.ready and (not s_in_eom_r or s_take_r);
+som <= in_in.som and in_in.ready and (not s_in_som_r or s_take_r);
 
 
 -- If som and eom occur a the same time, use the non latched seconds timestamp
 -- otherwise use the latched version of the timestamp
 som_seconds <= std_logic_vector(time_in.seconds) when (its((som and eom))) else
-               som_seconds_r;
+               s_in_seconds_r;
 
 -- If som and eom occur a the same time, use the non latched fraction timestamp
 -- otherwise use the latched version of the timestamp
 som_fraction <= std_logic_vector(time_in.fraction) when (its((som and eom))) else
-                som_fraction_r;
+                s_in_fraction_r;
 
+ctl_out.finished  <= finished;
 
 props_out.raw.done  <= '1';
 props_out.raw.error <= '0';
@@ -221,21 +225,21 @@ props_out.raw.error <= '0';
 data_bramW_in <= std_logic_vector(in_in.data and valid_bytes);
 
 -- Write to data BRAM when data is valid, when metadata and
--- data not full (when stopOnFull = true), and not finished.
-data_bramW_write <= capture_vld and (not dataDisable) and (not metadataDisable) and (not finished);
+-- data not full (when stopOnFull = true).
+data_bramW_write <= capture_vld and (not dataDisable) and (not metadataDisable);
 
 -- Total bytes sent for a message. Also handles trailing eom.
-total_bytes <= std_logic_vector(resize(last_msgLen*last_bytes, 24))
+total_bytes <= std_logic_vector(resize(last_messageSize*last_bytes, 24))
                when (its((not in_in.som) and in_in.eom and (not in_in.valid))) else
-              std_logic_vector(resize(msgLen*bytes, 24));
+              std_logic_vector(resize(messageSize*bytes, 24));
 
 -- Metadata to place into metadata BRAM
 metadata_bramW_in <= in_in.opcode  & total_bytes & std_logic_vector(time_in.fraction) & som_fraction & som_seconds
                     when (its(eom)) else
                     (others => '0');
 
--- Write to metadata BRAM when there is an eom and not finished. And if stopOnFull is true write when metadata not full.
-metadata_bramW_write <= eom and (not finished) and (not metadataDisable);
+-- Write to metadata BRAM when there is an eom. And if stopOnFull is true write when metadata not full.
+metadata_bramW_write <= eom and (not metadataDisable);
 
 
 -- Since metadata is the first raw property, assign raw.data to metadata until finished reading in metadata and then assign raw.data to the data
@@ -251,16 +255,16 @@ metadata <= metadata_bramR_out(127 downto 96) when (metadata_bramR_ctr = 0) else
 
 
 -- What each byte_enable value means in number of bytes
-bytes <= 4 when in_in.byte_enable(3) = '1' else
-         3 when in_in.byte_enable(2) = '1' else
-         2 when in_in.byte_enable(1) = '1' else
-         1 when in_in.byte_enable(0) = '1' else
+bytes <= 4 when (in_in.byte_enable(3) = '1' and in_in.valid = '1') else
+         3 when (in_in.byte_enable(2) = '1' and in_in.valid = '1') else
+         2 when (in_in.byte_enable(1) = '1' and in_in.valid = '1') else
+         1 when (in_in.byte_enable(0) = '1' and in_in.valid = '1') else
          0;
 
 valid_bytes(31 downto 24) <= (others => in_in.byte_enable(3));
 valid_bytes(23 downto 16) <= (others => in_in.byte_enable(2));
 valid_bytes(15 downto  8) <= (others => in_in.byte_enable(1));
-valid_bytes( 7 downto  0) <= (others => in_in.byte_enable(0));
+valid_bytes(7 downto  0) <= (others => in_in.byte_enable(0));
 
 
 -- Use zlm detector primitive to detect zlms and multicycle zlms
@@ -273,8 +277,8 @@ zlm_detector : util.util.zlm_detector
     eom => in_in.eom,
     ready => in_in.ready,
     take => take,
-    eozlm_pulse => zlm,
-    eozlm => open);
+    eozlm_pulse => open,
+    eozlm => zlm);
 
 
 dataBram : component util.util.BRAM2
@@ -367,47 +371,47 @@ som_timestamp_reg : process(ctl_in.clk)
 begin
   if rising_edge(ctl_in.clk) then
     if ctl_in.reset = '1' then
-      som_seconds_r <= (others => '0');
-      som_fraction_r <= (others => '0');
-    elsif (finished = '0' and som = '1') then
-      som_seconds_r <= std_logic_vector(time_in.seconds);
-      som_fraction_r <= std_logic_vector(time_in.fraction);
+      s_in_seconds_r <= (others => '0');
+      s_in_fraction_r <= (others => '0');
+    elsif (som = '1') then
+      s_in_seconds_r <= std_logic_vector(time_in.seconds);
+      s_in_fraction_r <= std_logic_vector(time_in.fraction);
     end if;
   end if;
 end process som_timestamp_reg;
 
--- This process sets the  s_is_read_r, s_eom_r, s_som_r s_take_r registers
+-- This process sets the  s_is_read_r, s_in_eom_r, s_in_som_r s_take_r registers
 set_regs : process (ctl_in.clk)
 begin
     if rising_edge(ctl_in.clk) then
       if ctl_in.reset = '1' then
         s_is_read_r <= '0';
-        s_eom_r <= '0';
-        s_som_r <= '0';
+        s_in_eom_r <= '0';
+        s_in_som_r <= '0';
         s_take_r <= '0';
         s_in_ready_r <= '0';
       else
         s_is_read_r <= props_in.raw.is_read;
-        s_eom_r <= in_in.eom and in_in.ready;
-        s_som_r <= in_in.som and in_in.ready;
+        s_in_eom_r <= in_in.eom and in_in.ready;
+        s_in_som_r <= in_in.som and in_in.ready;
         s_take_r <= take;
         s_in_ready_r <= in_in.ready;
       end if;
     end if;
 end process set_regs;
 
--- This process has the logic for incrementing the dataCount, msgLen, data_bramW_addr, and setting dataDisable.
+-- This process has the logic for incrementing the dataCount, messageSize, data_bramW_addr, and setting dataDisable.
 data_capture : process (ctl_in.clk)
 begin
     if rising_edge(ctl_in.clk) then
       if ctl_in.reset = '1' then
         dataCount <= (others => '0');
         data_bramW_addr <= (others => '0');
-        msgLen <= (0 =>'1', others =>'0');
+        messageSize <= (0 =>'1', others =>'0');
         dataDisable <= '0';
         last_bytes <= 0;
-        last_msgLen <= (others => '0');
-      elsif (capture_vld = '1' and finished = '0') then
+        last_messageSize <= (others => '0');
+      elsif capture_vld = '1' then
         -- Take data while buffer is in wrapping mode (stopOnFull=false) or continuous (stopOnFull=true) and data and metadata counts
         -- have not reached their respective maximum.
 
@@ -431,13 +435,13 @@ begin
             data_bramW_addr <= data_bramW_addr + 1;
             dataCount <= dataCount + 1;
           end if;
-          msgLen <= msgLen + 1;
+          messageSize <= messageSize + 1;
           last_bytes <= bytes;
-          last_msgLen <= msgLen;
+          last_messageSize <= messageSize;
       end if;
-      -- Reset msgLen after each message
+      -- Reset messageSize after each message
       if eom = '1' then
-        msgLen <= (0 =>'1', others =>'0');
+        messageSize <= (0 =>'1', others =>'0');
       end if;
     end if;
   end process data_capture;
@@ -450,10 +454,10 @@ begin
         metadataCount <= (others => '0');
         metadata_bramW_addr <= (others => '0');
         metadataDisable <= '0';
-      -- Store metadata after each message or if stopOnFull is true store metadata until data full or metadata full and not finished
-      elsif (finished = '0' and -- not finished
-        ((stopOnFull = false and eom = '1')  or  -- Case when wrap around is enabled and there is an eom
-        (eom = '1' and stopOnFull = true and metadataCount < numRecords))) -- Case when there's an eom, wrap not enabled, and metadata and data not full
+      -- Store metadata after each message or if stopOnFull is true store metadata until data full or metadata full
+      elsif
+        (stopOnFull = false and eom = '1')  or  -- Case when wrap around is enabled and there is an eom
+        (eom = '1' and stopOnFull = true and metadataCount < numRecords) -- Case when there's an eom, wrap around not enabled, and metadata and data not full
          then
           -- If stopOnFull is true and data will be full, set metadataDisable to 1 to stop writing to BRAM
           if ((metadataCount + 1 = numRecords) and stopOnFull = true) then
@@ -492,18 +496,18 @@ begin
     end if;
   end process buffer_full;
 
-  -- This process controls when the worker is finished
-  finish : process (ctl_in.clk)
+-- This process controls when the worker is finished
+finish : process (ctl_in.clk)
   begin
       if rising_edge(ctl_in.clk) then
         if ctl_in.reset = '1' then
           finished <= '0';
-        -- For stopOnEOF, if there is a zlm, the input opcode is equal to 0, and stopOnEOF is true then set finished to true
-        -- For stopOnZLM, if there is a zlm, the input opcode is equal to stopZLMOpcode, and stopOnZLM is true then set finished to true
-        elsif (zlm = '1' and ((props_in.stopOnEOF and unsigned(in_in.opcode) = 0) or (to_uchar(in_in.opcode) = props_in.stopZLMOpcode and props_in.stopOnZLM))) then
+        -- For stopOnEOF, if there is a zlm and has been given (if output connected), the input opcode is equal to 0, and stopOnEOF is true then set finished to true
+        -- For stopOnZLM, if there is a zlm and has been given (if output connected), the input opcode is equal to stopZLMOpcode, and stopOnZLM is true then set finished to true
+        elsif (zlm = '1' and (give = '1' or outNotConnected = '1') and ((props_in.stopOnEOF and unsigned(in_in.opcode) = 0) or (to_uchar(in_in.opcode) = props_in.stopZLMOpcode and props_in.stopOnZLM))) then
           finished <= '1';
         end if;
       end if;
- end process finish;
+end process finish;
 
 end rtl;
