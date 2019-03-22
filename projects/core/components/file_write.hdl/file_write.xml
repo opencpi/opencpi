@@ -1,4 +1,4 @@
-<HdlWorker Language="vhdl" datawidth='32' controlOperations='stop,release'>
+<HdlWorker Language="vhdl" datawidth='32' controlOperations='stop,release' version='2'>
   <xi:include href="file_write_spec.xml"/>
 
   <!-- Current working directory string - CWD_MAX_LENGTH usually should match file_read -->

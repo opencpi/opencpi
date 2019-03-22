@@ -18,6 +18,6 @@
 
 # This is the Makefile for worker complex_mixer.rcc
 
-RccStaticPrereqLibs=liquid
+# RccStaticPrereqLibs=liquid
 
 include $(OCPI_CDK_DIR)/include/worker.mk

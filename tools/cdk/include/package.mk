@@ -55,7 +55,8 @@ DirContainingLib=$$(if $$(LibIsInCwd),$$(or $1,.)/,$$(and $$(LibIsInParent),$$(o
 #   (if building from the worker level, <library>/Library.mk is included,
 #    but not <library>/Makefile)
 $$(foreach p,$$(shell [ -f $$(DirContainingLib)/Makefile ] && grep "^\s*Package\s*:\?=\s*.*" $$(DirContainingLib)/Makefile),\
-  $$(warning The Package variable can be set in either Project.mk, Library.mk, Platforms.mk or Platform.mk. Setting of Package= in 'Makefile' is deprecated and will not be supported in future releases.)\
+  $$(if $$(filter clean%,$$(MAKECMDGOALS)),,\
+    $$(warning The Package variable can be set in either Project.mk, Library.mk, Platforms.mk or Platform.mk. Setting of Package= in 'Makefile' is deprecated and will not be supported in future releases.))\
   $$(eval $$p))
 
 ###############################################################################

@@ -87,12 +87,6 @@ deriveOCP() {
   //   worker wants time in the native timekeepping clock domain
   //     specifies myclock - Clk signal here
   static uint8_t s[1]; // a non-zero string pointer
-#if 0
-  if (myClock) {
-    ocp.Clk.master = false;
-    ocp.Clk.value = s;
-  }
-#endif
   ocp.MCmd.width = 3;
   ocp.MData.width = m_dataWidth;
   // Note no MReset is present.  OCP says either reset must be present.
@@ -210,7 +204,7 @@ emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord, 
 const char *WtiPort::
 finalizeExternal(Worker &aw, Worker &/*iw*/, InstancePort &ip,
 		 bool &/*cantDataResetWhileSuspended*/) {
-  // We don't an external WTI port since the whole point of WTi is to get
+  // We don't share an external WTI port since the whole point of WTI is to get
   // intra-chip accuracy via replication of the time clients.
   const char *err;
   if (!m_master && ip.m_attachments.empty() &&

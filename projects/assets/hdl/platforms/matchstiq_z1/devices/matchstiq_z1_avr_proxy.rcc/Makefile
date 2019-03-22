@@ -17,5 +17,5 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # Put Makefile customizations for worker proxy.rcc here:
-OnlyPlatforms=xilinx13_3
+#OnlyPlatforms=xilinx13_3
 include $(OCPI_CDK_DIR)/include/worker.mk

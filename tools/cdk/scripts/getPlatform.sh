@@ -40,7 +40,19 @@ isCurPlatform() {
   [ -f $1-check.sh ] && bash $1-check.sh $HostSystem $HostProcessor > /dev/null && return 0
   return 1
 }
-
+tryDir() {
+  local platforms_dir=$1
+  if [ -n "$2" ]; then # looking for a specific platform (not the current one)
+    local d=$platforms_dir/$2
+    [ -d $d -a -f $d/$2.mk ] && returnPlatform $d
+  else # not looking for a particular platform, but looking for the one we're running on
+    for i in $platforms_dir/*; do
+      test -d $i -a -f $i/$(basename $i).mk &&
+        isCurPlatform $i/$(basename $i) && returnPlatform $i
+    done
+  fi
+  return 0 # if it returns, it didn't find anything
+}
 # These are universally available so far so we do this once and pass then to all probes.
 HostSystem=`uname -s | tr A-Z a-z`
 HostProcessor=`uname -m | tr A-Z a-z`
@@ -68,25 +80,12 @@ fi
 # loop through all projects to find the platform
 shopt -s nullglob
 for j in $projects; do
-  # First, assume this is an exported project and check lib/rcc...
+  # First, assume it is an exported project and check lib/rcc...
   # Next, assume this is a source project that is exported and check exports/lib/rcc,
   # Finally, just search the source rcc/platforms...
-  if test -d $j/lib/rcc/platforms; then
-    platforms_dir=$j/lib/rcc/platforms
-  elif test -d $j/exports/lib/rcc/platforms; then
-    platforms_dir=$j/exports/lib/rcc/platforms
-  else
-    platforms_dir=$j/rcc/platforms
-  fi
-  if [ -n "$1" ]; then # looking for a specific platform (not the current one)
-    d=$platforms_dir/$1
-    [ -d $d -a -f $d/$1.mk ] && returnPlatform $d
-  else # not looking for a particular platform, but looking for the one we're running on
-    for i in $platforms_dir/*; do
-      test -d $i -a -f $i/$(basename $i).mk &&
-        isCurPlatform $i/$(basename $i) && returnPlatform $i
-    done # done with platforms in this project's rcc/platforms directory
-  fi
+  for  d in $j/lib/rcc/platforms $j/exports/lib/rcc/platforms $j/rcc/platforms; do
+    [ -d $d ] && tryDir $d $1
+  done
 done # done with the project
 
 if [ -n "$1" ]; then

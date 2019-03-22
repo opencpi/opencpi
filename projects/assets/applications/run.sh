@@ -24,7 +24,7 @@ BIAS=$2
 BIAS0=$3
 DURATION=$4
 CMP=" && cmp test.input test.output"
-export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../projects/assets/artifacts:$OCPI_CDK_DIR/../projects/core/artifacts
+export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../projects/assets/artifacts:$OCPI_CDK_DIR/../projects/core/artifacts:/mnt
 echo OCPI_LIBRARY_PATH===$OCPI_LIBRARY_PATH
 $VG ocpirun -v -d $OPTS $FR $FW copy $CMP
 $VG ocpirun -v -d $OPTS hello

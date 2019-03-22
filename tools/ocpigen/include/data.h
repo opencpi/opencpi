@@ -139,7 +139,7 @@ class WsiPort : public DataPort {
   void emitRecordInputs(FILE *f);
   void emitRecordOutputs(FILE *f);
   void emitVHDLShellPortMap(FILE *f, std::string &last);
-  //  unsigned extraDataInfo() const;
+  void emitVHDLShellPortClock(FILE *f, std::string &last);
 };
 class WmiPort : public DataPort {
   bool m_talkBack;

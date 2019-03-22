@@ -27,8 +27,9 @@ endif
 
 # To restrict the applications that are built or run, you can set the Applications
 # variable to the specific list of which ones you want to build and run, e.g.:
+#             cic_int_dc_offset_iq_imbalance_mixer_cic_dec \
+
 Applications=bias.xml \
-             cic_int_dc_offset_iq_imbalance_mixer_cic_dec \
              copy.xml \
              file-bias-capture.xml \
              hello.xml \

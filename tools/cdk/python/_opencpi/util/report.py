@@ -114,7 +114,7 @@ def snip_widest_column(rows, forced_screen_width=None):
             # pylint:enable=no-member
             curses.endwin()
         except curses.error as ex:
-            logging.error(ex)
+            logging.info(ex)
             return rows
 
     # Take a nice guess at the final width of the table to be displayed.

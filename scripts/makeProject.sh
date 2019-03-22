@@ -68,7 +68,7 @@ function get_attrs {
 
   if [ -z "$spec" ] ; then
     spec=$(sed -n '/href=/s/^.*href="\([^"]*\)".*$/\1/p' $1)
-    [ -z $spec ] && {
+    [ -z "$spec" ] && {
       if grep -q -i componentspec $1; then
         spec=none
       else
@@ -693,7 +693,7 @@ ${package:+-K $package} \
       ospec=$spec
       [[ "$spec" == *[-_]spec ]] && spec=${spec/%[-_]spec/}
       [[ "$spec" == ${x[0]} ]] && spec=
-      [ -z $spec ] || spec=$ospec
+      [ -z "$spec" ] || spec=$ospec
       [ "$QUIET" == 1 ] || echo Spec for $n is $ospec
     else
       # No single OWD

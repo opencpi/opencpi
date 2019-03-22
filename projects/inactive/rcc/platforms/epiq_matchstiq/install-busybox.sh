@@ -27,22 +27,21 @@ source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        $me \
        "Busy box used in embedded platforms" \
        https://git.busybox.net/busybox/snapshot/ \
-       $dir.tar \
+       $dir.tar.gz \
        $dir \
        1
 cd ..
 export CROSS_COMPILE=$OcpiCrossCompile
 # In ntpd from busy box you cannot use -c to give your own config file.
-# This is a patch that will change the location to what we want and give the
-# option to add -c to specify a config files location
-patch -p0 < $OcpiThisPrerequisiteDir/prerequisites/$me/ntpd.patch
+# This is a patch that will change the location to what we want and give us the
+# option to add -c
+if ! patch -R -p0 -s -f --dry-run < $OcpiThisPrerequisiteDir/prerequisites/$me/ntpd.patch > /dev/null; then
+  patch -p0 < $OcpiThisPrerequisiteDir/prerequisites/$me/ntpd.patch
+fi
 cp $OcpiThisPrerequisiteDir/prerequisites/$me/busybox.config .config
-# The prereq dir can be different on different machines so we have to change on the fly
-replace_str="CONFIG_SYSROOT=\"/opt/CodeSourcery/Sourcery_G++_Lite/arm-none-linux-gnueabi/libc/\""
-# Have to follow this link or building wont work
-tmp=$(readlink -f $(dirname $(dirname $OcpiCrossCompile))/arm-none-linux-gnueabi)/libc
-new_str="CONFIG_SYSROOT=\"$tmp\""
-sed -i "s~$replace_str~$new_str~g" .config
+# Adding appropriate sysroot to config file based off of OcpiCrossCompile variable
+sysroot=$(echo $OcpiCrossCompile | sed "s|/bin[^/]*/$OcpiCrossHost-||")/$OcpiCrossHost/libc
+sed -i "s|CONFIG_SYSROOT=.*|CONFIG_SYSROOT=\"${sysroot}\"|g" .config
 make -j
 # Reverse the patch so other sw platforms are not affected
 patch -R -p0 < $OcpiThisPrerequisiteDir/prerequisites/$me/ntpd.patch
@@ -64,6 +63,6 @@ ln -sf busybox $OcpiInstallExecDir/bin/ntpd
 ln -sf busybox $OcpiInstallExecDir/bin/mdev
 
 # Make a directory for configuration files
-mkdir -p $OcpiInstallExecDir/conf 
+mkdir -p $OcpiInstallExecDir/conf
 # Link ntpd configuration file to prerequisites dir
 relative_link ntp.conf $OcpiInstallExecDir/conf

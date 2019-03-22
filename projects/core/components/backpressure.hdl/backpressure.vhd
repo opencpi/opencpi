@@ -23,7 +23,7 @@
 
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
-architecture rtl of backpressure_worker is
+architecture rtl of worker is
   signal take    : std_logic;
   signal take_en : std_logic;
   signal count   : unsigned(7 downto 0) := (others => '0');
@@ -70,7 +70,7 @@ begin
 
   out_out.som   <= in_in.som;
   out_out.eom   <= in_in.eom;
-  out_out.valid <= in_in.valid;
+  out_out.valid <= in_in.valid and take;
   out_out.data  <= in_in.data;
   out_out.byte_enable <= in_in.byte_enable;
   out_out.opcode <= in_in.opcode;

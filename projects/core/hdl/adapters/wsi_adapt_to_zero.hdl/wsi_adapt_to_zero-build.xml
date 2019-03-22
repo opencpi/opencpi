@@ -1,0 +1,5 @@
+<build>
+  <configuration>
+    <parameter name='width' value='32'/>
+  </configuration>
+</build>

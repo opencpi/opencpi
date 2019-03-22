@@ -1,0 +1,5 @@
+<!-- This protocol is the minimal one to convey pulses/events from one worker to another.
+     In HDL this generally means the fewest number of wires. -->
+<Protocol>
+  <Operation name="event"/>
+</Protocol>

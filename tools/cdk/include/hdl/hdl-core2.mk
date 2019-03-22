@@ -87,7 +87,6 @@ endif
     endif # end of else of prebuilt
 
     $(call OcpiDbg,Binary: $(call WkrTargetDir,$1,$4)/$2$(HdlBin))
-    all: $(call WkrTargetDir,$1,$4)/$2$(HdlBin)
 
   endef # DoCore
 
@@ -114,8 +113,7 @@ endif
     $(CoreResults): $(ImportsDir)
   endif
 
-  cores:$(LibResults) $(CoreResults)
-  all: cores
+  build: $(LibResults) $(CoreResults)
   $(call OcpiDbgVar,PreBuiltCore)
   $(call OcpiDbgVar,CoreResults)
   $(call OcpiDbgVar,LibResults)
@@ -184,7 +182,7 @@ $(foreach c,$(ParamConfigurations),\
         $(call CoreBlackBoxFiles,$f,$c)))))
 endif
 
-cores: $(BBLibResults)
+build: $(BBLibResults)
 
 $(call OcpiDbgVar,BBLibResults)
 $(call OcpiDbgVar,HdlActualTargets)

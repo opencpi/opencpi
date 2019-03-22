@@ -1,0 +1,17 @@
+<ComponentSpec>
+
+  <Property Name='NUM_TAPS_p' Type='ulong' Parameter='true' Default='32' 
+	    Description='The number of coefficients used by each real/imag even symmetric filter'/>
+
+  <!-- Peak Detect Value -->
+  <Property Name='peak' Type='short' Volatile='true'
+	    Description='Read-only amplitude which may be useful for gain control'/>
+
+  <!-- tap values  Format: short[NUM_TAPS_p] -->
+  <Property Name='taps' Type='short' ArrayLength='NUM_TAPS_p/2' Initial='true'
+	    Description='Symmetric filter coefficient values loaded into both real/imag filters'/>
+
+  <Port Name='in'  Protocol='ComplexShortWithMetadata-prot'/>
+  <Port Name='out' Protocol='ComplexShortWithMetadata-prot' Producer='true'/>
+
+</ComponentSpec>

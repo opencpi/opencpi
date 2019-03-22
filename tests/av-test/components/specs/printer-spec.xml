@@ -1,0 +1,8 @@
+<!-- This is the spec file (OCS) for: printer
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<ComponentSpec>
+  <Property name="print_value1" type="ULong" Writable="True"/>
+  <Property name="print_value2" type="ULong" Writable="True"/>
+</ComponentSpec>

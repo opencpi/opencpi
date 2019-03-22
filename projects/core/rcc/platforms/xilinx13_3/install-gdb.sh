@@ -29,7 +29,7 @@ source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        "GNU Debugger" \
        http://sourceware.org/git/binutils-gdb.git \
        users/ARM/embedded-binutils-2_26-branch-2016q1 \
-       $me \
+       binutils-gdb \
        1
 
 ../configure --target=$OcpiCrossHost --host=$OcpiCrossHost CFLAGS="-static $OcpiCFlags"

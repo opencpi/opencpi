@@ -52,7 +52,6 @@ RCCDispatch ProducerWorker = {
 };
 
 void sleep( int n);
-static ProducerWorkerProperties old_props;
 static RCCResult initialize(RCCWorker *this_)
 {
   int n;
@@ -69,7 +68,6 @@ static RCCResult initialize(RCCWorker *this_)
     props->p5[n] = 4+n;
   }
   props->p6 = 500;
-  // old_props = *props; this is a const violation
   return RCC_OK;
 }
 

@@ -556,18 +556,17 @@ parseBuildFile(bool optional, bool *missing) {
   std::string empty;
   if ((err = parseFile(fname.c_str(), empty, "build", &x, xfile, false, true, optional)))
     return err;
-  if ((err = parseBuildXml(x)))
+  if ((err = parseBuildXml(x, xfile)))
     return OU::esprintf("when processing build file \"%s\": %s", xfile.c_str(), err);
   return NULL;
 }
+
 const char *Worker::
-parseBuildXml(ezxml_t x) {
+parseBuildXml(ezxml_t x, const std::string &file) {
   const char *err;
   // This cannot be done during construction since the OWD isn't parsed then
   m_build.m_globalParams.params.resize(m_ctl.nParameters);
-  if ((err = OE::checkAttrs(x, PLATFORM_ATTRS, "onlytargets", "excludetargets", "sourcefiles",
-			    "libraries", "cores", "includedirs", "staticprereqlibs", 
-			    "dynamicprereqlibs", NULL)) ||
+  if ((err = OE::checkAttrs(x, BUILD_ATTRS)) ||
       (err = OE::checkElements(x, "configuration", "parameter", NULL)))
     return err;
   // Establish default values (or multiple values) for parameters that apply to all
@@ -631,7 +630,7 @@ parseBuildXml(ezxml_t x) {
   if (!m_paramConfigs.size() && 
       (err = doParam(m_build.m_globalParams, m_ctl.properties.begin(), true, 0)))
     return err;
-  return m_build.parse(x);
+  return m_build.parse(x, file.c_str());
 }
 
 const char *Worker::
@@ -994,33 +993,93 @@ setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig) {
   return NULL;
 }
 
+// There is probably a more clever way to do this, but we need decent warnings.
+static const char *
+onlyExclude(const char *thing,
+	    const char *baseFile, OrderedStringSet &baseOnly, OrderedStringSet &baseExclude,
+	    const char *newFile, const OrderedStringSet &newOnly,
+	    const OrderedStringSet &newExclude) {
+  if (newOnly.size()) {
+    if (baseOnly.size()) {
+      for (auto it = newOnly.begin(); it != newOnly.end(); ++it)
+	if (baseOnly.find(*it) == baseOnly.end())
+	  return OU::esprintf("the %s \"%s\" in only%ss in \"%s\" is not found in the only%ss list in \"%s\"",
+			      thing, (*it).c_str(), thing, baseFile, thing, newFile);
+      for (auto it = newOnly.begin(); it != newOnly.end(); ++it) {
+	auto baseIt = baseOnly.find(*it);
+	if (baseIt != baseOnly.end())
+	  baseOnly.erase(baseIt);
+      }
+    } else if (baseExclude.size()) {
+      for (auto it = newOnly.begin(); it != newOnly.end(); ++it)
+	if (baseExclude.find(*it) != baseOnly.end())
+	  return OU::esprintf("the %s \"%s\" in only%ss in \"%s\" is excluded in \"%s\"",
+			      thing, (*it).c_str(), thing, newFile, baseFile);
+    } else
+      baseOnly = newOnly;
+  } else if (newExclude.size()) {
+    if (baseOnly.size())
+      for (auto it = newExclude.begin(); it != newExclude.end(); ++it) {
+	auto baseIt = baseOnly.find(*it);
+	if (baseIt != baseOnly.end())
+	  baseOnly.erase(baseIt);
+	else
+	  fprintf(stderr, "the %s \"%s\" in exclude%ss in \"%s\" is not present in the only%ss list in \"%s\"",
+		  thing, (*it).c_str(), thing, newFile, thing, baseFile);
+      }
+    else if (baseExclude.size())
+      for (auto it = newExclude.begin(); it != newExclude.end(); ++it)
+	baseExclude.push_back(*it);
+  } else
+    baseExclude = newExclude;
+  return NULL;
+}
+
 Build::Build(Worker &w) : m_worker(w), m_globalParams(w) {
 }
+// Parse top-level attributes for the owd or build xml.  If buildFile arg not NULL, we are parsing
+// the build file which is parsed after the owd
 const char *Build::
-parse(ezxml_t x) {
+parse(ezxml_t x, const char *buildFile) {
   Model m = m_worker.m_model;
   // Expand and make sure they are valid platform names
   const char 
     *err,
     *aonly = ezxml_cattr(x, "onlyplatforms"),
     *aexclude = ezxml_cattr(x, "excludeplatforms");
+  // For compatibility: "only" should be deprecated
   if (!aonly)
     aonly = ezxml_cattr(x, "only");
-  if (!aexclude)
-    aexclude = ezxml_cattr(x, "exclude");
   if (aonly && aexclude)
-    return "only[Platforms] and exclude[Platforms] cannot both be used";
-  if ((aonly && (err = getPlatforms(aonly, m_onlyPlatforms, m))) ||
-      (aexclude && (err = getPlatforms(aexclude, m_excludePlatforms, m))))
+    return "onlyPlatforms and excludePlatforms cannot both be used";
+  if (buildFile) {
+    OrderedStringSet only, exclude;
+    if ((aonly && (err = getPlatforms(aonly, only, m))) ||
+	(aexclude && (err = getPlatforms(aexclude, exclude, m))) ||
+	(err = onlyExclude("platform", m_worker.m_file.c_str(), m_onlyPlatforms, m_excludePlatforms,
+			   buildFile, only, exclude)))
+      return err;
+  } else if ((aonly && (err = getPlatforms(aonly, m_onlyPlatforms, m))) ||
+	     (aexclude && (err = getPlatforms(aexclude, m_excludePlatforms, m))))
     return err;
   aonly = ezxml_cattr(x, "onlytargets");
   aexclude = ezxml_cattr(x, "excludetargets");
   if ((m_onlyPlatforms.size() || m_excludePlatforms.size()) &&
       (aonly || aexclude))
     return "targets and platforms cannot both be specified";
-  if ((aonly && (err = getTargets(aonly, m_onlyTargets, m))) ||
+  if (buildFile) {
+    OrderedStringSet only, exclude;
+    if ((aonly && (err = getTargets(aonly, only, m))) ||
+	(aexclude && (err = getTargets(aexclude, exclude, m))) ||
+	(err = onlyExclude("target", m_worker.m_file.c_str(), m_onlyTargets, m_excludeTargets,
+			   buildFile, only, exclude)))
+      return err;
+  } else if ((aonly && (err = getTargets(aonly, m_onlyTargets, m))) ||
       (aexclude && (err = getTargets(aexclude, m_excludeTargets, m))))
     return err;
+  if (buildFile)
+    return NULL;
+  // Everything from here down is OWD-only
   for (OU::TokenIter ti(ezxml_cattr(x, "sourcefiles")); ti.token(); ti.next()) {
     if (!OS::FileSystem::exists(ti.token()))
       fprintf(stderr, "Warning:  the source file: \"%s\" does not exist\n", ti.token());
@@ -1037,26 +1096,20 @@ parse(ezxml_t x) {
     else if ((err = getHdlPrimitive(ti.token(), "core", m_cores)))
       return err;
   bool isDir;
-#if 0
-  for (OU::TokenIter ti(ezxml_cattr(x, "xmlincludedirs")); ti.token(); ti.next()) {
-    if ((!OS::FileSystem::exists(ti.token(), &isDir) || !isDir) && ti.token()[0] != '$')
-      fprintf(stderr, "Warning:  the XML include directory: \"%s\" does not exist\n", ti.token());
-    m_xmlIncludeDirs.push_back(ti.token());
-  }
-#endif
+  // xmlincudedirs is handled specially in owd parsing for bootstrap reasons
   for (OU::TokenIter ti(ezxml_cattr(x, "includedirs")); ti.token(); ti.next()) {
     if (OS::FileSystem::exists(ti.token(), &isDir) && isDir)
       m_includeDirs.push_back(ti.token());
     else
       return OU::esprintf("The include directory: \"%s\" is not a directory", ti.token());
   }
-#if 0
   for (OU::TokenIter ti(ezxml_cattr(x, "componentlibraries")); ti.token(); ti.next())
-    if (!m_worker.m_slave && !m_worker.m_emulate)
+#if 0 // note: componentlibraries can be used for other xml files like specs etc.
+    if (!m_worker.m_isSlave && !m_worker.m_emulate)
       return OU::esprintf("componentlibraries only valid on workers with slaves or emulators");
-    else if ((err = getComponentLibrary(ti.token(), m_componentLibraries)))
-      return err;
 #endif
+    if ((err = getComponentLibrary(ti.token(), m_componentLibraries)))
+      return err;
   std::string prereqs;
   if ((err = getPrereqDir(prereqs)))
     return err;

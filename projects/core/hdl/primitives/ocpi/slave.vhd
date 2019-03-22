@@ -172,7 +172,7 @@ begin
     end generate gen1;
   end generate gen0;
   -- If there are no partial bytes in datainfo, the worker's data is just MData.
-  gen2: if mdata_info_width <= 1 generate
+  gen2: if mdata_info_width <= 1 and data_width > 0 generate
     my_data <= MData;
   end generate gen2;
   ----------------------------------

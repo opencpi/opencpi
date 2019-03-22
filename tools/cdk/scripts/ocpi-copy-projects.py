@@ -25,10 +25,11 @@ sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM'
 import _opencpi.util as ocpiutil
 import _opencpi.assets.factory as ocpifactory
 import _opencpi.assets.registry as ocpiregistry
+import grp
+import getpass
 import shutil
 import tarfile
 import subprocess
-from collections import namedtuple
 
 def print_help(err):
     print("""
@@ -71,11 +72,12 @@ def dir_exists_fail(in_dir):
            "Pick a different location or remove the directory or the contents")
     sys.exit(1)
 
-#main
+# main
 projects_dir = os.getenv('OCPI_CDK_DIR') + "/../projects/"
 projects = [dir for dir in os.listdir(projects_dir)
             if not os.path.isfile(os.path.join(projects_dir, dir))]
-while "bsps" in projects: projects.remove("bsps")
+while "bsps" in projects:
+    projects.remove("bsps")
 new_user_dir = None
 new_reg_dir = None
 force = False
@@ -96,14 +98,14 @@ elif len(sys.argv) == 2:
     if os.path.isdir(new_user_dir) and os.listdir(new_user_dir):
         dir_exists_fail(new_user_dir)
 elif len(sys.argv) != 1:
-    print ("Incorrect number of arguments")
+    print("Incorrect number of arguments")
     print_help(1)
 
 if not len(projects):
     print("Could not find any projects in '"+projects_dir+"'!")
     sys.exit(1)
 
-print ("Available projects are: " + ", ".join(projects))
+print("Available projects are: " + ", ".join(projects))
 
 proj_dir_dict = {}
 while not new_user_dir:
@@ -127,7 +129,7 @@ for proj in projects:
     extract_all_tar(dest_dir, True)
     proj_dir_dict[proj] = dest_dir
 try:
-    is_ocpi_grp = os.getlogin() in grp.getgrnam("opencpi").gr_mem
+    is_ocpi_grp = getpass.getuser() in grp.getgrnam("opencpi").gr_mem
 except:
     is_ocpi_grp = False
 
@@ -152,20 +154,20 @@ if not new_reg_dir:
         if ocpiutil.get_ok(prompt="~/.bashrc must be updated now to reflect new default " +
                            "registry. Do so automatically now:", default=True):
             bashrc = open(os.path.expanduser("~/.bashrc"), 'a')
-            bashrc.write("export OCPI_PROJECT_REGISTRY_DIR="+ new_reg_dir + "\n")
+            bashrc.write("export OCPI_PROJECT_REGISTRY_DIR=" + new_reg_dir + "\n")
 
     elif (is_ocpi_grp or
          ocpiregistry.Registry.get_registry_dir() != "/opt/opencpi/project-registry"):
         my_registry = ocpifactory.AssetFactory.factory("registry",
                                                        ocpiregistry.Registry.get_registry_dir())
     else:
-        print("User not in the opencpi user group. This is required to register projects in the" +
+        print("User not in the opencpi user group. This is required to register projects in the " +
               "default location")
         print("\nProject creation successful but projects were not registered automatically")
         sys.exit(0)
 
 elif (not is_ocpi_grp and new_reg_dir == "/opt/opencpi/project-registry"):
-    print("User not in the opencpi user group. This is required to register projects in the" +
+    print("User not in the opencpi user group. This is required to register projects in the " +
           "default location")
     print("\nProject creation successful but projects were not registered automatically")
     sys.exit(0)
@@ -213,7 +215,7 @@ for proj in projects:
         child.wait()
 
     except ocpiutil.OCPIException as ex:
-        print ("\nunable to register project " + proj + " due to error: \n" + str(ex))
+        print("\nunable to register project " + proj + " due to error: \n" + str(ex))
         num_exceptions += 1
 
 my_registry.show("table", False)

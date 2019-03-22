@@ -27,8 +27,9 @@
 Port::
 Port(Worker &w, ezxml_t x, Port *sp, int nameOrdinal, WIPType type, const char *defaultName,
      const char *&err)
-  : m_internal(NULL), m_morphed(false), m_worker(&w), m_ordinal(0), m_count(0), m_master(false), m_xml(x),
-    m_type(type), pattern(NULL), clock(NULL), clockPort(NULL), myClock(false), m_specXml(x) {
+  : m_internal(NULL), m_morphed(false), m_worker(&w), m_ordinal(0), m_count(0), m_master(false),
+    m_xml(x), m_type(type), pattern(NULL), clock(NULL), clockPort(NULL), myClock(false),
+    m_specXml(x) {
   if (sp) {
     // A sort of copy constructor from a spec port to an impl port
     m_morphed = true;
@@ -92,9 +93,9 @@ Port(Worker &w, ezxml_t x, Port *sp, int nameOrdinal, WIPType type, const char *
 // instance's port in the assembly that we are cloning/externalizing.
 Port::
 Port(const Port &other, Worker &w, std::string &name, size_t count, const char *&err)
-  : m_internal(&other), m_morphed(false), m_worker(&w), m_name(name), m_ordinal(w.m_ports.size()), m_count(count),
-    m_master(other.m_master), m_xml(other.m_xml), m_type(other.m_type), pattern(NULL),
-    clock(NULL), clockPort(NULL), myClock(false), m_specXml(other.m_specXml)
+  : m_internal(&other), m_morphed(false), m_worker(&w), m_name(name), m_ordinal(w.m_ports.size()),
+    m_count(count), m_master(other.m_master), m_xml(other.m_xml), m_type(other.m_type),
+    pattern(NULL), clock(NULL), clockPort(NULL), myClock(false), m_specXml(other.m_specXml)
 {
   err = NULL; // this is the base class for everything
   for (PortsIter pi = w.m_ports.begin(); pi != w.m_ports.end(); pi++)
@@ -269,12 +270,14 @@ doPatterns(unsigned nWip, size_t &maxPortTypeName) {
   return NULL;
 }
 
-void Port::
+Clock &Port::
 addMyClock(bool output) {
   clock = &m_worker->addClock();
-  OU::format(clock->m_name, "%s_Clk", pname());
+  clock->m_name = pname();
   clock->port = this;
   clock->m_output = output;
+  myClock = true;
+  return *clock;
 }
 
 // Here are the cases for "clock" and "myclock":
@@ -290,9 +293,10 @@ checkClock() {
   const char *clockName = m_xml ? ezxml_cattr(m_xml, "Clock") : NULL;
   if (clockName) {
     Port *other = m_worker->findPort(clockName, this);
-    if (other)
+    if (other) {
       clockPort = other; // I'll have what she is having
-    else if (!(clock = m_worker->findClock(clockName)))
+      clock = other->clock;
+    } else if (!(clock = m_worker->findClock(clockName)))
       return OU::esprintf("Clock for interface \"%s\", \"%s\" is not defined for the worker",
 			  pname(), clockName);
   } else if (myClock)

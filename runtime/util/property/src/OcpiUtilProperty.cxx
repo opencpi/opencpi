@@ -275,7 +275,7 @@ namespace OCPI {
 	static bool once = false;
 	if (!once)
 	  ewprintf("for property \"%s\", the \"readable\" attribute is deprecated: all properties "
-		   "are considered readable; workers can use the readback attribute in the OWD when "
+		   "are considered readable; workers can use the \"readback\" attribute in the OWD when "
 		   "required; see the CDG for details", cname());
 	once = true;
 	isReadback = true; // backward compatibility

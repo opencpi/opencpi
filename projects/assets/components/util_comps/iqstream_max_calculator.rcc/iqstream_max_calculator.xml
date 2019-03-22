@@ -1,4 +1,4 @@
-<RccWorker language='c++' spec='iqstream_max_calculator-spec'>
+<RccWorker language='c++' spec='iqstream_max_calculator-spec' version='2'>
 
   <!-- we add read sync to these property so we can perform the max_I/max_I_is
        valid resetting just after the read of the max_I property.

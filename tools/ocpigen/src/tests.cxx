@@ -612,9 +612,8 @@ namespace {
       const char *err, *a;
       if ((a = ezxml_cattr(x, "name")))
         m_name = a;
-      else {
+      else
         OU::format(m_name, "case%02zu", ordinal);
-      }
       if ((err = OE::checkAttrs(x, "duration", "timeout", "onlyplatforms", "excludeplatforms",
                                 "onlyworkers", "excludeworkers", NULL)) ||
           (err = OE::checkElements(x, "property", "input", "output", NULL)) ||
@@ -635,7 +634,7 @@ namespace {
         if ((a = ezxml_cattr(x, "excludeworkers")) && (err = OU::parseList(a, doExcludeWorker, this)))
           return err;
       }
-      // The only time the only= or exclude= attributes have an effect in the gen/case.xml
+      // The only time the onlyplatforms= or excludeplatforms= attributes have an effect in the gen/case.xml
       // is at the subcase level, not case or cases, so the global lists of only/excludedPlatforms
       // must be added to each case's individual lists (m_excludePlatforms and m_onlyPlatforms)
       // there's a check earlier to make sure both onlyPlatforms and excludePlatforms
@@ -879,7 +878,7 @@ namespace {
       OS::FileSystem::mkdir(file, true);
       OU::formatAdd(file, "/%s.%02u.%s", m_name.c_str(), s, name.c_str());
       // Allow executing from the target dir in case we created some C++ programs
-      std::string cmd("PATH=.:$OCPI_TOOL_DIR:$PATH ");
+      std::string cmd("PATH=.:$OCPI_TOOL_DIR:$OCPI_PROJECT_DIR/scripts:$PATH ");
       cmd += env;
       size_t prefix = cmd.length();
       OU::formatAdd(cmd, " %s %s", generate.c_str(), file.c_str());
@@ -1246,9 +1245,14 @@ namespace {
             std::string inArgs;
             for (unsigned nn = 0; nn < m_ports.size(); nn++) {
               InputOutput &in = m_ports[nn];
-              if (!in.m_port->isDataProducer())
-                OU::formatAdd(inArgs, " ../../gen/inputs/%s.$subcase.%s",
-                              m_name.c_str(), in.m_port->pname());
+              if (!in.m_port->isDataProducer()) {
+		if (in.m_file.size())
+		  OU::formatAdd(inArgs, " %s%s",
+				in.m_file[0] == '/' ? "" : "../../", in.m_file.c_str());
+		else
+		  OU::formatAdd(inArgs, " ../../gen/inputs/%s.$subcase.%s",
+				m_name.c_str(), in.m_port->pname());
+	      }
             }
             if (io.m_view.size())
               OU::formatAdd(verify, "[ -z \"$view\" ] || %s%s %s.$subcase.$worker.%s.out %s\n",
@@ -1260,9 +1264,9 @@ namespace {
               std::string out;
               OU::format(out, "%s.$subcase.$worker.%s.out", m_name.c_str(), io.m_port->pname());
               if (io.m_script.size())
-                OU::formatAdd(verify, "  %s%s %s %s\n",
-                              io.m_script[0] == '/' ? "" : "../../", io.m_script.c_str(),
-                              out.c_str(), inArgs.c_str());
+                OU::formatAdd(verify,
+			      "  PATH=../..:../../$OCPI_TOOL_DIR:$OCPI_PROJECT_DIR/scripts:$PATH %s %s %s\n",
+			      io.m_script.c_str(), out.c_str(), inArgs.c_str());
               else
                 OU::formatAdd(verify,
                               "  echo '    'Comparing output file to specified file: \"%s\"\n"
@@ -1344,7 +1348,7 @@ namespace {
         // Now that all platforms exclusions have been collected, generate list
         fprintf(out, "    <subcase id='%u'", s);
         if (m_excludePlatforms.size() && !onlyPlatforms.size() && !m_onlyPlatforms.size()) {
-          fprintf(out, " exclude='");
+          fprintf(out, " excludeplatforms='");
           for (auto si = m_excludePlatforms.begin(); si != m_excludePlatforms.end(); ++si)
             fprintf(out, "%s%s", si == m_excludePlatforms.begin() ? "" : " ",
                     si->c_str());
@@ -1352,12 +1356,12 @@ namespace {
         }
         // Now we know which platforms should be included
         if (m_onlyPlatforms.size()){
-          fprintf(out, " only='");
+          fprintf(out, " onlyplatforms='");
           for (auto si = m_onlyPlatforms.begin(); si != m_onlyPlatforms.end(); ++si)
             fprintf(out, "%s%s", si == m_onlyPlatforms.begin() ? "" : " ", si->c_str());
           fprintf(out, "'");
         } else if (onlyPlatforms.size()) {
-          fprintf(out, " only='");
+          fprintf(out, " onlyplatforms='");
           for (auto si = onlyPlatforms.begin(); si != onlyPlatforms.end(); ++si) {
             const char *p = si->c_str();
             if (m_excludePlatforms.size()  && m_excludePlatforms.find(p) != m_excludePlatforms.end())
@@ -2140,6 +2144,10 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
       const char
         *exclude = ezxml_cattr(x, "exclude"),
         *only = ezxml_cattr(x, "only");
+      if (!exclude)
+	exclude = ezxml_cattr(x, "excludeplatforms");
+      if (!only)
+	only = ezxml_cattr(x, "onlyplatforms");
       return
         (!exclude || !found(platform, exclude)) &&
         (!only || found(platform, only));

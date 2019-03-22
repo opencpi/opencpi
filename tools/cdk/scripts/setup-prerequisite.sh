@@ -320,7 +320,7 @@ function download_local {
 # Function to get the downloaded info (source file, tarball, or git repo)
 function do_download {
   local download_path=(${OCPI_PREREQUISITES_DOWNLOAD_PATH/:/ })
-  [ -z $download_path ] && download_path=(cached local internet)
+  [ -z "$download_path" ] && download_path=(cached local internet)
   # Iterate down the path
   for d in ${download_path[@]}; do
     case $d in

@@ -24,10 +24,8 @@ scan_mode = os.getenv('OCPI_SCAN_COPYRIGHTS') is not None  # Debug mode to scan 
 
 # Query rows
 try:
-    use_color = False
     with open(os.devnull, 'w') as devnull:
         rows = int(subprocess.check_output(['tput', 'lines'], stderr=devnull))-20
-        use_color = True
 except OSError:
     rows = 40
 except subprocess.CalledProcessError:
@@ -39,17 +37,26 @@ try:
 except NameError:
     pass
 
-
-# Set up colors LUT
+# import opencpi.colors as color - don't want dependency here
 class color(object):
-    if use_color:
-        CLS = '\033[2J\033[;H'
-        GREEN = '\033[92m'
-        RED = '\033[91m'
-        BOLD = '\033[1m'
-        END = '\033[0m'
-    else:
-        CLS = GREEN = RED = BOLD = END = ''
+    """ Look-up Table for colors """
+    CLS = BLUE = GREEN = YELLOW = RED = BOLD = UNDERLINE = END = ''
+    try:
+        with open(os.devnull, 'w') as devnull:
+            dont_care = int(subprocess.check_output(['tput', 'lines'], stderr=devnull))
+            if os.getenv('TERM', 'dumb') != "dumb":
+                CLS = subprocess.check_output(['tput', 'clear'], stderr=devnull)
+                BLUE = subprocess.check_output(['tput', 'setaf', '4'], stderr=devnull)
+                GREEN = subprocess.check_output(['tput', 'setaf', '2'], stderr=devnull)
+                YELLOW = subprocess.check_output(['tput', 'setaf', '3'], stderr=devnull)
+                RED = subprocess.check_output(['tput', 'setaf', '1'], stderr=devnull)
+                BOLD = subprocess.check_output(['tput', 'bold'], stderr=devnull)
+                UNDERLINE = subprocess.check_output(['tput', 'smul'], stderr=devnull)
+                END = subprocess.check_output(['tput', 'sgr0'], stderr=devnull)
+    except OSError:
+        pass
+    except subprocess.CalledProcessError:
+        pass
 
 
 def build_copyright(comment, pre='', post=''):
@@ -450,8 +457,8 @@ def process():
             if start == '.':  # "fast insert" which means 1,n,y,save
                 start = 1
                 # Check for shell shebang, LaTeX document class, or XML header
-                if (gbuff[0].startswith("#!") or 
-                    gbuff[0].strip().startswith(r'\documentclass') or 
+                if (gbuff[0].startswith("#!") or
+                    gbuff[0].strip().startswith(r'\documentclass') or
                     gbuff[0].startswith("<?xml")):
                     start = 2
                 fast_insert = True

@@ -41,6 +41,7 @@ From the host, install the necessary tools using yum:
 
 % \begin{minipage}{\linewidth}
 From the host, add the following lines to the bottom of \texttt{/etc/exports} and change ``XX.XX.XX.XX/MM'' to a valid netmask for the DHCP range that the SDR will be set to for your network (\textit{e.g.} \texttt{192.168.0.0/16}).
+This should be as ``tight'' as possible for security reasons. \textbf{Do \textit{not} share out your top-level directory! This would allow theft of your private ``ssh'' keys, etc!} % AV-5224
 \begin{verbatim}
 % sudo vi /etc/exports
 
@@ -91,12 +92,14 @@ From the host, allow NFS past the firewall:
 
 % \begin{minipage}{\linewidth}
 Define the export by creating a new file that has the extension ``\texttt{exports}''. If it does not have that extension, it will be ignored.  Add the following lines to that file and replace ``XX.XX.XX.XX/MM'' with a valid netmask for the DHCP range that the SDR will be set to for your network (\textit{e.g.} \texttt{192.168.0.0/16}).
+This should be as ``tight'' as possible for security reasons. \textbf{Do \textit{not} share out your top-level directory! This would allow theft of your private ``ssh'' keys, etc!} % AV-5224
+
 \begin{verbatim}
 % sudo vi /etc/exports.d/user_ocpi.exports
 
 /opt/opencpi XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt)
-/home/user/ocpi_projects/core XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt)
-/home/user/ocpi_projects/assets XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt)
+<host core project location> XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt)
+<host assets project location> XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt)
 \end{verbatim}
 % \end{minipage}
 % ~\\
@@ -107,8 +110,8 @@ If the file system that you are mounting is XFS, then each mount needs to have a
 % sudo vi /etc/exports.d/user_ocpi.exports
 
 /opt/opencpi XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt,fsid=33)
-/home/user/ocpi_projects/core XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt,fsid=34)
-/home/user/ocpi_projects/assets XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt,fsid=35)
+<host core project location> XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt,fsid=34)
+<host assets project location> XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt,fsid=35)
 \end{verbatim}
 % \end{minipage}
 % ~\\

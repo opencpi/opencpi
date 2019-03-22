@@ -131,7 +131,7 @@ deriveOCP() {
       ocp.MBurstPrecise.value = s;
   } else
     ocp.MBurstLength.width = 2;
-  if (m_byteWidth != m_dataWidth || m_zeroLengthMessages) {
+  if (m_byteWidth && (m_byteWidth != m_dataWidth || m_zeroLengthMessages)) {
     ocp.MByteEn.width = m_dataWidth / m_byteWidth;
     ocp.MByteEn.value = s;
   }
@@ -139,7 +139,7 @@ deriveOCP() {
     ocp.MData.width =
       m_byteWidth != m_dataWidth && m_byteWidth != 8 ?
       8 * m_dataWidth / m_byteWidth : m_dataWidth;
-  if (m_byteWidth != m_dataWidth && m_byteWidth != 8)
+  if (m_byteWidth && m_byteWidth != m_dataWidth && m_byteWidth != 8)
     ocp.MDataInfo.width = m_dataWidth - (8 * m_dataWidth / m_byteWidth);
   if (m_earlyRequest) {
     ocp.MDataLast.value = s;
@@ -290,9 +290,18 @@ emitVhdlShell(FILE *f, ::Port *wci) {
 	  "                hdl_version      => to_integer(ocpi_version),\n"
 	  "                early_request    => %s)\n",
 	  BOOL(m_earlyRequest));
-  fprintf(f, "    port map   (Clk              => %s%s,\n",
-	  clock->port ? clock->port->typeNameIn.c_str() : clock->signal(),
-	  clock->port ? ".Clk" : "");
+  std::string clockName(clock->signal());
+  if (clock->port) {
+    if (clock->m_output) {
+      if (isDataProducer())
+	clockName = clock->port->typeNameOut + "_temp."; // clk in temp bundle
+      else
+	clockName = cname(), clockName += "_";       // clk in temp signal
+    } else
+      clockName = clock->port->typeNameIn + ".";
+    clockName += "Clk";
+  }
+  fprintf(f, "    port map   (Clk              => %s,\n", clockName.c_str());
   fprintf(f, "                MBurstLength     => %s.MBurstLength,\n", mName);
   fprintf(f, "                MByteEn          => %s%s,\n",
 	  ocp.MByteEn.value ? mName : mOption1,
@@ -352,15 +361,20 @@ emitVhdlShell(FILE *f, ::Port *wci) {
 	    );
   fprintf(f, "                reset            => %s_reset,\n", cname());
   fprintf(f, "                ready            => %s_ready,\n", cname());
-  fprintf(f, "                som              => %s_som,\n", cname());
-  fprintf(f, "                eom              => %s_eom,\n", cname());
-  if (ocp.MData.value) {
-    fprintf(f, "                valid            => %s_valid,\n", cname());
-    fprintf(f, "                data             => %s_data,\n", cname());
-  } else {
-    fprintf(f, "                valid            => open,\n");
-    fprintf(f, "                data             => open,\n");
-  }
+  if (ocp.MData.value)
+    fprintf(f,
+	    "                som              => %s_som,\n"
+	    "                eom              => %s_eom,\n"
+	    "                valid            => %s_valid,\n"
+	    "                data             => %s_data,\n", cname(), cname(), cname(), cname());
+  else
+    fprintf(f,
+	    "                som              => %s,\n"
+	    "                eom              => %s,\n"
+	    "                valid            => %s,\n"
+	    "                data             => %s,\n",
+	    slave ? "open" : "btrue", slave ? "open" : "btrue",
+	    slave ? "open" : "bfalse", slave ? "open" : "(others => '0')");
   if (m_abortable)
     fprintf(f, "                abort            => %s_abort,\n", cname());
   else
@@ -398,11 +412,16 @@ emitVhdlShell(FILE *f, ::Port *wci) {
 	    cname(), cname(), cname(), cname(),
 	    slave ? "take" : "give", cname(), slave ? "take" : "give");
   fprintf(f, ");\n");
+  if (!isDataProducer() && myClock && clock->m_output)
+    fprintf(f, "  %s.Clk <= %s_Clk;\n", typeNameOut.c_str(), cname());
 }
 
 void WsiPort::
 emitImplSignals(FILE *f) {
   //	  const char *tofrom = p->masterIn() ? "from" : "to";
+  if (myClock && !isDataProducer() && clock->m_output)
+    fprintf(f, "  signal %s_Clk : std_logic; -- this input port has its own output clock\n",
+	    cname());
   fprintf(f,
 	  "  signal %s_%s  : Bool_t;\n"
 	  "  signal %s_ready : Bool_t;\n"
@@ -431,14 +450,12 @@ emitImplSignals(FILE *f) {
 	    cname(), operations() ?
 	    OU::Protocol::m_name.c_str() : cname(), cname(), ocp.MReqInfo.width - 1, cname());
   }
-  fprintf(f,
-	  "  signal %s_som   : Bool_t;\n"
-	  "  signal %s_eom   : Bool_t;\n"
-	  "  signal %s_eof   : Bool_t;\n",
-	  cname(), cname(), cname());
   if (m_dataWidth)
     fprintf(f,
-	    "  signal %s_valid : Bool_t;\n", cname());
+	    "  signal %s_som   : Bool_t;\n"
+	    "  signal %s_eom   : Bool_t;\n"
+	    "  signal %s_valid : Bool_t;\n", cname(), cname(), cname());
+  fprintf(f, "  signal %s_eof   : Bool_t;\n", cname());
   if (m_isPartitioned)
     fprintf(f,
 	    "  signal %s_part_size        : UShort_t;\n"
@@ -456,73 +473,84 @@ emitImplSignals(FILE *f) {
 }
 
 void WsiPort::
+emitVHDLShellPortClock(FILE *f, std::string &last) {
+#if 0
+    OcpPort::emitVHDLShellPortMap(f, last); // between ins and outs
+#else
+    // This is a bit clumsy, but its not clear how to do it better.
+    // Basically the OCP logic deals with the clock signal, but for wsi, we have an intermediate
+    // _temp signal to deal with...
+    // ALERT:  this code is mostly a duplicate of the code in ocp.cxx
+    if (myClock) {
+      std::string
+	&inout = clock->m_output ? typeNameOut : typeNameIn,
+	rhs = inout;
+      if (isDataProducer())
+	rhs += clock->m_output ? "_temp." : ".";
+      else if (clock->m_output)
+	rhs = cname(), rhs += "_";
+      else
+	rhs += ".";
+      fprintf(f, "%s    %s.Clk => %sClk", last.c_str(), inout.c_str(), rhs.c_str());
+      last = ",\n";
+    }
+#endif
+}
+
+void WsiPort::
 emitVHDLShellPortMap(FILE *f, std::string &last) {
-  OcpPort::emitVHDLShellPortMap(f, last);
   std::string in, out;
   OU::format(in, typeNameIn.c_str(), "");
   OU::format(out, typeNameOut.c_str(), "");
   fprintf(f,
 	  "%s    %s_in.reset => %s_reset,\n"
-	  "    %s_in.ready => %s_ready,\n",
+	  "    %s_in.ready => %s_ready",
 	  last.c_str(), cname(), cname(), cname(), cname());
   if (masterIn()) {
-    if (m_dataWidth)
-      fprintf(f,
-	      "    %s_in.data => %s_data,\n",
-	      cname(), cname());
-    if (ocp.MByteEn.value)
-      fprintf(f, "    %s_in.byte_enable => %s_byte_enable,\n", cname(), cname());
+    if (m_dataWidth) {
+      fprintf(f, ",\n    %s_in.data => %s_data", cname(), cname());
+      if (ocp.MByteEn.value)
+	fprintf(f, ",\n    %s_in.byte_enable => %s_byte_enable", cname(), cname());
+    }
     if (m_nOpcodes > 1)
-      fprintf(f, "    %s_in.opcode => %s_opcode,\n", cname(), cname());
-    fprintf(f,
-	    "    %s_in.som => %s_som,\n"
-	    "    %s_in.eom => %s_eom,\n"
-	    "    %s_in.eof => %s_eof,\n",
-	    cname(), cname(), cname(), cname(), cname(), cname());
+      fprintf(f, ",\n    %s_in.opcode => %s_opcode", cname(), cname());
     if (m_dataWidth)
       fprintf(f,
-	      "    %s_in.valid => %s_valid,\n",
-	      cname(), cname());
+	      ",\n    %s_in.som => %s_som,\n"
+	      "    %s_in.eom => %s_eom,\n"
+	      "    %s_in.valid => %s_valid", 
+	      cname(), cname(), cname(), cname(), cname(), cname());
+    fprintf(f, ",\n    %s_in.eof => %s_eof", cname(), cname());
     if (m_isPartitioned)
       fprintf(f,
-	      "    %s_in.part_size   => %s_part_size,\n"
+	      ",\n    %s_in.part_size   => %s_part_size,\n"
 	      "    %s_in.part_offset => %s_part_offset,\n"
 	      "    %s_in.part_start  => %s_part_start,\n"
-	      "    %s_in.part_ready  => %s_part_ready,\n",
-	      cname(), cname(), cname(), cname(), cname(),
-	      cname(), cname(), cname());
-    fprintf(f,
-	    "    %s_out.take => %s_take",
-	    cname(), cname());
+	      "    %s_in.part_ready  => %s_part_ready",
+	      cname(), cname(), cname(), cname(), cname(), cname(), cname(), cname());
+    emitVHDLShellPortClock(f, last);
+    fprintf(f, ",\n    %s_out.take => %s_take", cname(), cname());
     if (m_isPartitioned)
-      fprintf(f,
-	      ",\n"
-	      "    %s_out.part_take  => %s_part_take",
-	      cname(), cname());
-    last = ",\n";
+      fprintf(f, ",\n    %s_out.part_take  => %s_part_take", cname(), cname());
   } else {
     if (m_isPartitioned)
-      fprintf(f,
-	      "    %s_in.part_ready   => %s_part_ready,\n", cname(), cname());
-    fprintf(f,
-	    "    %s_out.give => %s_give,\n",
-	    cname(), cname());
-    if (m_dataWidth)
-      fprintf(f,
-	      "    %s_out.data => %s_data,\n", cname(), cname());
-    if (ocp.MByteEn.value)
-      fprintf(f, "    %s_out.byte_enable => %s_byte_enable,\n", cname(), cname());
+      fprintf(f, ",\n    %s_in.part_ready   => %s_part_ready", cname(), cname());
+    emitVHDLShellPortClock(f, last);
+    fprintf(f, ",\n    %s_out.give => %s_give", cname(), cname());
+    if (m_dataWidth) {
+      fprintf(f, ",\n    %s_out.data => %s_data", cname(), cname());
+      if (ocp.MByteEn.value)
+	fprintf(f, ",\n    %s_out.byte_enable => %s_byte_enable", cname(), cname());
+    }
     if (ocp.MReqInfo.value)
-      fprintf(f, "    %s_out.opcode => %s_opcode,\n", cname(), cname());
-    fprintf(f,
-	    "    %s_out.som => %s_som,\n"
-	    "    %s_out.eom => %s_eom,\n"
-	    "    %s_out.eof => %s_eof,\n",
-	    cname(), cname(), cname(), cname(), cname(), cname());
+      fprintf(f, ",\n    %s_out.opcode => %s_opcode", cname(), cname());
     if (m_dataWidth)
       fprintf(f,
+	      ",\n    %s_out.som => %s_som,\n"
+	      "    %s_out.eom => %s_eom,\n"
 	      "    %s_out.valid => %s_valid",
-	      cname(), cname());
+	    cname(), cname(), cname(), cname(), cname(), cname());
+    fprintf(f, ",\n    %s_out.eof => %s_eof", cname(), cname());
     if (m_isPartitioned)
       fprintf(f,
 	      ",\n"
@@ -530,10 +558,9 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
 	      "    %s_out.part_offset => %s_part_offset,\n"
 	      "    %s_out.part_start  => %s_part_start,\n"
 	      "    %s_out.part_give   => %s_part_give",
-	      cname(), cname(), cname(),
-	      cname(), cname(), cname(), cname(), cname());
-    last = ",\n";
+	      cname(), cname(), cname(), cname(), cname(), cname(), cname(), cname());
   }
+  last = ",\n";
 }
 
 const char *WsiPort::
@@ -881,7 +908,7 @@ emitRecordInputs(FILE *f) {
     if (m_dataWidth) {
       fprintf(f,
 	      "    data             : std_logic_vector(ocpi_port_%s_data_width-1 downto 0);\n",
-	      cname());	      
+	      cname());
       // This shouldn't be here when the width is 1, but some workers have been written this way
       // so we'll leave it, but it is redundant with valid when the width is 1
       if (ocp.MByteEn.value)
@@ -896,7 +923,7 @@ emitRecordInputs(FILE *f) {
     fprintf(f,
 	    m_dataWidth ?
 	    "    som, valid, eom, eof  : Bool_t;           -- valid means data and byte_enable are present\n" :
-	    "    som, eom, eof  : Bool_t;\n");
+	    "    eof  : Bool_t;\n");
     if (m_isPartitioned)
       fprintf(f,
 	      "    part_size        : UShort_t;\n"
@@ -937,8 +964,10 @@ emitRecordOutputs(FILE *f) {
       fprintf(f,
 	      "    opcode           : %s_OpCode_t;\n",
 	      operations() ? OU::Protocol::cname() : pname());
+    if (m_dataWidth)
+      fprintf(f,
+	      "    som, eom, valid  : Bool_t;       -- one or more must be true when 'give' is asserted\n");
     fprintf(f,
-	    "    som, eom, valid  : Bool_t;       -- one or more must be true when 'give' is asserted\n"
 	    "    eof  : Bool_t;\n");
     if (m_isPartitioned)
       fprintf(f,

@@ -11,10 +11,10 @@
   </configuration>
   <!-- AV-3096 blocks these configurations from building.
        Uncomment once the ticket is closed. -->
-  <!-- <configuration id='1'> -->
-  <!--   <parameter name='M_p' value='4'/> -->
-  <!--   <parameter name='DIN_WIDTH_p' value='16'/> -->
-  <!--   <parameter name='ocpi_debug' value='false'/> -->
-  <!--   <parameter name='ocpi_endian' value='little'/> -->
-  <!-- </configuration> -->
+  <configuration id='1'>
+    <parameter name='M_p' value='4'/>
+    <parameter name='DIN_WIDTH_p' value='16'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
 </build>

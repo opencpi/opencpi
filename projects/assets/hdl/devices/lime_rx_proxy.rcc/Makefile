@@ -17,6 +17,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # Put Makefile customizations for worker lime_rx_proxy.rcc here:
-SourceFiles=lime_shared.cc
+#SourceFiles=lime_shared.cc
 
 include $(OCPI_CDK_DIR)/include/worker.mk

@@ -126,7 +126,7 @@ for t in $TESTS; do
     assets)
       echo ======================= Running Application tests in project/assets
       if [ -z "$runtime" ] ; then
-        make -C $OCPI_CDK_DIR/../projects/assets/applications run
+        make -C $OCPI_CDK_DIR/../project-registry/ocpi.assets/applications run
       else
         (cd $OCPI_CDK_DIR/../projects/assets/applications; ./run.sh)
       fi;;

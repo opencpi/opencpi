@@ -41,7 +41,6 @@ typedef Strings::const_iterator StringsIter;
 
 class Worker;
 #define PARAM_ATTRS "name", "value", "values", "valueFile", "valueFiles"
-#define PLATFORM_ATTRS "only", "exclude", "onlyplatforms", "excludeplatforms"
 struct Param {
   std::string                 m_name;       // if spec, same as m_param->m_name, if impl worker.model.property
   OCPI::Util::Value           m_value;      // value for the current config, perhaps the default
@@ -123,7 +122,7 @@ struct Build {
   OrderedStringSet    m_staticPrereqLibs;
   OrderedStringSet    m_dynamicPrereqLibs;
   Build(Worker &w);
-  const char *parse(ezxml_t x);
+  const char *parse(ezxml_t x, const char *buildFile = NULL);
   void writeMakeVars(FILE *mkFile);
 };
 #endif

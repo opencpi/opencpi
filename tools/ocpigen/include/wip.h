@@ -463,7 +463,7 @@ class Worker : public OU::Worker {
     //    *parseSpecPort(Port *p),
     *parseHdlImpl(const char* package = NULL),
     *parseBuildFile(bool optional, bool *missing = NULL),
-    *parseBuildXml(ezxml_t x),
+    *parseBuildXml(ezxml_t x, const std::string &file),
     *startBuildXml(FILE *&f),
     *doProperties(ezxml_t top, const char *parent, bool impl, bool anyIsBad, const char *firstRaw, bool AllRaw),
     *parseHdlAssy(),
@@ -578,9 +578,14 @@ class Worker : public OU::Worker {
 #define VERH ".vh"
 #define BOOL(b) ((b) ? "true" : "false")
 
-#define IMPL_ATTRS \
+// Attributes common to both OWD and build xml
+#define PLATFORM_ATTRS "onlyPlatforms", "excludePlatforms"
+#define BUILD_ATTRS PLATFORM_ATTRS, "onlytargets", "excludeTargets"
+// Attributes common to all models
+#define IMPL_ATTRS BUILD_ATTRS, \
   "name", "spec", "paramconfig", "reentrant", "scaling", "scalable", "controlOperations", "xmlincludedirs", \
-  "componentlibraries", "version"
+    "componentlibraries", "version", "libraries", "includedirs", "sourcefiles"
+
 #define IMPL_ELEMS "componentspec", "properties", "property", "specproperty", "propertysummary", "slave", "xi:include", "controlinterface",  "timeservice", "unoc", "timebase", "sdp"
 #define GENERIC_IMPL_CONTROL_ATTRS \
   "name", "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"

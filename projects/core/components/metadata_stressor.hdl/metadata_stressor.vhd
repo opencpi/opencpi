@@ -59,8 +59,8 @@
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all; use ieee.math_real.all;
 library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
 library util; use util.util.all;
--- architecture rtl of metadata_stressor_worker is
-architecture rtl of metadata_stressor_worker is
+--architecture rtl of metadata_stressor_worker is
+architecture rtl of worker is
 
   constant DATA_WIDTH_c         : integer := to_integer(unsigned(DATA_WIDTH_p));
   constant BYTE_EN_WIDTH_c      : integer := ocpi_port_in_MByteEn_width;
@@ -72,12 +72,18 @@ architecture rtl of metadata_stressor_worker is
   signal take_en       : std_logic; -- used to throttle taking data in some modes
   signal val_take      : std_logic; -- this worker is prepared to take data
   signal give_en       : std_logic; -- used to throttle giving data in some modes
-  signal uut_ready     : std_logic; -- next worker is ready and give is enabled
+  signal uut_ready     : std_logic; -- next worker is ready and give is enabled and input is ready
+  signal out_ready     : std_logic; -- next worker is ready and give is enabled
+  signal in_ready      : std_logic; -- upstream worker is ready
+  signal deferred_take : std_logic; -- wanted to take (val_take) but couldn't
   signal zlm_detected  : std_logic;  -- zlm detected on input
   signal zlm_queued    : std_logic; -- buffer zlm after detection
-  signal swm_detected  : std_logic; -- swm detected on input
+  signal swm_detected  : std_logic; -- swm detected on input and not being given
+  signal swm_seen      : std_logic; -- swm detected on input
+  signal giving_swm_valid : std_logic; -- the valid part of a swm is being given
   signal in_som        : std_logic; -- used to maintain message boundaries
   signal in_valid      : std_logic; -- used to maintain message boundaries
+  signal in_eom        : std_logic; -- used to maintain message boundaries
   signal split_swm     : std_logic; -- split swm detected on input
   signal swm_take      : std_logic := '0'; -- used to take data in swm edge cases
   signal EOF           : std_logic; -- zlms with opcode zero have to be handled differently
@@ -112,6 +118,7 @@ architecture rtl of metadata_stressor_worker is
   signal out_data      : std_logic_vector(DATA_WIDTH_c-1 downto 0) := (others => '0'); -- buffer for data
   signal out_be        : std_logic_vector(BYTE_EN_WIDTH_c-1 downto 0) := (others => '0'); -- buffer for byte enable
   signal out_op        : std_logic_vector(OPCODE_WIDTH_c-1 downto 0) := (others => '0'); -- buffer for opcode
+  signal out_eof       : bool_t; -- this worker's driving signal for v2 out_out.eof
   signal op_zero       : std_logic_vector(OPCODE_WIDTH_c-1 downto 0) := (others => '0'); -- for comparing against opcodes
   signal be_zero       : std_logic_vector(BYTE_EN_WIDTH_c-1 downto 0) := (others => '0'); -- for comparing against opcodes
 
@@ -149,16 +156,19 @@ begin
       if (ctl_in.reset = '1') then
         in_som <= '0';
         in_valid <= '0';
+        in_eom <= '0';
         split_swm <= '0';
-        swm_detected <= '0';
+        swm_seen <= '0';
         EOF_flush <= '0';
         zlm_queued <= '0';
+        out_eof <= bfalse;
+        deferred_take <= '0';
       else
 
   -- Buffer the data and opcode while the new metadata is being generated
   -- to ensure that it is correct
         -- if ((val_take = '1' or EOF_flush = '1') and give_en = '1' and enable = '1') then
-        if ((val_take = '1' and give_en = '1' and enable = '1') or (EOF = '1')) then
+        if ready_for_in_port_data = '1' then -- (val_take = '1' and give_en = '1' and enable = '1') or (EOF = '1')) then
          out_data <= in_in.data;
          out_op   <= in_in.opcode;
         end if;
@@ -176,7 +186,7 @@ begin
 -- This logic handles zlms in the general case
         if (zlm_detected = '1' and output_state /= prop_nil) then
           zlm_queued <= '1';
-        elsif (zlm_queued = '1' and out_op /= op_zero and
+        elsif (zlm_queued = '1' and (out_op /= op_zero or ocpi_version > 1) and
         (output_state = zlm or (output_state = early_som and data_ready_for_out_port = '1') or
                              output_state = split_zlm_s)) then
           zlm_queued <= '0';
@@ -185,19 +195,25 @@ begin
 -- This worker will usually operate with file_read providing data, and file_read sends zlms with opcode = 0
 -- to signify the end of data, which needs to be detected so the worker can flush data.
 -- This has to be held until the next worker has been given the zlm
-         if (zlm_detected = '1' and in_in.opcode = op_zero and output_state /= prop_nil) then
+         if (ocpi_version < 2 and zlm_detected = '1' and in_in.opcode = op_zero and output_state /= prop_nil) then
            EOF_flush <= '1';
          elsif (EOF_flush = '1' and data_ready_for_out_port = '1' and (output_state = zlm or
                               output_state = split_zlm_e)) then
            EOF_flush <= '0';
          end if;
-
+        if (ocpi_version > 1 and in_in.eof and out_in.ready and
+            (props_in.mode = data_e or props_in.mode = bypass_e or
+             (output_state = prop_nil and swm_detected = '0') or
+             output_state = nil)) then
+          out_eof <= btrue;
+        end if;
 
   -- Save SOM and valid until the next time the worker reads its own inputs in order to detect
   -- split single word messages
-          if (val_take = '1' and enable = '1') then
+          if ready_for_in_port_data = '1' then
             in_som   <= in_in.som;
             in_valid <= in_in.valid;
+            in_eom <= in_in.eom;
           end if;
 
 
@@ -205,16 +221,22 @@ begin
   -- Flag can't be cleared until the swm is sent, or data might be lost
           split_swm <= in_in.eom and not(in_in.valid) and in_in.ready and in_som and in_valid and not(zlm_detected);
           if ((in_in.som = '1' and in_in.eom = '1' and in_in.valid = '1') or split_swm = '1') then
-            swm_detected <= '1';
-          elsif (swm_detected <= '1' and enable = '1' and (output_state = valid or output_state = valid_buf
-                  or output_state = swm or output_state = val_eom) and output_state /= prop_nil) then
-            swm_detected <= '0';
+            swm_seen <= '1';
+          elsif (swm_seen = '1' and giving_swm_valid) then
+            swm_seen <= '0';
           end if;
-
+        if (val_take and in_ready = '0') then
+          deferred_take <= '1';
+        end if;
+        if deferred_take and ready_for_in_port_data then
+          deferred_take <= '0';
+        end if;
       end if;
     end if;
   end process buffer_inputs;
-
+  giving_swm_valid <=  out_ready and to_bool(output_state = valid or output_state = valid_buf or
+                                             output_state = swm or output_state = val_eom);
+  swm_detected <= swm_seen and not giving_swm_valid;
   -- This FSM controls what kind of message is passed to the unit under test.
   output_select_proc : process (ctl_in.clk)
   begin
@@ -238,38 +260,38 @@ begin
          end if;
   -- early start of message preceding late end of message
        when start_es_a =>
-         if ((uut_ready = '1' and zlm_queued = '1') or
+         if ((out_ready = '1' and zlm_queued = '1') or
             (out_in.ready = '1' and EOF = '1')) then
             state <= end_le_a;
             output_state <= early_som;
-         elsif (swm_detected = '1' and uut_ready = '1') then
+         elsif (swm_detected = '1' and out_ready = '1') then
            state <= es_val_le_a;
            output_state <= early_som;
          elsif (take_en = '1' and uut_ready = '1') then
            state <= es_val_le_a;
            output_state <= early_som;
-         elsif (uut_ready = '1') then
+         elsif (out_ready = '1') then
            output_state <= nil;
          end if;
   -- send data and/or no-ops between early start of message and late end of message
        when es_val_le_a =>
          if (out_in.ready = '1' and EOF = '1' and in_valid = '0') or
-             (uut_ready = '1' and in_valid = '0' and zlm_queued = '1') then
+             (out_ready = '1' and in_valid = '0' and zlm_queued = '1') then
            output_state <= late_eom;
            state <= start_es_b;
         elsif ((in_in.eom = '1' and  output_state = valid and uut_ready = '1' and
              output_state /= nil and swm_detected = '0')) or
-             ((swm_detected = '1' or swm_live = '1') and uut_ready = '1') then
+             ((swm_detected = '1' or swm_live = '1') and out_ready = '1') then
            output_state <= valid_buf;
            state <= end_le_a;
-         elsif (take_en = '1' and uut_ready = '1') then
+        elsif (take_en = '1' and uut_ready = '1') then
            output_state <= valid;
-         elsif (take_en = '0' and uut_ready = '1') then
+        elsif (out_ready = '1') then
            output_state <= nil;
          end if;
   -- send late end of message after early start of message
        when end_le_a =>
-         if (uut_ready = '1' or (out_in.ready = '1' and EOF = '1')) then
+         if (out_ready = '1' or (out_in.ready = '1' and EOF = '1')) then
            if (EOF = '1') then
              state <= zlm_z;
            elsif (props_in.insert_nop = '1') then
@@ -282,39 +304,44 @@ begin
          end if;
   -- early start of message preceding end of message with data
        when start_es_b =>
-        if ((uut_ready = '1' and zlm_queued = '1') or
+        if ((out_ready = '1' and zlm_queued = '1') or
            (out_in.ready = '1' and EOF = '1')) then
           state <= end_b_zlm;
           output_state <= early_som;
-        elsif (swm_detected = '1' and uut_ready = '1') then
+        elsif (swm_detected = '1' and out_ready = '1') then
           state <= end_b_swm;
           output_state <= early_som;
         elsif (take_en = '1' and uut_ready = '1') then
            state <= val_ve_b;
            output_state <= early_som;
-        elsif (uut_ready = '1') then
+        elsif (out_ready = '1') then
            output_state <= nil;
          end if;
   -- send data and/or no-ops and output end of message with data after early start of message
        when val_ve_b =>
-         if (in_in.eom = '1' and uut_ready = '1' and output_state /= nil) then
-           output_state <= val_eom;
-           if (props_in.insert_nop = '1') then
-             state <= nil_s;
-             nil_state_store <= start_sv_c;
-           elsif (out_in.ready = '1' and EOF = '1') then
-             state <= zlm_z;
+--         if (in_in.eom = '1' and uut_ready = '1' and output_state /= nil) then
+         -- we enter this state with taken data and early_som
+         if out_ready = '1' then
+           if ((output_state = early_som and in_eom = '1') or
+               (output_state = valid and in_ready and in_in.eom)) then
+             output_state <= val_eom;
+             if (props_in.insert_nop = '1') then
+               state <= nil_s;
+               nil_state_store <= start_sv_c;
+             elsif EOF = '1' then
+               state <= zlm_z;
+             else
+               state <= start_sv_c;
+             end if;
+           elsif output_state = early_som or (in_ready = '1' and take_en) then
+             output_state <= valid;
            else
-             state <= start_sv_c;
+             output_state <= nil;
            end if;
-         elsif (take_en = '1' and uut_ready = '1') then
-           output_state <= valid;
-         elsif (take_en = '0' and uut_ready = '1') then
-           output_state <= nil;
          end if;
 -- handle zlms detected in start_es_b
       when end_b_zlm =>
-        if (uut_ready = '1' or (out_in.ready = '1' and EOF = '1')) then
+        if (out_ready = '1' or (out_in.ready = '1' and EOF = '1')) then
           output_state <= late_eom;
           if (EOF = '1') then
             state <= zlm_z;
@@ -335,7 +362,7 @@ begin
         end if;
 -- send data and/or no-ops and output end of message with data after early start of message in the case of swm
       when end_b_swm =>
-        if (uut_ready = '1' or EOF_flush = '1') then
+        if (out_ready = '1' or EOF_flush = '1') then
           if (EOF = '1') then
             state <= zlm_z;
           elsif (props_in.insert_nop = '1') then
@@ -349,7 +376,7 @@ begin
                                            -- this worker, some of the time, when it's behind itself
   -- send start of message with data preceding late end of message
        when start_sv_c =>
-        if (((zlm_queued = '1' or zlm_detected = '1') and uut_ready = '1') or
+        if (((zlm_queued = '1' or zlm_detected = '1') and out_ready = '1') or
            (out_in.ready = '1' and EOF = '1')) then
             state <= end_le_c;
             output_state <= early_som;
@@ -361,25 +388,26 @@ begin
             state <= sv_val_le_c;
             output_state <= som_val;
           end if;
-        elsif (uut_ready = '1') then
+        elsif (out_ready = '1') then
           output_state <= nil;
         end if;
   -- send data and/or no-ops between start of message with data and late end of message
        when sv_val_le_c =>
-        if (in_in.eom = '1' and uut_ready = '1' and output_state /= nil and swm_detected = '0') then
+         if (in_in.eom = '1' and uut_ready = '1' and swm_detected = '0' and data_ready_for_out_port and
+             (val_take or output_state /= nil)) then
            output_state <= valid_buf;
            state <= end_le_c;
-         elsif (swm_detected = '1' and uut_ready = '1') then
+         elsif (swm_detected = '1' and out_ready = '1') then
            output_state <= late_eom;
            state <= start_sv_d;
          elsif (take_en = '1' and uut_ready = '1' and swm_take = '0') then
            output_state <= valid;
-         elsif (take_en = '0' and uut_ready = '1') then
+         elsif (out_ready = '1') then
            output_state <= nil;
          end if;
   -- send late end of message after start of message with data
        when end_le_c =>
-         if (uut_ready = '1' or (out_in.ready = '1' and EOF = '1')) then
+         if (out_ready = '1' or (out_in.ready = '1' and EOF = '1')) then
            if (EOF = '1') then
              state <= zlm_z;
            elsif (props_in.insert_nop = '1') then
@@ -392,7 +420,7 @@ begin
          end if;
   -- send start of message with data preceding end of message with data
        when start_sv_d =>
-         if ((zlm_queued = '1' and uut_ready = '1') or
+         if ((zlm_queued = '1' and out_ready = '1') or
             (out_in.ready = '1' and EOF = '1')) then
            state <= end_d;
            output_state <= early_som;
@@ -409,7 +437,7 @@ begin
              state <= val_ve_d;
              output_state <= som_val;
            end if;
-         elsif (uut_ready = '1') then
+         elsif (out_ready = '1') then
            output_state <= nil;
          end if;
   -- send data and/or no-ops and output end of message with data after start of message with data
@@ -433,12 +461,12 @@ begin
            output_state <= val_eom;
          elsif (take_en = '1' and uut_ready = '1') then
            output_state <= valid;
-         elsif (take_en = '0' and uut_ready = '1') then
+         elsif (out_ready = '1') then
            output_state <= nil;
          end if;
   -- handle zlms detected in start_sv_d
       when end_d =>
-        if (uut_ready = '1' or (out_in.ready = '1' and EOF = '1')) then
+        if (out_ready = '1' or (out_in.ready = '1' and EOF = '1')) then
           if (props_in.insert_nop = '1') then
             state <= nil_s;
             nil_state_store <= start_es_a;
@@ -471,7 +499,7 @@ begin
        if ((out_in.ready = '1' and (EOF = '1' or (EOF_flush = '1' and out_eom and data_ready_for_out_port)))) then
          state <= zlm_z;
          output_state <= zlm_eof;
-       elsif (uut_ready = '1') then
+       elsif (out_ready = '1') then
          state <= nil_state_store;
          output_state <= prop_nil;
        end if;
@@ -516,7 +544,7 @@ begin
           take_en <= take_v;
         end if;
 
-        if (enable = '1') then
+        if (out_in.ready = '1') then
   -- polynomial for linear-feedback shift register is x^16 + x^14 + x^13 + x^11 + 1
           lfsr <= lfsr(14 downto 0) & (lfsr(15) xor lfsr(13) xor lfsr(12) xor lfsr (10));
         end if;
@@ -552,10 +580,11 @@ begin
     end if;
   end process stutter;
 
-  EOF <= EOF_flush and not(in_valid);
+  EOF <= EOF_flush and (not in_valid or in_eom);
   swm_take <= in_in.eom and not(in_in.valid) and split_swm and not(zlm_detected);
   lone_som <=  in_in.som and not(in_in.valid) and not(in_in.eom);
-  trailing_eom <= '0' when (in_in.eom = '1' and in_in.valid = '0' and output_state = valid) else '1';
+--  trailing_eom <= '0' when (in_in.eom = '1' and in_in.valid = '0' and output_state = valid) else '1';
+  trailing_eom <= '1';
   swm_live <= in_in.eom and not(in_in.valid) and in_som and in_valid and in_in.ready;
 
   -- out_som, out_valid, and out_eom determine the metadata pattern in full or
@@ -563,7 +592,6 @@ begin
   out_som <= '1' when (output_state = early_som or output_state = som_val or
                        output_state = swm or output_state = som_val_swm or
                        output_state = zlm or output_state = split_zlm_s or output_state = zlm_eof) else '0';
-                       -- output_state = zlm or output_state = split_zlm_s  or output_state = init) else '0';
   out_valid <= '1' when (output_state = valid or output_state = valid_buf or
                          output_state = val_eom or output_state = som_val or
                          output_state = som_val_swm or output_state = swm) else '0';
@@ -579,8 +607,10 @@ begin
                         output_state = zlm_eof) else '0';
 
   out_out.som   <= out_som when (props_in.mode = full_e or props_in.mode = metadata_e) else in_in.som;
-  out_out.valid <= out_valid when (props_in.mode = full_e or props_in.mode = metadata_e) else
-                   (take_en and in_in.valid) or (in_in.valid and in_in.eom)
+  out_out.valid <= to_bool(out_valid and (ocpi_version < 2 or data_ready_for_out_port))
+                   when (props_in.mode = full_e or props_in.mode = metadata_e) else
+                   in_in.valid and to_bool(ocpi_version < 2 or data_ready_for_out_port) and
+                   (take_en or in_in.eom)
                    when (props_in.mode = data_e) else in_in.valid;
   out_out.eom   <= out_eom when (props_in.mode = full_e or props_in.mode = metadata_e) else in_in.eom;
 
@@ -590,9 +620,11 @@ begin
   out_out.opcode <= out_op when (props_in.mode = full_e or props_in.mode = metadata_e) else in_in.opcode;
 
 
-  uut_ready <= out_in.ready and give_en and ctl_in.is_operating and in_in.ready;
+  out_ready <= out_in.ready and give_en and ctl_in.is_operating;
+  in_ready  <= in_in.ready;
+  uut_ready <= out_ready and in_ready;
   enable <= ctl_in.is_operating and out_in.ready and in_in.ready;
-  ready_for_in_port_data <= ((enable and (val_take or swm_take or lone_som) and give_en))
+  ready_for_in_port_data <= ((enable and (deferred_take or val_take or swm_take or lone_som) and give_en))
                  when (props_in.mode = full_e or props_in.mode = metadata_e) else
                  (enable and take_en and give_en)
                  when (props_in.mode = data_e) else enable;
@@ -601,8 +633,8 @@ begin
   -- Don't assert give if metadata is all zeros
   -- Do assert give if sending a zlm
   -- '... or zlm_queued' included to send data at end of file after receiving a split swm
-  data_ready_for_out_port <= ((enable and give_en and trailing_eom and (out_som or out_eom or out_valid))
-              or  (enable and give_en and ((out_som or out_eom) and not(out_valid)) and (zlm_queued))
+  data_ready_for_out_port <= ((out_ready and trailing_eom and (out_som or out_eom or out_valid))
+              or  (out_ready and ((out_som or out_eom) and not(out_valid)) and (zlm_queued))
               or (out_in.ready and (out_som or out_eom or out_valid) and EOF))
                   when (props_in.mode = full_e or props_in.mode = metadata_e) else
                   ((enable and take_en and give_en) or
@@ -610,4 +642,7 @@ begin
                   when (props_in.mode = data_e) else enable;
   out_out.give <= ctl_in.is_operating and data_ready_for_out_port;
 
+  gen0: if ocpi_version > 1 generate
+    out_out.eof <= out_eof;
+  end generate gen0;
 end rtl;

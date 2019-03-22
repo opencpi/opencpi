@@ -30,7 +30,7 @@ fi
 output_path="$1"
 platform="$2"
 cross="$3"
-[ -z $OCPI_CDK_DIR ] && echo "Need to set \$OCPI_CDK_DIR before running this script" && exit 1
+[ -z "$OCPI_CDK_DIR" ] && echo "Need to set \$OCPI_CDK_DIR before running this script" && exit 1
 
 # Make output directory
 mkdir -p $output_path

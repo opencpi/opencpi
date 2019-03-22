@@ -16,5 +16,10 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-export OCPI_LIBRARY_PATH=$PWD/../../hdl/assemblies/tb_bias_v2
-ocpirun -d -v tb_bias_v2 2>&1 | tee xml_tb_bias_v2_run.log
+$(if $(realpath $(OCPI_CDK_DIR)),,\
+  $(error The OCPI_CDK_DIR environment variable is not set correctly.))
+# This is the application Makefile for the "delay_test" application
+# If there is a delay_test.cc (or delay_test.cxx) file, it will be assumed to be a C++ main program to build and run
+# If there is a delay_test.xml file, it will be assumed to be an XML app that can be run with ocpirun.
+# The RunArgs variable can be set to a standard set of arguments to use when executing either.
+include $(OCPI_CDK_DIR)/include/application.mk

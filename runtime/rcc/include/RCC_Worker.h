@@ -73,7 +73,8 @@ typedef enum {
 #ifdef __cplusplus
   class RCCUserPort;
   typedef OCPI::API::OcpiBoolean RCCBoolean;
-  typedef OCPI::API::OcpiPortMask RCCPortMask;
+  typedef OCPI::API::OcpiPortMask RCCPortMask; // not documented
+  typedef OCPI::API::OcpiPortMask PortMask;
   typedef OCPI::API::RunCondition RunCondition;
   const OCPI::API::OcpiPortMask RCC_ALL_PORTS = OCPI::API::OCPI_ALL_PORTS;
   const OCPI::API::OcpiPortMask RCC_NO_PORTS = OCPI::API::OCPI_NO_PORTS;

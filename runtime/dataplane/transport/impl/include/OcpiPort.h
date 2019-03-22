@@ -127,7 +127,7 @@ namespace OCPI {
       /**********************************
        * Reteives the next available input buffer.
        *********************************/
-      BufferUserFacet* getNextFullInputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode);
+      BufferUserFacet* getNextFullInputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode, bool &end);
       // For use by bridge ports
       BufferUserFacet* getNextEmptyInputBuffer(uint8_t *&data, size_t &length);
       void sendInputBuffer(BufferUserFacet &b, size_t length, uint8_t opcode);

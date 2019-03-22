@@ -163,7 +163,7 @@ function register_project {
     from _opencpi.assets import factory, registry;
     factory.AssetFactory.factory(\"registry\",
                                  registry.Registry.get_registry_dir(\"$project\")).add(\"$project\",
-                                                                                       force=$py_force)" || return
+                                                                                       force=$py_force)" 1>&2 || return
 
   # We want to export a project on register, but only if it is not
   # an exported project itself
@@ -193,7 +193,7 @@ function unregister_project {
         factory.AssetFactory.factory(\"registry\", registry.Registry.get_registry_dir(\"$project\")).remove(directory=\"$project\")
     else:
         # Create registry instance from current dir, and remove project by its package-ID
-        factory.AssetFactory.factory(\"registry\", registry.Registry.get_registry_dir(\"$project\")).remove(\"$project\")"
+        factory.AssetFactory.factory(\"registry\", registry.Registry.get_registry_dir(\"$project\")).remove(\"$project\")" 1>&2
 }
 
 function delete_project {
@@ -404,13 +404,13 @@ function do_registry {
     fi
   elif [ "$verb" == set ]; then
     py_cmd="from _opencpi.assets import factory; factory.AssetFactory.factory(\"project\", \".\").set_registry(\"$1\")"
-    if [ $(py_try_return_bool "$py_cmd"; echo $?) -eq 1 ]; then
+    if [ $(py_try_return_bool "$py_cmd" 1>&2; echo $?) -eq 1 ]; then
       # Error is printed in python
       exit 1
     fi
   elif [ "$verb" == unset ]; then
     py_cmd="from _opencpi.assets import factory; factory.AssetFactory.factory(\"project\", \".\").unset_registry()"
-    if [ $(py_try_return_bool "$py_cmd"; echo $?) -eq 1 ]; then
+    if [ $(py_try_return_bool "$py_cmd" 1>&2; echo $?) -eq 1 ]; then
       # Error is printed in python
       exit 1
     fi
@@ -926,7 +926,7 @@ EOF
 
 function do_library {
   set -e
-  if [ $libbase == "hdl" -a -n "$library" ]; then
+  if [ "$libbase" == "hdl" -a -n "$library" ]; then
     one=$(basename $library)
   else
     one=$1
@@ -967,7 +967,7 @@ function do_library {
       ;;
     (*) bad this command can only be issued in a project directory or a components directory
   esac
-  if [ "$verb" == "create" -a "$(realpath $subdir)" == "hdl" ]; then
+  if [ "$verb" == "create" -a "$(ocpiReadLinkE $subdir)" == "hdl" ]; then
       1=$(basename $subdir)
   fi
   if [ "$verb" == delete ]; then
@@ -1078,7 +1078,7 @@ function get_spec {
 
   # Here we set some default xml. Subdevices are a special case with some additional default
   # XML. They are permitted to omit OCS, but are not required to.
-  if [ -z $s ] ; then
+  if [ -z "$s" ] ; then
     specelem="  <componentspec>
   </componentspec>"
   else
@@ -1107,7 +1107,7 @@ function do_worker {
   if [ -n "$standalone" ] ; then
     libdir=.
   elif [ "$dirtype" == library ]; then
-    [ -z $library ] || bad the -l or --hdl-library "(library)" option is not valid in a "library's" directory
+    [ -z "$library" ] || bad the -l or --hdl-library "(library)" option is not valid in a "library's" directory
   elif [ -z "$libdir" ]; then
     [ "$dirtype" == project ] || bad workers can only be created in project or library directories
   fi
@@ -1140,7 +1140,7 @@ function do_worker {
      language=$2
   }
   noexist $libdir/$1
-  if [ -z $language ] ; then
+  if [ -z "$language" ] ; then
     language=$(eval echo \${Language_$model})
     [ -z "$verbose" ] || echo Choosing default language \"$language\" for worker $1
     langattr=" language='$language'"
@@ -1796,6 +1796,7 @@ function do_build_here {
        ${hdltargets:+HdlTargets=" ${hdltargets[@]}"} \
        ${swplats:+RccPlatforms=" ${swplats[@]}"} \
        ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"} \
+       ${workerList:+Workers=" ${workerList[@]}"}\
        $OCPI_MAKE_OPTS
   if [ "$dirtype" == "project" -a -z "$hardClean" ] ; then
     make ${verbose:+AT=} imports
@@ -2512,7 +2513,7 @@ fi
 if [ "$noun" == "component" ]; then
   noun=spec
 fi
-[ -z $verb ] && bad missing verb, nothing to do
+[ -z "$verb" ] && bad missing verb, nothing to do
 [ -z "$noun" -a "$verb" != build ] && help
 # option testing dependent on noun and verb
 [ -z "$args" -a "$noun" != primitives -a "$noun" != assemblies  -a "$noun" != applications -a "$noun" != platforms -a "$verb" != build -a "$verb" != register -a "$verb" != unregister -a "$verb" != refresh -a "$verb" != set -a "$verb" != unset -a \( "$verb" != delete -a "$noun" != registry \) -a \( "$verb" != create -a "$noun" != library -a \( -n "$liboptset" -o -n "$hdlliboptset" -o -n "$platform" \) \) ] && bad there must be a name argument after: $verb $hdl$noun

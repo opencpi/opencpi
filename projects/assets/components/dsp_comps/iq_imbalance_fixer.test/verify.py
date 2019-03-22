@@ -34,23 +34,12 @@ To validate the test, the output file is examined using FFT analysis to determin
 that the spectral image has been removed and the tones are still present and of
 sufficient power in the range DC to Fs/2.
 """
-import struct
-import shutil
-import numpy as np
-import sys
 import os.path
-
-class color:
-    PURPLE = '\033[95m'
-    CYAN = '\033[96m'
-    DARKCYAN = '\033[36m'
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    END = '\033[0m'
+import shutil
+import struct
+import sys
+import opencpi.colors as color
+import numpy as np
 
 print "\n","*"*80
 print "*** Python: IQ Imbalance Fixer ***"

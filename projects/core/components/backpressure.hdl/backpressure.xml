@@ -1,4 +1,4 @@
-<HdlWorker language='vhdl' spec='backpressure-spec'>
+<HdlWorker language='vhdl' spec='backpressure-spec' version='2'>
   <Property Name="IDATA_WIDTH_p" Type="ulong" Default="32" Parameter="true"/>
   <Property Name="ODATA_WIDTH_p" Type="ulong" Default="32" Parameter="true"/>
 

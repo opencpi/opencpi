@@ -27,7 +27,7 @@ source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        $me \
        "Busy box used in embedded platforms" \
        https://git.busybox.net/busybox/snapshot/ \
-       $dir.tar \
+       $dir.tar.gz \
        $dir \
        1
 cd ..
@@ -40,10 +40,8 @@ if ! patch -R -p0 -s -f --dry-run < $OcpiThisPrerequisiteDir/prerequisites/$me/n
 fi
 cp $OcpiThisPrerequisiteDir/prerequisites/$me/busybox.config .config
 # Adding appropriate sysroot to config file based off of OcpiCrossCompile variable
-sysroot=$(echo $OcpiCrossCompile | sed "s/\/bin\/$OcpiCrossHost-//")/$OcpiCrossHost/libc
-# Replacing / with \/
-sysroot=$(echo $sysroot | sed 's/\//\\\//g')
-sed -i "s/CONFIG_SYSROOT=.*/CONFIG_SYSROOT=\"$sysroot\"/g" .config
+sysroot=$(echo $OcpiCrossCompile | sed "s|/bin[^/]*/$OcpiCrossHost-||")/$OcpiCrossHost/libc
+sed -i "s|CONFIG_SYSROOT=.*|CONFIG_SYSROOT=\"${sysroot}\"|g" .config
 make -j
 # Reverse the patch so other sw platforms are not affected
 patch -R -p0 < $OcpiThisPrerequisiteDir/prerequisites/$me/ntpd.patch

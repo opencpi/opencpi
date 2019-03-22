@@ -97,7 +97,7 @@ public:
   virtual const char *parse();    // second pass parsing for ports referring to each other
   virtual const char *resolveExpressions(OCPI::Util::IdentResolver &ir);
   virtual bool masterIn() const;  // Are master signals inputs at this port?
-  void addMyClock(bool output);
+  Clock &addMyClock(bool output);
   virtual const char *checkClock();
   // This is not cname to deal with a multiple-inheritance issue.  The runtime classes use cname
   const char *pname() const { return m_name.c_str(); }

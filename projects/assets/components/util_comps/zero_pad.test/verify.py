@@ -28,22 +28,12 @@ All parameter and property values are set in the environment variables: OCPI_TES
 Verification:
 - numZeros 0s of size dwidth are inserted between input samples.
 """
-import struct
-import numpy
-import sys
 import os.path
+# import struct
+import sys
+import opencpi.colors as color
+import numpy
 
-class color:
-    PURPLE = '\033[95m'
-    CYAN = '\033[96m'
-    DARKCYAN = '\033[36m'
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    END = '\033[0m'
 
 if len(sys.argv) != 4:
     if len(sys.argv) != 3:
@@ -88,7 +78,7 @@ firstIdx=64/width-1
 idx=firstIdx
 for i in xrange(0,len(dout)):
     #print color.RED + color.BOLD + 'dout[i] =' + hex(dout[i])
-    #print color.RED + color.BOLD + 'i mod numZeros+1 =', i % (numZeros+1) 
+    #print color.RED + color.BOLD + 'i mod numZeros+1 =', i % (numZeros+1)
     if not(i % (numZeros+1)):
         #print color.RED + color.BOLD + 'myPattern >> idx*width&ttype.max =', hex(myPattern >> idx*width&ttype.max)
         if dout[i] != myPattern >> idx*width&ttype.max:
@@ -104,7 +94,3 @@ for i in xrange(0,len(dout)):
             print color.RED + color.BOLD + '#2.FAILED at sample:', i, 'with value:' + color.END, format(dout[i], '#X')
             print color.RED + color.BOLD + '*** Error:End validation ***\n' + color.END
             sys.exit(102)
-    
-        
-
-       

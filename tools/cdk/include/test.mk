@@ -95,8 +95,7 @@ TESTXML:=$(CwdName)-test.xml
 
 $(CASEXML): $(TESTXML)
 	$(AT)echo ========= Generating test assemblies, inputs and applications for $(CwdName):
-	$(AT)OCPI_ALL_PLATFORMS="$(strip $(HdlAllPlatforms:%=%.hdl) $(RccAllPlatforms:%=%.rcc) $(OclAllPlatforms:%=%.ocl))" \
-	     $(call OcpiGen, -v -T $<)
+	$(AT)$(call OcpiGen, -v -T $<)
 
 -include gen/*.deps
 generate: $(CASEXML)

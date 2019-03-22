@@ -24,6 +24,7 @@ import os
 import logging
 import copy
 import shutil
+import _opencpi.hdltargets as hdltargets
 import _opencpi.util as ocpiutil
 
 class Asset(metaclass=ABCMeta):
@@ -311,7 +312,12 @@ class ReportableAsset(Asset):
         # Get the utilization using this class' hopefully overridden get_utilization() function
         util_report = self.get_utilization()
         if not util_report:
-            logging.warning("Skipping " + caption + " because the report is empty")
+            if dirtype == "hdl-platform":
+                plat_obj = hdltargets.HdlToolFactory.factory("hdlplatform", self.name)
+                if not plat_obj.get_toolset().is_simtool:
+                    logging.warning("Skipping " + caption + " because the report is empty")
+            else:
+                logging.warning("Skipping " + caption + " because the report is empty")
             return
 
         if self.output_format not in self.valid_formats:

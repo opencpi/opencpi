@@ -54,5 +54,4 @@ $(OutLibFiles): $(ImportsDir)
 endif
 $(call OcpiDbgVar,OutLibFiles,Before all:)
 $(call OcpiDbgVar,LibName,Before all:)
-
-all: $(OutLibFiles)
+build: $(OutLibFiles)

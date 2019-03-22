@@ -89,11 +89,16 @@ class HdlApplicationAssembly(HdlAssembly, ReportableAsset):
             plat_string = "HdlPlatform=" + plat.name
             # NOTE: We need to call make with a single HdlPlatform set because otherwise
             #       hdl-pre calls multiple sub-make commands and causes complications
-            assemb_vars = ocpiutil.set_vars_from_make(mk_file=self.directory + "/Makefile",
-                                                      mk_arg=plat_string +
-                                                      " shellhdlassemblyvars " +
-                                                      "ShellHdlAssemblyVars=1",
-                                                      verbose=True)
+            try:
+                assemb_vars = ocpiutil.set_vars_from_make(mk_file=self.directory + "/Makefile",
+                                                          mk_arg=plat_string +
+                                                          " shellhdlassemblyvars " +
+                                                          "ShellHdlAssemblyVars=1",
+                                                          verbose=False)
+            except:
+                # if the make call throws a error this means that that hdl platform isnt build
+                # better fix is to have make handle this more gracefully
+                continue
             if "Containers" not in assemb_vars:
                 raise ocpiutil.OCPIException("Could not get list of HDL containers from " +
                                              "directory\"" + self.directory + "\"")

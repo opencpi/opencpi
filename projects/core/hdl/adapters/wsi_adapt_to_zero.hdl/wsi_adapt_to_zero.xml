@@ -1,0 +1,11 @@
+<HdlWorker language='vhdl' version='2'>
+  <componentspec nocontrol='true'>
+    <property name='width' parameter='1' type='uchar' default='32'/>
+    <port Name="in"  Producer="false"
+	  zerolengthmessages='1' numberofopcodes='256'/>
+    <port Name="out" Producer="true"
+	  datavaluewidth='0' zerolengthmessages='1' numberofopcodes='256'/>
+  </componentspec>
+  <streaminterface name='in' datawidth='width'/>
+  <streaminterface name='out' datawidth='0'/>
+</HdlWorker>

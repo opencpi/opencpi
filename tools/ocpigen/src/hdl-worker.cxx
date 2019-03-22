@@ -707,16 +707,16 @@ emitSignals(FILE *f, Language lang, bool useRecords, bool inPackage, bool inWork
   std::string last = init;
   if (m_type != Container)
     for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
-      Clock *c = *ci;
-      if (!c->port) {
+      Clock &c = **ci;
+      if (!c.port && !c.m_internal) {
 	if (last.empty())
 	  fprintf(f,
 		  "    %s Clock(s) not associated with one specific port:\n", comment);
-	emitSignal(c->signal(), f, lang, Signal::IN, last, -1, 0);
-	if (c->m_reset.size())
+	emitSignal(c.signal(), f, lang, c.m_output ? Signal::OUT : Signal::IN, last, -1, 0);
+	if (c.m_reset.size())
 	  // FIXME: FOR THE INNER WORKER TO HAVE A POSITIVE RESET
-	  emitSignal(inWorker && !strcasecmp(c->reset(), "wci_reset_n") ?
-		     "wci_reset" : c->reset(),
+	  emitSignal(inWorker && !strcasecmp(c.reset(), "wci_reset_n") ?
+		     "wci_reset" : c.reset(),
 		     f, lang, Signal::IN, last, -1, 0);
       }
     }
@@ -1180,11 +1180,11 @@ emitDefsHDL(bool wrap) {
 #endif
     // Now we emit the declarations (input, output, width) for each module port
     for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
-      Clock *c = *ci;
-      if (!c->port) {
-	fprintf(f, "  input      %s;\n", c->signal());
-	if (c->m_reset.size())
-	  fprintf(f, "  input      %s;\n", c->reset());
+      Clock &c = **ci;
+      if (!c.port && !c.m_internal) {
+	fprintf(f, "  %s      %s;\n", c.m_output ? "output" : "input", c.signal());
+	if (c.m_reset.size())
+	  fprintf(f, "  input      %s;\n", c.reset());
       }
     }
     for (unsigned i = 0; i < m_ports.size(); i++)

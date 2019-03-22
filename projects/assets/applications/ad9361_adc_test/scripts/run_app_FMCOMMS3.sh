@@ -22,7 +22,7 @@ FMCOMMS3_REF_CLK_RATE=40e6
 #ENSM_MODE_FDD=3
 ENSM_MODE_FDD_INDEPENDENT_CTRL=7
 
-if [ -z $1 ]; then
+if [ -z "$1" ]; then
   echo "first argument must be app xml filename"
   exit 1
 fi
@@ -30,17 +30,17 @@ fi
 APP_XML=$1
 
 APP_RUNTIME_SEC=1
-if [ ! -z $2 ]; then
+if [ ! -z "$2" ]; then
   APP_RUNTIME_SEC=$2
 fi
 
 TWO_R_TWO_T=1
-if [ ! -z $3 ]; then
+if [ ! -z "$3" ]; then
   TWO_R_TWO_T=$3
 fi
 
 ENSM_MODE=$ENSM_MODE_FDD_INDEPENDENT_CTRL
-if [ ! -z $4 ]; then
+if [ ! -z "$4" ]; then
   ENSM_MODE=$4
 fi
 

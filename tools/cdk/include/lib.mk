@@ -80,7 +80,7 @@ AssyImplementations=$(filter %.assy,$(Implementations))
 # must eval here hence ifeq
 ifeq ($(TestImplementations),)
   ifeq ($(origin Tests),undefined)
-    TestImplementations:=$(subst %/,%,$(dir $(wildcard *.test/Makefile)))
+    TestImplementations:=$(filter-out $(ExcludeTests),$(patsubst %/,%,$(dir $(wildcard *.test/Makefile))))
   else
     TestImplementations:=$(Tests)
   endif

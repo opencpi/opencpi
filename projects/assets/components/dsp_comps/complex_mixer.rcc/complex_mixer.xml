@@ -1,3 +1,4 @@
-<RccWorker language='c++' spec='complex_mixer-spec' controlOperations="initialize,release">
-
-</RccWorker>
+<RccWorker language='c++'
+	   spec='complex_mixer-spec'
+	   controlOperations="initialize,release"
+	   staticPrereqLibs='liquid'/>

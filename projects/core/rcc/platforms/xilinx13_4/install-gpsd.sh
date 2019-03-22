@@ -34,9 +34,7 @@ source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
 
 cd ..
 export CCFLAGS=$OcpiCFlags
-sysroot=$(echo $OcpiCrossCompile  | sed "s/\/bin\/$OcpiCrossHost-//")/$OcpiCrossHost/libc
+sysroot=$(echo $OcpiCrossCompile | sed "s|/bin[^/]*/$OcpiCrossHost-||")/$OcpiCrossHost/libc
 scons prefix=$OcpiInstallExecDir target=$OcpiCrossHost sysroot=$sysroot libgpsmm=True ncurses=False qt=False python=False usb=False bluez=False ntp=False manbuild=False
 scons install
-# Grab the file that goes in /etc/init.d but first populate OCPI_PATH
-sed -i "s/OCPI_PATH=$/OCPI_PATH=\/mnt\/card\/opencpi\/$OcpiPlatform\/bin/" $OcpiThisPrerequisiteDir/prerequisites/$me/etc_initd_gpsd
-relative_link $OcpiThisPrerequisiteDir/prerequisites/$me/etc_initd_gpsd $OcpiInstallExecDir/bin
+cp $OcpiThisPrerequisiteDir/prerequisites/$me/etc_initd_gpsd $OcpiInstallExecDir/bin

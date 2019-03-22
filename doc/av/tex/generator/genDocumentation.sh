@@ -450,8 +450,20 @@ BSPS=()
 [ -z "${dirsearch}" ] && find_bsps
 generate_pdfs "${dirsearch}"
 
-# Special case - we don't (currently) have a decent source for the IDE PDF
-[ -z "${dirsearch}" ] && (cd ${OUTPUT_PATH} && wget http://opencpi.github.io/ANGRYVIPER_IDE_UG.pdf) || :
+# Special case - we don't (currently) have a decent source for the IDE PDF (AV-4685)
+if [ -z "${dirsearch}" ]; then
+  if [ -f "${REPO_PATH}/doc/av/ANGRYVIPER_IDE_UG.pdf" ]; then
+    echo "${BOLD}Re-using GUI PDF from ${REPO_PATH}/doc/av/ANGRYVIPER_IDE_UG.pdf${RESET}"
+    cp "${REPO_PATH}/doc/av/ANGRYVIPER_IDE_UG.pdf" "${OUTPUT_PATH}"
+  else
+    echo "${RED}Could not find local ${REPO_PATH}/doc/av/ANGRYVIPER_IDE_UG.pdf; re-using GUI PDF from opencpi.github.io${RESET}"
+    # Not sure if this should be an error or not.
+    echo "Could not find local ${REPO_PATH}/doc/av/ANGRYVIPER_IDE_UG.pdf; re-using GUI PDF from opencpi.github.io" >> ${OUTPUT_PATH}/errors.log
+    pushd ${OUTPUT_PATH} > /dev/null
+    wget http://opencpi.github.io/ANGRYVIPER_IDE_UG.pdf
+    popd > /dev/null
+  fi
+fi
 
 [ -z "${dirsearch}" ] && create_index > ${OUTPUT_PATH}/${index_file}
 compress_pdfs

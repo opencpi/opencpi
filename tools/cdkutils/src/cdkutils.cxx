@@ -278,7 +278,7 @@ printgen(FILE *f, const char *comment, const char *file, bool orig, const char *
   std::string escaped_file = file;
   // -- in xml comments is invalid xml grammer so we remove it if it exists in the filename
   while (escaped_file.find("--") != std::string::npos)
-    escaped_file.replace(escaped_file.find("--"), 2, "-/-");
+    escaped_file.replace(escaped_file.find("--"), 2, "-\\-");
   char *ct = ctime(&now);
   ct[strlen(ct) - 1] = '\0';
   struct tm *local = localtime(&now);

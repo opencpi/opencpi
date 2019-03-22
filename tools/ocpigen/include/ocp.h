@@ -163,8 +163,8 @@ class OcpPort : public Port {
 		       std::string &last, const char *myComment, OcpAdapt *adapt,
 		       std::string *signalIn, std::string &clockSignal, std::string &exprs);
 #endif
-  InstancePort &ocpSignalPrefix(bool master, bool clock, Language lang, const Attachments &atts,
-				std::string &signal);
+  void ocpSignalPrefix(bool master, bool clock, Language lang, const Attachment &otherAt,
+		       std::string &signal);
 #if 1
   void emitExprAssignments(const InstancePort &ip, Language lang, std::string &out);
   void connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, const OcpAdapt *oa, std::string &thisComment,

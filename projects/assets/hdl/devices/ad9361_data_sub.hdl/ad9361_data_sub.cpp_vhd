@@ -79,8 +79,9 @@ begin
       port map(I => dev_data_dac_in.tx_frame, O => TX_FRAME_P);
     fb_clk   : BUFFER_OUT_1 generic map(DIFFERENTIAL => false)
       port map(I => FB_CLK_P_s, O => FB_CLK_P);
-    // Tie _N signals to ground for CMOS as recommended in Table 13 of
-    // the AD9361 datasheet
+    // The AD9361 datasheet Table 13 recommends to ground these input pins in cmos mode.
+    // Note that these signals may or *may not* actually be connected on a given platform/card.
+    // If they are, we need to ground them ourselves.
     TX_FRAME_N <= '0';
     FB_CLK_N   <= '0';
   #endif

@@ -308,7 +308,7 @@ main(int argc, const char **argv) {
           return 0;
         }
         Worker *w = Worker::create(*ap, parent, package, outDir, NULL, NULL,
-                                   doGenerics >= 0 ? doGenerics : 0, err);
+                                   doGenerics >= 0 ? (unsigned)doGenerics : 0, err);
 
         if (err)
           err = OU::esprintf("For file %s: %s", *ap, err);

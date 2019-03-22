@@ -22,7 +22,7 @@
 #   include/platform-defaults.mk file.
 # See that file for a description of valid variables and their defaults.
 
-include $(dir $(lastword $(MAKEFILE_LIST)))../../../../core/rcc/platforms/xilinx13_3/xilinx13_3.mk
+include $(dir $(lastword $(MAKEFILE_LIST)))../xilinx13_3/xilinx13_3.mk
 OcpiPlatformOs=linux
 OcpiPlatformOsVersion=x13_4
 OcpiPlatformArch=arm

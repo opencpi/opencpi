@@ -30,22 +30,12 @@ Tests:
 #2: Is the expected amount
 #3: Matches the expected output
 """
-import sys
-import os.path
-import numpy as np
 import datetime
+import os.path
+import sys
+import opencpi.colors as color
+import numpy as np
 
-class color:
-    PURPLE = '\033[95m'
-    CYAN = '\033[96m'
-    DARKCYAN = '\033[36m'
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    END = '\033[0m'
 
 def myround(x, base=8):
     return base * round(float(x) / base)
@@ -103,14 +93,14 @@ ofile_nbytes = int(os.stat(sys.argv[2]).st_size)
 # Compare input file size (adjusted by decimation factor) and output file size
 # Need special rounding to adjust for 'odd' valued decimation factors
 if (myround((ifile_nbytes / R), 8) != ofile_nbytes):
-    print '    FAIL - Output file is not the correct size'
+    print color.RED, color.BOLD, '    FAIL - Output file is not the correct size', color.END
     sys.exit(1)
 else:
     print '    PASS - Output file is the correct size'
-    
+
 # Test #3 - Check that output data values: Unity Gain Response or Tone
 if (Ft == 0): # Unity Gain Response (DC input results in DC output)
-    # Calculate the expected output DC value, by scaling the input DC value 
+    # Calculate the expected output DC value, by scaling the input DC value
     # based on the configuration of the worker under test
     AMPLITUDE = int(AMPLITUDE * ((R*M)**N) / 2**np.ceil((N*(np.log2(R*M))))) #overwrite
     #print 'DBG: Test for Unity Gain Response: expected amplitude =', AMPLITUDE
@@ -118,7 +108,7 @@ if (Ft == 0): # Unity Gain Response (DC input results in DC output)
     skip_index = (N+M)*2
     #print 'DBG: skip_index and I/Q values:', skip_index, real[skip_index], imag[skip_index]
     if all(real[skip_index::] != AMPLITUDE) and all(imag[skip_index::] != AMPLITUDE):
-        print '    FAIL - I or Q values do not match the expected constant value of', AMPLITUDE
+        print color.RED, color.BOLD, '    FAIL - I or Q values do not match the expected constant value of', AMPLITUDE, color.END
         sys.exit(1)
     else:
         #nsamples_matched = len(real[skip_index::] / 2)
@@ -148,7 +138,7 @@ else: # Measure and compare power of tone(s)
     eps = pow(10, -10) #Error factor to avoid divide by zero in log10
     #print 'DBG: len(IFFT)=%d \nDBG: len(OFFT)=%d' % (len(IFFT), len(OFFT))
 
-    # Report time needed to perform FFTs 
+    # Report time needed to perform FFTs
     end_time = datetime.datetime.today()
     print '    End time =', end_time
     print '    Elapsed time:', end_time - start_time
@@ -180,27 +170,27 @@ else: # Measure and compare power of tone(s)
     # Note: Comparison values were determined empirically across entire test suite
     diffT1 = abs(OPowerT1 - IPowerT1)
     if (M == 2 and R == 8192):
-        if (diffT1 < 37.0) : 
+        if (diffT1 < 37.0) :
             print "    FAIL, Output Tone 1 power level = ", OPowerT1, "dBm", diffT1
             sys.exit(1)
     elif (M == 2 and R == 8191):
-        if (diffT1 < 46.0) : 
+        if (diffT1 < 46.0) :
             print "    FAIL, Output Tone 1 power level = ", OPowerT1, "dBm", diffT1
             sys.exit(1)
     elif (R == 8191):
-        if (diffT1 < 15.0): 
+        if (diffT1 < 15.0):
             print "    FAIL, Output Tone 1 power level = ", OPowerT1, "dBm", diffT1
             sys.exit(1)
-    elif diffT1 > 8.0 : 
+    elif diffT1 > 8.0 :
         print "    FAIL, Output Tone 1 power level = ", OPowerT1, "dBm", diffT1
         sys.exit(1)
 
     diffT2 = abs(OPowerT2 - IPowerT2)
     if (R >= 8191):
-        if (diffT2 < 37.0) : 
+        if (diffT2 < 37.0) :
             print "    FAIL, Output Tone 1 power level =", OPowerT2, "dBm", diffT2
             sys.exit(1)
-    elif diffT2 > 8.0 : 
+    elif diffT2 > 8.0 :
         print "    FAIL, Output Tone 2 power level =", OPowerT2, "dBm", diffT2
         sys.exit(1)
 

@@ -49,8 +49,9 @@ HdlContainer *HdlContainer::
 create(ezxml_t xml, const char *xfile, const char *&err) {
   std::string myConfig, myPlatform, myAssy, myConstraints;
   OrderedStringSet platforms;
+  // "only" is for backward compatibility
   if ((err = OE::checkAttrs(xml, IMPL_ATTRS, HDL_TOP_ATTRS, PLATFORM_ATTRS,
-			    HDL_CONTAINER_ATTRS, (void*)0)) ||
+			    HDL_CONTAINER_ATTRS, "only", (void*)0)) ||
       (err = OE::checkElements(xml, HDL_CONTAINER_ELEMS, (void*)0)) ||
       (err = parsePlatform(xml, myConfig, myConstraints, platforms)))
     return NULL;
@@ -216,7 +217,7 @@ HdlContainer::
 HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const char *xfile,
 	     const char *&err)
   : Worker(xml, xfile, "", Worker::Container, NULL, NULL, err),
-    HdlHasDevInstances(config.m_platform, config.m_plugged),
+    HdlHasDevInstances(config.m_platform, config.m_plugged, *this),
     m_appAssembly(appAssembly), m_config(config) {
   appAssembly.setParent(this);
   config.setParent(this);
@@ -565,7 +566,6 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
       }
     }
   }
-#if 1
   // During the parsing of the container assembly we KNOW what the platform is,
   // but the platform config XML that might be parsed might think it is defaulting
   // from the platform where it lives, so we temporarily set the global to the
@@ -575,7 +575,6 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   if ((err = parseHdl()))
     return;
   g_platform = save;
-#endif
 }
 
 HdlContainer::
@@ -934,8 +933,13 @@ emitXmlConnections(FILE *f) {
 // are actually signals of the platform configuration worker.
 void HdlContainer::
 mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
-  const Signals &devsigs = di.device.deviceType().m_signals;
-  for (SignalsIter s = devsigs.begin(); s != devsigs.end(); s++)
+  const Signals
+    &devSigs = di.device.deviceType().m_signals,
+    &instSigs = di.m_worker->m_signals;
+  for (SignalsIter s = devSigs.begin(), i = instSigs.begin(); s != devSigs.end(); ++s, ++i) {
+    assert((*s)->m_name == (*i)->m_name);
+    if ((*i)->m_direction == Signal::UNUSED)
+      continue;
     for (unsigned n = 0; (*s)->m_width ? n < (*s)->m_width : n == 0; n++) {
       // (Re)create the signal name of the pf_config signal
       const char *boardName;
@@ -978,6 +982,7 @@ mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
 	break;
       }
     }
+  }
 }
 
 const char *HdlContainer::

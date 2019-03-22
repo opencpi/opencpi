@@ -42,7 +42,7 @@ ifndef HdlSkip
 
 ifndef HdlCores
 ifdef Core
-HdlCores:=$(Core)	
+HdlCores:=$(Core)
 else
 HdlCores:=$(CwdName)
 endif
@@ -70,6 +70,9 @@ CoreFile=$(PreBuiltCore)
 else
 CoreFile=$(Core)$(HdlBin)
 endif
+endif
+ifndef HdlInstallDir
+  HdlInstallDir:=../lib
 endif
 HdlCoreInstallDir=$(HdlInstallDir)/$1
 HdlCoreInstallDirs=$(HdlCores:$(HdlInstallDir)/%)
@@ -162,6 +165,9 @@ endif # for building a real core
 ifneq ($(Imports)$(ImportCore)$(ImportBlackBox),)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-import.mk
 endif # imports
+
+install: build
+all: install
 else
 install:
 endif # HdlSkip

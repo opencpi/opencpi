@@ -774,11 +774,12 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         I.e. Create the 'imports' link at the top-level of the project to point to the project
              registry
         """
+        import _opencpi.assets.registry
         # If registry path is not provided, get the default
-        if registry_path is None or registry_path == "":
-            import _opencpi.assets.registry
+        default_registry_path = _opencpi.assets.registry.Registry.get_default_registry_dir()
+        if registry_path is None or registry_path == "":           
             # Get the default project registry set by the environment state
-            registry_path = _opencpi.assets.registry.Registry.get_default_registry_dir()
+            registry_path = default_registry_path
         reg = self.registry()
         # If we are about to set a new registry, and this project is registered in the current one,
         # raise an exception; user needs to unregister the project first.
@@ -790,10 +791,10 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                                          "This can be done by running 'ocpidev unregister project" +
                                          " " + self.package_id + "'.")
         # pylint:enable=bad-continuation
-
-        ocpiutil.logging.warning("To use this registry, run the following command and add it " +
-                                 "to your ~/.bashrc:\nexport OCPI_PROJECT_REGISTRY_DIR=" +
-                                 os.path.realpath(registry_path))
+        if( os.path.realpath(registry_path) != os.path.realpath(default_registry_path)):
+            ocpiutil.logging.warning("To use this registry, run the following command and add it " +
+                                    "to your ~/.bashrc:\nexport OCPI_PROJECT_REGISTRY_DIR=" +
+                                    os.path.realpath(registry_path))
 
         #self.__registry = AssetFactory.factory("registry", registry_path)
         # TODO: pull this relative link functionality into a helper function
@@ -838,6 +839,8 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                                          "'.  Tried to use relative path: " + rel_registry_path +
                                          " in project: " + self.directory + "'.\nPath does not " +
                                          "exist or is not a directory.")
+        print("Succesfully set the registry of the project " + os.path.realpath(self.directory) +
+              "\nto the registry: " + os.path.realpath(self.registry().directory))
 
     def unset_registry(self):
         """
@@ -868,6 +871,8 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
             else:
                 logging.debug("Unset project registry has succeeded, but nothing was done.\n" +
                               "Registry was not set in the first place for this project.")
+        print("Succesfully unset the registry of the project " + os.path.realpath(self.directory) +
+              "\nFrom the registry: " + os.path.realpath(reg.directory) + "to the default registry")
 
     def registry(self):
         """

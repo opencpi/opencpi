@@ -22,23 +22,12 @@ This script defines the functions used to validate the data captured by the Capt
 by the verify.py script.
 """
 
+# import os.path
+# import struct
 import sys
-import os.path
-import struct
+import opencpi.colors as color
 import numpy as np
 
-
-class color:
-    PURPLE = '\033[95m'
-    CYAN = '\033[96m'
-    DARKCYAN = '\033[36m'
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    END = '\033[0m'
 
 # For testScenario 1
 def verify_metadataCount1(metadataCount):

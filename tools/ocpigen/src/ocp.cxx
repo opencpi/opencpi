@@ -231,10 +231,12 @@ emitSignals(FILE *f, Language lang, std::string &last, bool /*inPackage*/, bool 
       fprintf(f,
 	      "  %s No Clk signal here. The \"%s\" interface uses \"%s\" as clock\n",
 	      comment, pname(), clock->signal());
+    bool clockOut = myClock && clock->m_output;
     osd = ocpSignals;
     std::string ws;
     for (OcpSignal *os = ocp.signals; osd->name; os++, osd++)
-      if (os->master == mIn && /* strcmp(osd->name, "Clk") && */ os->value) {
+      if (os->value && ((osd == &ocpSignals[OCP_Clk] && !clockOut) ||
+			(osd != &ocpSignals[OCP_Clk] && mIn == os->master))) {
 	vectorWidth(osd, ws, lang, convert);
 	emitSignal(os->signal, f, lang, Signal::IN,
 		   last, osd->vector ? (int)os->width : -1, n,
@@ -242,7 +244,8 @@ emitSignals(FILE *f, Language lang, std::string &last, bool /*inPackage*/, bool 
       }
     osd = ocpSignals;
     for (OcpSignal *os = ocp.signals; osd->name; os++, osd++)
-      if (os->master != mIn && /* strcmp(osd->name, "Clk") && */ os->value) {
+      if (os->value && ((osd == &ocpSignals[OCP_Clk] && clockOut) ||
+			(osd != &ocpSignals[OCP_Clk] && mIn != os->master))) {
 	vectorWidth(osd, ws, lang, convert);
 	emitSignal(os->signal, f, lang, Signal::OUT,
 		   last, osd->vector ? (int)os->width : -1, n,
@@ -261,14 +264,17 @@ emitVector(FILE *f, const OcpSignalDesc *osd) {
 
 void OcpPort::
 emitDirection(FILE *f,  const char *implName, bool mIn, std::string &dir) {
+  bool output = mIn == m_master;
   fprintf(f,
-	  "\n  -- Record for the %s input (OCP %s) signals for port \"%s\" of worker \"%s\"\n",
-	  typeName(), mIn ? "master" : "slave", pname(), implName);
+	  "\n  -- Record for the %s %s (OCP %s) signals for port \"%s\" of worker \"%s\"\n",
+	  typeName(), output ? "output" : "input", mIn ? "master" : "slave", pname(), implName);
   fprintf(f, "  type %s_t is record\n", dir.c_str());
   OcpSignalDesc *osd = ocpSignals;
+  bool clockOut = myClock && clock->m_output;
   for (OcpSignal *os = ocp.signals; osd->name; os++, osd++)
     //      if ((osd->master == mIn && strcmp(osd->name, "Clk")) && os->value) {
-    if (os->master == mIn && os->value) {
+    if (os->value && ((osd == &ocpSignals[OCP_Clk] && output == clockOut) ||
+		      (osd != &ocpSignals[OCP_Clk] && mIn == os->master))) {
       fprintf(f, "    %-20s: ", osd->name);
       if (osd->type)
 	fprintf(f, "ocpi.ocp.%s_t", osd->name);
@@ -287,8 +293,13 @@ emitRecordInterface(FILE *f, const char *implName) {
   //      emitPortDescription(p, f);
   fprintf(f, "\n"
 	  "  -- These 2 records correspond to the input and output sides of the OCP bundle\n"
-	  "  -- for the \"%s\" worker's \"%s\" profile interface named \"%s\"\n",
+	  "  -- for the \"%s\" worker's \"%s\" interface named \"%s\"\n",
 	  implName, typeName(), pname());
+  if (myClock)
+    fprintf(f, "  -- This interface has its own clock, which is an %s.\n",
+	    clock->m_output ? "output" : "input");
+  else if (clockPort)
+    fprintf(f, "  -- This interface uses the clock from the \"%s\" port.\n", clockPort->pname());
   std::string in, out;
   OU::format(in, typeNameIn.c_str(), "");
   OU::format(out, typeNameOut.c_str(), "");
@@ -397,8 +408,10 @@ emitVerilogSignals(FILE *f) {
     std::string num;
     OU::format(num, "%u", n);
     std::string name, width;
+    bool clockOut = myClock && clock->m_output;
     for (OcpSignal *os = ocp.signals; osd->name; os++, osd++)
-      if (os->master == masterIn() && /* strcmp(osd->name, "Clk")) && */ os->value) {
+      if (os->value && ((osd == &ocpSignals[OCP_Clk] && !clockOut) ||
+			(osd != &ocpSignals[OCP_Clk] && masterIn() == os->master))) {
 	OU::format(name, os->signal, num.c_str());
 	if (osd->vector) {
 	  vectorWidth(osd, width, Verilog);
@@ -408,7 +421,8 @@ emitVerilogSignals(FILE *f) {
       }
     osd = ocpSignals;
     for (OcpSignal *os = ocp.signals; osd->name; os++, osd++)
-      if (os->master != masterIn() && /* strcmp(osd->name, "Clk")) && */ os->value) {
+      if (os->value && ((osd == &ocpSignals[OCP_Clk] && clockOut) ||
+			(osd != &ocpSignals[OCP_Clk] && masterIn() != os->master))) {
 	OU::format(name, os->signal, num.c_str());
 	if (osd->vector) {
 	  vectorWidth(osd, width, Verilog);
@@ -467,15 +481,16 @@ emitVhdlShell(FILE *f, Port */*wci*/) {
 }
 
 // This method will be called at the start of all OcpPort-based derived classes
+// ALERT: this code is mostly duplicated in the middle of the wsi.cxx method
 void OcpPort::
 emitVHDLShellPortMap(FILE *f, std::string &last) {
   // If the port has its own clock, we wire it here, generally
   // Own clocks are always part of the signal structure for the port.
-  if (!myClock)
-    return;
-  const char *inout = clock->m_output ? typeNameOut.c_str() : typeNameIn.c_str();
-  fprintf(f, "%s    %s.Clk => %s.Clk", last.c_str(), inout, inout);
-  last = ",\n";
+  if (myClock) {
+    const char *inout = clock->m_output ? typeNameOut.c_str() : typeNameIn.c_str();
+    fprintf(f, "%s    %s.Clk => %s.Clk", last.c_str(), inout, inout);
+    last = ",\n";
+  }
 }
 
 
@@ -485,19 +500,18 @@ emitVHDLSignalWrapperPortMap(FILE *f, std::string &last) {
   OU::format(in, typeNameIn.c_str(), "");
   OU::format(out, typeNameOut.c_str(), "");
   OcpSignalDesc *osd = ocpSignals;
+  bool clockOut = myClock && clock->m_output;
   for (OcpSignal *os = ocp.signals; osd->name; os++, osd++)
-    if (os->value && os->master) {
-      fprintf(f, "%s      %s.%s => %s", last.c_str(),
-	      os->master == masterIn() ? in.c_str() : out.c_str(),
-	      osd->name, os->signal);
+    if (os->value && ((osd == &ocpSignals[OCP_Clk] && !clockOut) ||
+		      (osd != &ocpSignals[OCP_Clk] && os->master == masterIn()))) {
+      fprintf(f, "%s      %s.%s => %s", last.c_str(), in.c_str(), osd->name, os->signal);
       last = ",\n";
     }
   osd = ocpSignals;
   for (OcpSignal *os = ocp.signals; osd->name; os++, osd++)
-    if (os->value && !os->master) {
-      fprintf(f, "%s      %s.%s => %s", last.c_str(),
-	      os->master == masterIn() ? in.c_str() : out.c_str(),
-	      osd->name, os->signal);
+    if (os->value && ((osd == &ocpSignals[OCP_Clk] && clockOut) ||
+		      (osd != &ocpSignals[OCP_Clk] && os->master != masterIn()))) {
+      fprintf(f, "%s      %s.%s => %s", last.c_str(), out.c_str(), osd->name, os->signal);
       last = ",\n";
     }
 }
@@ -542,15 +556,16 @@ emitVHDLRecordWrapperAssignments(FILE *f) {
 	OU::format(name, os->signal, num.c_str());
 	if (os->value) {
 	  std::string rec;
+	  bool isOutput = osd == &ocpSignals[OCP_Clk] ? myClock && clock->m_output : os->master != masterIn();
 	  if (m_count > 1)
-	    OU::format(rec, "%s(%u).%s", os->master == masterIn() ? in.c_str() : out.c_str(),
+	    OU::format(rec, "%s(%u).%s", isOutput ? out.c_str() : in.c_str(),
 		       n, osd->name);
 	  else
-	    OU::format(rec, "%s.%s", os->master == masterIn() ? in.c_str() : out.c_str(),
+	    OU::format(rec, "%s.%s", isOutput ? out.c_str() : in.c_str(),
 		       osd->name);
 	  fprintf(f, "  %s <= %s;\n",
-		  os->master == masterIn() ? name.c_str() : rec.c_str(),
-		  os->master == masterIn() ? rec.c_str() : name.c_str());
+		  isOutput ? rec.c_str() : name.c_str(),
+		  isOutput ? name.c_str() : rec.c_str());
 	}
       }
   }
@@ -649,7 +664,8 @@ emitPortSignalsDir(FILE *f, bool output, Language lang, const char *indent,
 	((osd == &ocpSignals[OCP_Clk] && output == clock->m_output) ||
 	 (osd != &ocpSignals[OCP_Clk] && (output ? os->master == m_master : os->master != m_master)))) {
       std::string signal, thisComment;
-      connectOcpSignal(*osd, *os, lang == VHDL ? NULL : oa, thisComment, lang, ip, signal);
+      // connectOcpSignal(*osd, *os, lang == VHDL ? NULL : oa, thisComment, lang, ip, signal);
+      connectOcpSignal(*osd, *os, oa, thisComment, lang, ip, signal);
       /* if (signal.length()) */ {
 	// We have a new one, so can close the previous one
 	doPrev(f, last, comment, hdlComment(lang));
@@ -676,7 +692,7 @@ emitExprAssignments(const InstancePort &ip, Language lang, std::string &out) {
   OU::formatAdd(out,
 		"\n"
 		"  %s Temporary input signal assignments for port \"%s\":\n",
-		hdlComment(lang), pname());		
+		hdlComment(lang), pname());
   if (lang == VHDL)
     OU::formatAdd(out,
 		  "  -- since it has some signals with expression values that are not "
@@ -685,7 +701,8 @@ emitExprAssignments(const InstancePort &ip, Language lang, std::string &out) {
   OcpSignal *os;
   const OcpAdapt *oa;
   for (osd = ocpSignals, os = ocp.signals, oa = ip.m_ocp; osd->name; os++, osd++, oa++)
-    if (os->value && os->master != m_master && !(osd == &ocpSignals[OCP_Clk] && ip.m_clockSignal.size())) {
+    if (os->value && os->master != m_master &&
+	!(osd == &ocpSignals[OCP_Clk] && ip.m_clockSignal.size())) {
       std::string signal, thisComment;
       connectOcpSignal(*osd, *os, oa, thisComment, lang, ip, signal);
       const char *comment = oa->comment ? oa->comment : thisComment.c_str();
@@ -695,7 +712,8 @@ emitExprAssignments(const InstancePort &ip, Language lang, std::string &out) {
 }
 void OcpPort::
 emitPortSignals(FILE *f, const InstancePort &ip, Language lang, const char *indent, bool &any,
-		std::string &comment, std::string &last, const char */*myComment*/, std::string &exprs) {
+		std::string &comment, std::string &last, const char */*myComment*/,
+		std::string &exprs) {
   if (ip.m_hasExprs) {
     std::string signal;
     if (ip.m_clockSignal.empty()) {
@@ -715,37 +733,29 @@ emitPortSignals(FILE *f, const InstancePort &ip, Language lang, const char *inde
   // FIXME: clock outputs?
   if (clockSignal.length()) {
     std::string signal, thisComment;
-    connectOcpSignal(ocpSignals[OCP_Clk], ocp.signals[OCP_Clk], adapt[OCP_Clk], signal, thisComment, lang, atts);
+    connectOcpSignal(ocpSignals[OCP_Clk], ocp.signals[OCP_Clk], adapt[OCP_Clk], signal, thisComment,
+		     lang, atts);
     OU::formatAdd(exprs, "  %s%s %s %s;\n",
-		  lang == VHDL ? "" : "assign ", clockSignal.c_str(), lang == VHDL ? "<=" : "=", signal.c_str());
-  }    
+		  lang == VHDL ? "" : "assign ", clockSignal.c_str(), lang == VHDL ? "<=" : "=",
+		  signal.c_str());
+  }
 #endif
 }
 
-InstancePort  &OcpPort::
-ocpSignalPrefix(bool master, bool a_clock, Language lang, const Attachments &atts, std::string &signal) {
-  // Find the other end of the connection
-  assert(atts.size() == 1); // OCP connections are always point-to-point
-  Connection &c = atts.front()->m_connection;
-  assert(c.m_attachments.size() == 2);
-  InstancePort *otherIp = NULL;
-  Attachment *at;
-  for (AttachmentsIter ai = c.m_attachments.begin(); ai != c.m_attachments.end(); ai++)
-    if ((*ai)->m_instPort.m_port != this) {
-      at = *ai;
-      otherIp = &at->m_instPort;
-      break;
-    }
-  assert(otherIp);
+void OcpPort::
+ocpSignalPrefix(bool master, bool a_clock, Language lang, const Attachment &otherAt,
+		std::string &signal) {
+  Connection &c = otherAt.m_connection;
+  std::string &cName =
+    (a_clock ? (myClock && clock->m_output) != masterIn() : master) ?
+    c.m_masterName : c.m_slaveName;
   // Decide on our indexing.  We need an index if our attachment is a subset of
   // what we are connecting to, which is either another internal port or an external one.
-  // In either case
-  std::string &cName = master ? c.m_masterName : c.m_slaveName;
   size_t index, top, count = 0; // count for indexing purpose
-  if (otherIp->m_port->m_count > c.m_count) {
+  if (otherAt.m_instPort.m_port->m_count > c.m_count) {
     // We're connecting to something bigger: indexing is needed in this port binding
     count = c.m_count;
-    index = at->m_index;
+    index = otherAt.m_index;
     top = index + count - 1;
   }
   if (count) {
@@ -764,12 +774,11 @@ ocpSignalPrefix(bool master, bool a_clock, Language lang, const Attachments &att
     }
   } else
     OU::format(signal, cName.c_str(), "");
-  return *otherIp;
 }
 
 void OcpPort::
-connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, const OcpAdapt *oa, std::string &thisComment, Language lang,
-		 const InstancePort &ip, std::string &signal) {
+connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, const OcpAdapt *oa, std::string &thisComment,
+		 Language lang, const InstancePort &ip, std::string &signal) {
   if (ip.m_attachments.empty()) {
     // A truly unconnected port.  All we want is a tieoff if it is an input
     // We can always use zero since that will assert reset (in OCP reset signaling)
@@ -786,8 +795,25 @@ connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, const OcpAdapt *oa, std::str
     signal = ip.m_clockSignal;
     return;
   }
+  // Find the other end of the connection
+  assert(ip.m_attachments.size() == 1); // OCP connections are always point-to-point
+  Connection &c = ip.m_attachments.front()->m_connection;
+  assert(c.m_attachments.size() == 2);
+  InstancePort *otherIp = NULL;
+  Attachment *at;
+  for (AttachmentsIter ai = c.m_attachments.begin(); ai != c.m_attachments.end(); ai++)
+    if ((*ai)->m_instPort.m_port != this) {
+      at = *ai;
+      otherIp = &at->m_instPort;
+      break;
+    }
+  assert(otherIp);
+  if (&osd == &ocpSignals[OCP_Clk] && otherIp->m_clockSignal.size()) {
+    signal = otherIp->m_clockSignal;
+    return;
+  }
   std::string temp;
-  InstancePort &otherIp = ocpSignalPrefix(os.master, &osd == &ocpSignals[OCP_Clk], lang, ip.m_attachments, temp);
+  ocpSignalPrefix(os.master, &osd == &ocpSignals[OCP_Clk], lang, *at, temp);
   if (lang == VHDL)
     temp += '.';
   if (oa && oa->expr) {
@@ -805,7 +831,7 @@ connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, const OcpAdapt *oa, std::str
       OU::formatAdd(signal, oa->expr, temp.c_str());
   } else {
     signal = temp + osd.name;
-    OcpPort &other = *static_cast<OcpPort*>(otherIp.m_port);
+    OcpPort &other = *static_cast<OcpPort*>(otherIp->m_port);
     //assert(other.ocp.signals[osd.number].value);
     if (other.ocp.signals[osd.number].value && osd.vector && os.width != other.ocp.signals[osd.number].width) {
       ocpiDebug("Narrowing of assignment to port %s of worker %s from %zu to %zu",
@@ -842,7 +868,10 @@ adjustConnection(Connection &c, bool /*isProducer*/, OcpAdapt *myAdapt, bool &/*
       assert(ocp.Clk.value && other.ocp.Clk.value);
     } else if (myClock) {
       // I am taking as clock from the temp clock signal associated with the other port
-      assert(!clock->m_output);
+      if (clock->m_output)
+	return OU::esprintf("Connection between worker \"%s\" port \"%s\" and "
+			    "worker \"%s\" port \"%s\" needs a clock domain adapter",
+			    worker().cname(), pname(), otherPort.worker().cname(), otherPort.pname());
       OcpAdapt &oa = myAdapt[OCP_Clk];
       oa.expr = strdup(c.m_clockName.c_str());
       // myHasExpr = true;

@@ -36,19 +36,9 @@ Validation Tests:
 """
 import sys
 import os.path
+import opencpi.colors as color
 import numpy as np
 
-class color:
-    PURPLE = '\033[95m'
-    CYAN = '\033[96m'
-    DARKCYAN = '\033[36m'
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    END = '\033[0m'
 
 if len(sys.argv) != 3:
     print("Invalid arguments:  usage is: verify.py <output-file> <input-file>")
@@ -107,7 +97,7 @@ if (enable == "true"): # => NORMAL MODE
     data.real[0:NUM_SAMPLES-STAGES-2] = real
     data.imag[0:NUM_SAMPLES-STAGES-2] = imag
     # CRITICAL NOTE:
-    # The FFT performed on the output data requires a large amount 
+    # The FFT performed on the output data requires a large amount
     # of samples to provided the necessary resolution for verification.
     # Perform FFT
     w = np.fft.fft(data)
@@ -116,7 +106,7 @@ if (enable == "true"): # => NORMAL MODE
     # Locate max Tone
     idx = np.argmax(np.abs(w))
     measured_freq = freqs[idx]
-    
+
     expected_freq = CONSTANT_VALUE * Fs/float(2**DATA_WIDTH)
     # Max possible difference is based on the bit width of the CORDIC
     max_delta = 1/float(2**(DATA_WIDTH))
@@ -128,7 +118,7 @@ if (enable == "true"): # => NORMAL MODE
     #print "DBG: max_delta\t\t=", max_delta
     #print "DBG: calc_delta\t\t=", calc_delta
 
-    # Check that the difference between the calculated and expected frequencies is greater 
+    # Check that the difference between the calculated and expected frequencies is greater
     # than the max possible difference (max_delta).
     if (calc_delta > max_delta):
         print '    FAIL - Expected:Max:Delta ', expected_freq, measured_freq, calc_delta, max_delta

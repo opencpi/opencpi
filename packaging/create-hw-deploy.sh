@@ -34,7 +34,7 @@ if [ ! -d $output_path ]; then
   echo "Parameter given for output_path does not exist. Please make sure to run create-sw-deploy.sh before this script"
   exit 1
 fi
-if [ -z $OCPI_CDK_DIR ]; then
+if [ -z "$OCPI_CDK_DIR" ]; then
   echo "Need to set \$OCPI_CDK_DIR before running this script"
   exit 1
 fi

@@ -297,7 +297,7 @@ getOclPlatforms(const StringSet *&platforms) {
     if (!eq)
       return OU::esprintf("Invalid output from the \"ocpiocl targets\" command:  \"%s\"",
 			  targets.c_str());
-    std::string platform(ti.token(), eq - ti.token());
+    std::string platform(ti.token(), OCPI_SIZE_T_DIFF(eq, ti.token()));
     oclPlatforms.insert(platform);
   }
   oclPlatformsDone = true;
@@ -318,7 +318,7 @@ getAllPlatforms(const StringSet *&platforms, Model m) {
 	  return OU::esprintf("the environment variable OCPI_ALL_PLATFORMS (\"%s\") is invalid",
 			      env);
 	std::string p;
-	p.assign(env, (ep - 4) - env);
+	p.assign(env, OCPI_SIZE_T_DIFF((ep - 4), env));
 	if (!strncmp(ep - 4, ".rcc", 4))
 	  addPlatform(p.c_str(), rccPlatforms);
 	else if (!strncmp(ep - 4, ".hdl", 4))
@@ -426,7 +426,7 @@ getTargets(const char *attr, OrderedStringSet &targets, Model m) {
   }
   return NULL;
 }
-std::list<std::string>::const_iterator OrderedStringSet::
+std::list<std::string>::iterator OrderedStringSet::
 find(const std::string &s) {
   for (auto si = begin(); si != end(); ++si)
     if (s == *si)

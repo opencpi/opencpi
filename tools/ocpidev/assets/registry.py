@@ -105,6 +105,9 @@ class Registry(ShowableAsset):
             # If the project is already registered and is the same
             if self.__projects[pid].directory == project.directory:
                 logging.debug("Project link is already in the registry. Proceeding...")
+                print("Successfully registered the " + project.package_id + " project: " +
+                      os.path.realpath(project.directory) + "\nInto the registry: " +
+                      os.path.realpath(self.directory) + "\n")
                 return
             if not force:
                 raise ocpiutil.OCPIException("Failure to register project with package '" + pid +
@@ -133,6 +136,10 @@ class Registry(ShowableAsset):
         # Add the project to this registry's projects dictionary
         self.__projects[project.package_id] = project
 
+        print("Successfully registered the " + project.package_id + " project: " +
+              os.path.realpath(project.directory) + "\nInto the registry: " +
+              os.path.realpath(self.directory) + "\n")
+
     def remove(self, package_id=None, directory=None):
         """
         Given a project's package-ID or directory, determine if the project is present
@@ -153,6 +160,9 @@ class Registry(ShowableAsset):
                 logging.debug("Removing the following broken link from the registry:\n" +
                               link_path + " -> " + os.readlink(link_path))
                 self.remove_link(package_id)
+                print("Successfully unregistered the " + package_id + " project: " +
+                      os.path.realpath(directory) + "\nFrom the registry: " +
+                      os.path.realpath(self.directory) + "\n")
                 return
             raise ocpiutil.OCPIException("Could not unregister project with package-ID \"" +
                                          package_id + "\" because the project is not in the " +
@@ -170,10 +180,15 @@ class Registry(ShowableAsset):
                                              os.path.realpath(directory) + "'." + "\nThis " +
                                              "project does not appear to be registered.")
 
+        if directory is None:
+            directory = str(self.__projects[package_id].directory)
         # Remove the symlink registry/package-ID --> project
         self.remove_link(package_id)
         # Remove the project from this registry's dict
         self.__projects.pop(package_id)
+        print("Successfully unregistered the " + package_id + " project: " +
+              os.path.realpath(directory) + "\nFrom the registry: " +
+              os.path.realpath(self.directory) + "\n")
 
     def create_link(self, project):
         """
@@ -245,6 +260,7 @@ class Registry(ShowableAsset):
             cdkdir = os.environ.get('OCPI_CDK_DIR')
             if cdkdir:
                 project_registry_dir = cdkdir + "/../project-registry"
+                project_registry_dir = os.path.realpath(project_registry_dir)
             else:
                 project_registry_dir = "/opt/opencpi/project-registry"
         return project_registry_dir
@@ -300,7 +316,14 @@ class Registry(ShowableAsset):
                     wkrs_dict = {"workers":wkr_dict,
                                  "directory":lib.directory,
                                  "package_id": lib.package_id}
-                    lib_dict[lib.package_id] = wkrs_dict
+                    lib_package = lib.package_id
+                    # in case two or more  libraries have the same package id we update the key to end
+                    # with a number
+                    i = 1
+                    while lib_package in lib_dict:
+                        lib_package += ":" + str(i)
+                        i += 1
+                    lib_dict[lib_package] = wkrs_dict
             if lib_dict:
                 libs_dict = {"libraries":lib_dict,
                              "directory":self.__projects[proj].directory,
@@ -331,7 +354,14 @@ class Registry(ShowableAsset):
                     comps_dict = {"components":comp_dict,
                                   "directory":lib.directory,
                                   "package_id": lib.package_id}
-                    lib_dict[lib.package_id] = comps_dict
+                    lib_package = lib.package_id
+                    # in case two or more  libraries have the same package id we update the key to
+                    # end with a number
+                    i = 1
+                    while lib_package in lib_dict:
+                        lib_package += ":" + str(i)
+                        i += 1
+                    lib_dict[lib_package] = comps_dict
             if lib_dict:
                 libs_dict = {"libraries":lib_dict,
                              "directory":self.__projects[proj].directory,

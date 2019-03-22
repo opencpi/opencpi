@@ -1,0 +1,1 @@
+../../../../assets/hdl/devices/ad9361_config.hdl/signals.vhd

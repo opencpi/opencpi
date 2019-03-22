@@ -16,10 +16,10 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-RccStaticPrereqLibs=ad9361
+#RccStaticPrereqLibs=ad9361
 
 # Our "platform" functions that the ADI library calls
-SourceFiles=ad9361_platform.cc
+#SourceFiles=ad9361_platform.cc
 
 RccIncludeDirs+=./supporting/include/OCPIProjects/
 RccIncludeDirs+=./supporting/src/OCPIProjects/

@@ -11,7 +11,11 @@
 <!-- | ad9361_config.hdl       |                                             -->
 <!-- +_________________________+                                             -->
 <!--                                                                         -->
-<rccworker language="c++" slave='ad9361_config.hdl' spec='ad9361_config_proxy-spec' controloperations='initialize'>
+<rccworker language="c++" slave='ad9361_config.hdl' spec='ad9361_config_proxy-spec'
+	   controloperations='initialize'
+	   staticprereqlibs='ad9361'
+	   sourcefiles='ad9361_platform.cc'
+	   >
 
   <!--**** PROPERTIES CORRESPONDING TO libad9361 "STANDARD" API (ad9361_api.h)****-->
   <specproperty name='ad9361_init'                           writesync='true'/>

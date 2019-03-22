@@ -18,7 +18,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 analyzer=/opt/opencpi/prerequisites/loc/hfcca14.py
-if [ -z $analyzer ]; then
+if [ -z "$analyzer" ]; then
     echo 'You must install the static code anayzer to use this target, see $(OCPI_BASE_DIR)/intall_codeanalyzer.sh'
     exit -1;
 fi

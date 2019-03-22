@@ -19,9 +19,13 @@
 ##########################################################################################
 .NOTPARALLEL:
 ifneq ($(filter-out cleandriver,$(filter show help clean% distclean%,$(MAKECMDGOALS))),)
-  ifndef OCPI_CDK_DIR
-    export OCPI_CDK_DIR:=$(CURDIR)/bootstrap
-  endif
+  $(if $(and $(OCPI_CDK_DIR),$(realpath $(OCPI_CDK_DIR))),,\
+    $(if $(OCPI_CDK_DIR),\
+      $(foreach p,$(realpath $(CURDIR)),\
+        $(if $(filter $(realpath $(OCPI_CDK_DIR)),$p/cdk $p/exports),\
+           $(warning Missing exports link when performing: $(MAKECMDGOALS).)\
+	   $(warning Setting OCPI_CDK_DIR temporarily to $(CURDIR)/bootstrap.))))\
+    $(eval export OCPI_CDK_DIR:=$(CURDIR)/bootstrap))
 else
   ifndef OCPI_CDK_DIR
     export OCPI_CDK_DIR:=$(CURDIR)/cdk
@@ -62,7 +66,7 @@ $(foreach p,$(RccPlatforms),$(if $(filter $p,$(RccAllPlatforms)),,\
 HdlPlatforms:=$(call Unique,$(strip $(HdlPlatforms) $(HdlPlatform)))
 $(foreach h,$(HdlPlatforms) $(foreach p,$(Platforms),$(and $(findstring :,$p),$(word 1,$(subst :, ,$p)))),\
   $(if $(filter $h,$(HdlAllPlatforms)),,\
-    $(error HDL platform $p is specified but not a known HDL platform.)))
+    $(error HDL platform $h is specified but not a known HDL platform.)))
 # Add any RCC platforms in $(Platforms) to the RCC platforms list (not second of pairs though)
 override \
 RccPlatforms:=$(call Unique,$(RccPlatforms)\
@@ -152,20 +156,20 @@ cleandriver:
 	           fi;))) \
 
 # Clean that respects platforms
-clean: cleanframework cleanprojects
+clean: cleanprojects cleanframework
 
 # Super clean, but not git clean, based on our patterns, not sub-make cleaning
 cleaneverything distclean: clean cleandriver cleanpackaging
-	$(AT)rm -r -f exports
+	$(AT)$(call DoProjects,cleaneverything)
 	$(AT)find . -depth -a ! -name .git  -a ! -path "./prerequisites*" -a \( \
              -name '*~' -o -name '*.dSym' -o -name timeData.raw -o -name 'target-*' -o \
-             -name "*.lo" -o -name "*.o" -o \
+             -name "*.lo" -o -name "*.o" -o \( -type d -a -name simulations \) -o \
 	     \( -name lib -a -type d -a \
 	       ! -path "*/rcc/platforms/*" -a ! -path "./prerequisites*" \) -o \
 	     \( -name gen -a -type d -a \
 	       ! -path "*/rcc/platforms/*" -a ! -path "./prerequisites*" \)  \
              \) -exec rm -r {} \;
-	$(AT)for p in projects/*; do [ -d $$p ] && make -C $$p cleaneverything || :; done
+	$(AT)rm -r -f exports
 
 ##########################################################################################
 # Goals, variables and macros that are about packaging the CDK, whether tarball, rpm, etc.

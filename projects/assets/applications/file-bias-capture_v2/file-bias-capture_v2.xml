@@ -1,0 +1,17 @@
+<application package='ocpi.core' done='capture_v2'>
+  <instance component="file_read" connect="bias">
+    <property name='filename' value='test.input' />
+    <property name='messagesInFile' value='false' />
+    <property name='opcode' value='0' />
+    <property name='messageSize' value='2048' />
+    <property name='granularity' value='4' />
+  </instance>
+  <instance component='bias' connect="capture_v2">
+    <property name='biasValue' value='0x01020304'/>
+  </instance>
+  <instance component="ocpi.assets.util_comps.capture_v2">
+  <property name='stopOnFull' value='true'/>
+  <property name='numRecords' value='256'/>
+  <property name='numDataWords' value='1024'/>
+  </instance>
+</application>

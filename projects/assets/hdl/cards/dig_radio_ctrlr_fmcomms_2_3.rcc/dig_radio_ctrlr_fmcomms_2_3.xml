@@ -34,7 +34,13 @@
 -->
 <!-- TODO / FIXME - add SCHEMATIC_CRYSTAL_Y101_FREQ parameter property -->
 <!-- TODO / FIXME - add ARE_USING_REF_CLK_SMA bool parameter property -->
-<RccWorker language='c++' spec='dig_radio_ctrlr-spec' slave='ad9361_config.hdl'>
+<RccWorker language='c++'
+	   spec='dig_radio_ctrlr-spec'
+	   slave='ad9361_config.hdl'
+	   staticprereqlibs='ad9361'
+	   includedirs='supporting/include/no-OS/ad9361/sw/platform_opencpi supporting/include/no-OS/ad9361/sw supporting/include supporting/include/OCPIProjects supporting/include/OCPIProjects/AD9361 supporting/src/OCPIProjects supporting/src/OCPIProjects/AD9361'
+	   sourcefiles='platform.cc'
+	   >
 
   <Property Name="FMCOMMS_NUM_p" Type="ushort"
                                  Parameter="true"

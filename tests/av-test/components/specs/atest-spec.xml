@@ -1,0 +1,21 @@
+<!-- Test all valid combinations of accessibility for specs-->
+<ComponentSpec>
+  <!-- errors could be: no value, any other accessibility or "default" -->
+  <property name='param0' parameter='1' value='5'/>
+  <property name='param1' parameter='1' default='5' hidden='1'/>
+  <property name='param2' parameter='1'/>
+  <!-- errors could be: any other accessibility except volatile -->
+  <property name='initial' initial='1' default='1'/>
+  <!-- errors could be: any other accessibility except volatile -->
+  <property name='writable1' writable='1' default='2'/>
+  <property name='writable2' writable='1'/>
+  <property name='writable3' writable='1'/>
+  <!-- errors could be: any value -->
+  <property name='readonlyconst' />
+  <!-- errors could be: any value -->
+  <property name='readonlyvolatile' volatile='1'/>
+  <!-- errors could be: any other accessibility -->
+  <property name='initialvolatile' initial='1' volatile='1' default='1'/>
+  <!-- errors could be: any other accessibility -->
+  <property name='writablevolatile' writable='1' volatile='1' default='1'/>
+</ComponentSpec>

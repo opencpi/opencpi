@@ -1,0 +1,222 @@
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+\def\importpath{../../../imports/ocpi.assets/components/dsp_comps/complex_mixer.test/doc/}
+\input{\importpath snippets/Complex_Mixer_Header.tex}
+%----------------------------------------------------------------------------------------
+% Update the docTitle and docVersion per document
+%----------------------------------------------------------------------------------------
+\def\docTitle{Component Data Sheet}
+\def\docVersion{1.5}
+%----------------------------------------------------------------------------------------
+\date{Version \docVersion} % Force date to be blank and override date with version
+\title{\docTitle}
+\lhead{\small{\docTitle}}
+
+\def\comp{complex\_mixer}
+\edef\ecomp{complex_mixer}
+\def\Comp{Complex Mixer (TimeStamped)}
+\graphicspath{ {figures/} }
+
+\begin{document}
+
+\section*{Summary - \Comp}
+\begin{tabular}{|c|M{13.5cm}|}
+	\hline
+	\rowcolor{blue}
+	                  & \\
+	\hline
+	Name              & \comp \\
+	\hline
+	Worker Type       & Application \\
+	\hline
+	Version           & v\docVersion \\
+	\hline
+	Release Date      & April 2019 \\
+	\hline
+	Component Library & ocpi.assets\_ts.components \\
+	\hline
+	Workers           & \comp.hdl \\
+	\hline
+	Tested Platforms  & xsim, isim, modelsim, Matchstiq-Z1(PL) \\
+	\hline
+\end{tabular}
+\input{\importpath snippets/Complex_Mixer_Functionality.tex}
+\section*{Worker Implementation Details}
+\input{\importpath snippets/Complex_Mixer_HDL_Implementation.tex}
+\input{\importpath snippets/Complex_Mixer_Theory.tex}
+
+\section*{Block Diagrams}
+\subsection*{Top level}
+	\begin{center}
+		\begin{tikzpicture}[% List of styles applied to all, to override specify on a case-by-case
+				every node/.style={
+					align=center,  		% use this so that the "\\" for line break works
+					minimum size=2cm	% creates space above and below text in rectangle
+				},
+				every edge/.style={draw,thick}
+			]
+			\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
+			\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in'' \\ Signed complex samples \\ with time};
+			\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' \\ Signed complex samples \\ with time};
+			\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+enable, phs_inc, phs_init, mag+};
+			\path[->]
+			(R3)edge []	node [] {} (R2)
+			(R2)edge []	node [] {} (R4)
+			(R2)edge []	node [] {} (R5)
+			(R5)edge []	node [] {} (R2)
+			;
+		\end{tikzpicture}
+	\end{center}
+	\captionof{figure}{Complex Mixer Top Level Block Diagram}
+	\label{fig:block_diagram}
+
+\newpage
+\section*{Source Dependencies}
+\subsection*{\comp.hdl}
+\begin{itemize}
+	\item projects/assets\_ts/components/complex\_mixer.hdl/complex\_mixer.vhd
+        \input{\importpath snippets/Complex_Mixer_Primitive_Dependencies.tex}
+\end{itemize}
+
+\begin{landscape}
+	\section*{Component Spec Properties}
+	\begin{scriptsize}
+		\begin{tabular}{|p{3cm}|p{1.5cm}|c|c|c|p{1.5cm}|p{1cm}|p{7cm}|}
+			\hline
+			\rowcolor{blue}
+			Name               & Type   & SequenceLength & ArrayDimensions & Accessibility	& Valid Range	& Default 	& Usage\\
+			\hline
+			\verb+enable+      & bool   & -              & -               & Writable			& -				& true    	& Enable(true) or bypass(false) mixer\\
+			\hline
+			\verb+phs_inc+     & short  & -              & -               & Writable			& -				& -4096		& Phase increment of NCO\\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+
+	\section*{Worker Properties}
+	\subsection*{\comp.hdl}
+	\begin{scriptsize}
+		\begin{tabular}{|p{1.5cm}|p{2.5cm}|p{1cm}|c|c|c|p{2cm}|p{1cm}|p{5cm}|}
+			\hline
+			\rowcolor{blue}
+			Type     & Name                      	& Type  	& SequenceLength & ArrayDimensions & Accessibility	& Valid Range 	& Default & Usage\\
+			\hline
+			Property & \verb+NCO_DATA_WIDTH_p+		& uchar 	& -              & -               & Parameter		& 12/16       	& 12      & Output data width of NCO\\
+			\hline
+			Property & \verb+INPUT_DATA_WIDTH_p+	& uchar 	& -              & -               & Parameter		& 12/16       	& 12      & Input port data width\\
+			\hline
+			Property & \verb+CORDIC_STAGES_p+    	& uchar 	& -              & -               & Parameter		& 16          	& 16      & Number of CORDIC stages implemented in NCO\\
+			\hline
+			Property & \verb+PEAK_MONITOR_p+     	& bool  	& -              & -               & Parameter		& -				& true    & Include peak monitor circuit\\
+			\hline
+			Property & \verb+LATENCY_p+     	  	& ushort	& -              & -               & Parameter		& 2				& 2		  & Number of clock cycles between a valid input and a valid output\\
+			\hline
+			Property & \verb+peak+            		& short 	& -              & -               & Volatile		& -				& -       & Output of peak detector\\
+			\hline
+			Property & \verb+phs_init+    			& ushort 	& -              & -               & Writable 		& -           	& 0       & Initial phase of NCO\\
+			\hline
+			Property & \verb+mag+         			& ushort 	& -              & -               & Writable 		& -           	& 1024    & Magnitude of NCO output\\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+
+	\section*{Component Ports}
+	\begin{scriptsize}
+		\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|c|M{9cm}|}
+			\hline
+			\rowcolor{blue}
+			Name & Producer & Protocol         & Optional	& Advanced & Usage\\
+			\hline
+			in   & -		& TimeStamped\_IQ	& -			& -        & Signed complex samples\\
+			\hline
+			out  & -		& TimeStamped\_IQ	& -			& -        & Signed complex samples\\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+
+	\section*{Worker Interfaces}
+	\subsection*{\comp.hdl}
+	\begin{scriptsize}
+		\begin{tabular}{|M{2cm}|M{1.5cm}|c|c|M{12cm}|}
+			\hline
+			\rowcolor{blue}
+			Type            & Name & DataWidth & Advanced  & Usage\\
+			\hline
+			StreamInterface & in   & 32        & -			& Signed Complex Samples\\
+			\hline
+			\rowcolor{blue}
+			Type            & Name & DataWidth & Advanced	& Usage\\
+			\hline
+			StreamInterface & out  & 32        & 			& Signed Complex Samples\\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+\end{landscape}
+
+\section*{Control Timing and Signals}
+\begin{flushleft}
+	The Complex Mixer HDL worker uses the clock from the Control Plane and standard Control Plane signals.\medskip
+
+	There is a startup delay for this worker. Once the input is ready and valid and the output is ready, there is a delay of \verb+CORDIC_STAGES_p++1 before the first sample is taken. After this initial delay, valid output data is given 2 clock cycles after input data is taken.
+
+	\begin{tabular}{|M{4.5cm}|M{1cm}|M{1cm}|M{1.5cm}|M{2cm}|M{1cm}|M{1cm}|M{2.5cm}|}
+		\hline
+		\rowcolor{blue}
+		Latency         \\
+		\hline
+		2 clock cycles  \\
+		\hline
+	\end{tabular}
+\end{flushleft}
+
+\begin{landscape}
+\section*{Worker Configuration Parameters}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/configurations.inc}
+\section*{Performance and Resource Utilization}
+\input{../../\ecomp.hdl/utilization.inc}
+\end{landscape}
+\section*{Test and Verification}
+Test cases are derived from the number of properties, and their respective values, as listed in the \comp-test.xml.
+\begin{itemize}
+	\item[1)] Bypass: The input data is forwarded to the output port. For verification of this case, the output file is byte-wise compared to the input file.
+	\item[2)] Normal mode:
+	Input data is generated by first creating a *.dat input file containing all of the operations of the TimeStamped\_IQ protocol in the following sequence:
+\begin{enumerate}
+	\item Interval
+	\item Sync (this opcode is expected after an Interval operation)
+	\item Time
+	\item Samples (tone with configurable length and magnitude)
+	\item Samples (tone with configurable length and magnitude)
+	\item Flush	
+	\item Samples (tone with configurable length and magnitude)
+	\item Sync
+	\item Samples (tone with configurable length and magnitude)
+	\item Done
+\end{enumerate}
+The samples messages consist of a tone with configurable length and magnitude.\medskip
+
+The NCO is configured to tune the input samples operations to baseband. For verification, an FFT of the output data is performed and the max value of the FFT is checked to be at DC (0 Hz).\medskip
+
+The worker will pass through all operations of the TimeStamped\_IQ protocol. During sync operations, the NCO is reset.
+
+\end{itemize}
+
+\end{document}

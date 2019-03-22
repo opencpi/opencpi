@@ -184,29 +184,29 @@ protected : void     register_OpenCPI_logging_API();
  *  API methods. */
 protected : void     cache_clkrf_freq_regs();
 
-protected : uint32_t _get_bbpll_n_fractional(        bool use_reg_cache);
-protected : float    _get_bbpll_ref_scaler(          bool use_reg_cache);
-protected : uint8_t  _get_bbpll_n_integer(           bool use_reg_cache);
-protected : uint8_t  _get_bbpll_divider(             bool use_reg_cache);
-protected : bool     _get_rhb3_enable(               bool use_reg_cache);
-protected : uint8_t  _get_rhb3_decimation_factor(    bool use_reg_cache);
-protected : uint8_t  _get_rhb3_num_taps(             bool use_reg_cache);
-protected : uint8_t  _get_rhb3_filter_order(         bool use_reg_cache);
-protected : bool     _get_rhb2_enable(               bool use_reg_cache);
-protected : uint8_t  _get_rhb2_decimation_factor(    bool use_reg_cache);
-protected : bool     _get_rhb1_enable(               bool use_reg_cache);
-protected : uint8_t  _get_rhb1_decimation_factor(    bool use_reg_cache);
-protected : double   _get_bbpll_freq_Hz(             bool use_reg_cache);
-protected : double   _get_adc_freq_Hz(               bool use_reg_cache);
-protected : double   _get_r2_freq_Hz(                bool use_reg_cache);
-protected : double   _get_r1_freq_Hz(                bool use_reg_cache);
-protected : double   _get_clkrf_freq_Hz(             bool use_reg_cache);
+protected : uint32_t _get_bbpll_n_fractional(        bool use_reg_cache = false);
+protected : float    _get_bbpll_ref_scaler(          bool use_reg_cache = false);
+protected : uint8_t  _get_bbpll_n_integer(           bool use_reg_cache = false);
+protected : uint8_t  _get_bbpll_divider(             bool use_reg_cache = false);
+protected : bool     _get_rhb3_enable(               bool use_reg_cache = false);
+protected : uint8_t  _get_rhb3_decimation_factor(    bool use_reg_cache = false);
+protected : uint8_t  _get_rhb3_num_taps(             bool use_reg_cache = false);
+protected : uint8_t  _get_rhb3_filter_order(         bool use_reg_cache = false);
+protected : bool     _get_rhb2_enable(               bool use_reg_cache = false);
+protected : uint8_t  _get_rhb2_decimation_factor(    bool use_reg_cache = false);
+protected : bool     _get_rhb1_enable(               bool use_reg_cache = false);
+protected : uint8_t  _get_rhb1_decimation_factor(    bool use_reg_cache = false);
+protected : double   _get_bbpll_freq_Hz(             bool use_reg_cache = false);
+protected : double   _get_adc_freq_Hz(               bool use_reg_cache = false);
+protected : double   _get_r2_freq_Hz(                bool use_reg_cache = false);
+protected : double   _get_r1_freq_Hz(                bool use_reg_cache = false);
+protected : double   _get_clkrf_freq_Hz(             bool use_reg_cache = false);
 /*! @param[in] rx_ch A std::string exception will be thrown if this is not one
  *                   of the RX1 or RX2 macros (from No-OS header), each of which
  *                   correspond to an AD9361 RF port.
  ******************************************************************************/
 protected : double   _get_digital_rx_block_delay_sec(uint8_t rx_ch,
-                                                     bool use_reg_cache);
+                                                     bool use_reg_cache = false);
 
 protected : void throw_if_ad9361_rf_phy_is_zero();
 /*! @brief Necessary because the following No-OS software library methods do not

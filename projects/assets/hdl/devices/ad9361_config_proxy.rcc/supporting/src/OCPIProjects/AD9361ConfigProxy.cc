@@ -320,7 +320,7 @@ void AD9361ConfigProxy<ad9361_config_slave_t>::cache_clkrf_freq_regs() {
 
 template<class ad9361_config_slave_t>
 uint32_t AD9361ConfigProxy<ad9361_config_slave_t>::_get_bbpll_n_fractional(
-    bool use_reg_cache = false) {
+    bool use_reg_cache) {
 
   uint8_t reg;
   uint32_t tmp = 0;
@@ -362,7 +362,7 @@ uint32_t AD9361ConfigProxy<ad9361_config_slave_t>::_get_bbpll_n_fractional(
 
 template<class ad9361_config_slave_t>
 float AD9361ConfigProxy<ad9361_config_slave_t>::_get_bbpll_ref_scaler(
-    bool use_reg_cache = false) {
+    bool use_reg_cache) {
 
   float ret;
 
@@ -400,7 +400,7 @@ float AD9361ConfigProxy<ad9361_config_slave_t>::_get_bbpll_ref_scaler(
 
 template<class ad9361_config_slave_t>
 uint8_t AD9361ConfigProxy<ad9361_config_slave_t>::_get_bbpll_n_integer(
-    bool use_reg_cache = false) {
+    bool use_reg_cache) {
 
   uint8_t reg;
   if(use_reg_cache) {
@@ -415,7 +415,7 @@ uint8_t AD9361ConfigProxy<ad9361_config_slave_t>::_get_bbpll_n_integer(
 
 template<class ad9361_config_slave_t>
 uint8_t AD9361ConfigProxy<ad9361_config_slave_t>::_get_bbpll_divider(
-    bool use_reg_cache = false) {
+    bool use_reg_cache) {
 
   // from AD9361_Register_Map_Reference_Manual_UG-671.pdf Rev. 0 pg. 7:
   // SPI Register 0x00A-BBPLL
@@ -443,14 +443,14 @@ uint8_t AD9361ConfigProxy<ad9361_config_slave_t>::_get_bbpll_divider(
 
 template<class ad9361_config_slave_t>
 bool AD9361ConfigProxy<ad9361_config_slave_t>::_get_rhb3_enable(
-    bool use_reg_cache = false) {
+    bool use_reg_cache) {
 
   return _get_rhb3_decimation_factor(use_reg_cache) != 1;
 }
 
 template<class ad9361_config_slave_t>
 uint8_t AD9361ConfigProxy<ad9361_config_slave_t>::_get_rhb3_decimation_factor(
-    bool use_reg_cache = false) {
+    bool use_reg_cache) {
 
   uint8_t ret;
 
@@ -501,7 +501,7 @@ uint8_t AD9361ConfigProxy<ad9361_config_slave_t>::_get_rhb3_decimation_factor(
 
 template<class ad9361_config_slave_t>
 uint8_t AD9361ConfigProxy<ad9361_config_slave_t>::_get_rhb3_num_taps(
-    bool use_reg_cache = false) {
+    bool use_reg_cache) {
 
   uint8_t ret;
   uint8_t val = _get_rhb3_decimation_factor(use_reg_cache);
@@ -526,14 +526,14 @@ uint8_t AD9361ConfigProxy<ad9361_config_slave_t>::_get_rhb3_num_taps(
 
 template<class ad9361_config_slave_t>
 uint8_t AD9361ConfigProxy<ad9361_config_slave_t>::_get_rhb3_filter_order(
-    bool use_reg_cache = false) {
+    bool use_reg_cache) {
 
   return get_filter_order(_get_rhb3_num_taps(use_reg_cache));
 }
 
 template<class ad9361_config_slave_t>
 bool AD9361ConfigProxy<ad9361_config_slave_t>::_get_rhb2_enable(
-    bool use_reg_cache = false) {
+    bool use_reg_cache) {
 
   uint8_t reg;
   if(use_reg_cache) {
@@ -548,14 +548,14 @@ bool AD9361ConfigProxy<ad9361_config_slave_t>::_get_rhb2_enable(
 
 template<class ad9361_config_slave_t>
 uint8_t AD9361ConfigProxy<ad9361_config_slave_t>::_get_rhb2_decimation_factor(
-    bool use_reg_cache = false) {
+    bool use_reg_cache) {
 
   return _get_rhb2_enable(use_reg_cache) ? 2 : 1;
 }
 
 template<class ad9361_config_slave_t>
 bool AD9361ConfigProxy<ad9361_config_slave_t>::_get_rhb1_enable(
-    bool use_reg_cache = false) {
+    bool use_reg_cache) {
 
   uint8_t reg;
   if(use_reg_cache) {
@@ -570,14 +570,14 @@ bool AD9361ConfigProxy<ad9361_config_slave_t>::_get_rhb1_enable(
 
 template<class ad9361_config_slave_t>
 uint8_t AD9361ConfigProxy<ad9361_config_slave_t>::_get_rhb1_decimation_factor(
-    bool use_reg_cache = false) {
+    bool use_reg_cache) {
 
   return _get_rhb1_enable(use_reg_cache) ? 2 : 1;
 }
 
 template<class ad9361_config_slave_t>
 double AD9361ConfigProxy<ad9361_config_slave_t>::_get_bbpll_freq_Hz(
-    bool use_reg_cache = false) {
+    bool use_reg_cache) {
 
   // see "BBPLL_freq formula" for explanation of the following;
   double frac, tmp;
@@ -594,7 +594,7 @@ double AD9361ConfigProxy<ad9361_config_slave_t>::_get_bbpll_freq_Hz(
 /// @brief See AD9361_Register_Map_Reference_Manual_UG-671.pdf eq (2)
 template<class ad9361_config_slave_t>
 double AD9361ConfigProxy<ad9361_config_slave_t>::_get_adc_freq_Hz(
-    bool use_reg_cache = false) {
+    bool use_reg_cache) {
 
   double divisor = pow(2.,(double)_get_bbpll_divider(use_reg_cache));
 
@@ -602,14 +602,14 @@ double AD9361ConfigProxy<ad9361_config_slave_t>::_get_adc_freq_Hz(
 }
 
 template<class ad9361_config_slave_t>
-double AD9361ConfigProxy<ad9361_config_slave_t>::_get_r2_freq_Hz(bool use_reg_cache = false) {
+double AD9361ConfigProxy<ad9361_config_slave_t>::_get_r2_freq_Hz(bool use_reg_cache) {
 
   bool use = use_reg_cache;
   return _get_adc_freq_Hz(use) / _get_rhb3_decimation_factor(use);
 }
 
 template<class ad9361_config_slave_t>
-double AD9361ConfigProxy<ad9361_config_slave_t>::_get_r1_freq_Hz(bool use_reg_cache = false) {
+double AD9361ConfigProxy<ad9361_config_slave_t>::_get_r1_freq_Hz(bool use_reg_cache) {
 
   bool use = use_reg_cache;
   return _get_r2_freq_Hz(use) / _get_rhb2_decimation_factor(use);
@@ -617,7 +617,7 @@ double AD9361ConfigProxy<ad9361_config_slave_t>::_get_r1_freq_Hz(bool use_reg_ca
 
 template<class ad9361_config_slave_t>
 double AD9361ConfigProxy<ad9361_config_slave_t>::_get_clkrf_freq_Hz(
-    bool use_reg_cache = false) {
+    bool use_reg_cache) {
 
   bool use = use_reg_cache;
   return _get_r1_freq_Hz(use) / _get_rhb1_decimation_factor(use);
@@ -627,7 +627,7 @@ double AD9361ConfigProxy<ad9361_config_slave_t>::_get_clkrf_freq_Hz(
  ******************************************************************************/
 template<class ad9361_config_slave_t>
 double AD9361ConfigProxy<ad9361_config_slave_t>::
-_get_digital_rx_block_delay_sec(uint8_t rx_ch, bool use_reg_cache = false) {
+_get_digital_rx_block_delay_sec(uint8_t rx_ch, bool use_reg_cache) {
 
   double delta_t = 0.;
 

@@ -1398,9 +1398,8 @@ parseSlaves() {
 const char *Worker::
 parseRccImpl(const char *a_package) {
   const char *err = NULL;
-  if ((err = OE::checkAttrs(m_xml, IMPL_ATTRS, "ExternMethods", "StaticMethods", "Threaded",
-                            "Language", "Slave", (void*)0)) ||
-      (err = OE::checkElements(m_xml, IMPL_ELEMS, "port", (void*)0))) {
+  if ((err = OE::checkAttrs(m_xml, RCC_IMPL_ATTRS, (void*)0)) ||
+      (err = OE::checkElements(m_xml, RCC_IMPL_ELEMS, "port", (void*)0))) {
     return err;
   }
   if ((err = parseSlaves()))

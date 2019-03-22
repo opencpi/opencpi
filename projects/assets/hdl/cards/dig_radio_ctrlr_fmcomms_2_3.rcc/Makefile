@@ -18,6 +18,7 @@
 
 # This is the Makefile for worker dig_radio_ctrlr_fmcomms_2_3.rcc
 
+ifneq (,)
 # No-OS library
 RccStaticPrereqLibs=ad9361
 
@@ -32,6 +33,7 @@ RccIncludeDirs+=./supporting/include/OCPIProjects/AD9361/
 RccIncludeDirs+=./supporting/src/OCPIProjects/
 RccIncludeDirs+=./supporting/src/OCPIProjects/AD9361/
 RccIncludeDirs+=$(OCPI_PREREQUISITES_DIR)/ad9361/include/
+endif
 
 include $(OCPI_CDK_DIR)/include/worker.mk
 

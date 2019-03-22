@@ -1,0 +1,5 @@
+<!-- The spec for quadrature ADCs (with timestamping), that all such things should be based on -->
+<ComponentSpec>
+  <xi:include href='adc-properties'/>
+  <DataInterfaceSpec Name="OUT" Producer="true" protocol='ComplexShortWithMetadata-prot' optional='1'/>
+</ComponentSpec>

@@ -82,8 +82,8 @@
 +tools/ocpidev/assets/worker.py <target>/lib/_opencpi/assets/
 +tools/ocpidev/assets/component.py <target>/lib/_opencpi/assets/
 +tools/ocpidev/ocpidev.sh <target>/bin/ocpidev
-+tools/ocpidev/ocpidev_run.py scripts/   
-+tools/ocpidev/ocpishow.py scripts/ 
++tools/ocpidev/ocpidev_run.py scripts/
++tools/ocpidev/ocpishow.py scripts/
 +tools/ocpidev/ocpidev_utilization.py scripts/
 # generic make scripts
 +tools/cdk/include/show.mk include/
@@ -174,7 +174,10 @@
 ################################################################################
 # Python related exclusions and additions
 # It is runtime for systems that have python, but non-python platforms can exclude it
+# SWIG:
 =runtime/python/opencpi/__init__.py <target>/lib/opencpi/
+# Colors for verification scripts:
++tools/cdk/python/opencpi/colors.py <target>/lib/opencpi/
 ################################################################################
 # RCC related exclusions and additions
 # We don't want everything so we are selective here.  was: +tools/cdk/include/rcc include/rcc

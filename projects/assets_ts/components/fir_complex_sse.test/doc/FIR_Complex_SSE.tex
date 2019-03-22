@@ -1,0 +1,213 @@
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+\def\importpath{../../../imports/ocpi.assets/components/dsp_comps/fir_complex_sse.test/doc/}
+\input{\importpath snippets/FIR_Complex_SSE_Header.tex}
+%----------------------------------------------------------------------------------------
+% Update the docTitle and docVersion per document
+%----------------------------------------------------------------------------------------
+\def\docTitle{Component Data Sheet}
+\def\docVersion{1.5}
+%----------------------------------------------------------------------------------------
+\date{Version \docVersion} % Force date to be blank and override date with version
+\title{\docTitle}
+\lhead{\small{\docTitle}}
+
+\def\comp{fir\_complex\_sse}
+\edef\ecomp{fir_complex_sse}
+\def\Comp{FIR Complex SSE (TimeStamped)}
+\graphicspath{ {figures/} }
+
+\begin{document}
+
+\section*{Summary - \Comp}
+
+\input{\importpath snippets/FIR_Complex_SSE_Test_Warning_Header.tex}
+
+\begin{tabular}{|c|M{13.5cm}|}
+	\hline
+	\rowcolor{blue}
+	                  &                                                              \\
+	\hline
+	Name              & \comp                                                        \\
+	\hline
+	Worker Type       & Application                                                  \\
+	\hline
+	Version           & v\docVersion \\
+	\hline
+	Release Date      & April 2019 \\
+	\hline
+	Component Library & ocpi.assets\_ts.components                                        \\
+	\hline
+	Workers           & \comp.hdl                                                    \\
+	\hline
+	Tested Platforms  & xsim, isim, modelsim, Matchstiq-Z1(PL) \\
+	\hline
+\end{tabular}
+
+\section*{Functionality}
+\begin{flushleft}
+	The FIR Complex SSE (Systolic Symmetric Even) component inputs complex signed samples and filters them based upon a programmable number of coefficient tap values. The worker also processes all operations of the Timestamped\_IQ protocol, passing along time and interval information. The underlying FIR Filter implementation makes use of a symmetric systolic structure to construct a filter with an even number of taps and symmetry about its midpoint.
+\end{flushleft}
+
+\section*{Worker Implementation Details}
+\subsection*{\comp.hdl}
+\begin{flushleft}
+	The \verb+NUM_TAPS_p+ parameter defines the number of coefficient values. Care should be taken to ensure that the \verb+COEFF_WIDTH_p+ parameter is $\le$ the type (size) of the taps property. The taps property is type short, so \verb+COEFF_WIDTH_p+ must be between 1 and 16. Identical filter tap coefficients are applied to both real and imaginary input samples.\medskip
+
+	This implementation uses \verb+NUM_TAPS_p/2+ multipliers for each of the real and imaginary data paths and processes input data at the clock rate - i.e. this worker can handle a new input value every clock cycle.\medskip
+	
+	The FIR Complex SSE worker utilizes the OCPI \textit{TimeStamped\_IQ} protocol for both input and output ports. The \textit{TimeStamped\_IQ} protocol conveys sample data using an interface of 16-bit complex signed samples. The \verb+DATA_WIDTH_p+ parameter may be used to restrict the the number of bits processed on the input and the number of bits (sign-extended) produced on the input.
+\end{flushleft}
+{\centering\captionsetup{type=figure}\includegraphics[scale=0.65]{fir_systolic_sym_even}\par\captionof{figure}{FIR Complex SSE Block Diagram - 8-tap example per I/Q rail}\label{fig:circuit}}
+
+\section*{Theory}
+\begin{flushleft}
+	For a FIR filter with symmetric impulse response we are guaranteed to have linear phase response and thus constant group delay vs. frequency. In general, the group delay will be equal to (\verb+NUM_TAPS_p+-1)/2.	The filter topology itself will add some propagation delay to the response. For this design the total delay from an impulse input to the beginning of the impulse response will be \verb+NUM_TAPS_p/2+ + 4 samples.\medskip
+	
+	The worker only outputs samples after the delay has occurred. During \verb+flush+ or \verb+done+ operations, the worker continues to produce valid data until the pipeline is empty. During the \verb+sync+ operation, the pipeline is emptied, but no valid data is produced. During \verb+flush+, \verb+done+, and \verb+sync+ operations, the operation is passed along after the pipeline is empty.\medskip
+	
+	The worker passes along and does not modify \verb+time+ and \verb+interval+ operations.
+\end{flushleft}
+
+\section*{Block Diagrams}
+\subsection*{Top level}
+\begin{center}
+	\begin{tikzpicture}[% List of styles applied to all, to override specify on a case-by-case
+			every node/.style={
+				align=center,  		% use this so that the "\\" for line break works
+				minimum size=2cm	% creates space above and below text in rectangle
+			},
+			every edge/.style={draw,thick}
+		]
+		\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
+		\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in'' \\ Signed complex samples};
+		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' \\ Signed complex samples};
+		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+NUM_TAPS_p+ \\ \verb+LATENCY_p+ \\ \verb+GROUP_DELAY_p+ \\ \verb+taps+ \\ \verb+peak, messageSize+};
+		\path[->]
+		(R3)edge []	node [] {} (R2)
+		(R2)edge []	node [] {} (R4)
+		(R2)edge []	node [] {} (R5)
+		(R5)edge []	node [] {} (R2)
+		;
+	\end{tikzpicture}
+\end{center}
+
+\section*{Source Dependencies}
+\subsection*{\comp.hdl}
+\begin{itemize}
+	\item projects/assets\_ts/components/fir\_complex\_sse.hdl/fir\_complex\_sse.vhd
+          \input{\importpath snippets/FIR_Complex_SSE_Primitive_Dependencies.tex}
+\end{itemize}
+
+\begin{landscape}
+	\section*{Component Spec Properties}
+	\begin{scriptsize}
+		\begin{tabular}{|p{1.5cm}|p{1cm}|c|c|c|p{3cm}|c|p{7cm}|}
+			\hline
+			\rowcolor{blue}
+			Name               & Type   & SequenceLength & ArrayDimensions   & Accessibility	& Valid Range                                                                      & Default & Usage                                                                        \\
+			\hline
+			\verb+NUM_TAPS_p+  & ULong  & -              & -                 & Parameter		& 1-?                                                                              & 16      & Number of coefficients used by each real/imag even symmetric filter \\
+			\hline
+			\verb+peak+        & Short  & -              & -                 & Volatile		& Standard                                                                         & 0       & Read-only amplitude which may be useful for gain control                     \\
+			\hline
+			\verb+taps+        & Short  & -              & \verb+NUM_TAPS_p+ & Writable		& -2\textsuperscript{COEFF\_WIDTH\_p-1} to +2\textsuperscript{COEFF\_WIDTH\_p-1}-1 & -       & Symmetric filter coefficient values loaded into both real/imag filters       \\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+
+	\section*{Worker Properties}
+	\subsection*{\comp.hdl}
+	\begin{scriptsize}
+		\begin{tabular}{|p{3cm}|p{2cm}|p{1cm}|c|c|c|c|c|p{5cm}|}
+			\hline
+			\rowcolor{blue}
+			Type     & Name                 & Type  	& SequenceLength & ArrayDimensions & Accessibility	& Valid Range & Default & Usage                                        \\
+			\hline
+			Property & \verb+DATA_WIDTH_p+  & -     	& -              & -               & Parameter		& 1-16        & 16      & Number of bits of input data which are processed by FIR primitive \\
+			\hline
+			Property & \verb+COEFF_WIDTH_p+ & -	 	& -              & -               & Parameter		& 1-32        & 16      & Number of bits of taps property values which are processed by FIR primitive\\
+			\hline
+			Property & \verb+LATENCY_p+ 	 & UShort	& -              & -               & Parameter		& -           & 1       & Clock cycle delay between input and output   \\
+			\hline
+			Property & \verb+GROUP_DELAY_p+ & -		& -              & -               & Parameter		& -           & 1       & Number of clocks between first valid input and first valid output\\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+
+
+	\section*{Component Ports}
+	\begin{scriptsize}
+		\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|c|M{9cm}|}
+			\hline
+			\rowcolor{blue}
+			Name & Producer & Protocol           	& Optional & Advanced & Usage                  \\
+			\hline
+			in   & false    & TimeStamped\_IQ		& false    & -        & Complex signed samples \\
+			\hline
+			out  & true     & TimeStamped\_IQ		& false    & -        & Complex signed samples \\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+
+	\section*{Worker Interfaces}
+	\subsection*{\comp.hdl}
+	\begin{scriptsize}
+		\begin{tabular}{|M{2cm}|M{1.5cm}|c|c|M{12cm}|}
+			\hline
+			\rowcolor{blue}
+			Type            & Name & DataWidth & Advanced  & Usage                  \\
+			\hline
+			StreamInterface & in   & 32        & 			& Signed complex samples \\
+			\hline
+			StreamInterface & out  & 32        & 			& Signed complex samples \\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+\end{landscape}
+
+\input{\importpath snippets/FIR_Complex_SSE_Control_Config_Utilization.tex}
+\section*{Test and Verification}
+\input{\importpath snippets/FIR_Complex_SSE_Test_Warning.tex}
+
+\begin{flushleft}
+A single test case is implemented to validate the FIR Complex SSE component. The python script \textit{gen\_lpf\_taps.py} is used to generate a taps file consisting of \verb+NUM_TAPS_p/2+ filter coefficients. Input data is generated by first creating a *.dat input file containing all of the opcodes of the TimestampedIQ protocol in the following sequence:
+\begin{enumerate}
+	\item Interval
+	\item Sync (this opcode is expected after an Interval opcode)
+	\item Time
+	\item Samples (impulse with length numtaps*2)
+	\item Samples (impulse with length numtaps*2)
+	\item Flush	
+	\item Samples (impulse with length numtaps*2)
+	\item Sync
+	\item Samples (impulse with length numtaps*2)
+	\item Done
+\end{enumerate}
+
+The samples messages consist of a single maximum signed value of +32767 (for each real/imag filter) followed by 2*(\verb+NUM_TAPS_p+-1) zero samples (again for each real/imag filter). The *.bin input file is the binary version of the *.dat ASCII file repeated \verb+NUM_TAPS_p+ times.\medskip
+
+The FIR Complex SSE worker inputs complex signed samples, filters the input as defined by the coefficient filter taps, and outputs complex signed samples. Since the input consists of an impulse response - that is, a maximal `one' sample followed by all zeros equal to the length of the filter - the output of each filter is simply the coefficient values.\medskip
+
+The worker will pass through the interval and time opcodes. The samples opcode followed by flush or done will output an impulse response, showing the symmetric tap values. The samples opcode followed by sync will produce the first numtaps*2-group\_delay tap values. In addition to the samples data, the worker also passes along the zlms.\medskip
+
+For verification, the output file is parsed into messages. All non-samples messages should match the input exactly. The samples messages are compared to the tap values and checked to ensure they are within +/- 1. 
+\end{flushleft}
+\end{document}

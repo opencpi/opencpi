@@ -1104,6 +1104,7 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
     addInclude(inc.c_str());
   }
   // This is a convenient way to specify XML include dirs in component libraries
+  // This will be parsed again for build/Makefile purposes.
   for (OU::TokenIter ti(ezxml_cattr(xml, "componentlibraries")); ti.token(); ti.next()) {
     std::string inc;
     if ((err = getComponentLibrary(ti.token(), inc)))
@@ -1113,6 +1114,7 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
     addInclude(inc + "/" + m_modelString);
     addInclude(inc);
   }
+  err = m_build.parse(xml);
 }
 
 // Base class has no worker level expressions, but does all the ports
@@ -1205,7 +1207,7 @@ Parsed(ezxml_t xml,        // The xml for this entity
 
 Clock::
 Clock()
-  : port(NULL), assembly(false), m_output(false), ordinal(0) {
+  : port(NULL), ordinal(0), m_output(false), m_internal(false) {
 }
 
 const char *Worker::

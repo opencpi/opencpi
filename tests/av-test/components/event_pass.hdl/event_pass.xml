@@ -1,0 +1,6 @@
+<HdlWorker language='vhdl' version='2'>
+  <ComponentSpec>
+    <port name='in' protocol='event-prot'/>
+    <port name='out' producer='1' protocol='event-prot'/>
+  </ComponentSpec>
+</HdlWorker>

@@ -1,0 +1,15 @@
+<!-- The delay_test application xml file -->
+<Application>
+  <Instance Component='av.test.printer'>
+    <Property name='print_value1'>
+      <Set value='51' delay='1'/>
+      <Set value='52' delay='3'/>
+    </Property>
+    <Property name='print_value2'>
+      <Set value='63' delay='2'/>
+      <Set value='64' delay='3'/>
+      <Set value='51' delay='1'/>
+      <Set value='75' delay='4'/>
+    </Property>
+  </Instance>
+</Application>

@@ -124,7 +124,7 @@ namespace OCPI {
 	const OCPI::Util::Property *m_property;
 	OCPI::Util::Value m_value;
       };
-      typedef std::map<OCPI::Util::Assembly::Delay, DelayedPropertyValue> DelayedPropertyValues;
+      typedef std::multimap<OCPI::Util::Assembly::Delay, DelayedPropertyValue> DelayedPropertyValues;
       DelayedPropertyValues    m_delayedPropertyValues;
       size_t m_nProperties;
       CMap m_curMap;              // A temporary indicating possible containers for a candidate

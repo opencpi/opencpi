@@ -1473,7 +1473,7 @@ hasEmptyOutputBuffer()
 
 BufferUserFacet* 
 Port::
-getNextFullInputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode)
+getNextFullInputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode, bool &end)
 {
   Circuit *c = getCircuit();
   OU::SelfAutoMutex guard(c); // FIXME: refactor to make this a circuit method
@@ -1490,6 +1490,7 @@ getNextFullInputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode)
 
     data = (uint8_t*)buf->getBuffer(); // cast off the volatile
     opcode = (uint8_t)buf->getMetaData()->ocpiMetaDataWord.opCode;
+    end = buf->getMetaData()->ocpiMetaDataWord.end;
     length = buf->getDataLength();
     if (buf->getMetaData()->ocpiMetaDataWord.truncate)
       ocpiBad("Message was truncated to %zu bytes", length);
@@ -1497,8 +1498,8 @@ getNextFullInputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode)
 
     OCPI_EMIT_REGISTER_FULL_VAR( "Data Buffer Opcode and length", OCPI::Time::Emit::DT_u, 64, OCPI::Time::Emit::Value, dbre ); 
     OCPI_EMIT_VALUE_CAT_NR__(dbre, (uint64_t)(opcode | (uint64_t)length<<16) , OCPI_EMIT_CAT_WORKER_DEV,OCPI_EMIT_CAT_WORKER_DEV_BUFFER_VALUES, buf);
-    ocpiDebug("Getting buffer %p on port %p on circuit %p on transport %p data %p op %u len %zu",
-	      buf, this, c, &c->parent(), data, opcode, length);
+    ocpiDebug("Getting buffer %p on port %p on circuit %p on transport %p data %p op %u len %zu end %u",
+	      buf, this, c, &c->parent(), data, opcode, length, buf->getMetaData()->ocpiMetaDataWord.end);
 
   }
   return buf;

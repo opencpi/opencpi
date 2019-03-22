@@ -274,4 +274,28 @@ package wsi is
       part_give        : in Bool_t
       );
   end component part_master;
+  
+  component delayline is
+    generic (
+      LATENCY : integer);
+    port (
+      CLK                : in std_logic;
+      RESET              : in std_logic;
+      IS_OPERATING       : in std_logic;
+      IN_READY           : in std_logic;
+      IN_SOM             : in std_logic;
+      IN_EOM             : in std_logic;
+      IN_OPCODE          : in std_logic_vector;
+      IN_VALID           : in std_logic;
+      IN_BYTE_ENABLE     : in std_logic_vector;
+      IN_DATA            : in std_logic_vector;
+      OUT_READY          : in std_logic;
+      OUT_SOM            : out std_logic;
+      OUT_EOM            : out std_logic;
+      OUT_OPCODE         : out std_logic_vector;
+      OUT_VALID          : out std_logic;
+      OUT_BYTE_ENABLE    : out std_logic_vector;
+      OUT_DATA           : out std_logic_vector
+      );
+  end component;
 end package wsi;

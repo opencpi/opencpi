@@ -1,0 +1,12 @@
+<ComponentSpec>
+
+  <Property Name='enable' Type='bool' Writable='true' Default='true'
+	    Description='Enable(true) or bypass(false) mixer'/>
+
+  <Property Name='phs_inc' Type='short' Writable='true' Default='-4096'
+	    Description='Phase increment of NCO'/>
+
+  <Port Name='in'  Protocol='ComplexShortWithMetadata-prot'/>
+  <Port Name='out' Protocol='ComplexShortWithMetadata-prot' Producer='true'/>
+
+</ComponentSpec>

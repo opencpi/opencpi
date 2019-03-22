@@ -61,7 +61,7 @@ export OCPI_TARGET_PLATFORM=${3:-$(basename $(pwd))}
 export OCPI_TARGET_DIR=$OCPI_TARGET_PLATFORM
 export HDL_PLATFORM=${2:-zed}
 echo Software platform is $OCPI_TARGET_PLATFORM, and hardware platform is $HDL_PLATFORM.
-if test -z $RPM_BUILD_ROOT; then
+if test -z "$RPM_BUILD_ROOT"; then
   # We assume a built tree for the tool platform - check for exports etc.?
   # ensure OCPI_CDK_DIR and OCPI_TOOL_DIR
   source $OCPI_CDK_DIR/scripts/ocpitarget.sh $OCPI_TARGET_PLATFORM
@@ -109,7 +109,7 @@ cp uramdisk.image.gz $sd
 rm -r -f $sd/opencpi
 mkdir $sd/opencpi
 set -o pipefail
-(cd $OCPI_CDK_DIR/..; ./packaging/prepare-package-list.sh deploy $OCPI_TARGET_PLATFORM 1 ) | 
+(cd $OCPI_CDK_DIR/..; ./packaging/prepare-package-list.sh deploy $OCPI_TARGET_PLATFORM 1 ) |
 while read source dest; do
   [[ $source == */ ]] && continue # we don't do anything for individual directories
   if [ -n "$dest" ] ; then
@@ -129,10 +129,11 @@ done
   n=0
   echo Adding artifacts found in OCPI_LIBRARY_PATH for ${OCPI_TARGET_PLATFORM} and ${HDL_PLATFORM} HDL targets.
   mkdir $sd/opencpi/artifacts
+  # Prefix artifact w/ "a" then number for bad simulators (AV-5233)
   for i in $(${OCPI_CDK_DIR}/${OCPI_TOOL_DIR}/bin/ocpirun \
 			    -A ${OCPI_TARGET_PLATFORM},${HDL_PLATFORM} | \
 		            xargs -rn1 readlink -e | sort -u ); do
-    cp -p $i $sd/opencpi/artifacts/$(printf %03d-%s $n $(basename $i))
+    cp -p $i $sd/opencpi/artifacts/$(printf a%03d-%s $n $(basename $i))
     n=$(expr $n + 1)
   done
   echo Added $n artifacts to SD image.
@@ -141,7 +142,7 @@ done
 [ -f $sd/opencpi/$OCPI_TARGET_PLATFORM/system.xml ] && {
     rm -f $sd/opencpi/system.xml
     mv $sd/opencpi/$OCPI_TARGET_PLATFORM/system.xml $sd/opencpi
-}    
+}
 # Give the user a starting point for the setup scripts
 cp -p $sd/opencpi/$OCPI_TARGET_PLATFORM/default_mynetsetup.sh $sd/opencpi/mynetsetup.sh
 cp -p $sd/opencpi/$OCPI_TARGET_PLATFORM/default_mysetup.sh $sd/opencpi/mysetup.sh

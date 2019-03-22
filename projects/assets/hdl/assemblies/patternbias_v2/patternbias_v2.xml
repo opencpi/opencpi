@@ -1,0 +1,4 @@
+<HdlAssembly>
+  <Instance Worker='pattern_v2' connect='bias_vhdl'/>
+  <Instance Worker="bias_vhdl" external='out'/>
+</HdlAssembly>

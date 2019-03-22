@@ -413,13 +413,21 @@ The steps herein are a slightly modified subset of those outlined in \url{https:
 \item Reload the udev rules by typing \code{udevadm control --reload-rules}
 \end{enumerate}
 \subsubsection{Testing Cable Driver Installation}
+\textbf{Vivado}
+\begin{flushleft}
+In the event that the Xilinx JTAG pod's LED does not illuminate (Amber, or Green) after installing the driver as previously discussed, it is recommended that the user manually attempt to establish a connection to the pod using the Vivado tools. This has shown to successfully recognize the pod and correctly illuminate it's LED.\medskip\newline
+\code{\$ cd /opt/Xilinx/Vivado/2017.1} \\
+\code{\$ . ./settings64.sh} \\\medskip
+Once the environment has been configured, launch the Vivado IDE and use the Hardware Manager to scan for JTAG pod. The expected result is for the pod to be recognized by the tools and its LED to illuminate Amber if its JTAG connector is not powered, or Green if the JTAG connect is powered.\newline
+(While not confirm, it is believed that some host system environments are preventing non-interactive driver accesses.)\medskip
+\end{flushleft}
 \textbf{ISE}
 \begin{flushleft}
-To verify successful cable driver installation, you can run the following:\\
-\code{cd /opt/Xilinx/14.7/ISE\_DS} \\
-\code{. ./settings64.sh} \\
-\code{cd ~} \\
-\code{echo listusbcables | impact -batch} \\
+To verify successful cable driver installation, you can run the following:\medskip\newline
+\code{\$ cd /opt/Xilinx/14.7/ISE\_DS} \\
+\code{\$ . ./settings64.sh} \\
+\code{\$ cd ~} \\
+\code{\$ echo listusbcables | impact -batch} \\\medskip
 If the cable driver is successfully installed, ``\code{Using libusb.}'' will be included in the text printed to the screen.
 %
 %This section assumes you have completed the cable driver installation and you have OpenCPI installed.

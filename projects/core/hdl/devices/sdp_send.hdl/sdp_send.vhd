@@ -89,6 +89,7 @@ architecture rtl of worker is
   signal md_not_full       : std_logic;
   -- ndws is rounded up so needs ONE fewer bits, not TWO
   signal md_out_ndws       : unsigned(meta_length_width_c-2 downto 0);
+  signal eof_sent_r        : bool_t; -- input eof indication conveyed/enqueued
 
   -- SDP back side --
   signal bramb_addr             : bram_addr_t;
@@ -160,7 +161,8 @@ begin
   md_in.eof          <= in_in.eof;
   md_in.truncate     <= in_in.valid and buffer_maxed_r;
   md_in.opcode       <= in_in.opcode;
-  md_enq             <= to_bool(its(can_take) and ((in_in.ready and its(in_in.eom)) or in_in.eof));
+  md_enq             <= to_bool(its(can_take) and ((in_in.ready and its(in_in.eom)) or
+                                                   (in_in.eof and not its(eof_sent_r))));
   -- Instance the message data BRAM
   -- Since the BRAM is single cycle, there is no handshake.
   bram : component util.util.BRAM2
@@ -244,6 +246,7 @@ begin
         truncatedMessage    <= (others => '0');
         truncatedData       <= (others => '0');
         messageCount        <= (others => '0');
+        eof_sent_r          <= bfalse;
       elsif not operating_r then
         -- initialization on first transition to operating.  poor man's "start".
         if its(ctl_in.is_operating) then
@@ -257,7 +260,11 @@ begin
         operating_r <= bfalse;
       else
         if its(md_enq) then
-          messageCount <= messageCount + 1;
+          if its(in_in.eof) then
+            eof_sent_r <= btrue;
+          else
+            messageCount <= messageCount + 1;
+          end if;
         end if;
         if md_enq and not its(buffer_consumed) then
           buffer_avail_r <= buffer_avail_r - 1;

@@ -1,7 +1,8 @@
 <!-- 
  Matchstiq-Z1 AVR Device Proxy Worker OWD
 -->
-<RccWorker language="c++" slave="matchstiq_z1_avr.hdl" spec="matchstiq_z1_avr_proxy_spec">
+<RccWorker language="c++" slave="matchstiq_z1_avr.hdl" spec="matchstiq_z1_avr_proxy_spec"
+	   OnlyPlatforms='xilinx13_3'>
   <!--This property is encoded: -->
   <!-- 0 = off -->
   <!-- 1 = green -->

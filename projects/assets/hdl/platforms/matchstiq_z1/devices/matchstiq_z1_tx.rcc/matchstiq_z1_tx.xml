@@ -1,4 +1,5 @@
-<RccWorker language="c++" spec="tx_spec.xml" controloperations='initialize,start'>
+<RccWorker language="c++" spec="tx_spec.xml" controloperations='initialize,start'
+	   onlyplatforms='xilinx13_3'>
 
   <!-- OCS Parameters -->
 

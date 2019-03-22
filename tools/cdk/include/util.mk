@@ -333,6 +333,7 @@ OcpiGenEnv=\
     OCPI_PREREQUISITES_DIR="$(OCPI_PREREQUISITES_DIR)" \
     OCPI_HDL_PLATFORM_PATH="$(subst $(Space),:,$(strip \
                               $(call OcpiRelativePathsInsideProjectOrImports,.,$(subst :, ,$(OCPI_HDL_PLATFORM_PATH)))))" \
+    OCPI_ALL_PLATFORMS="$(strip $(HdlAllPlatforms:%=%.hdl) $(RccAllPlatforms:%=%.rcc) $(OclAllPlatforms:%=%.ocl))"\
     OCPI_ALL_HDL_TARGETS="$(OCPI_ALL_HDL_TARGETS)" \
     OCPI_ALL_RCC_TARGETS="$(OCPI_ALL_RCC_TARGETS)" \
     OCPI_ALL_OCL_TARGETS="$(OCPI_ALL_OCL_TARGETS)"

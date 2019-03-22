@@ -1,0 +1,13 @@
+The file-bias-capture_v2 application utilizes the file_read, bias, and capture_v2 components.
+
+To run the application on an embedded platform, with the assumption you are operating in NFS/Network mode on the
+embedded platform and you have your projects mounted at /mnt/ocpi_core and /mnt/ocpi_assets do:
+
+export OCPI_LIBRARY_PATH=/mnt/ocpi_assets/artifacts:/mnt/ocpi_core/artifacts
+ocpirun -d -v -x file-bias-capture_v2
+
+The input file to be read by file_read contains the data values 0 to 999. So file_read will read 4000 bytes of data.
+
+Since the messageSize property for file_read is set to 2048, file_read will send the data in 2 messages; a 2048 byte message and a 1952 byte message.
+
+The bias component adds the bias value 0x01020304 to the data in the messages.

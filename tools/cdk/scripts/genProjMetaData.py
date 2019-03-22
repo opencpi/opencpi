@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# TODO: integegrate more inline with ocpirun -A o get information instead of metadata file
+# TODO: integrate more inline with ocpirun -A to get information instead of metadata file
 
 from xml.etree import ElementTree as ET
 import os

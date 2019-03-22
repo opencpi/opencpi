@@ -231,24 +231,23 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
     implementations\cite{rx_tx_comp_datasheet}.
     In any given OpenCPI application, a
     \textit{digital radio controller} provides mechanisms for locking multiple
-    \textit{data streams} at once as well as performing multiple successive locks
-    and unlocks. Each implementation of this component spec represents a
-    single \textit{digital radio controller}.
+    \textit{data streams} of a single \textit{digital radio} at once as well as
+    performing multiple successive locks and unlocks.
 
   \subsection{Data Stream Concept and Definition}
     A \textit{data stream} has the following characteristics.
     \begin{itemize}
       \item It corresponds to an RF data sink or source on the
             \textit{digital radio},
-            usually an SMA connector.
+            usually an RF connector.
       \item It has an associated \textit{data stream ID}, which usually
             corresponds to the
-            label of the SMA connector it represents.
+            label of the RF connector it represents.
       \item It can be configured with at least one \textit{data stream type}
             which can be RX or TX. Worker implementations are allowed to have a
             \textit{data stream} support both types, e.g. if the radio allows
-            configuring an SMA connector for either RX or TX.
-      \item It has at a minimum configurations for tuning freq, 3dB bandwidth,
+            configuring an RF connector for either RX or TX.
+      \item It has, at a minimum configurations for tuning frequency, 3dB bandwidth,
             and sampling rate, where:
       \begin{itemize}
         \item Tuning frequency is the RF frequency corresponding to 0 Hz in the
@@ -318,7 +317,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
     implementations. The following classes are notable:
     \begin{itemize}
       \item \textit{ValidRanges} - This template class represents a collection of inclusive numeric ranges. 
-      \item \textit{Configurator} - Software-only emulator of a hardware configuration environment which provides an API for locking/unlocking range-constrained configs. Each config has a constraint which is a valid range represented by an object of the \textit{ValidRanges} type.
+      \item \textit{Configurator} - Software-only emulator of a hardware configuration environment which provides an API for locking/unlocking range-constrained configurations. Each configuration has a constraint which is a valid range represented by an object of the \textit{ValidRanges} type.
       \item \textit{DigRadioCtrlr} -
         Provides an API for controlling/locking analog and digital configs of
         a radio. When requesting config locks, a \textit{Configurator} object is

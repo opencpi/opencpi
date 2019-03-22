@@ -119,7 +119,7 @@ done
 # FIXME: this list is redundant with "install-prerequisites.sh" and "places"
 # This list could potentially be platform-specific
 # and then there are platform-specific prereqs
-prereqs="gmp lzma gtest patchelf inode64 ad9361 liquid"
+prereqs="gmp lzma gtest patchelf inode64 ad9361 liquid gpsd"
 case $type in
   all)
     for f in cdk/*; do
@@ -201,6 +201,7 @@ case $type in
       echo projects/
       emit_project_dir projects/core
       emit_project_dir projects/assets
+      emit_project_dir projects/assets_ts
     fi
     ;;
   driver)

@@ -266,7 +266,8 @@ $(call OcpiDbgVar,HdlAllPlatforms)
 $(call OcpiDbgVar,OCPI_HDL_PLATFORM_PATH)
 # The warning below would apply, e.g. if a new project has been registered.
 $(foreach d,$(subst :, ,$(OCPI_HDL_PLATFORM_PATH)),\
-  $(if $(wildcard $d),,$(warning "$d" does not exist, so no hardware platform(s) can be imported from it))\
+  $(if $(wildcard $d),,$(if $(filter clean%,$(MAKECMDGOALS)),,\
+    $(warning "$d" does not exist, so no hardware platform(s) can be imported from it)))\
   $(if $(filter platforms,$(notdir $d)),\
     $(call HdlDoPlatformsDir,$d),\
     $(call HdlDoPlatform,$d)))
@@ -303,6 +304,6 @@ $(info HdlTopTargets="$(HdlTopTargets)";\
        $(foreach p,$(HdlAllPlatforms),\
          HdlFamily_$(HdlPart_$p)=$(call HdlGetFamily,$(HdlPart_$p));)\
 	   $(foreach p,$(HdlAllPlatforms),\
-  	     HdlPlatformDir_$(p)="$(realpath $(HdlPlatformDir_$(p)))";))
+	     HdlPlatformDir_$(p)="$(realpath $(HdlPlatformDir_$(p)))";))
 endif
 endif

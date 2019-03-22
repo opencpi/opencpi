@@ -81,6 +81,7 @@ entity master is
 end entity;
 architecture rtl of master is
   constant data_width : natural := n_bytes * byte_width;
+  constant count_width : natural := width_for_max(max(max_bytes,1)/(max(data_width,8)/8)-1);
   type state_t is (BEFORE_SOM_e, EARLY_SOM_e, AFTER_SOM_e, NEED_EOM_e, NEED_EOF_e, FINISHED_e);
   signal state_r : state_t;
   signal reset_i      : Bool_t; -- internal reset, in ports clock domain
@@ -99,10 +100,10 @@ architecture rtl of master is
   signal first_data_r : Bool_t; -- measuring latency
   signal last_data_r  : Bool_t; -- the last possible word in a message has been given.
   -- counter to check output length or insert eom automatically
-  signal data_count_r : unsigned(width_for_max(max_bytes/(data_width/8)-1)-1 downto 0);
+  signal data_count_r : unsigned(count_width-1 downto 0);
   signal byte_limit   : unsigned(width_for_max(max_bytes)-1 downto 0);
-  signal data_limit   : unsigned(width_for_max(max_bytes/(data_width/8)-1)-1 downto 0);
-  constant bs_shift   : natural := width_for_max(data_width/8) - 1;
+  signal data_limit   : unsigned(count_width-1 downto 0);
+  constant bs_shift   : natural := width_for_max(max(data_width,8)/8) - 1;
 begin
   byte_limit <= to_unsigned(max_bytes, byte_limit'length) when fixed_buffer_size
                 else resize(ocpi.util.min(to_ushort(max_bytes), buffer_size), byte_limit'length);
@@ -153,7 +154,7 @@ begin
     end generate gen1;
   end generate gen0;
   -- If there are no partial bytes in datainfo, the worker's data is just MData.
-  gen2: if mdata_info_width <= 1 generate
+  gen2: if mdata_info_width <= 1 and data_width > 0 generate
     MData <= data;
   end generate gen2;
   -- If there is room in mdatainfo for abort, assign it

@@ -25,12 +25,12 @@
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="GPS (Global Positioning System) daemon"
 NAME=gpsd
-OCPI_PATH=
-[ -z "$OCPI_PATH" ] && DAEMON=/usr/sbin/$NAME || \
+OCPI_PATH=$OCPI_CDK_DIR/$OCPI_TOOL_PLATFORM/bin/
+[ ! -d "$OCPI_PATH" ] && DAEMON=/usr/sbin/$NAME || \
   DAEMON=$OCPI_PATH/$NAME
 PIDFILE=/var/run/$NAME.pid
-SCRIPTNAME=/etc/init.d/$NAME
-DEVICES=/dev/ttyPS1
+SCRIPTNAME=NAME
+GPS_DEVICES=/dev/ttyPS1
 
 # Exit if the package is not installed
 if [ ! -x "$DAEMON" ]; then
@@ -47,10 +47,6 @@ fi
 
 if [ -n "$GPSD_SOCKET" ]; then
   GPSD_OPTIONS="$GPSD_OPTIONS -F $GPSD_SOCKET"
-fi
-
-if [ -n "$DEVICES" ]; then
-  GPSD_OPTIONS="$GPSD_OPTIONS $DEVICES -n"
 fi
 
 #

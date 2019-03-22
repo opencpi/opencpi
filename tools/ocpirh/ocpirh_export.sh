@@ -57,13 +57,13 @@ function myshift {
   argv=(${argv[@]})
 }
 function takeval {
-  [ -z ${argv[1]} ] && bad missing value after ${argv[0]} option for $1
+  [ -z "${argv[1]}" ] && bad missing value after ${argv[0]} option for $1
   [[ "${argv[1]}" == -* ]] && bad value after ${argv[0]} option: ${argv[1]}
   eval $1=${argv[1]}
   myshift
 }
 function addval {
-  [ -z ${argv[1]} ] && bad missing value after ${argv[0]} option for $1
+  [ -z "${argv[1]}" ] && bad missing value after ${argv[0]} option for $1
   [[ "${argv[1]}" == -* ]] && bad value after ${argv[0]} option: ${argv[1]}
   eval $1="(\${$1[@]} ${argv[1]})"
   myshift
@@ -182,7 +182,7 @@ n=0
 for a in $(for x in ${artifacts[@]}; do echo $x; done | sort -u); do
   # echo ARTIFACT_PATH=$a
   mkdir -p $tmpdir/artifacts
-  cp $a $tmpdir/artifacts/$(printf %03u-${a##*/} $n)
+  cp $a $tmpdir/artifacts/$(printf a%03u-${a##*/} $n)
   n=$((n + 1))
 done
 echo Generating the SCA XML files corresponding to this deployment file.

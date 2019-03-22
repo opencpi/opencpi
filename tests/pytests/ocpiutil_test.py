@@ -245,7 +245,7 @@ class TestPathFunctions(unittest.TestCase):
         del os.environ['OCPI_PROJECT_REGISTRY_DIR']
         logging.info("Verify that the registry is correct when OCPI_PROJECT_REGISTRY_DIR is unset.")
         reg_dir = Registry.get_registry_dir()
-        self.assertEqual(reg_dir, os.environ.get('OCPI_CDK_DIR') + "/../project-registry")
+        self.assertEqual(reg_dir, os.path.realpath(os.environ.get('OCPI_CDK_DIR') + "/../project-registry"))
         logging.info("Verify that the default registry is correct when the env var is unset.")
         self.assertEqual(reg_dir, Registry.get_default_registry_dir())
         if os.path.isdir("/opt/opencpi/project-registry"):
