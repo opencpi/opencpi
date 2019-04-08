@@ -221,12 +221,15 @@ bad_paths = (
 bad_path_globs = (
     '*/configurations*.inc', '*/utilization*.inc',  # LaTeX include files for utilization
     '*/idata/*',  # Unit test data source
+    '*/ip_user_files/sim_scripts/*',  # Vivado simulation scripts
     '*/MANIFEST.MF',  # Java packaging
+    '*/managed_ip_project/managed_ip_project.cache/*',  # Vivado core cruft
     '*/notes',  # Misc notes
     '*/odata/*',  # Unit test data destination
     '*/package-name',
     '*/package-id',
     '*/project-registry/*',  # Don't scan registered projects outside this source tree
+    '*/projects/core/hdl/primitives/sync/xsim/*/xsim/*',  # Non-copyrighted Xilinx cores
     '*/__pycache__/*',
     '*/*.sh.example',
     '*/snippets/*',

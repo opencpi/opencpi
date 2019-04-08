@@ -161,3 +161,40 @@ class Library(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ReportableAss
         This is a placeholder function will be the function that builds this Asset
         """
         raise NotImplementedError("Library.build() is not implemented")
+
+class LibraryCollection(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ReportableAsset):
+    def __init__(self, directory, name=None, **kwargs):
+        self.check_dirtype("libraries", directory)
+        super().__init__(directory, name, **kwargs)
+        self.library_list = None
+        if kwargs.get("init_libs_col", False):
+            self.library_list = []
+            logging.debug("LibraryCollection constructor creating Library Objects")
+            for lib in next(os.walk(directory))[1]:
+                lib_directory = directory + "/" + lib
+                self.library_list.append(AssetFactory.factory("library", lib_directory, **kwargs))
+
+    def run(self):
+        """
+        Runs the Library with the settings specified in the object.  Throws an exception if the
+        tests were not initialized by using the init_tests variable at initialization.  Running a
+        Library will run all the component unit tests that are contained in the Library
+        """
+        ret_val = 0
+        for lib in self.library_list:
+            run_val = lib.run()
+            ret_val = ret_val + run_val
+        return ret_val
+
+    def show_utilization(self):
+        """
+        Show utilization separately for each library
+        """
+        for lib in self.library_list:
+            lib.show_utilization()
+
+    def build(self):
+        """
+        This is a placeholder function will be the function that builds this Asset
+        """
+        raise NotImplementedError("LibraryCollection.build() is not implemented")

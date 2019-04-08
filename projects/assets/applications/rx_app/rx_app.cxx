@@ -445,7 +445,7 @@ int main(int argc, char **argv) {
   rx_rf_cutoff_frequency_min_MHz = atof(value.c_str());
   app.getProperty("rx","rf_cutoff_frequency_max_MHz", value);
   rx_rf_cutoff_frequency_max_MHz = atof(value.c_str());
-  if (rf_bw != rx_rf_cutoff_frequency_min_MHz && rf_bw != rx_rf_cutoff_frequency_max_MHz)
+  if (rf_bw < rx_rf_cutoff_frequency_min_MHz || rf_bw > rx_rf_cutoff_frequency_max_MHz)
     {
       print_limits("Error: invalid rf_bw.\n", rf_bw, rx_rf_cutoff_frequency_min_MHz, rx_rf_cutoff_frequency_max_MHz);
     }
@@ -483,26 +483,25 @@ int main(int argc, char **argv) {
   sprintf(rx_sample_rate_str,  "%f", rx_sample_rate_MHz);
   app.setProperty("rx","sample_rate_Mhz", rx_sample_rate_str);
 
-  if (if_tune_freq == 0)
+  // It is desired that setting a + IF freq results in mixing *down*.
+  // Because complex_mixer's NCO mixes *up* for + freqs (see complex mixer
+  // datasheet), IF tune freq must be negated in order to achieve the
+  // desired effect.
+  double nco_output_freq = -if_tune_freq;
+
+  // todo this math might be better off in a small proxy that sits on top of complex_mixer
+  // from complex mixer datasheet, nco_output_freq =
+  // sample_freq * phs_inc / 2^phs_acc_width, phs_acc_width is fixed at 16
+  phase_inc = round(nco_output_freq/rx_sample_rate_MHz*65536.);
+
+  if (phase_inc == 0)
   {
-    phase_inc = 0;
     app.setProperty("complex_mixer","enable", "false");
   }
   else
   {
-     // It is desired that setting a + IF freq results in mixing *down*.
-     // Because complex_mixer's NCO mixes *up* for + freqs (see complex mixer
-     // datasheet), IF tune freq must be negated in order to achieve the
-     // desired effect.
-     double nco_output_freq = -if_tune_freq;
-
-     // todo this math might be better off in a small proxy that sits on top of complex_mixer
-     // from complex mixer datasheet, nco_output_freq =
-     // sample_freq * phs_inc / 2^phs_acc_width, phs_acc_width is fixed at 16
-     phase_inc = round(nco_output_freq/rx_sample_rate_MHz*65536.);
-
-     //std::cout << "setting complex mixer phase_inc = " << phase_inc << "\n";
-     app.setPropertyValue<OA::Short>("complex_mixer","phs_inc", phase_inc);
+    //std::cout << "setting complex mixer phase_inc = " << phase_inc << "\n";
+    app.setPropertyValue<OA::Short>("complex_mixer","phs_inc", phase_inc);
   }
 
   app.setProperty("rx","rf_cutoff_frequency_Mhz", argv[3]);
@@ -515,7 +514,7 @@ int main(int argc, char **argv) {
   double rf_cutoff_frequency_Mhz = atof(value.c_str());
   app.getProperty("rx","bb_cutoff_frequency_Mhz", value);
   double bb_cutoff_frequency_Mhz = atof(value.c_str());
-  bool currentFrontendUses_rx_rf_cutoff_frequency_MHz = (rf_cutoff_frequency_Mhz != -1.);
+  bool currentFrontendUses_rx_rf_cutoff_frequency_MHz = (rf_cutoff_frequency_Mhz < 0.);
   checkAndWarnIfAnalogFilterBandwidthIsAboveTheNyquistFreq( bb_cutoff_frequency_Mhz*1000000,
                                                             rf_cutoff_frequency_Mhz*1000000,
                                                             currentFrontendUses_rx_rf_cutoff_frequency_MHz,

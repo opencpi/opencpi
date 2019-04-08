@@ -111,9 +111,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		\hline
 		Name & \comp \\
 		\hline
-		Version & v1.0 \\
+		Version & v1.5 \\
 		\hline
-		Release Date & August 2018 \\
+		Release Date & May 2019 \\
 		\hline
 		Component Library & ocpi.assets.util\_comps \\
 		\hline
@@ -122,15 +122,42 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		Tested Platforms & xsim, isim, matchstiq\_z1 \\
 		\hline
 	\end{tabular}
+	
+\begin{center}
+	\textit{\textbf{Revision History}}
+		\begin{table}[H]
+		\label{table:revisions} % Add "[H]" to force placement of table
+			\begin{tabularx}{\textwidth}{|c|X|l|}
+			\hline
+			\rowcolor{blue}
+			\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+		    \hline
+		    v1.4 & Initial Release & Oct 2018 \\
+		    \hline
+        v1.5 & \begin{itemize} \item Version bump.  \end{itemize} & May 2019 \\
+		    \hline
+			\end{tabularx}
+		\end{table}
+	\end{center}	
+	
 \section*{Functionality}
 \begin{flushleft}
-The {\comp} component takes input port messages and stores their data in a buffer via the \texttt{data} property as 4 byte words. Metadata associated with each message is stored as a record in a metadata buffer exposed by the \texttt{metadata} property. Each record contains four 4 byte words of metadata. The first word contains the opcode for the message and message size in bytes; opcode 8 MSB and message size 24 LSB. The second word contains the unsigned Q0.32 fractional portion of the timestamp for the End-Of-Message (EOM). The third word contains the fractional portion of the timestamp for the Start-Of-Message (SOM). The fourth word contains the unsigned Q32.0 integer portion of the timestamp for the SOM. All timestamps are provided by the worker's time service interface. So that the metadata can be read on a little-endian processor, the ordering of the metadata is as follows: \newline
 
-opcode (8-bit), \\
-message size (24-bit), \\
-eom fraction (32-bit), \\
-som fraction (32-bit), \\
-som seconds (32-bit) \newline
+The {\comp} component provides the ability to store an input port's
+data. Two modes are supported: \newline
+* 'leading' - capture all messages from input port until the buffer is full. This has the affect of capturing messages from the start of an application. \newline
+* 'trailing' - capture all messages from input port and allow the buffer's content to be overwritten while application is in operation. This has the affect of capturing all messages (a buffers worth) near the end of an application. \newline
+
+This component provides an optional output port, so that, it may be
+placed between two components. The input messages are directly passed to
+the output port with a latency of the control plane clock cycles. \newline
+
+The {\comp} component takes input port messages and stores their data in a buffer via the \texttt{data} property as 4 byte words. Metadata associated with each message is stored as a record in a metadata buffer via the \texttt{metadata} property. It captures four 4 byte words of metadata. The first metadata word is the opcode of the message and message size (bytes); opcode 8 MSB and message size 24 LSB. The second word is the fraction time stamp for the EOM. The third word is the fraction time stamp for the SOM. And the fourth word is the seconds timestamp for the SOM. So that the metadata can be read on a little-endian processor, the ordering of the metadata is as follows: \newline
+
+1) opcode (8-bit) \& message size (24-bit), \\
+2) eom fraction (32-bit), \\
+3) som fraction (32-bit), \\
+4) som seconds (32-bit) \newline
 
 Some example python code for reading in the \texttt{metadata} property values written to a file packed little-endian:
     \begin{lstlisting}[language=Python]
@@ -138,18 +165,21 @@ Some example python code for reading in the \texttt{metadata} property values wr
     \end{lstlisting}
 
 
-When the number bytes sent for a message is not a multiple of 4, only the last (number of bytes modulus 4) least significant bytes of the last word in the data buffer represent received data. The (number of bytes modulus 4) most significant bytes will always be zero in the last word in the data buffer. \newline
+When the number of bytes sent for a message is not a multiple of 4, only the
+last (number of bytes modulus 4) least significant bytes of the last word
+in the data buffer represent received data. The (number of bytes modulus 4)
+most significant bytes will always be zero in the last word in the data
+buffer. \\
+For example, given that last captured data buffer word is 0x0000005a: \newline
+- if number of bytes is 5, the last data received was 0x5a. \\
+- if number of bytes is 6, the last data received was 0x005a. \newline
 
-For example, if number of bytes is 5 and the last captured data buffer word is 0x0000005a, the last data received by {\comp} was 0x5a. If number if bytes was 6, the last data received was 0x005a. \newline
 
-The {\comp} component keeps count of how many metadata records (\texttt{metadataCount}) have been captured and a count of how many data words have been captured (\texttt{dataCount}). It allows for the option to wrap around and continue to capture data and metadata once the buffers are full or to stop capturing data and metadata when the data and metadata buffers are full via the \texttt{stoponFull} property. \newline
+The {\comp} component counts the number of metadata records (\texttt{metadataCount}) have been captured and how many data words have been captured (\texttt{dataCount}). It allows for the option to wrap around and continue to capture data and metadata once the buffers are full or to stop capturing data and metadata when the data and metadata buffers are full via the stoponFull property. \newline
 
-When \texttt{stopOnFull} is true, data and metadata will be captured as long as the metadata buffer is not full. If the data buffer is full before the metadata buffer, metadata will still be captured until the metadata buffer is full. If the metadata buffer is full before the data buffer, no more metadata and no more data will be captured. When \texttt{stopOnFull} is false, there will be a wrap around when the data and metadata buffers are full and data metadata will continue to be captured.  \newline
+When \texttt{stopOnFull} is true (leading), data and metadata will be captured as long as the metadata buffer is not full. If the data buffer is full before the metadata buffer, metadata will still be captured until the metadata buffer is full. If the metadata buffer is full before the data buffer, no more metadata and no more data will be captured. When \texttt{stopOnFull} is false (trailing), there will be a wrap around when the data and metadata buffers are full and data and metadata will continue to be captured.  \newline
 
 The component also has properties that keep track of whether or not the metadata and data buffers are full; \texttt{metaFull} and \texttt{dataFull}. \newline
-
-It has an (optional) output port so that it can placed between two workers. The input message are directly passed to the output port with a latency of the control plane clock cycles. \newline
-
 
 \end{flushleft}
 
@@ -313,7 +343,9 @@ The custom tests also have \path{generate.py} and \path{verify.py} scripts but t
 \begin{flushleft}
 
 For an example of the {\comp} component used in an application, please reference the
-tb\_bias\_v2 application located in \path{assets/applications/tb_bias_v2}.
+tb\_bias\_v2 application located in \path{assets/applications/tb_bias_v2}. \newline
+
+Something to note is that for the hdl worker, the BRAM2 module that is used to store the data and metadata initializes the BRAM to an initial value of 0xAAAAAAAA (2863311530 in base 10) in simulation. This means at the start of an application, in simulation, the \texttt{data} and \texttt{metadata} properties will have an initial value of 0xAAAAAAAA.
 
 \end{flushleft}
 

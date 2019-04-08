@@ -63,7 +63,7 @@ HdlTargets_spartan6:=xc6slx45
 HdlTargets_spartan3adsp:=xc3sd3400a
 
 # Zynq targets - supported by both ISE and Vivado
-HdlTargets_zynq:=xc7z007s xc7z012s xc7z014s xc7z010 xc7z015 xc7z020 xc7z030 xc7z035 xc7z045 xc7z100
+HdlTargets_zynq:=xc7z007s xc7z012s xc7z014s xc7z010 xc7z015 xc7z020 xc7z030 xc7z035 xc7z045 xc7z100 xc7z035i
 # If building for zynq and no target is specified, default to the xc7z020
 HdlDefaultTarget_zynq:=xc7z020
 # Parts for zynq in ISE are the same as Vivado but with _ise_alias appended for internal differentiation

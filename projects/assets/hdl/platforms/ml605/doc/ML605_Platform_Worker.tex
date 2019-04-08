@@ -93,7 +93,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Platform Data Sheet}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -106,23 +106,27 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \begin{document}
 
+\section*{Zipper Deprecation Notice:}
+\textbf{Beginning with OpenCPI Version 1.5, support for Lime Microsystems' Zipper card is now deprecated.}
+
+
 \section*{Summary - \Comp}
 \begin{tabular}{|c|M{13.5cm}|}
 	\hline
 	\rowcolor{blue}
-	                  &                                                    \\
+	                  & \\
 	\hline
-	Name              & \comp                                              \\
+	Name              & \comp \\
 	\hline
-	Worker Type       & Platform                                           \\
+	Worker Type       & Platform \\
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & October 2018 \\
+	Release Date      & April 2019 \\
 	\hline
-	Component Library & ocpi                                        \\
+	Library & ocpi.assets.platforms \\
 	\hline
-	Workers & \comp.hdl                                        \\
+	Workers & \comp.hdl \\
 	\hline
 \end{tabular}
 
@@ -250,7 +254,7 @@ assets/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/v6\_pcie\_v1\_7.v
 			\hline
 			\verb+platform+    & String & 31             & -               & Parameter & Standard & - & Name of this platform                                                     \\
 			\hline
-			\verb+sdp_width+   & UChar  & -              & -               & Parameter & Standard & 1 & Width of data plane in DWORDS                                             \\
+			\verb+sdp_width+   & UChar  & -              & -               & Parameter & Standard & 1 & Width of data plane in DWORDS \newline \textbf{(SDP is NOT implemented by the ml605)}   \\
 			\hline
 			\verb+UUID+        & ULong  & -              & 16              & Readable           & Standard    & -       & UUID of this platform                                                         \\
 			\hline
@@ -337,18 +341,19 @@ assets/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/v6\_pcie\_v1\_7.v
 
 \end{landscape}
 \pagebreak
-	\section*{Platform Devices}
-	The following is a table which enumerates which device workers are allowed in platform configurations and in assembly containers. The parameter values specified restrict allowed implementations. Note that the worker signals listed are only those who are unconnected on the platform or whose platform signal name differ from the worker signal name. Note that device workers allowed by cards are not included in this list.\\
-			\begin{tabular}{|M{3cm}|M{3.5cm}|M{3cm}|M{3cm}|M{3cm}|}
-			\hline
-			\rowcolor{blue}
-			Name                       & Property Name    & Property Value              & Worker Signal & Platform Signal         \\
-			\hline
-			time\_server               & frequency        & 200*10\textsuperscript{6}   &               &                         \\
-			\hline
-			flash &   &   &  &  \\
-			\hline
-		\end{tabular}
+
+\section*{Platform Devices}
+The following table enumerates the device workers that are included in the base platform configuration. The parameter values specified restrict allowed implementations. Note that the worker signals listed are only those who are unconnected on the platform or whose platform signal name differ from the worker signal name. Note that device workers allowed by cards are not included in this list. \\ \newline
+\begin{tabular}{|M{3cm}|M{3.5cm}|M{3cm}|M{3cm}|M{3cm}|}
+	\hline
+	\rowcolor{blue}
+	Name                       & Property Name    & Property Value              & Worker Signal & Platform Signal         \\
+	\hline
+	time\_server               & frequency        & 200*10\textsuperscript{6}   &               &                         \\
+	\hline
+	flash &   &   &  &  \\
+	\hline
+\end{tabular}
 
 \section*{Signals}
 Note that this signal table does not include signals that may be provided by slots. \\
@@ -540,36 +545,71 @@ The following table enumerates the available slots for this platform and the sig
   \\\cline{3-4}
   & & PG\_M2C & PG\_M2C\_LS \
   \\\cline{3-4}
-	& & SCL & IIC\_SCL\_LS \
+	& & SCL & IIC\_SCL\_MAIN\_LS \
 	\\\cline{3-4}
-	& & SDA & IIC\_SDA\_LS \\
+	& & SDA & IIC\_SDA\_MAIN\_LS \\
 	\hline
 \end{longtable}
+
+\newpage
 \section*{Platform Configurations}
-	\begin{tabular}{|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		Name & Platform Configuration Workers & Card & Slot \\
-		\hline
-		\multirow{2}{*}{base} &ml605 & - & - \\ &time\_server & - & - \\
-		\hline
-		\multirow{2}{*}{ml605\_flash} &ml605 & - & - \\ &time\_server & - & - \\ &flash & - & - \\
-		\hline
-		\multirow{5}{*}{ml605\_zipper\_fmc\_lpc\_rx\_tx} &ml605 & - & - \\ &time\_server & - & - \\ &lime\_adc & lime\_zipper\_fmc\_lpc & fmc\_lpc \\ &lime\_dac & lime\_zipper\_fmc\_lpc & fmc\_lpc \\ &si5351 & lime\_zipper\_fmc\_lpc & fmc\_lpc \\ &lime\_rx & lime\_zipper\_fmc\_lpc & fmc\_lpc \\ &lime\_tx & lime\_zipper\_fmc\_lpc & fmc\_lpc \\
-		\hline
-		\multirow{5}{*}{ml605\_zipper\_fmc\_lpc\_rx} &ml605 & - & - \\ &time\_server & - & - \\ &lime\_adc & lime\_zipper\_fmc\_lpc & fmc\_lpc \\  &si5351 & lime\_zipper\_fmc\_lpc & fmc\_lpc \\ &lime\_rx & lime\_zipper\_fmc\_lpc & fmc\_lpc \\
-		\hline
-		\multirow{5}{*}{ml605\_zipper\_fmc\_lpc\_tx} &ml605 & - & - \\ &time\_server & - & - \\ &lime\_dac & lime\_zipper\_fmc\_lpc & fmc\_lpc \\  &si5351 & lime\_zipper\_fmc\_lpc & fmc\_lpc \\ &lime\_tx & lime\_zipper\_fmc\_lpc & fmc\_lpc \\
-		\hline
-		\multirow{5}{*}{ml605\_zipper\_fmc\_hpc\_rx\_tx} &ml605 & - & - \\ &time\_server & - & - \\ &lime\_adc & lime\_zipper\_fmc\_hpc & fmc\_hpc \\ &lime\_dac & lime\_zipper\_fmc\_hpc & fmc\_hpc \\ &si5351 & lime\_zipper\_fmc\_hpc & fmc\_hpc \\ &lime\_rx & lime\_zipper\_fmc\_hpc & fmc\_hpc \\ &lime\_tx & lime\_zipper\_fmc\_hpc & fmc\_hpc \\
-		\hline
-		\multirow{5}{*}{ml605\_zipper\_fmc\_hpc\_rx} &ml605 & - & - \\ &time\_server & - & - \\ &lime\_adc & lime\_zipper\_fmc\_hpc & fmc\_hpc \\  &si5351 & lime\_zipper\_fmc\_hpc & fmc\_hpc \\ &lime\_rx & lime\_zipper\_fmc\_hpc & fmc\_hpc \\
-		\hline
-		\multirow{5}{*}{ml605\_zipper\_fmc\_hpc\_tx} &ml605 & - & - \\ &time\_server & - & - \\ &lime\_dac & lime\_zipper\_fmc\_hpc & fmc\_hpc \\  &si5351 & lime\_zipper\_fmc\_hpc & fmc\_hpc \\ &lime\_tx & lime\_zipper\_fmc\_hpc & fmc\_hpc \\
-		\hline
-	\end{tabular}
-	\section*{Control Timing and Signals}
-	There are 3 clock domains present in the ml605 platform worker: 250 MHz, 125 MHz, and 200 MHz. The worker ingests an external-to-the FPGA 250 MHz clock. This clock serves as the clock source for the LogiCORE PCIe Integrated Block within the worker. The LogiCORE block divides the 250 MHz clock down to a 125 MHz clock which is subsequently supplied to the control plane as its clock. The worker also feeds a buffered version of the external-to-the-FPGA 200 MHz clock to the timebase port. The timebase port is also supplied with a PPS from the ML605 board's J56 SMA connector. The timebase port also include a PPS output which is fed to the J57 SMA connector.
+Below is a sample set of supported platform configurations which  highlight the device workers included in the platform configuration versus card/slots. For a complete list of supported platform configurations, refer to the ml605 directory. \\
+
+\begin{tabular}{|c|c|c|c|}
+	\hline
+	\rowcolor{blue}
+	Name & Platform Configuration Workers & Card & Slot \\
+	\hline
+	\multirow{2}{*}{base} &ml605 & - & - \\ &time\_server & - & - \\
+	\hline
+	\multirow{2}{*}{ml605\_flash} &ml605 & - & - \\ &time\_server & -
+	& - \\ &flash & - & - \\
+	\hline
+	\multirow{5}{*}{ml605\_zipper\_fmc\_lpc\_rx\_tx}&
+	ml605 & - & - \\ &time\_server & - & - \\
+	&lime\_adc & lime\_zipper\_fmc\_lpc & fmc\_lpc \\ &lime\_dac &
+	lime\_zipper\_fmc\_lpc & fmc\_lpc \\ &si5351 &
+	lime\_zipper\_fmc\_lpc & fmc\_lpc \\ &lime\_rx &
+	lime\_zipper\_fmc\_lpc & fmc\_lpc \\ &lime\_tx &
+	lime\_zipper\_fmc\_lpc & fmc\_lpc \\
+	\hline
+	\multirow{5}{*}{ml605\_zipper\_fmc\_lpc\_rx}&
+	ml605 & - & - \\ &time\_server & - & - \\
+	&lime\_adc & lime\_zipper\_fmc\_lpc & fmc\_lpc \\  &si5351 &
+	lime\_zipper\_fmc\_lpc & fmc\_lpc \\ &lime\_rx &
+	lime\_zipper\_fmc\_lpc & fmc\_lpc \\
+	\hline
+	\multirow{5}{*}{ml605\_zipper\_fmc\_lpc\_tx}&
+	ml605 & - & - \\ &time\_server & - & - \\
+	&lime\_dac & lime\_zipper\_fmc\_lpc & fmc\_lpc \\  &si5351 &
+	lime\_zipper\_fmc\_lpc & fmc\_lpc \\ &lime\_tx &
+	lime\_zipper\_fmc\_lpc & fmc\_lpc \\
+	\hline
+	\multirow{5}{*}{ml605\_zipper\_fmc\_hpc\_rx\_tx}&
+	ml605 & - & - \\ &time\_server & - & - \\
+	&lime\_adc & lime\_zipper\_fmc\_hpc & fmc\_hpc \\ &lime\_dac &
+	lime\_zipper\_fmc\_hpc & fmc\_hpc \\ &si5351 &
+	lime\_zipper\_fmc\_hpc & fmc\_hpc \\ &lime\_rx &
+	lime\_zipper\_fmc\_hpc & fmc\_hpc \\ &lime\_tx &
+	lime\_zipper\_fmc\_hpc & fmc\_hpc \\
+	\hline
+	\multirow{5}{*}{ml605\_zipper\_fmc\_hpc\_rx}&
+	ml605 & - & - \\ &time\_server & - & - \\
+	&lime\_adc & lime\_zipper\_fmc\_hpc & fmc\_hpc \\  &si5351 &
+	lime\_zipper\_fmc\_hpc & fmc\_hpc \\ &lime\_rx &
+	lime\_zipper\_fmc\_hpc & fmc\_hpc \\
+	\hline
+	\multirow{5}{*}{ml605\_zipper\_fmc\_hpc\_tx}&
+	ml605 & - & - \\ &time\_server & - & - \\
+	&lime\_dac & lime\_zipper\_fmc\_hpc & fmc\_hpc \\  &si5351 &
+	lime\_zipper\_fmc\_hpc & fmc\_hpc \\ &lime\_tx &
+	lime\_zipper\_fmc\_hpc & fmc\_hpc \\
+	\hline
+\end{tabular}
+
+\newpage	
+\section*{Control Timing and Signals}
+There are 3 clock domains present in the ml605 platform worker: 250 MHz, 125 MHz, and 200 MHz. The worker ingests an external-to-the FPGA 250 MHz clock. This clock serves as the clock source for the LogiCORE PCIe Integrated Block within the worker. The LogiCORE block divides the 250 MHz clock down to a 125 MHz clock which is subsequently supplied to the control plane as its clock. The worker also feeds a buffered version of the external-to-the-FPGA 200 MHz clock to the timebase port. The timebase port is also supplied with a PPS from the ML605 board's J56 SMA connector. The timebase port also include a PPS output which is fed to the J57 SMA connector.
 
 \begin{landscape}
 \section*{Performance and Resource Utilization}

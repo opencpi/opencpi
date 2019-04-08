@@ -109,7 +109,7 @@ class ShowableComponent(ShowableAsset):
             port_details = port.attrib
             for child in port:
                 if child.tag == "protocol":
-                    port_details["protocol"] = child.attrib["name"]
+                    port_details["protocol"] = child.attrib.get("padding", "N/A")
             self.port_list.append(port_details)
         #set up self.slave_list from the xml
         for slave in parsed_xml.findall("slave"):
@@ -239,6 +239,8 @@ class ShowableComponent(ShowableAsset):
         base_type = my_dict.get("type", "ULong")
         is_seq = my_dict.get("sequenceLength")
         is_array = my_dict.get("arrayLength")
+        if not is_array:
+            is_array = my_dict.get("arrayDimensions")
         is_enum = my_dict.get("enums")
         is_string = my_dict.get("stringLength")
         #change the base tyoe string for enums or strings
@@ -276,7 +278,7 @@ class ShowableComponent(ShowableAsset):
                                                    "volatile" : prop.get("volatile", "0"),
                                                    "parameter" : prop.get("parameter", "0"),
                                                    "padding" : prop.get("padding", "0")},
-                                 "name" : prop["name"],
+                                 "name" : prop.get("name", "N/A"),
                                  "type" : prop.get("type", "ULong")}
 
                 required_details = ["initial", "readable", "writable", "volatile", "parameter",

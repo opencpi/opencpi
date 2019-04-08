@@ -37,7 +37,7 @@ class Tx_event_ctrlrWorker : public Tx_event_ctrlrWorkerBase {
   // this object can not be const because setRunCondition won't accept const
   // pointers, but the OpenCPI RCC Development guide state that it "must not be
   // modified while it is the current run condition."
-  RunCondition         m_aRunConditionNoPorts;
+  const RunCondition m_aRunConditionNoPorts;
 
   std::vector<uint8_t> m_pending_txens;
   bool                 m_txen;

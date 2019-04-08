@@ -1,0 +1,422 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="UUT_tb.wdb" id="1">
+         <top_modules>
+            <top_module name="UUT_tb" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="0fs"></ZoomStartTime>
+      <ZoomEndTime time="2000000001fs"></ZoomEndTime>
+      <Cursor1Time time="1841100000fs"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="175"></NameColumnWidth>
+      <ValueColumnWidth column_width="77"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="100" />
+   <wvobject fp_name="divider39" type="divider">
+      <obj_property name="label">Test 1</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test1/clk1">
+      <obj_property name="ElementShortName">clk1</obj_property>
+      <obj_property name="ObjectShortName">clk1</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test1/clk2">
+      <obj_property name="ElementShortName">clk2</obj_property>
+      <obj_property name="ObjectShortName">clk2</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test1/rst">
+      <obj_property name="ElementShortName">rst</obj_property>
+      <obj_property name="ObjectShortName">rst</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test1/din">
+      <obj_property name="ElementShortName">din[15:0]</obj_property>
+      <obj_property name="ObjectShortName">din[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test1/din_trdy">
+      <obj_property name="ElementShortName">din_trdy</obj_property>
+      <obj_property name="ObjectShortName">din_trdy</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test1/dout">
+      <obj_property name="ElementShortName">dout[7:0]</obj_property>
+      <obj_property name="ObjectShortName">dout[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test1/test_en">
+      <obj_property name="ElementShortName">test_en</obj_property>
+      <obj_property name="ObjectShortName">test_en</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test1/test_done">
+      <obj_property name="ElementShortName">test_done</obj_property>
+      <obj_property name="ObjectShortName">test_done</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test1/rdy_vhdl">
+      <obj_property name="ElementShortName">rdy_vhdl</obj_property>
+      <obj_property name="ObjectShortName">rdy_vhdl</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test1/rdy_vlog">
+      <obj_property name="ElementShortName">rdy_vlog</obj_property>
+      <obj_property name="ObjectShortName">rdy_vlog</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test1/error_rdy">
+      <obj_property name="ElementShortName">error_rdy</obj_property>
+      <obj_property name="ObjectShortName">error_rdy</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test1/dout_vhdl">
+      <obj_property name="ElementShortName">dout_vhdl[7:0]</obj_property>
+      <obj_property name="ObjectShortName">dout_vhdl[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test1/dout_vlog">
+      <obj_property name="ElementShortName">dout_vlog[7:0]</obj_property>
+      <obj_property name="ObjectShortName">dout_vlog[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test1/error_dout">
+      <obj_property name="ElementShortName">error_dout[7:0]</obj_property>
+      <obj_property name="ObjectShortName">error_dout[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test1/SRC_FNAME">
+      <obj_property name="ElementShortName">SRC_FNAME[1:10]</obj_property>
+      <obj_property name="ObjectShortName">SRC_FNAME[1:10]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test1/VER_CHK_FNAME">
+      <obj_property name="ElementShortName">VER_CHK_FNAME[1:15]</obj_property>
+      <obj_property name="ObjectShortName">VER_CHK_FNAME[1:15]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test1/UUT_NAME">
+      <obj_property name="ElementShortName">UUT_NAME[1:13]</obj_property>
+      <obj_property name="ObjectShortName">UUT_NAME[1:13]</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/UUT_tb/test1/TEST_NUM">
+      <obj_property name="ElementShortName">TEST_NUM</obj_property>
+      <obj_property name="ObjectShortName">TEST_NUM</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/UUT_tb/test1/DATA_WIDTH">
+      <obj_property name="ElementShortName">DATA_WIDTH</obj_property>
+      <obj_property name="ObjectShortName">DATA_WIDTH</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/UUT_tb/test1/CLK_PER_1">
+      <obj_property name="ElementShortName">CLK_PER_1</obj_property>
+      <obj_property name="ObjectShortName">CLK_PER_1</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/UUT_tb/test1/CLK_PER_2">
+      <obj_property name="ElementShortName">CLK_PER_2</obj_property>
+      <obj_property name="ObjectShortName">CLK_PER_2</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test1/VER_ACT_FNAME">
+      <obj_property name="ElementShortName">VER_ACT_FNAME[1:25]</obj_property>
+      <obj_property name="ObjectShortName">VER_ACT_FNAME[1:25]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test1/VER_LOG_FNAME">
+      <obj_property name="ElementShortName">VER_LOG_FNAME[1:25]</obj_property>
+      <obj_property name="ObjectShortName">VER_LOG_FNAME[1:25]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test1/VER_TAG">
+      <obj_property name="ElementShortName">VER_TAG[1:22]</obj_property>
+      <obj_property name="ObjectShortName">VER_TAG[1:22]</obj_property>
+   </wvobject>
+   <wvobject fp_name="divider40" type="divider">
+      <obj_property name="label">Test 2</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test2/clk1">
+      <obj_property name="ElementShortName">clk1</obj_property>
+      <obj_property name="ObjectShortName">clk1</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test2/clk2">
+      <obj_property name="ElementShortName">clk2</obj_property>
+      <obj_property name="ObjectShortName">clk2</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test2/rst">
+      <obj_property name="ElementShortName">rst</obj_property>
+      <obj_property name="ObjectShortName">rst</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test2/din">
+      <obj_property name="ElementShortName">din[15:0]</obj_property>
+      <obj_property name="ObjectShortName">din[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test2/din_trdy">
+      <obj_property name="ElementShortName">din_trdy</obj_property>
+      <obj_property name="ObjectShortName">din_trdy</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test2/dout">
+      <obj_property name="ElementShortName">dout[7:0]</obj_property>
+      <obj_property name="ObjectShortName">dout[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test2/test_en">
+      <obj_property name="ElementShortName">test_en</obj_property>
+      <obj_property name="ObjectShortName">test_en</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test2/test_done">
+      <obj_property name="ElementShortName">test_done</obj_property>
+      <obj_property name="ObjectShortName">test_done</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test2/rdy_vhdl">
+      <obj_property name="ElementShortName">rdy_vhdl</obj_property>
+      <obj_property name="ObjectShortName">rdy_vhdl</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test2/rdy_vlog">
+      <obj_property name="ElementShortName">rdy_vlog</obj_property>
+      <obj_property name="ObjectShortName">rdy_vlog</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test2/error_rdy">
+      <obj_property name="ElementShortName">error_rdy</obj_property>
+      <obj_property name="ObjectShortName">error_rdy</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test2/dout_vhdl">
+      <obj_property name="ElementShortName">dout_vhdl[7:0]</obj_property>
+      <obj_property name="ObjectShortName">dout_vhdl[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test2/dout_vlog">
+      <obj_property name="ElementShortName">dout_vlog[7:0]</obj_property>
+      <obj_property name="ObjectShortName">dout_vlog[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test2/error_dout">
+      <obj_property name="ElementShortName">error_dout[7:0]</obj_property>
+      <obj_property name="ObjectShortName">error_dout[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test2/SRC_FNAME">
+      <obj_property name="ElementShortName">SRC_FNAME[1:11]</obj_property>
+      <obj_property name="ObjectShortName">SRC_FNAME[1:11]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test2/VER_CHK_FNAME">
+      <obj_property name="ElementShortName">VER_CHK_FNAME[1:15]</obj_property>
+      <obj_property name="ObjectShortName">VER_CHK_FNAME[1:15]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test2/UUT_NAME">
+      <obj_property name="ElementShortName">UUT_NAME[1:13]</obj_property>
+      <obj_property name="ObjectShortName">UUT_NAME[1:13]</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/UUT_tb/test2/TEST_NUM">
+      <obj_property name="ElementShortName">TEST_NUM</obj_property>
+      <obj_property name="ObjectShortName">TEST_NUM</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/UUT_tb/test2/DATA_WIDTH">
+      <obj_property name="ElementShortName">DATA_WIDTH</obj_property>
+      <obj_property name="ObjectShortName">DATA_WIDTH</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/UUT_tb/test2/CLK_PER_1">
+      <obj_property name="ElementShortName">CLK_PER_1</obj_property>
+      <obj_property name="ObjectShortName">CLK_PER_1</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/UUT_tb/test2/CLK_PER_2">
+      <obj_property name="ElementShortName">CLK_PER_2</obj_property>
+      <obj_property name="ObjectShortName">CLK_PER_2</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test2/VER_ACT_FNAME">
+      <obj_property name="ElementShortName">VER_ACT_FNAME[1:25]</obj_property>
+      <obj_property name="ObjectShortName">VER_ACT_FNAME[1:25]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test2/VER_LOG_FNAME">
+      <obj_property name="ElementShortName">VER_LOG_FNAME[1:25]</obj_property>
+      <obj_property name="ObjectShortName">VER_LOG_FNAME[1:25]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test2/VER_TAG">
+      <obj_property name="ElementShortName">VER_TAG[1:22]</obj_property>
+      <obj_property name="ObjectShortName">VER_TAG[1:22]</obj_property>
+   </wvobject>
+   <wvobject fp_name="divider81" type="divider">
+      <obj_property name="label">Test 3</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test3/clk1">
+      <obj_property name="ElementShortName">clk1</obj_property>
+      <obj_property name="ObjectShortName">clk1</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test3/clk2">
+      <obj_property name="ElementShortName">clk2</obj_property>
+      <obj_property name="ObjectShortName">clk2</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test3/rst">
+      <obj_property name="ElementShortName">rst</obj_property>
+      <obj_property name="ObjectShortName">rst</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test3/din">
+      <obj_property name="ElementShortName">din[15:0]</obj_property>
+      <obj_property name="ObjectShortName">din[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test3/din_trdy">
+      <obj_property name="ElementShortName">din_trdy</obj_property>
+      <obj_property name="ObjectShortName">din_trdy</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test3/dout">
+      <obj_property name="ElementShortName">dout[7:0]</obj_property>
+      <obj_property name="ObjectShortName">dout[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test3/test_en">
+      <obj_property name="ElementShortName">test_en</obj_property>
+      <obj_property name="ObjectShortName">test_en</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test3/test_done">
+      <obj_property name="ElementShortName">test_done</obj_property>
+      <obj_property name="ObjectShortName">test_done</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test3/rdy_vhdl">
+      <obj_property name="ElementShortName">rdy_vhdl</obj_property>
+      <obj_property name="ObjectShortName">rdy_vhdl</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test3/rdy_vlog">
+      <obj_property name="ElementShortName">rdy_vlog</obj_property>
+      <obj_property name="ObjectShortName">rdy_vlog</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test3/error_rdy">
+      <obj_property name="ElementShortName">error_rdy</obj_property>
+      <obj_property name="ObjectShortName">error_rdy</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test3/dout_vhdl">
+      <obj_property name="ElementShortName">dout_vhdl[7:0]</obj_property>
+      <obj_property name="ObjectShortName">dout_vhdl[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test3/dout_vlog">
+      <obj_property name="ElementShortName">dout_vlog[7:0]</obj_property>
+      <obj_property name="ObjectShortName">dout_vlog[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test3/error_dout">
+      <obj_property name="ElementShortName">error_dout[7:0]</obj_property>
+      <obj_property name="ObjectShortName">error_dout[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test3/SRC_FNAME">
+      <obj_property name="ElementShortName">SRC_FNAME[1:11]</obj_property>
+      <obj_property name="ObjectShortName">SRC_FNAME[1:11]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test3/VER_CHK_FNAME">
+      <obj_property name="ElementShortName">VER_CHK_FNAME[1:15]</obj_property>
+      <obj_property name="ObjectShortName">VER_CHK_FNAME[1:15]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test3/UUT_NAME">
+      <obj_property name="ElementShortName">UUT_NAME[1:13]</obj_property>
+      <obj_property name="ObjectShortName">UUT_NAME[1:13]</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/UUT_tb/test3/TEST_NUM">
+      <obj_property name="ElementShortName">TEST_NUM</obj_property>
+      <obj_property name="ObjectShortName">TEST_NUM</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/UUT_tb/test3/DATA_WIDTH">
+      <obj_property name="ElementShortName">DATA_WIDTH</obj_property>
+      <obj_property name="ObjectShortName">DATA_WIDTH</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/UUT_tb/test3/CLK_PER_1">
+      <obj_property name="ElementShortName">CLK_PER_1</obj_property>
+      <obj_property name="ObjectShortName">CLK_PER_1</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/UUT_tb/test3/CLK_PER_2">
+      <obj_property name="ElementShortName">CLK_PER_2</obj_property>
+      <obj_property name="ObjectShortName">CLK_PER_2</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test3/VER_ACT_FNAME">
+      <obj_property name="ElementShortName">VER_ACT_FNAME[1:25]</obj_property>
+      <obj_property name="ObjectShortName">VER_ACT_FNAME[1:25]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test3/VER_LOG_FNAME">
+      <obj_property name="ElementShortName">VER_LOG_FNAME[1:25]</obj_property>
+      <obj_property name="ObjectShortName">VER_LOG_FNAME[1:25]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test3/VER_TAG">
+      <obj_property name="ElementShortName">VER_TAG[1:22]</obj_property>
+      <obj_property name="ObjectShortName">VER_TAG[1:22]</obj_property>
+   </wvobject>
+   <wvobject fp_name="divider104" type="divider">
+      <obj_property name="label">Test 4</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test4/clk1">
+      <obj_property name="ElementShortName">clk1</obj_property>
+      <obj_property name="ObjectShortName">clk1</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test4/clk2">
+      <obj_property name="ElementShortName">clk2</obj_property>
+      <obj_property name="ObjectShortName">clk2</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test4/rst">
+      <obj_property name="ElementShortName">rst</obj_property>
+      <obj_property name="ObjectShortName">rst</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test4/din">
+      <obj_property name="ElementShortName">din[15:0]</obj_property>
+      <obj_property name="ObjectShortName">din[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test4/din_trdy">
+      <obj_property name="ElementShortName">din_trdy</obj_property>
+      <obj_property name="ObjectShortName">din_trdy</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test4/dout">
+      <obj_property name="ElementShortName">dout[7:0]</obj_property>
+      <obj_property name="ObjectShortName">dout[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test4/test_en">
+      <obj_property name="ElementShortName">test_en</obj_property>
+      <obj_property name="ObjectShortName">test_en</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test4/test_done">
+      <obj_property name="ElementShortName">test_done</obj_property>
+      <obj_property name="ObjectShortName">test_done</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test4/rdy_vhdl">
+      <obj_property name="ElementShortName">rdy_vhdl</obj_property>
+      <obj_property name="ObjectShortName">rdy_vhdl</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test4/rdy_vlog">
+      <obj_property name="ElementShortName">rdy_vlog</obj_property>
+      <obj_property name="ObjectShortName">rdy_vlog</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/UUT_tb/test4/error_rdy">
+      <obj_property name="ElementShortName">error_rdy</obj_property>
+      <obj_property name="ObjectShortName">error_rdy</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test4/dout_vhdl">
+      <obj_property name="ElementShortName">dout_vhdl[7:0]</obj_property>
+      <obj_property name="ObjectShortName">dout_vhdl[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test4/dout_vlog">
+      <obj_property name="ElementShortName">dout_vlog[7:0]</obj_property>
+      <obj_property name="ObjectShortName">dout_vlog[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test4/error_dout">
+      <obj_property name="ElementShortName">error_dout[7:0]</obj_property>
+      <obj_property name="ObjectShortName">error_dout[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test4/SRC_FNAME">
+      <obj_property name="ElementShortName">SRC_FNAME[1:11]</obj_property>
+      <obj_property name="ObjectShortName">SRC_FNAME[1:11]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test4/VER_CHK_FNAME">
+      <obj_property name="ElementShortName">VER_CHK_FNAME[1:15]</obj_property>
+      <obj_property name="ObjectShortName">VER_CHK_FNAME[1:15]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test4/UUT_NAME">
+      <obj_property name="ElementShortName">UUT_NAME[1:13]</obj_property>
+      <obj_property name="ObjectShortName">UUT_NAME[1:13]</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/UUT_tb/test4/TEST_NUM">
+      <obj_property name="ElementShortName">TEST_NUM</obj_property>
+      <obj_property name="ObjectShortName">TEST_NUM</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/UUT_tb/test4/DATA_WIDTH">
+      <obj_property name="ElementShortName">DATA_WIDTH</obj_property>
+      <obj_property name="ObjectShortName">DATA_WIDTH</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/UUT_tb/test4/CLK_PER_1">
+      <obj_property name="ElementShortName">CLK_PER_1</obj_property>
+      <obj_property name="ObjectShortName">CLK_PER_1</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/UUT_tb/test4/CLK_PER_2">
+      <obj_property name="ElementShortName">CLK_PER_2</obj_property>
+      <obj_property name="ObjectShortName">CLK_PER_2</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test4/VER_ACT_FNAME">
+      <obj_property name="ElementShortName">VER_ACT_FNAME[1:25]</obj_property>
+      <obj_property name="ObjectShortName">VER_ACT_FNAME[1:25]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test4/VER_LOG_FNAME">
+      <obj_property name="ElementShortName">VER_LOG_FNAME[1:25]</obj_property>
+      <obj_property name="ObjectShortName">VER_LOG_FNAME[1:25]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/UUT_tb/test4/VER_TAG">
+      <obj_property name="ElementShortName">VER_TAG[1:22]</obj_property>
+      <obj_property name="ObjectShortName">VER_TAG[1:22]</obj_property>
+   </wvobject>
+</wave_config>

@@ -508,8 +508,8 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
       if (ssi != sl.m_signals.end() && ssi->second.c_str()[0] == '/')
 	sig.m_name = &ssi->second.c_str()[1];
       else
-	sig.m_name = sl.m_name + "_" + (ssi == sl.m_signals.end() ? (*si)->cname() :
-					ssi->second.c_str());
+	sig.m_name = sl.m_prefix + (ssi == sl.m_signals.end() ? (*si)->cname() :
+				    ssi->second.c_str());
       if (!m_sigmap.findSignal(sig.m_name)) {
 	m_signals.push_back(&sig);
 	m_sigmap[sig.cname()] = &sig;
@@ -950,7 +950,7 @@ mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
 	  OU::formatAdd(devSig, "(%u)", n);
 	std::string dname, ename;
 	if (di.slot && !inContainer)
-	  OU::format(dname, "%s_%s_%s", di.slot->cname(), di.device.cname(), devSig.c_str());
+	  OU::format(dname, "%s%s_%s", di.slot->m_prefix.c_str(), di.device.cname(), devSig.c_str());
 	else if (inContainer)
 	  dname = devSig.c_str();
 	else
@@ -965,7 +965,7 @@ mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
 	  if (ssi != di.slot->m_signals.end() && ssi->second.c_str()[0] == '/')
 	    ename = &ssi->second.c_str()[1];
 	  else if (ssi == di.slot->m_signals.end() || ssi->second.c_str()[0])
-	    OU::format(ename, "%s_%s", di.slot->cname(),
+	    OU::format(ename, "%s%s", di.slot->m_prefix.c_str(),
 		       ssi == di.slot->m_signals.end()  ?
 		       slotSig->cname() : ssi->second.c_str());
 	} else
@@ -974,7 +974,7 @@ mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
 	  OU::formatAdd(assy, "    <signal name='%s' external='%s'/>\n",
 			dname.c_str(), ename.c_str());
       } else {
-	Signal *ns = new Signal(**s);
+	Signal *ns = new Signal(**i);
 	if (di.device.deviceType().m_type != Worker::Platform)
 	  OU::format(ns->m_name, "%s_%s", di.device.cname(), ns->cname());
 	m_signals.push_back(ns);

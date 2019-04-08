@@ -1,0 +1,24 @@
+<Application Package='ocpi.assets_ts' Done='file_write'>
+  <Instance Component='ocpi.core.file_read' Connect='complex_mixer_ts'>
+    <Property Name='fileName' Value='idata/rx_app_input.bin'/>
+    <Property Name='messagesInFile' Value='true'/>
+  </Instance>
+  <Instance Component='ocpi.assets_ts.complex_mixer_ts' Connect='cic_dec_ts'>
+    <Property Name='NCO_DATA_WIDTH_p' Value='12'/>
+    <Property Name='INPUT_DATA_WIDTH_p' Value='12'/>
+    <Property Name='enable' Value='true'/>
+    <Property Name='mag' Value='1024'/>
+    <Property Name='phs_init' Value='0'/>
+    <Property Name='phs_inc' Value='-16384'/>
+  </Instance>
+  <Instance Component='ocpi.assets_ts.cic_dec_ts' Connect='file_write'>
+    <Property Name='N' Value='3'/>
+    <Property Name='M' Value='1'/>
+    <Property Name='R' Value='8'/>
+    <Property Name='ACC_WIDTH' Value='25'/>
+  </Instance>
+  <Instance Component='ocpi.core.file_write'>
+    <Property Name='fileName' Value='odata/rx_app_output.bin'/>
+    <Property Name='messagesInFile' Value='true'/>
+  </Instance>
+</Application>

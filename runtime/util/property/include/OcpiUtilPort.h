@@ -132,6 +132,7 @@ namespace OCPI {
       size_t      m_minBufferCount;  // implementation-defined value
       size_t      m_defaultBufferCount; // specify default when none is specified.
       size_t      m_bufferSize;      // metadata protocol override, if not SIZE_MAX
+      bool        m_workerEOF;       // this port handles all input EOFs by itself.  No auto-propagation
     private:
       ezxml_t     m_xml;
     public:

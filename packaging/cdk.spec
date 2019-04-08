@@ -67,8 +67,8 @@ AutoReqProv: no  # This must preceed the %description.  Go figure.
 %define      __strip %{RPM_CROSS_COMPILE}strip
 BuildArch:   noarch
 %define      _binaries_in_noarch_packages_terminate_build 0
-Requires:    %{name} = %{version}-%{release}
-Requires(pre,postun): %{name} = %{version}-%{release}
+Requires:             opencpi = %{version}
+Requires(pre,postun): opencpi = %{version}
 Obsoletes:   %{RPM_BASENAME}-platform-%{RPM_PLATFORM}
 %description
 This package contains the OpenCPI static libraries for cross-compiling

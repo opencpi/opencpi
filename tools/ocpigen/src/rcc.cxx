@@ -1871,7 +1871,7 @@ RccPort::
 RccPort(Worker &w, ezxml_t x, DataPort *sp, int ordinal, const char *&err)
   : DataPort(w, x, sp, ordinal, RCCPort, err) {
   if (x && !err &&
-      !(err = OE::checkAttrs(x, SPEC_DATA_PORT_ATTRS, "implname",
+      !(err = OE::checkAttrs(x, SPEC_DATA_PORT_ATTRS, "implname", "workerEOF",
                              "minbuffers", "minbuffercount", "buffersize",
                              DISTRIBUTION_ATTRS, PARTITION_ATTRS, (void*)0)))
     err = OE::checkElements(x, "operation" ,(void*)0);

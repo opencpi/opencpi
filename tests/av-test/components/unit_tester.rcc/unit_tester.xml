@@ -1,0 +1,4 @@
+<RccWorker language='c++' spec='unit_tester-spec'>
+<SpecProperty Name="prop" Parameter="true" Default="1"/>
+
+</RccWorker>

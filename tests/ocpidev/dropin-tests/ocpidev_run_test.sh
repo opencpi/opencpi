@@ -38,7 +38,6 @@ fail() {
   exit 1
 }
 
-# OCPIDEV="coverage3 run --append $OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin/ocpidev_run.py -d ../../av-test"
 OCPIDEV="$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin/ocpidev run -d ../../av-test"
 
 $OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin/ocpidev build -d ../../av-test --hdl-platform $HDL_TEST_PLATFORM

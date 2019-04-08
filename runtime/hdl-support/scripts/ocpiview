@@ -43,10 +43,18 @@ EOF
 
 source $OCPI_CDK_DIR/scripts/util.sh
 
+# Just to clear the positional parameters
+function do_source {
+    local f=$1
+    shift
+    source $f
+}
+
 if test "$1" = "-v"; then
   verbose=1
   shift
 fi
+
 if test "$1" != ""; then
   if [ -d "$1" ]; then
     cd $1
@@ -63,7 +71,7 @@ if test -f isim.wdb; then
     exit 1
   }
   set -e
-  . $OcpiXilinxIseDir/settings64.sh > /dev/null
+  do_source $OcpiXilinxIseDir/settings64.sh > /dev/null
   export LM_LICENSE_FILE=$OcpiXilinxLicenseFile
   exec isimgui -view isim.wdb
 elif test -f vsim.wlf; then

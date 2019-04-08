@@ -102,13 +102,13 @@ private:
   }
 
   template<typename R>
-  void get_data_stream_ID_and_or_type_for_valid_values_idx(R type_rx,
-      R type_tx, unsigned idx, std::string* ID, R* type = 0) {
+  void get_data_stream_ID_and_or_dir_for_valid_values_idx(R dir_rx,
+      R dir_tx, unsigned idx, std::string* ID, R* dir = 0) {
 
-    // SMA RX1A (can be configured for only the rx data stream type)
-    // SMA RX2A (can be configured for only the rx data stream type)
-    // SMA TX1A (can be configured for only the tx data stream type)
-    // SMA TX2A (can be configured for only the tx data stream type)
+    // SMA RX1A (can be configured for only the rx direction)
+    // SMA RX2A (can be configured for only the rx direction)
+    // SMA TX1A (can be configured for only the tx direction)
+    // SMA TX2A (can be configured for only the tx direction)
 
     if(ID != 0) {
       unsigned ii_rx = 0;
@@ -123,19 +123,19 @@ private:
       }
     }
 
-    if(type != 0) {
+    if(dir != 0) {
       switch(idx) {
         case 0:
-          *type = type_rx;
+          *dir = dir_rx;
           break;
         case 1:
-          *type = type_rx;
+          *dir = dir_rx;
           break;
         case 2:
-          *type = type_tx;
+          *dir = dir_tx;
           break;
         default: // 3
-          *type = type_tx;
+          *dir = dir_tx;
           break;
       }
     }
@@ -147,15 +147,15 @@ private:
     size_t num = DIG_RADIO_CTRLR_FMCOMMS_2_3_MAX_STRING_LENGTH_P;
 
     std::string data_stream_ID;
-    R type;
+    R direction;
 
     unsigned ii_rx = 0;
     unsigned ii_tx = 0;
     for(unsigned ii=0; ii < num_streams; ii++) {
 
       std::string* ID = &data_stream_ID;
-      R* t = &type;
-      get_data_stream_ID_and_or_type_for_valid_values_idx(trx, ttx, ii, ID, t);
+      R* dir = &direction;
+      get_data_stream_ID_and_or_dir_for_valid_values_idx(trx, ttx, ii, ID, dir);
 
       auto& prop_entry = this_prop[ii];
       if(ii_rx < DIG_RADIO_CTRLR_FMCOMMS_2_3_NUM_DATA_STREAM_IDS_RX_P) {
@@ -254,15 +254,15 @@ private:
       DataStreamConfigLockRequest data_stream_config_lock_request;
       DataStreamConfigLockRequest& dsreq = data_stream_config_lock_request;
 
-      if(data_stream.data_stream_type == REQUEST_CONFIG_LOCKDATA_STREAMS_DATA_STREAM_TYPE_RX) {
-        dsreq.include_data_stream_type(data_stream_type_t::RX);
+      if(data_stream.direction == REQUEST_CONFIG_LOCKDATA_STREAMS_DIRECTION_RX) {
+        dsreq.include_data_stream_type(data_stream_type_t::RX); /// @todo / FIXME change 'type' to direction
         std::string ID(data_stream.data_stream_ID);
         if(not ID.empty()) {
           dsreq.include_data_stream_ID(data_stream.data_stream_ID);
         }
       }
-      else if(data_stream.data_stream_type == REQUEST_CONFIG_LOCKDATA_STREAMS_DATA_STREAM_TYPE_TX) {
-        dsreq.include_data_stream_type(data_stream_type_t::TX);
+      else if(data_stream.direction == REQUEST_CONFIG_LOCKDATA_STREAMS_DIRECTION_TX) {
+        dsreq.include_data_stream_type(data_stream_type_t::TX); /// @todo / FIXME change 'type' to direction
         std::string ID(data_stream.data_stream_ID);
         if(not ID.empty()) {
           dsreq.include_data_stream_ID(data_stream.data_stream_ID);
@@ -458,10 +458,10 @@ private:
 
     return RCC_OK;
   }
-  // notification that data_stream_type_readabck property will be read
-  RCCResult data_stream_type_readback_read() {
+  // notification that direction_readabck property will be read
+  RCCResult direction_readback_read() {
 
-    m_properties.data_stream_type_readback.resize(0);
+    m_properties.direction_readback.resize(0);
 
     std::string data_stream_ID;
 
@@ -495,9 +495,9 @@ private:
         }
         continue;
       }
-      m_properties.data_stream_type_readback.resize(m_properties.data_stream_type_readback.length+1);
+      m_properties.direction_readback.resize(m_properties.direction_readback.length+1);
 
-      auto& prop = m_properties.data_stream_type_readback.data[m_properties.data_stream_type_readback.length-1];
+      auto& prop = m_properties.direction_readback.data[m_properties.direction_readback.length-1];
       if(ii_rx < DIG_RADIO_CTRLR_FMCOMMS_2_3_MAX_NUM_DATA_STREAMS_RX_P) {
         const char* src = DIG_RADIO_CTRLR_FMCOMMS_2_3_DATA_STREAM_IDS_RX_P[ii_rx];
         strncpy(prop.data_stream_ID, src, num);
@@ -511,16 +511,16 @@ private:
 
       switch(ii) {
         case 0:
-          prop.data_stream_type_val = DATA_STREAM_TYPE_READBACK_DATA_STREAM_TYPE_VAL_RX;
+          prop.direction_val = DIRECTION_READBACK_DIRECTION_VAL_RX;
           break;
         case 1:
-          prop.data_stream_type_val = DATA_STREAM_TYPE_READBACK_DATA_STREAM_TYPE_VAL_RX;
+          prop.direction_val = DIRECTION_READBACK_DIRECTION_VAL_RX;
           break;
         case 2:
-          prop.data_stream_type_val = DATA_STREAM_TYPE_READBACK_DATA_STREAM_TYPE_VAL_TX;
+          prop.direction_val = DIRECTION_READBACK_DIRECTION_VAL_TX;
           break;
         default: // 3
-          prop.data_stream_type_val = DATA_STREAM_TYPE_READBACK_DATA_STREAM_TYPE_VAL_TX;
+          prop.direction_val = DIRECTION_READBACK_DIRECTION_VAL_TX;
           break;
       }
     }
@@ -780,25 +780,25 @@ private:
 
     auto& this_prop = m_properties.valid_values_tuning_freq_MHz;
     const unsigned num_streams = get_num_streams();
-    Data_stream_type_tuning trx, ttx;
-    trx = VALID_VALUES_TUNING_FREQ_MHZ_DATA_STREAM_TYPE_TUNING_RX;
-    ttx = VALID_VALUES_TUNING_FREQ_MHZ_DATA_STREAM_TYPE_TUNING_TX;
+    Direction_tuning drx, dtx;
+    drx = VALID_VALUES_TUNING_FREQ_MHZ_DIRECTION_TUNING_RX;
+    dtx = VALID_VALUES_TUNING_FREQ_MHZ_DIRECTION_TUNING_TX;
 
-    init_valid_values_read(this_prop, trx, ttx, num_streams);
+    init_valid_values_read(this_prop, drx, dtx, num_streams);
 
     for(unsigned ii = 0; ii < num_streams; ii++) {
 
-      Data_stream_type_tuning tp; // type
+      Direction_tuning dd;
 #ifdef IS_BROKEN
-      get_data_stream_ID_and_or_type_for_valid_values_idx(trx, ttx, ii, 0, &tp);
-      this_prop[ii].data_stream_type_tuning = tp;
+      get_data_stream_ID_and_or_dir_for_valid_values_idx(drx, dtx, ii, 0, &dd);
+      this_prop[ii].direction_tuning = dd;
 
       this_prop[ii].valid_values.resize(0);
 #else
       std::string ID;
 
-      get_data_stream_ID_and_or_type_for_valid_values_idx(trx, ttx, ii, &ID, 0);
-      this_prop[ii].data_stream_type_tuning = tp;
+      get_data_stream_ID_and_or_dir_for_valid_values_idx(drx, dtx, ii, &ID, 0);
+      this_prop[ii].direction_tuning = dd;
 
       ConfigValueRanges vr = m_ctrlr.get_ranges_possible_tuning_freq_MHz(ID);
       try {
@@ -817,27 +817,27 @@ private:
 
     auto& this_prop = m_properties.valid_values_bandwidth_3dB_MHz;
     const unsigned num_streams = get_num_streams();
-    Data_stream_type_bandwidth trx, ttx;
-    trx = VALID_VALUES_BANDWIDTH_3DB_MHZ_DATA_STREAM_TYPE_BANDWIDTH_RX;
-    ttx = VALID_VALUES_BANDWIDTH_3DB_MHZ_DATA_STREAM_TYPE_BANDWIDTH_TX;
+    Direction_bandwidth drx, dtx;
+    drx = VALID_VALUES_BANDWIDTH_3DB_MHZ_DIRECTION_BANDWIDTH_RX;
+    dtx = VALID_VALUES_BANDWIDTH_3DB_MHZ_DIRECTION_BANDWIDTH_TX;
 
-    init_valid_values_read(this_prop, trx, ttx, num_streams);
+    init_valid_values_read(this_prop, drx, dtx, num_streams);
 
     std::string data_stream_ID;
 
     for(unsigned ii = 0; ii < num_streams; ii++) {
 
-      Data_stream_type_bandwidth tp; // type
+      Direction_bandwidth dd;
 #ifdef IS_BROKEN
-      get_data_stream_ID_and_or_type_for_valid_values_idx(trx, ttx, ii, 0, &tp);
-      this_prop[ii].data_stream_type_bandwidth = tp;
+      get_data_stream_ID_and_or_dir_for_valid_values_idx(drx, dtx, ii, 0, &dd);
+      this_prop[ii].direction_bandwidth = dd;
 
       this_prop[ii].valid_values.resize(0);
 #else
       std::string ID;
 
-      get_data_stream_ID_and_or_type_for_valid_values_idx(trx, ttx, ii, &ID, &tp);
-      this_prop[ii].data_stream_type_bandwidth = tp;
+      get_data_stream_ID_and_or_dir_for_valid_values_idx(drx, dtx, ii, &ID, &dd);
+      this_prop[ii].direction_bandwidth = dd;
 
       ConfigValueRanges vr = m_ctrlr.get_ranges_possible_bandwidth_3dB_MHz(ID);
       try {
@@ -856,27 +856,27 @@ private:
 
     auto& this_prop = m_properties.valid_values_sampling_rate_Msps;
     const unsigned num_streams = get_num_streams();
-    Data_stream_type_sampling trx, ttx;
-    trx = VALID_VALUES_SAMPLING_RATE_MSPS_DATA_STREAM_TYPE_SAMPLING_RX;
-    ttx = VALID_VALUES_SAMPLING_RATE_MSPS_DATA_STREAM_TYPE_SAMPLING_TX;
+    Direction_sampling drx, dtx;
+    drx = VALID_VALUES_SAMPLING_RATE_MSPS_DIRECTION_SAMPLING_RX;
+    dtx = VALID_VALUES_SAMPLING_RATE_MSPS_DIRECTION_SAMPLING_TX;
 
-    init_valid_values_read(this_prop, trx, ttx, num_streams);
+    init_valid_values_read(this_prop, drx, dtx, num_streams);
 
     std::string data_stream_ID;
 
     for(unsigned ii = 0; ii < num_streams; ii++) {
 
-      Data_stream_type_sampling tp; // type
+      Direction_sampling dd;
 #ifdef IS_BROKEN
-      get_data_stream_ID_and_or_type_for_valid_values_idx(trx, ttx, ii, 0, &tp);
-      this_prop[ii].data_stream_type_sampling = tp;
+      get_data_stream_ID_and_or_dir_for_valid_values_idx(drx, dtx, ii, 0, &dd);
+      this_prop[ii].direction_sampling = dd;
 
       this_prop[ii].valid_values.resize(0);
 #else
       std::string ID;
 
-      get_data_stream_ID_and_or_type_for_valid_values_idx(trx, ttx, ii, &ID, &tp);
-      this_prop[ii].data_stream_type_sampling = tp;
+      get_data_stream_ID_and_or_dir_for_valid_values_idx(drx, dtx, ii, &ID, &dd);
+      this_prop[ii].direction_sampling = dd;
 
       ConfigValueRanges vr = m_ctrlr.get_ranges_possible_sampling_rate_Msps(ID);
       try {
@@ -894,22 +894,22 @@ private:
   RCCResult valid_values_samples_are_complex_read() {
     auto& this_prop = m_properties.valid_values_samples_are_complex;
     const unsigned num_streams = get_num_streams();
-    Data_stream_type_samples_are trx, ttx;
-    trx = VALID_VALUES_SAMPLES_ARE_COMPLEX_DATA_STREAM_TYPE_SAMPLES_ARE_RX;
-    ttx = VALID_VALUES_SAMPLES_ARE_COMPLEX_DATA_STREAM_TYPE_SAMPLES_ARE_TX;
+    Direction_samples_are drx, dtx;
+    drx = VALID_VALUES_SAMPLES_ARE_COMPLEX_DIRECTION_SAMPLES_ARE_RX;
+    dtx = VALID_VALUES_SAMPLES_ARE_COMPLEX_DIRECTION_SAMPLES_ARE_TX;
 
-    init_valid_values_read(this_prop, trx, ttx, num_streams);
+    init_valid_values_read(this_prop, drx, dtx, num_streams);
 
     std::string data_stream_ID;
 
     for(unsigned ii = 0; ii < num_streams; ii++) {
 
-      Data_stream_type_samples_are tp; // type
+      Direction_samples_are dd;
       std::string ID;
 
-      get_data_stream_ID_and_or_type_for_valid_values_idx(trx, ttx, ii, &ID, &tp);
+      get_data_stream_ID_and_or_dir_for_valid_values_idx(drx, dtx, ii, &ID, &dd);
 
-      this_prop[ii].data_stream_type_samples_are = tp;
+      this_prop[ii].direction_samples_are = dd;
       typedef std::vector<bool> tmp;
       const tmp& vr = m_ctrlr.get_ranges_possible_samples_are_complex(ID);
       try {
@@ -1115,27 +1115,27 @@ private:
 
     auto& this_prop = m_properties.valid_values_gain_mode;
     const unsigned num_streams = get_num_streams();
-    Data_stream_type_gain_mode trx, ttx;
-    trx = VALID_VALUES_GAIN_MODE_DATA_STREAM_TYPE_GAIN_MODE_RX;
-    ttx = VALID_VALUES_GAIN_MODE_DATA_STREAM_TYPE_GAIN_MODE_TX;
+    Direction_gain_mode drx, dtx;
+    drx = VALID_VALUES_GAIN_MODE_DIRECTION_GAIN_MODE_RX;
+    dtx = VALID_VALUES_GAIN_MODE_DIRECTION_GAIN_MODE_TX;
 
-    init_valid_values_read(this_prop, trx, ttx, num_streams);
+    init_valid_values_read(this_prop, drx, dtx, num_streams);
 
     std::string data_stream_ID;
 
     for(unsigned ii = 0; ii < num_streams; ii++) {
 
-      Data_stream_type_gain_mode tp; // type
+      Direction_gain_mode dd;
 #ifdef IS_BROKEN
-      get_data_stream_ID_and_or_type_for_valid_values_idx(trx, ttx, ii, 0, &tp);
-      this_prop[ii].data_stream_type_gain_mode = tp;
+      get_data_stream_ID_and_or_dir_for_valid_values_idx(drx, dtx, ii, 0, &dd);
+      this_prop[ii].direction_gain_mode = dd;
 
       this_prop[ii].valid_values.resize(0);
 #else
       std::string ID;
 
-      get_data_stream_ID_and_or_type_for_valid_values_idx(trx, ttx, ii, &ID, &tp);
-      this_prop[ii].data_stream_type_gain_mode = tp;
+      get_data_stream_ID_and_or_dir_for_valid_values_idx(drx, dtx, ii, &ID, &dd);
+      this_prop[ii].direction_gain_mode = dd;
 
       typedef std::vector<gain_mode_value_t> tmp;
       const tmp& vr = m_ctrlr.get_ranges_possible_gain_mode(ID);
@@ -1155,27 +1155,27 @@ private:
 
     auto& this_prop = m_properties.valid_values_gain_dB;
     const unsigned num_streams = get_num_streams();
-    Data_stream_type_gain trx, ttx;
-    trx = VALID_VALUES_GAIN_DB_DATA_STREAM_TYPE_GAIN_RX;
-    ttx = VALID_VALUES_GAIN_DB_DATA_STREAM_TYPE_GAIN_TX;
+    Direction_gain drx, dtx;
+    drx = VALID_VALUES_GAIN_DB_DIRECTION_GAIN_RX;
+    dtx = VALID_VALUES_GAIN_DB_DIRECTION_GAIN_TX;
 
-    init_valid_values_read(this_prop, trx, ttx, num_streams);
+    init_valid_values_read(this_prop, drx, dtx, num_streams);
 
     std::string data_stream_ID;
 
     for(unsigned ii = 0; ii < num_streams; ii++) {
 
-      Data_stream_type_gain tp; // type
+      Direction_gain dd;
 #ifdef IS_BROKEN
-      get_data_stream_ID_and_or_type_for_valid_values_idx(trx, ttx, ii, 0, &tp);
-      this_prop[ii].data_stream_type_gain = tp;
+      get_data_stream_ID_and_or_dir_for_valid_values_idx(drx, dtx, ii, 0, &dd);
+      this_prop[ii].direction_gain = dd;
 
       this_prop[ii].valid_values.resize(0);
 #else
       std::string ID;
 
-      get_data_stream_ID_and_or_type_for_valid_values_idx(trx, ttx, ii, &ID, &tp);
-      this_prop[ii].data_stream_type_gain = tp;
+      get_data_stream_ID_and_or_dir_for_valid_values_idx(drx, dtx, ii, &ID, &dd);
+      this_prop[ii].direction_gain = dd;
 
       ConfigValueRanges vr = m_ctrlr.get_ranges_possible_gain_dB(ID);
       try {

@@ -182,7 +182,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
       Non-parameter Properties: \verb+request_config_lock+,
       \verb+config_locks+, \verb+unlock_config_lock+,
       \verb+unlock_all+, \\ \verb+data_stream_is_enabled+, \\
-      \verb+data_stream_type_readback+, \\
+      \verb+direction_readback+, \\
       \verb+tuning_freq_MHz+,
       \verb+bandwidth_3dB_MHz+, \verb+sampling_rate_Msps+,
       \verb+samples_are_complex+, \\ \verb+valid_values_tuning_freq_MHz+, \\
@@ -541,13 +541,13 @@ evince ./latex/refman.pdf
 			\hline
 			\verb+MAX_ACHIEVABLE_RX_SAMPLING_RATE_MSPS_p+      & Double & -        & - & Parameter           & 61.44 \textsuperscript{\ref{nonspec}} & Max for all RX \textit{data streams}. \\
 			\hline
-			\verb+IS_SUPPORTED_RX_SAMPLES_COMPLEX_p+           & Double & -        & - & Parameter           & true \textsuperscript{\ref{nonspec}}  & True if supported by any RX \textit{data streams}. \\
+			\verb+IS_SUPPORTED_RX_SAMPLES_COMPLEX_p+           & Bool   & -        & - & Parameter           & true \textsuperscript{\ref{nonspec}}  & True if supported by any RX \textit{data streams}. \\
 			\hline
-			\verb+IS_SUPPORTED_RX_SAMPLES_REAL_p+              & Double & -        & - & Parameter           & false \textsuperscript{\ref{nonspec}}  & True if supported by any RX \textit{data streams}. \\
+			\verb+IS_SUPPORTED_RX_SAMPLES_REAL_p+              & Bool   & -        & - & Parameter           & false \textsuperscript{\ref{nonspec}}  & True if supported by any RX \textit{data streams}. \\
 			\hline
-			\verb+IS_SUPPORTED_RX_GAIN_MODE_AUTO_p+            & Double & -        & - & Parameter           & true \textsuperscript{\ref{nonspec}} & True if supported by any RX \textit{data streams}. \\
+			\verb+IS_SUPPORTED_RX_GAIN_MODE_AUTO_p+            & Bool   & -        & - & Parameter           & true \textsuperscript{\ref{nonspec}} & True if supported by any RX \textit{data streams}. \\
 			\hline
-			\verb+IS_SUPPORTED_RX_GAIN_MODE_MANUAL_p+          & Double & -        & - & Parameter           & true \textsuperscript{\ref{nonspec}} & True if supported by any RX \textit{data streams}. \\
+			\verb+IS_SUPPORTED_RX_GAIN_MODE_MANUAL_p+          & Bool   & -        & - & Parameter           & true \textsuperscript{\ref{nonspec}} & True if supported by any RX \textit{data streams}. \\
 			\hline
 			\verb+MIN_ACHIEVABLE_TX_TUNING_FREQ_MHZ_p+        & Double & -        & - & Parameter          & \verb+FMCOMMS_NUM_p+& Min for all RX \textit{data streams}. \\
 			 & & & & & ==2 ? 2400 : & \\
@@ -565,9 +565,9 @@ evince ./latex/refman.pdf
 			\hline
 			\verb+MAX_ACHIEVABLE_TX_SAMPLING_RATE_MSPS_p+      & Double & -        & - & Parameter           & 61.44 \textsuperscript{\ref{nonspec}} & Max for all TX \textit{data streams}. \\
 			\hline
-			\verb+IS_SUPPORTED_TX_SAMPLES_COMPLEX_p+           & Double & -        & - & Parameter           & true \textsuperscript{\ref{nonspec}} & True if supported by any TX \textit{data streams}. \\
+			\verb+IS_SUPPORTED_TX_SAMPLES_COMPLEX_p+           & Bool   & -        & - & Parameter           & true \textsuperscript{\ref{nonspec}} & True if supported by any TX \textit{data streams}. \\
 			\hline
-			\verb+IS_SUPPORTED_TX_SAMPLES_REAL_p+              & Double & -        & - & Parameter           & false \textsuperscript{\ref{nonspec}} & True if supported by any TX \textit{data streams}. \\
+			\verb+IS_SUPPORTED_TX_SAMPLES_REAL_p+              & Bool   & -        & - & Parameter           & false \textsuperscript{\ref{nonspec}} & True if supported by any TX \textit{data streams}. \\
 			\hline
 			\verb+request_config_lock+          & Struct & - & -       & Writable, & -       & Configures radio hardware \\
 			 & (see \hyperlink{tab2}{Table 2} & & & WriteSync \textsuperscript{\ref{nonspec}} & & for requested settings and prevents settings from changing. \\
@@ -584,7 +584,7 @@ evince ./latex/refman.pdf
 			\verb+data_stream_is_enabled+       & Struct & \verb+NUM_DATA_STREAM_IDS_p+ & - & Volatile,    & -       & Used to read enabled status for \\
 			 & (see \hyperlink{tab7}{Table 7} & & &  ReadSync \textsuperscript{\ref{nonspec}} & & all \textit{data streams}. \\
 			\hline
-			\verb+data_stream_type_readback+       & Struct & \verb+MAX_NUM_DATA_STREAMS_RX_p+ & - &Volatile, & -       & Used to read current config \\
+			\verb+direction_readback+              & Struct & \verb+MAX_NUM_DATA_STREAMS_RX_p+ & - &Volatile, & -       & Used to read current config \\
 			 & (see \hyperlink{tab8}{Table 8} & + \verb+MAX_NUM_DATA_STREAMS_TX_p+ & &  ReadSync \textsuperscript{\ref{nonspec}} & & value (locked or not) for each enabled \textit{data stream}. \\
 			\hline
 			\verb+tuning_freq_MHz+                 & Struct & \verb+MAX_NUM_DATA_STREAMS_RX_p+ & - &Volatile, & -       & Used to read current config \\
@@ -685,7 +685,7 @@ evince ./latex/refman.pdf
 			\rowcolor{blue}
 			             &                                     &      & Length   & Dimensions & Advanced       &              &         &                                                                                                                                                                                                                             \\
 			\hline
-			Member       & \verb+data_stream_type+             & Enum  & -       & -          & -              & RX,TX        & -       & - \\
+			Member       & \verb+direction+                    & Enum  & -       & -          & -              & RX,TX        & -       & - \\
 			\hline
 			Member       & \verb+data_stream_ID+               & String& -       & -          & -              & Standard     & -       & Set to empty or to one of the values in \verb+DATA_STREAM_IDS_RX_p+ or \verb+DATA_STREAM_IDS_TX_p+. \\
 			\hline
@@ -699,7 +699,7 @@ evince ./latex/refman.pdf
 			\hline
 			Member       & \verb+samples_are_complex+            & Bool   & -       & -          & -              & Standard     & -       & - \\
 			\hline
-			Member       & \verb+gain_mode+                      & String & -       & -          & -              & Standard     & -       & Set to "auto", "manual", or possibly something worker-specific. \\
+			Member       & \verb+gain_mode+                      & String & -       & -          & -              & Standard     & -       & Set to "null", "auto", "manual", or possibly something worker-specific. \\
 			\hline
 			Member       & \verb+gain_dB+                        & Double & -       & -          & -              & Standard     & -       & - \\
 			\hline
@@ -739,7 +739,7 @@ evince ./latex/refman.pdf
 			\rowcolor{blue}
 			             &                                     &      & Length   & Dimensions & Advanced       &              &         &                                                                                                                                                                                                                             \\
 			\hline
-			Member       & \verb+data_stream_type_lock+        & Enum  & -       & -          & -              & RX,TX        & -       & Locked type for \textit{data stream} specified in \verb+data_stream_ID+. \\
+			Member       & \verb+direction_lock+               & Enum  & -       & -          & -              & RX,TX        & -       & Locked type for \textit{data stream} specified in \verb+data_stream_ID+. \\
 			\hline
 			Member       & \verb+data_stream_ID+               & String& -       & -          & -              & Standard     & -       & - \\
 			\hline
@@ -790,7 +790,7 @@ evince ./latex/refman.pdf
 		\end{longtable}
 	\end{scriptsize}
 
-	\noindent Table \hypertarget{tab8}{8}: Structure declaration for \comp{} \verb+data_stream_type_readback+ property.
+	\noindent Table \hypertarget{tab8}{8}: Structure declaration for \comp{} \verb+direction_readback+ property.
 	\begin{scriptsize}
 		\noindent\begin{longtable}{|p{1.8cm}|p{3.6cm}|c|p{4cm}|c|p{2cm}|p{1.7cm}|p{0.8cm}|p{4.81cm}|}
 			\hline
@@ -801,7 +801,7 @@ evince ./latex/refman.pdf
 			\hline
 			Member       & \verb+data_stream_ID+               & String& -       & -          & -              & Standard     & -       & - \\
 			\hline
-			Member       & \verb+data_stream_type_val+         & Bool& -       & -          & -              & Standard & -       & - \\
+			Member       & \verb+direction_val+                & Bool& -       & -          & -              & Standard & -       & - \\
 			\hline
 		\end{longtable}
 	\end{scriptsize}
@@ -883,7 +883,7 @@ evince ./latex/refman.pdf
 			\hline
 			Member       & \verb+data_stream_ID+               & String& -       & -          & -              & Standard     & -       & - \\
 			\hline
-			Member       & \verb+data_stream_type_tuning+      & Enum  & -       & -          & -              & RX,TX        & -       & - \\
+			Member       & \verb+direction_tuning+             & Enum  & -       & -          & -              & RX,TX        & -       & - \\
 			\hline
 			Member       & \verb+valid_values+                 & Struct (see \hyperlink{tab17}{Table 17}) & 32      & -          & -              & Standard & -       & - \\
 			\hline
@@ -901,7 +901,7 @@ evince ./latex/refman.pdf
 			\hline
 			Member       & \verb+data_stream_ID+               & String& -       & -          & -              & Standard     & -       & - \\
 			\hline
-			Member       & \verb+data_stream_type_bandwidth+   & Enum  & -       & -          & -              & RX,TX        & -       & - \\
+			Member       & \verb+direction_bandwidth+          & Enum  & -       & -          & -              & RX,TX        & -       & - \\
 			\hline
 			Member       & \verb+valid_values+                 & Struct (see \hyperlink{tab17}{Table 17}) & 32      & -          & -              & Standard & -       & - \\
 			\hline
@@ -919,7 +919,7 @@ evince ./latex/refman.pdf
 			\hline
 			Member       & \verb+data_stream_ID+               & String& -       & -          & -              & Standard     & -       & - \\
 			\hline
-			Member       & \verb+data_stream_type_sampling+    & Enum  & -       & -          & -              & RX,TX        & -       & - \\
+			Member       & \verb+direction_sampling+           & Enum  & -       & -          & -              & RX,TX        & -       & - \\
 			\hline
 			Member       & \verb+valid_values+                 & Struct (see \hyperlink{tab17}{Table 17}) & 32      & -          & -              & Standard & -       & - \\
 			\hline
@@ -937,7 +937,7 @@ evince ./latex/refman.pdf
 			\hline
 			Member       & \verb+data_stream_ID+               & String& -       & -          & -              & Standard     & -       & - \\
 			\hline
-			Member       & \verb+data_stream_type_samples_are+ & Enum  & -       & -          & -              & RX,TX        & -       & - \\
+			Member       & \verb+direction_samples_are+        & Enum  & -       & -          & -              & RX,TX        & -       & - \\
 			\hline
 			Member       & \verb+valid_values+                 & Bool  & 2       & -          & -              & Standard & -       & - \\
 			\hline
@@ -1003,7 +1003,7 @@ evince ./latex/refman.pdf
 			\hline
 			Member       & \verb+data_stream_ID+               & String& -       & -          & -              & Standard     & -       & - \\
 			\hline
-			Member       & \verb+data_stream_type_gain_mode+   & Enum  & -       & -          & -              & RX,TX        & -       & - \\
+			Member       & \verb+direction_gain_mode+          & Enum  & -       & -          & -              & RX,TX        & -       & - \\
 			\hline
 			Member       & \verb+valid_values+                 & String & 32      & -          & -              & Standard & -       & - \\
 			\hline
@@ -1021,7 +1021,7 @@ evince ./latex/refman.pdf
 			\hline
 			Member       & \verb+data_stream_ID+               & String& -       & -          & -              & Standard     & -       & - \\
 			\hline
-			Member       & \verb+data_stream_type_gain+        & Enum  & -       & -          & -              & RX,TX        & -       & - \\
+			Member       & \verb+direction_gain+               & Enum  & -       & -          & -              & RX,TX        & -       & - \\
 			\hline
 			Member       & \verb+valid_values+                 & Struct (see \hyperlink{tab17}{Table 17}) & 32      & -          & -              & Standard & -       & - \\
 			\hline

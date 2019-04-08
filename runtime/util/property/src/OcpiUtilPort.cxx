@@ -136,7 +136,6 @@ namespace OCPI {
 	l_name = defaultName;
       if (!l_name)
 	return "Missing \"name\" attribute for port";
-      
       if (w.findMetaPort(l_name, this))
 	return esprintf("Can't create port named \"%s\" since it already exists",
 			    m_name.c_str());
@@ -144,6 +143,7 @@ namespace OCPI {
       m_worker = &w;
       m_ordinal = OCPI_UTRUNCATE(PortOrdinal, ord);
       m_xml = x;
+      m_workerEOF = w.m_workerEOF;
       return NULL;
     }
 
@@ -181,6 +181,7 @@ namespace OCPI {
 	  // Be sure we don't clobber a spec that has set optional,
 	  // but impls can have optional ports in devices...
 	  (err = OE::getBoolean(m_xml, "optional", &m_isOptional, true)) ||
+	  (err = OE::getBoolean(m_xml, "workerEOF", &m_workerEOF, true)) ||
 	  (err = OE::getNumber(m_xml, "minBufferCount", &m_minBufferCount, 0, 1)) ||
 	  (err = OE::getNumber(m_xml, "bufferCount", &m_defaultBufferCount, NULL, 0, false)) ||
 	  (err = OE::getNumber(m_xml, "minBuffers", &m_minBufferCount, 0, m_minBufferCount)) ||
@@ -523,6 +524,8 @@ namespace OCPI {
 	formatAdd(out, " optional=\"%u\"", m_isOptional);
       if (m_isInternal)
 	formatAdd(out, " internal='1'");
+      if (m_workerEOF && !m_worker->m_workerEOF)
+	formatAdd(out, " workerEOF='1'");
       emitScalingAttrs(out);
       formatAdd(out, ">\n");
       printXML(out, 2);

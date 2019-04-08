@@ -383,10 +383,6 @@ if [ -z "$NO_BUILD" ] ; then
   do_ocpidev clean test --build-rcc-platform $RCC_PLATFORM
   do_ocpidev clean test --rcc-platform $RCC_PLATFORM
   # in this test project building platforms is not relevenat beacuse they are fake platforms
-  #echo "============OCPIDEVTEST:Building platform "
-  #do_ocpidev build hdl platform isim_0
-  #echo "============OCPIDEVTEST:Building platforms "
-  #do_ocpidev build hdl platforms
 if [ -z "$HDL_NO_BUILD" ]; then
   echo "============OCPIDEVTEST:Building primitive "
   do_ocpidev build hdl primitive library comms_comps --build-hdl-platform $HDL_PLATFORM
@@ -440,6 +436,8 @@ fi
   echo "============OCPIDEVTEST:Building project HSP/HP"
   do_ocpidev build project . $RCC --build-hdl-rcc-platform $HDL_PLATFORM --build-hdl-platform $HDL_PLATFORM
   do_ocpidev build project . $RCC --hdl-rcc-platform $HDL_PLATFORM --hdl-platform $HDL_PLATFORM
+  do_ocpidev run library components
+  do_ocpidev run -d components
   fi
   if [ "$ONLY_CREATE_BUILD" == 1 ] ; then
     echo "Exiting before project deletion."

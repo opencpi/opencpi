@@ -33,6 +33,7 @@ Workers = \
 	ad9361_adc_ts.hdl \
 	ad9361_adc_ts_sub.hdl \
 	ad9361_config_ts.hdl \
+	ad9361_config_ts_proxy.rcc \
 	ad9361_data_ts_sub.hdl \
 	ad9361_spi_ts.hdl
 

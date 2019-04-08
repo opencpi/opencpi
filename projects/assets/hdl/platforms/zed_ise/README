@@ -1,3 +1,8 @@
-This is a version of the 'zed' platform that uses ISE instead of Vivado.
+This is a version of the Zedboard BSP that uses ISE (zed_ise) instead of Vivado (zed).
 
-To load use zed_ise bitstreams on a ZedBoard, use the system.xml file located in zed_ise/sd_card.
+For setup of the 'zed_ise', follow the Zedboard_Getting_Started_Guide and where appropriate,
+substitute 'zed_ise' for 'zed' and ISE for Vivado. (the rest is up to the student!)
+
+When creating an SD card, use the system.xml file located in zed_ise/sd_card. This 
+will ensure that the proper container labeling for the FPGA is reported when the 
+FPGA not loaded with a bitstream.

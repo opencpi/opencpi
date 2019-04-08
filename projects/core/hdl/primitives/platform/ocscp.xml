@@ -1,0 +1,6 @@
+<HdlWorker language='vhdl' library='platform'>
+  <ComponentSpec nocontrol='true' package='ocpi.core'/>
+  <property name='nWorkers' parameter='true'/>
+  <cpmaster name='cp'/>
+  <control name='wci' master='true' count='nWorkers'/>
+</HdlWorker>

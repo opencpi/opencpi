@@ -75,12 +75,12 @@
   <SpecProperty Name="unlock_config_lock"  WriteSync="true"/>
   <SpecProperty Name="unlock_all"          WriteSync="true"/>
 
-  <SpecProperty Name="data_stream_is_enabled"    ReadSync="true"/>
-  <SpecProperty Name="data_stream_type_readback" ReadSync="true"/>
-  <SpecProperty Name="tuning_freq_MHz"           ReadSync="true"/>
-  <SpecProperty Name="bandwidth_3dB_MHz"         ReadSync="true"/>
-  <SpecProperty Name="sampling_rate_Msps"        ReadSync="true"/>
-  <SpecProperty Name="samples_are_complex"       ReadSync="true"/>
+  <SpecProperty Name="data_stream_is_enabled" ReadSync="true"/>
+  <SpecProperty Name="direction_readback"     ReadSync="true"/>
+  <SpecProperty Name="tuning_freq_MHz"        ReadSync="true"/>
+  <SpecProperty Name="bandwidth_3dB_MHz"      ReadSync="true"/>
+  <SpecProperty Name="sampling_rate_Msps"     ReadSync="true"/>
+  <SpecProperty Name="samples_are_complex"    ReadSync="true"/>
 
   <SpecProperty Name="valid_values_tuning_freq_MHz"     ReadSync="true"/>
   <SpecProperty Name="valid_values_bandwidth_3dB_MHz"   ReadSync="true"/>
@@ -122,7 +122,7 @@
                                   StringLength="MAX_STRING_LENGTH_p"/>
 
     <!-- _gain_mode was only included due to enum namespace collision -->
-    <Member Name="data_stream_type_gain_mode" Type="Enum" Enums="RX,TX"/>
+    <Member Name="direction_gain_mode" Type="Enum" Enums="RX,TX"/>
 
     <Member Name="valid_values"   Type="string"
                                   StringLength="MAX_STRING_LENGTH_p"
@@ -139,7 +139,7 @@
                                   StringLength="MAX_STRING_LENGTH_p"/>
 
     <!-- _gain was only included due to enum namespace collision -->
-    <Member Name="data_stream_type_gain" Type="Enum" Enums="RX,TX"/>
+    <Member Name="direction_gain" Type="Enum" Enums="RX,TX"/>
 
     <Member Name="valid_values"   Type="struct"
                                   SequenceLength="32">

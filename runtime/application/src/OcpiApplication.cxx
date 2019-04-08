@@ -1495,7 +1495,7 @@ namespace OCPI {
       PropertyAttributes attrs;
       for (unsigned n = 0; getProperty(n, value, AccessList({}),
                                        PropertyOptionList({m_hex ? HEX : NONE, UNREADABLE_OK}), &attrs); ++n)
-        if ((printParameters || (!attrs.isParameter && !attrs.isInitial)) &&
+        if ((printParameters || attrs.isVolatile || attrs.isWritable) &&
             (m_hidden || !attrs.isHidden) && (printCached || !attrs.isCached)) {
           fprintf(stderr, "Property %2u: %s = \"%s\"", n, attrs.name.c_str(), value.c_str());
           std::string out;

@@ -99,7 +99,7 @@ mkdir -p $output_path/$hdl_platform/host-udev-rules
 exit 0
 # TODO Build pdfs for current platform AV-4538 AV-4817
 #[ -e $output_path/$hdl_platform/pdfs ] && rm -rf $output_path/$hdl_platform/pdfs
-#$OCPI_CDK_DIR/../doc/av/tex/generator/genDocumentation.sh --repopath $OCPI_CDK_DIR/../ --outputpath $output_path/$hdl_platform/pdfs --dirsearch "$hdl_platform_dir"
+#$OCPI_CDK_DIR/../doc/generator/genDocumentation.sh --repopath $OCPI_CDK_DIR/../ --outputpath $output_path/$hdl_platform/pdfs --dirsearch "$hdl_platform_dir"
 ## Removing unnecessary files
 #find $output_path/$hdl_platform/pdfs/ ! -name "*.pdf" -type f -delete
 ## Removing empty directories caused by above

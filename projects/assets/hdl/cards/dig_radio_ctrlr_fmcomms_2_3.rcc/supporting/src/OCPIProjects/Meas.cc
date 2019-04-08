@@ -31,28 +31,9 @@ Meas<T>::Meas(meas_type_t type) : m_type(type) {
 }
 
 template<class T>
-void Meas<T>::append_to_ostream(std::ostream& os) const {
-  os << std::setprecision(std::numeric_limits<T>::digits10+1);
-  os << m_value << m_unit;
-  if(m_type == meas_type_t::NOMINAL) {
-    os << " (nominal)";
-  }
-  if(m_type == meas_type_t::THEORETICAL) {
-    os << " (theoretical)";
-  }
-  if(m_type == meas_type_t::MEASURED) {
-    os << " (measured)";
-  }
-  if(m_type == meas_type_t::EXACT) {
-    os << " (exact)";
-  }
-}
+meas_type_t Meas<T>::get_type() const {
 
-template<class T>
-std::ostream& operator<< (std::ostream& ostream,
-                          const Meas<T>& meas) {
-  meas.append_to_ostream(ostream);
-  return ostream;
+  return m_type;
 }
 
 } // namespace RadioCtrlr

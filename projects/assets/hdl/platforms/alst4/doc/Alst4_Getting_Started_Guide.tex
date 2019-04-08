@@ -37,8 +37,13 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \definecolor{blue}{rgb}{.5,1,1}
 \definecolor{drkgreen}{rgb}{0,.6,0}
 \begin{document}
+
+\section*{Zipper Deprecation Notice:}
+Beginning with OpenCPI Version 1.5, support for Lime Microsystems' Zipper card is now deprecated.
+
 \section*{ALST4 Getting Started Guide}
 \setcounter{section}{0}
+
 \section{Hardware Prerequisites}
 This section describes the hardware prerequisites required for an operational alst4 (Altera Stratix IV) platform using OpenCPI. The optional HSMC Debug Loopback and HSMC Debug Breakout Header cards are only intended for testing purposes. Also note that the slot configurations in Table \ref{table:supported_slots} are limited by what FPGA bitstreams are currently built by OpenCPI and not by what hardware configurations are theoretically possible using OpenCPI.\\ \\
 Hardware prerequisites are as follows.
@@ -80,6 +85,41 @@ Hardware prerequisites are as follows.
 
 \section{Driver Notes}
 \input{../../../../../../doc/av/tex/snippets/Driver_Snippet.tex }
+
+\section{Loading the OpenCPI driver}
+When OpenCPI is installed via RPMs, the OpenCPI driver should have been installed. However, when developing with source OpenCPI, the user is required to manage the loading of the OpenCPI driver. \\
+The following terminal outputs are intended to provide the user with expected behavior of when the driver is not and is loaded. The user should note that only when the driver is installed can the alst4 be discovered as a valid OpenCPI container.
+
+\begin{lstlisting}
+ocpidriver unload
+The driver module was successfully unloaded.
+
+ocpidriver load
+Found generic reserved DMA memory on the linux boot command line and assuming it is for OpenCPI: [memmap=128M$0x1000000]
+Driver loaded successfully.
+
+ocpidriver unload
+The driver module was successfully unloaded.
+
+ocpirun -C
+OCPI( 2:816.0497): When searching for PCI device '0000:03:00.0': Can't open /dev/mem, forgot to load the driver? sudo?
+OCPI( 2:816.0499): When searching for PCI device '0000:08:00.0': Can't open /dev/mem, forgot to load the driver? sudo?
+OCPI( 2:816.0544): In HDL Container driver, got PCI search error: Can't open /dev/mem, forgot to load the driver? sudo?
+Available containers:
+ #  Model Platform       OS     OS-Version  Arch     Name
+ 0  rcc   centos7        linux  c7          x86_64   rcc0
+ 
+ocpidriver load
+Found generic reserved DMA memory on the linux boot command line and assuming it is for OpenCPI: [memmap=128M$0x1000000]
+Driver loaded successfully.
+
+ocpirun -C
+Available containers:
+ #  Model Platform       OS     OS-Version  Arch     Name
+ 0  hdl   ml605                                      PCI:0000:08:00.0
+ 1  hdl   alst4                                      PCI:0000:03:00.0
+ 2  rcc   centos7        linux  c7          x86_64   rcc0
+\end{lstlisting}
 
 \section{Proof of Operation}
 The following commands may be run in order to verify correct OpenCPI operation on the x86/Stratix IV system.\\ \\

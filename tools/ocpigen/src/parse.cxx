@@ -877,7 +877,7 @@ create(const char *file, const std::string &parentFile, const char *package, con
       err = OU::esprintf("Unrecognized top level tag: \"%s\" in file \"%s\"", name, xfile);
   }
   if (err ||
-      (err = w->setParamConfig(instancePVs, paramConfig)) ||
+      (err = w->setParamConfig(instancePVs, paramConfig, &parentFile)) ||
       // Resolving expressions finalizes data ports, which may add built-in properties for ports
       (err = w->resolveExpressions(*w)) ||
       (err = w->finalizeProperties()) ||

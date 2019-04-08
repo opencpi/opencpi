@@ -62,5 +62,7 @@ echo Now we will build the tests and examples for $OCPI_TARGET_PLATFORM
 make -C projects/core test
 make -C projects/assets applications
 make -C projects/inactive applications
+# ensure any framework exports that depend on built projects happen
+make exports Platforms=$OCPI_TARGET_PLATFORM
 echo ================================================================================
 echo OpenCPI has been built for $OCPI_TARGET_PLATFORM, with software components, examples and kernel driver

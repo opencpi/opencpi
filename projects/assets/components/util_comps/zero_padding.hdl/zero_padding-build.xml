@@ -1,3 +1,4 @@
+<!-- DEPRECATION NOTICE: This worker is deprecated and will be removed in OpenCPI 2.0. Use the Zero Pad component for new designs.-->
 <build>
   <configuration id='0'>
     <parameter name='IDATA_WIDTH_p' value='8'/>

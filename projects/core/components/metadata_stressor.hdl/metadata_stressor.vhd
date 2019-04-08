@@ -203,8 +203,8 @@ begin
          end if;
         if (ocpi_version > 1 and in_in.eof and out_in.ready and
             (props_in.mode = data_e or props_in.mode = bypass_e or
-             (output_state = prop_nil and swm_detected = '0') or
-             output_state = nil)) then
+             (output_state = prop_nil and swm_detected = '0' and zlm_queued = '0') or
+             (output_state = nil and zlm_queued = '0'))) then
           out_eof <= btrue;
         end if;
 
@@ -235,7 +235,8 @@ begin
     end if;
   end process buffer_inputs;
   giving_swm_valid <=  out_ready and to_bool(output_state = valid or output_state = valid_buf or
-                                             output_state = swm or output_state = val_eom);
+                                             output_state = swm or output_state = val_eom or
+                                             output_state = som_val_swm or output_state = som_val);
   swm_detected <= swm_seen and not giving_swm_valid;
   -- This FSM controls what kind of message is passed to the unit under test.
   output_select_proc : process (ctl_in.clk)
@@ -311,6 +312,9 @@ begin
         elsif (swm_detected = '1' and out_ready = '1') then
           state <= end_b_swm;
           output_state <= early_som;
+        elsif (take_en = '1' and uut_ready = '1' and in_in.valid = '0') then
+           state <= end_b_zlm;
+           output_state <= early_som;
         elsif (take_en = '1' and uut_ready = '1') then
            state <= val_ve_b;
            output_state <= early_som;
@@ -381,15 +385,21 @@ begin
             state <= end_le_c;
             output_state <= early_som;
         elsif (take_en = '1' and uut_ready = '1') then
-          if (swm_detected = '1' and swm_take = '0') then
-            output_state <= som_val_swm; -- som_val_swm???
-            state <= sv_val_le_c;
+          if (swm_detected = '1' and swm_take = '0') or
+             (in_in.eom = '1' and in_in.valid = '1' and ready_for_in_port_data = '1') then
+            output_state <= som_val_swm;
+            state <= end_le_c;
           else
             state <= sv_val_le_c;
             output_state <= som_val;
           end if;
         elsif (out_ready = '1') then
-          output_state <= nil;
+          if (give_en = '1' and swm_detected = '1') then
+            state <= end_le_c;
+            output_state <= som_val_swm;
+          else
+            output_state <= nil;
+          end if;
         end if;
   -- send data and/or no-ops between start of message with data and late end of message
        when sv_val_le_c =>
@@ -433,12 +443,20 @@ begin
                state <= start_es_a;
              end if;
              output_state <= swm;
+           elsif (ready_for_in_port_data = '1' and in_in.valid = '0') then
+             state <= end_d;
+             output_state <= early_som;
            else
              state <= val_ve_d;
              output_state <= som_val;
            end if;
          elsif (out_ready = '1') then
-           output_state <= nil;
+           state <= start_es_a;
+           if (swm_detected = '1' and data_ready_for_out_port = '0') then
+             output_state <= swm;
+           else
+             output_state <= nil;
+           end if;
          end if;
   -- send data and/or no-ops and output end of message with data after start of message with data
        when val_ve_d =>

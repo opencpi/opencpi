@@ -94,7 +94,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Platform Data Sheet}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -107,23 +107,26 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \begin{document}
 
+\section*{Zipper Deprecation Notice:}
+\textbf{Beginning with OpenCPI Version 1.5, support for Lime Microsystems' Zipper card is now deprecated.}
+
 \section*{Summary - \Comp}
 \begin{tabular}{|c|M{13.5cm}|}
 	\hline
 	\rowcolor{blue}
-	                  &                                                    \\
+	                  & \\
 	\hline
-	Name              & \comp                                              \\
+	Name              & \comp \\
 	\hline
-	Worker Type       & Platform                                           \\
+	Worker Type       & Platform \\
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & October 2018 \\
+	Release Date      & April 2019 \\
 	\hline
-	Component Library & ocpi                                        \\
+	Library & ocpi.assets.platforms \\
 	\hline
-	Workers & \comp.hdl                                        \\
+	Workers & \comp.hdl \\
 	\hline
 \end{tabular}
 
@@ -240,7 +243,7 @@ assets/hdl/primitives/pcie\_4243\_hip\_s4gx\_gen2\_x4\_128/pciexp\_dcram.v
 			\hline
 			\verb+platform+    & String & 31             & -               & Parameter & Standard & - & Name of this platform                                                     \\
 			\hline
-			\verb+sdp_width+   & UChar  & -              & -               & Parameter & Standard & 1 & Width of data plane in DWORDS                                             \\
+			\verb+sdp_width+   & UChar  & -              & -               & Parameter & Standard & 1 & Width of data plane in DWORDS \newline \textbf{(SDP is NOT implemented by the alst4)} \\
 			\hline
 			\verb+UUID+        & ULong  & -              & 16              & Readable           & Standard    & -       & UUID of this platform                                                         \\
 			\hline
@@ -327,16 +330,17 @@ assets/hdl/primitives/pcie\_4243\_hip\_s4gx\_gen2\_x4\_128/pciexp\_dcram.v
 
 \end{landscape}
 \pagebreak
-	\section*{Platform Devices}
-	The following is a table which enumerates which device workers are allowed in platform configurations and in assembly containers. The parameter values specified restrict allowed implementations. Note that the worker signals listed are only those who are unconnected on the platform or whose platform signal name differ from the worker signal name. Note that device workers allowed by cards are not included in this list.\\
-			\begin{tabular}{|M{3cm}|M{3.5cm}|M{3cm}|M{3cm}|M{3cm}|}
-			\hline
-			\rowcolor{blue}
-			Name                       & Property Name    & Property Value              & Worker Signal & Platform Signal         \\
-			\hline
-			time\_server               & frequency        & 100*10\textsuperscript{6}   &               &                         \\
-			\hline
-		\end{tabular}
+
+\section*{Platform Devices}
+The following table enumerates the device workers that are included in the base platform configuration. The parameter values specified restrict allowed implementations. Note that the worker signals listed are only those who are unconnected on the platform or whose platform signal name differ from the worker signal name. Note that device workers allowed by cards are not included in this list. \\ \newline
+\begin{tabular}{|M{3cm}|M{3.5cm}|M{3cm}|M{3cm}|M{3cm}|}
+	\hline
+	\rowcolor{blue}
+	Name                       & Property Name    & Property Value              & Worker Signal & Platform Signal         \\
+	\hline
+	time\_server               & frequency        & 200*10\textsuperscript{6}   &               &                         \\
+	\hline
+\end{tabular}
 
 \section*{Signals}
 Note that this signal table does not include signals that may be provided by slots. \\
@@ -522,28 +526,61 @@ The following table enumerates the available slots for this platform and the sig
   & & PSNTn & - \\
 	\hline
 \end{longtable}
-\section*{Platform Configurations}
-	\begin{tabular}{|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		Name & Platform Configuration Workers & Card & Slot \\
-		\hline
-		\multirow{2}{*}{base} &\comp & - & - \\ &time\_server & - & - \\
-		\hline
-		\multirow{5}{*}{alst4\_zipper\_hsmc\_alst4\_port\_a\_rx\_tx} &\comp & - & - \\ &time\_server & - & - \\ &lime\_adc & lime\_zipper\_fmc\_lpc & hsmc\_alst4\_a \\ &lime\_dac & lime\_zipper\_fmc\_lpc & hsmc\_alst4\_a \\ &si5351 & lime\_zipper\_fmc\_lpc & hsmc\_alst4\_a \\ &lime\_rx & lime\_zipper\_fmc\_lpc & hsmc\_alst4\_a \\ &lime\_tx & lime\_zipper\_fmc\_lpc & hsmc\_alst4\_a \\
-		\hline
-		\multirow{5}{*}{alst4\_zipper\_hsmc\_alst4\_port\_a\_rx} &\comp & - & - \\ &time\_server & - & - \\ &lime\_adc & lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_a \\  &si5351 & lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_a \\ &lime\_rx & lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_a \\
-		\hline
-		\multirow{5}{*}{alst4\_zipper\_hsmc\_alst4\_port\_a\_tx} &\comp & - & - \\ &time\_server & - & - \\ &lime\_dac & lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_a \\  &si5351 & lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_a \\ &lime\_tx & lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_a \\
-		\hline
-		\multirow{5}{*}{alst4\_zipper\_hsmc\_alst4\_port\_b\_rx\_tx} &\comp & - & - \\ &time\_server & - & - \\ &lime\_adc & lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_b \\ &lime\_dac & lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_b \\ &si5351 & lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_b \\ &lime\_rx & lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_b \\ &lime\_tx & lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_b \\
-		\hline
-		\multirow{5}{*}{alst4\_zipper\_hsmc\_alst4\_port\_b\_rx} &\comp & - & - \\ &time\_server & - & - \\ &lime\_adc & lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_b \\  &si5351 & lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_b \\ &lime\_rx & lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_b \\
-		\hline
-		\multirow{5}{*}{alst4\_zipper\_hsmc\_alst4\_port\_b\_tx} &\comp & - & - \\ &time\_server & - & - \\ &lime\_dac & lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_b \\  &si5351 & lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_b \\ &lime\_tx & lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_b \\
-		\hline
-	\end{tabular}
+\newpage
 
+\section*{Platform Configurations}
+Below is a sample set of supported platform configurations which  highlight the device workers included in the platform configuration versus card/slots. For a complete list of supported platform configurations, refer to the alst4 directory. \\
+
+\begin{tabular}{|c|c|c|c|}
+	\hline
+	\rowcolor{blue}
+	Name & Platform Configuration Workers & Card & Slot \\
+	\hline
+	\multirow{2}{*}{base} &\comp & - & - \\ &time\_server & - & - \\
+	\hline
+	\multirow{5}{*}{alst4\_zipper\_hsmc\_alst4\_port\_a\_rx\_tx}&
+	\comp & - & - \\ &time\_server & - & -
+	\\ &lime\_adc & lime\_zipper\_fmc\_lpc & hsmc\_alst4\_a \\
+	&lime\_dac & lime\_zipper\_fmc\_lpc & hsmc\_alst4\_a \\
+	&si5351 & lime\_zipper\_fmc\_lpc & hsmc\_alst4\_a \\
+	&lime\_rx & lime\_zipper\_fmc\_lpc & hsmc\_alst4\_a \\
+	&lime\_tx & lime\_zipper\_fmc\_lpc & hsmc\_alst4\_a \\
+	\hline
+	\multirow{5}{*}{alst4\_zipper\_hsmc\_alst4\_port\_a\_rx}&
+	\comp & - & - \\ &time\_server & - & - \\ &lime\_adc &
+	lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_a \\  &si5351 &
+	lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_a \\ &lime\_rx &
+	lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_a \\
+	\hline
+	\multirow{5}{*}{alst4\_zipper\_hsmc\_alst4\_port\_a\_tx}&
+	\comp & - & - \\ &time\_server & - & - \\ &lime\_dac &
+	lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_a \\  &si5351 &
+	lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_a \\ &lime\_tx &
+	lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_a \\
+	\hline
+	\multirow{5}{*}{alst4\_zipper\_hsmc\_alst4\_port\_b\_rx\_tx}&
+	\comp & - & - \\ &time\_server & - & - \\ &lime\_adc &
+	lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_b \\ &lime\_dac &
+	lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_b \\ &si5351 &
+	lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_b \\ &lime\_rx &
+	lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_b \\ &lime\_tx &
+	lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_b \\
+	\hline
+	\multirow{5}{*}{alst4\_zipper\_hsmc\_alst4\_port\_b\_rx}&
+	\comp & - & - \\ &time\_server & - & - \\ &lime\_adc &
+	lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_b \\  &si5351 &
+	lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_b \\ &lime\_rx &
+	lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_b \\
+	\hline
+	\multirow{5}{*}{alst4\_zipper\_hsmc\_alst4\_port\_b\_tx}&
+	\comp & - & - \\ &time\_server & - & - \\ &lime\_dac &
+	lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_b \\  &si5351 &
+	lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_b \\ &lime\_tx &
+	lime\_zipper\_hsmc\_alst4 & hsmc\_alst4\_b \\
+	\hline
+\end{tabular}
+
+\newpage
 \section*{Control Timing and Signals}
 	There are 3 clock domains present in the alst4 platform worker: 100 MHz, 125 MHz, and 200 MHz. The worker ingests an external-to-the FPGA 100 MHz clock. This clock serves as the clock source for the MegaCore function within the worker. The MegaCore function produces a clock via it's core\_clk\_out pin which is 125 MHz for the x4 Gen2 Avalon-128 implementation\footnote{See Table 7-1 in the IP Compiler for PCI Express User Guide}. This 125 MHz clock is subsequently supplied to the control plane as its clock. The worker also feeds a buffered version of the external-to-the-FPGA 200 MHz clock to the timebase port. The timebase port's PPS inputs and outputs are left unconnected.
 \begin{landscape}

@@ -24,6 +24,7 @@
 RccIncludeDirs+=./supporting/include/OCPIProjects/
 RccIncludeDirs+=./supporting/src/OCPIProjects/
 
+# This is the Makefile for worker ad9361_config_proxy.rcc
 include $(OCPI_CDK_DIR)/include/worker.mk
 
 # if someone happened to run doxygen, this will clean it up

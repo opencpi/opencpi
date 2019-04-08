@@ -14,17 +14,17 @@
                                          Description="Total number of data
                                            stream IDs."/>
   <Property Name="NUM_DATA_STREAM_IDS_RX_p" Type="ushort"
+                                            Parameter="true"
+                                            Default="1"
+                                            Description="Total number of data
+                                              stream IDs that can be
+                                              configured for RX streaming."/>
+  <Property Name="NUM_DATA_STREAM_IDS_TX_p"  Type="ushort"
                                              Parameter="true"
                                              Default="1"
                                              Description="Total number of data
                                                stream IDs that can be
-                                               configured for RX streaming."/>
-  <Property Name="NUM_DATA_STREAM_IDS_TX_p"  Type="ushort"
-                                              Parameter="true"
-                                              Default="1"
-                                              Description="Total number of data
-                                                stream IDs that can be
-                                                configured for TX streaming."/>
+                                               configured for TX streaming."/>
   <Property Name="DATA_STREAM_IDS_RX_p" Type="string"
                                         Parameter="true"
                                         StringLength="MAX_STRING_LENGTH_p"
@@ -147,13 +147,11 @@
                                          StringLength="MAX_STRING_LENGTH_p"/>
     <Member Name="data_streams"          Type="struct"
                                          SequenceLength="MAX_NUM_DATA_STREAMS_RX_p + MAX_NUM_DATA_STREAMS_TX_p">
-      <Member Name="data_stream_type"      Type="enum"
-                                           Enums="RX,TX"
-                                           Description="Set to RX or TX."/>
+      <Member Name="direction"             Type="enum" Enums="RX,TX"/>
       <Member Name="data_stream_ID"        Type="string"
                                            StringLength="MAX_STRING_LENGTH_p"
                                            Description="Set to empty to request
-                                             data stream by type only, otherwise
+                                             data stream by direction only, otherwise
                                              set to one of the values in
                                              DATA_STREAM_IDS_RX_p or
                                              DATA_STREAM_IDS_TX_p."/>
@@ -190,11 +188,10 @@
     <Member Name="data_streams"   Type="struct"
                                   SequenceLength="MAX_NUM_DATA_STREAMS_RX_p + MAX_NUM_DATA_STREAMS_TX_p">
       <!-- _lock was only included due to enum namespace collision (bug AV-4870) -->
-      <Member Name="data_stream_type_lock" Type="enum"
-                                           Enums="RX,TX"
-                                           Description="Locked type
-                                             for data stream specified in
-                                             data_stream_ID."/>
+      <Member Name="direction_lock" Type="enum"
+                                    Enums="RX,TX"
+                                    Description="Locked direction for data
+                                      stream specified in data_stream_ID."/>
       <Member Name="data_stream_ID"      Type="string"
                                          StringLength="MAX_STRING_LENGTH_p"/>
       <Member Name="routing_ID"          Type="string"
@@ -254,17 +251,16 @@
   </Property>
 
   <!-- _readback was only included due to enum namespace collision (bug AV-4870) -->
-  <Property Name="data_stream_type_readback" Type="struct"
-                                             Volatile="true"
-                                             SequenceLength="MAX_NUM_DATA_STREAMS_RX_p + MAX_NUM_DATA_STREAMS_TX_p"
-                                             Description="Used to read current config
-                                               value (locked or not) for each enabled
-                                               data stream.">
+  <Property Name="direction_readback" Type="struct"
+                                      Volatile="true"
+                                      SequenceLength="MAX_NUM_DATA_STREAMS_RX_p + MAX_NUM_DATA_STREAMS_TX_p"
+                                      Description="Used to read current config
+                                        value (locked or not) for each enabled
+                                        data stream.">
     <Member Name="data_stream_ID"   Type="string"
                                     StringLength="MAX_STRING_LENGTH_p"/>
     <!-- _val was only included due to enum namespace collision (bug AV-4870) -->
-    <Member Name="data_stream_type_val" Type="enum"
-                                        Enums="RX,TX"/>
+    <Member Name="direction_val" Type="enum" Enums="RX,TX"/>
   </Property>
 
   <Property Name="tuning_freq_MHz" Type="struct"
@@ -315,13 +311,15 @@
                                                 Volatile="true"
                                                 ArrayLength="NUM_DATA_STREAM_IDS_RX_p + NUM_DATA_STREAM_IDS_TX_p"
                                                 Description="Indicates the
-                                                  current valid ranges of values for all data
-                                                  stream/data stream type combinations.">
+                                                  current valid ranges of values
+                                                  for all data stream/data
+                                                  stream direction
+                                                  combinations.">
     <Member Name="data_stream_ID" Type="string"
                                   StringLength="MAX_STRING_LENGTH_p"/>
 
     <!-- _tuning was only included due to enum namespace collision (bug AV-4870) -->
-    <Member Name="data_stream_type_tuning" Type="Enum" Enums="RX,TX"/>
+    <Member Name="direction_tuning" Type="Enum" Enums="RX,TX"/>
 
     <Member Name="valid_values"   Type="struct"
                                   SequenceLength="32">
@@ -334,13 +332,15 @@
                                                   ArrayLength="NUM_DATA_STREAM_IDS_RX_p + NUM_DATA_STREAM_IDS_TX_p"
 
                                                   Description="Indicates the
-                                                    current valid ranges of values for all data
-                                                    stream/data stream type combinations.">
+                                                    current valid ranges of
+                                                    values for all data
+                                                    stream/data stream direction
+                                                    combinations.">
     <Member Name="data_stream_ID" Type="string"
                                   StringLength="MAX_STRING_LENGTH_p"/>
 
     <!-- _bandwidth was only included due to enum namespace collision (bug AV-4870) -->
-    <Member Name="data_stream_type_bandwidth" Type="Enum" Enums="RX,TX"/>
+    <Member Name="direction_bandwidth" Type="Enum" Enums="RX,TX"/>
 
     <Member Name="valid_values"   Type="struct"
                                   SequenceLength="32">
@@ -352,13 +352,15 @@
                                                    Volatile="true"
                                                    ArrayLength="NUM_DATA_STREAM_IDS_RX_p + NUM_DATA_STREAM_IDS_TX_p"
                                                    Description="Indicates the
-                                                     current valid ranges of values for all data
-                                                     stream/data stream type combinations.">
+                                                     current valid ranges of
+                                                     values for all data
+                                                     stream/data stream
+                                                     direction combinations.">
     <Member Name="data_stream_ID" Type="string"
                                   StringLength="MAX_STRING_LENGTH_p"/>
 
     <!-- _sampling was only included due to enum namespace collision (bug AV-4870) -->
-    <Member Name="data_stream_type_sampling" Type="Enum" Enums="RX,TX"/>
+    <Member Name="direction_sampling" Type="Enum" Enums="RX,TX"/>
 
     <Member Name="valid_values"   Type="struct"
                                   SequenceLength="32">
@@ -370,13 +372,15 @@
                                                     Volatile="true"
                                                     ArrayLength="NUM_DATA_STREAM_IDS_RX_p + NUM_DATA_STREAM_IDS_TX_p"
                                                     Description="Indicates the
-                                                      current valid ranges of values for all data
-                                                      stream/data stream type combinations.">
+                                                      current valid ranges of
+                                                      values for all data
+                                                      stream/data stream
+                                                      direction combinations.">
     <Member Name="data_stream_ID" Type="string"
                                   StringLength="MAX_STRING_LENGTH_p"/>
 
     <!-- _sampling was only included due to enum namespace collision (bug AV-4870) -->
-    <Member Name="data_stream_type_samples_are" Type="Enum" Enums="RX,TX"/>
+    <Member Name="direction_samples_are" Type="Enum" Enums="RX,TX"/>
 
     <Member Name="valid_values"   Type="bool"
                                   SequenceLength="2"/>

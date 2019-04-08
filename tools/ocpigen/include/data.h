@@ -112,7 +112,6 @@ class WsiPort : public DataPort {
   bool m_earlyRequest;
   bool m_regRequest; // request is registered
   bool m_insertEOM;
-  bool m_workerEOF;
   WsiPort(const WsiPort &other, Worker &w , std::string &name, size_t count,
 	  OCPI::Util::Assembly::Role *role, const char *&err);
  public:

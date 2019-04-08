@@ -228,11 +228,12 @@ class HdlLibraryWorker(HdlWorker, ReportableAsset):
 
             # Initialize the config instance with this worker's dir and name, and the
             # configuration's ID and parameter dictionary
-            self.configs[int(config_id)] = HdlLibraryWorkerConfig(directory=self.directory,
-                                                                  name=self.name,
-                                                                  config_index=int(config_id),
-                                                                  config_params=param_dict,
-                                                                  **kwargs)
+            if config_id:
+                self.configs[int(config_id)] = HdlLibraryWorkerConfig(directory=self.directory,
+                                                                      name=self.name,
+                                                                      config_index=int(config_id),
+                                                                      config_params=param_dict,
+                                                                      **kwargs)
 
     def get_config_params_report(self):
         """
@@ -363,8 +364,6 @@ class HdlLibraryWorkerConfig(HdlCore, ReportableAsset):
         This function will build the asset, must be implemented by the child class
         """
         raise NotImplementedError("build() is not implemented")
-
-
 
     def get_utilization(self):
         """

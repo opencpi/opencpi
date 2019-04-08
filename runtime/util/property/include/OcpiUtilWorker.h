@@ -126,7 +126,8 @@ namespace OCPI {
       Memory *m_memories;
       //      Test *m_tests;
       unsigned m_nPorts, m_nMemories; //, size , m_nTests
-      uint8_t m_version;  // version of the model-specific API this worker is written to
+      uint8_t  m_version;   // version of the model-specific API this worker is written to
+      bool     m_workerEOF; // this worker handles all input EOFs by itself.  No auto-propagation
     private: // FIXME: make more of this stuff private
       size_t m_totalPropertySize;
       bool   m_isSource; // is this worker a source of data (no inputs)

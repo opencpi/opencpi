@@ -57,6 +57,7 @@ typedef std::map<const char *, Slot *, OCPI::Util::ConstCharCaseComp> Slots;
 typedef Slots::const_iterator SlotsIter;
 struct Slot {
   std::string                     m_name;
+  std::string                     m_prefix; // prefix for platform signals if not <name>_
   const SlotType                 &m_type;
   unsigned                        m_ordinal;
   // A map from the underlying slot type signal to an override signal

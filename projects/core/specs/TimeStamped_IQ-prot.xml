@@ -1,3 +1,6 @@
+<!--
+    * This protocol will be deprecated in OpenCPI 2.0. Use ComplexShortWithMetadata for new designs.
+-->
 <Protocol> 
   <!--
     * This message includes the actual data payload of the protocol. Messages can be from 0 to

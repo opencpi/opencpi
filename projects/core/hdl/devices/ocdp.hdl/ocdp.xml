@@ -1,4 +1,5 @@
-<HdlDevice language='vhdl' rawProperties='true' outer='true'>
+<HdlDevice language='vhdl' rawProperties='true' outer='true'
+	   SourceFiles='mkOCDP4B.v' Libraries='platform'>
   <ComponentSpec>
     <DataInterfaceSpec Name="data"/>
   </ComponentSpec>

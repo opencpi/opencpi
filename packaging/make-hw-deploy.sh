@@ -33,5 +33,6 @@ OCPI_CDK_DIR=$my_loc/../cdk
 [ "$hdl_rcc_platform" = "-" ] && hdl_rcc_platform=no_sw
 [ "$hdl_rcc_platform" != "no_sw" ] && OCPI_CDK_DIR=$OCPI_CDK_DIR $my_loc/create-sw-deploy.sh $tmpdir "$hdl_rcc_platform" "$cross"
 OCPI_CDK_DIR=$OCPI_CDK_DIR $my_loc/create-hw-deploy.sh $tmpdir "$platform" "$hdl_rcc_platform"
+mkdir -p cdk/$platform
 cp -R $tmpdir/$platform/. ./cdk/$platform/$platform-deploy
 rm -rf $tmpdir

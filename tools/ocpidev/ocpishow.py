@@ -70,7 +70,7 @@ def parse_cl_vars():
     description = ("Utility for showing the project registry, any " +
                    "available projects (registered or in path), workers, " +
                    "components, HDL/RCC Platforms and Targets available at built time.")
-    parser = argparse.ArgumentParser(description=description)
+    parser = argparse.ArgumentParser(description=description, prog="ocpidev show")
     # Print help screen and usage to pager. Code block adapted and inlined from from:
     # https://github.com/fmenabe/python-clg/blob/master/LICENSE#L6
     #     under MIT license

@@ -120,9 +120,10 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
     return RCC_OK;
   }
   close(s->fd);
-#if 0 // API version < 2
+  // Suppressing EOF with v2 just means we truly do not assert EOF at all.
   if (props->suppressEOF)
     return RCC_DONE;
+#if 0 // API version < 2
   props->messagesWritten++;
 #else
   port->output.eof = true;

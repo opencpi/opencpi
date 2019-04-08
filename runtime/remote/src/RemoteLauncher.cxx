@@ -441,9 +441,12 @@ getPropertyValue(unsigned remoteInstance, size_t propN, std::string &v, const st
   for (unsigned n = 0; n < path.size(); ++n)
     OU::formatAdd(s, "%02x", path[n]);
   OU::SelfAutoMutex guard(this);
-  OU::format(m_request, "<control id='%u' get='%zu' path='%s' offset='%zu' dimension='%zu' hex='%d'>\n",
+  OU::format(m_request,
+	     "<control id='%u' get='%zu' path='%s' offset='%zu' dimension='%zu' "
+	     "hex='%d' unreadable_ok='%d'>\n",
 	     remoteInstance, propN, s.c_str(), offset, dimension,
-	     OC::Worker::hasOption(options, OA::PropertyOption::HEX) ? 1 : 0);
+	     OC::Worker::hasOption(options, OA::PropertyOption::HEX) ? 1 : 0,
+	     OC::Worker::hasOption(options, OA::PropertyOption::UNREADABLE_OK) ? 1 : 0);
   send();
   receive();
   assert(!strcasecmp(OX::ezxml_tag(m_rx), "control"));

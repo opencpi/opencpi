@@ -1,0 +1,31 @@
+This is a library of HDL platforms. An HDL  "platform" is composed of a 
+platform worker, OpenCPI or Vendor IP and possibly device workers
+that may be generic or unique and supporting proxies.
+
+The platform worker, is combined with IP, and optional device workers
+to create a platform configuration. The platform configuration is 
+combined with the assembly, and additionally more device workers, to
+construct the container (bitstream).
+
+The following is high-level summary of the steps for creating a new platform:
+
+1. If not already supported, update the framwork to support the new FPGA target family:
+This requires changing the hdl-targets.mk to included the new family.  
+This may involve updating the tool scripts, e.g. xst.mk or quartus.mk.
+
+2. Make a copy of an existing platform directory as a starting point.
+In the platform's directory you must:
+
+i) Define the platform worker in <platform>.xml
+
+ii) Specify the cores used by setting the Cores variable to specify cores found in the
+hdl/primitives directory.
+
+iii) Specify the SourceFiles variable to the top level source files that are 
+presumably placed in this directory other than the platform worker itself.
+
+iv) Create a <platform>.mk file for use by the final bit-stream-building scripts as needed.
+This is needed when tool scripts need to know certain settings for the platform being built.
+Examples are the "HdlPromArgs_<platform>" variable that xilinx back end scripts need.
+
+v). Create any other per-platform files, like Xilinx UCF/XCF files.

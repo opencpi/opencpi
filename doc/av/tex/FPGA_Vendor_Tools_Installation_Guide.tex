@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{FPGA Vendor Tools Installation Guide}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \input{snippets/LaTeX_Header.tex}
 \date{Version \docVersion} % Force date to be blank and override date with version
@@ -48,6 +48,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 			\hline
 			v1.4 & Updated for Release 1.4 & 9/2018 \\
 			\hline
+			v1.5 & Updated for Release 1.5 & 4/2019 \\
+			\hline
 			\end{tabularx}
 		\end{table}
 	\end{center}
@@ -66,12 +68,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \begin{flushleft}
 \begin{landscape}
-\section{OpenCPI Vendor Tool Prerequisites}
+\section{OpenCPI FPGA Vendor Tool Prerequisites}
 \label{sec:doc_overview}
-OpenCPI utilizes third party vendor toolsets to perform various operations, such as, building bitstreams or loading bitstreams into FPGAs.
-Table~\ref{table:tool-support} identifies the various vendor tool installation and license requirement combinations, which are actively supported by OpenCPI. Each combination enumerates the associated capability that the given combination provides to OpenCPI. \\
-Note that Quartus Standard and Quartus Pro are \textit{different tools}. These two tools support different sets of devices and users should consult Intel's documentation for more information.\\
-Order versions of the FPGA tools have been supported by OpenCPI but are not actively regression tested, such as, Vivado 2015.4 and Quartus Standard Edition 15.1. \\
+OpenCPI utilizes third party FPGA vendor toolsets to perform various operations, such as, building bitstreams or, for certain platforms, loading  bitstreams into FPGAs. Table~\ref{table:tool-support} identifies the various FPGA vendor tool installation and license requirement combinations, which are actively supported by OpenCPI. Each combination enumerates the associated capability that the given combination provides to OpenCPI. Note that Quartus Standard and Quartus Pro are \textit{different tools}. These two tools support different sets of devices and users should consult Intel's documentation for more information. Older versions of some FPGA tools have been supported by OpenCPI but are not actively regression tested, such as, Vivado 2015.4 and Quartus Standard Edition 15.1. \\
 %Commented this out because there may be other Vivado functionality that requires a non-webpack license.
 %Maximum functionality for OpenCPI's currently supported platforms is provided by a WebPACK licensed Xilinx Vivado installation, a non-WebPACK licensed Xilinx ISE installation and a licensed Quartus installation.
 
@@ -86,16 +85,16 @@ Order versions of the FPGA tools have been supported by OpenCPI but are not acti
 			\rowcolor{blue}
 			\multicolumn{1}{|c|}{\textbf{Tool}} & \multicolumn{1}{|c|}{\textbf{Installation}} & \textbf{Supported \newline simulators} & \textbf{Load bitstreams onto} & \textbf{Run applications on these platforms} & \textbf{Build bitstreams for} & \textbf{Build software for} \\
 			\hline
-			\multicolumn{2}{|c|}{\textbf{No vendor tools}} & & Zynq$^1$ & Zynq-based$^2$, x86-only$^1$ & & x86$^1$ \\
+			\multicolumn{2}{|c|}{\textbf{OpenCPI installed \textit{without} FPGA vendor tools}} & & Zynq-7000$^1$ & Zynq-7000 based$^2$, x86-only$^1$ & & x86$^1$ \\
 			\hline
-			\multirow{3}{*}{\textbf{Xilinx Vivado}} & 2017.1 with WebPACK License & \code{xsim} & & & Zynq$^3$ & \\ \cline{2-7}
-			& 2013.4 (SDK only)$^5$ & & & & & Zynq-ARM \\ \cline{2-7}
-			& 2017.1 \textit{and} 2013.4 SDK with WebPACK License & \code{xsim} & & & Zynq$^3$ &  Zynq-ARM \\
+			\multirow{3}{*}{\textbf{Xilinx Vivado}} & 2017.1 with WebPACK License & \code{xsim} & & & Zynq-7000$^3$ & \\ \cline{2-7}
+			& 2013.4 (SDK only)$^5$ & & & & & Zynq-7000 ARM \\ \cline{2-7}
+			& 2017.1 \textit{and} 2013.4 SDK with WebPACK License & \code{xsim} & & & Zynq-7000$^3$ &  Zynq-7000 ARM \\
 			\hline
 			\multicolumn{2}{|c|}{\textbf{Xilinx LabTools 14.7}} & & ML605 & x86/ML605 & & \\
 			\hline
-			\multirow{2}{*}{\textbf{Xilinx ISE 14.7}} & WebPACK License & \code{isim} & ML605 & x86/ML605 & Zynq$^3$ & Zynq-ARM \\ \cline{2-7}
-			& Full License & \code{isim} & ML605 & x86/ML605 & Zynq, ML605 & Zynq-ARM \\
+			\multirow{2}{*}{\textbf{Xilinx ISE 14.7}} & WebPACK License & \code{isim} & ML605 & x86/ML605 & Zynq-7000$^3$ & Zynq-7000 ARM \\ \cline{2-7}
+			& Full License & \code{isim} & ML605 & x86/ML605 & Zynq-7000, ML605 & Zynq-7000 ARM \\
 			\hline
 			\multicolumn{2}{|c|}{\textbf{Intel Quartus Standard 17.1 with License}}  & & ALST4 & x86/ALST4 & ALST4 & \\
 			\hline
@@ -107,12 +106,12 @@ Order versions of the FPGA tools have been supported by OpenCPI but are not acti
 			\hline
 		\end{tabularx}\newline
 
-		\footnotesize{$^1$With OpenCPI installed, no additional software is required to load bitstreams onto Zynq FPGAs, run applications on Zynq-based or x86-only platforms, or build software for x86.}\\
-		\footnotesize{$^2$``Zynq-based'' platform includes both a Zynq's FPGA and ARM PS. The usage of ``Zynq'' or ``Zynq-based'' here does not include Zynq UltraScale devices.}\\
+		\footnotesize{$^1$With OpenCPI installed, no additional vendor tools are required to load bitstreams onto Zynq-7000 FPGAs, run applications on Zynq-7000 based or x86-only platforms, or build software for x86.}\\
+		\footnotesize{$^2$``Zynq-7000 based'' platform includes both a Zynq-7000's FPGA and ARM PS. The usage of ``Zynq'' or ``Zynq-based'' does not imply Zynq UltraScale+ devices.}\\
 		\footnotesize{$^3$Building bitstreams with a WebPACK license is limited to certain Zynq parts. Refer to the vendor's documentation for further information.}\\
 		\footnotesize{$^4$While there are currently no OpenCPI Board Support Packages developed for Quartus Pro, HDL workers can be built targeting the \textit{arria10soc} device family.}\\
 		\footnotesize{$^5$The relationship between the Vivado Design Edition and SDK is discussed in \ref{sec:viv_intro}.}\\
-		\caption {Support with Vendor Tools}
+		\caption {Support with FPGA Vendor Tools}
 		\label{table:tool-support} % Add "[H]" to force placement of table
 	\end{table}
 \end{center}
@@ -122,15 +121,15 @@ Order versions of the FPGA tools have been supported by OpenCPI but are not acti
 \subsection{Xilinx Vivado Installation in CentOS~6/7}
 \label{sec:viv_intro}
 \begin{flushleft}
-As described in Table~\ref{table:tool-support}, building for OpenCPI board support packages (BSPs) which are Xilinx FPGA-based requires various Xilinx FPGA tools to be installed. \\
-In the case of Zynq-based OpenCPI BSPs, the required tools are Vivado 2017.1 \textit{and} Vivado 2013.4's SDK, where the 2013.4 SDK is necessary because OpenCPI's ``\code{xilinx13\_3}'' and ``\code{xilinx13\_4}'' software platforms require an SDK with matching glibc/glibc++ versions. An SDK meeting this requirement can be found explicitly in either ISE 14.7 or Vivado 2013.4 SDK. For more information on this requirement you can reference the README for the \code{xilinx13\_3} software platform. This is located in the core project (\textit{e.g.}: \path{<core-project>/rcc/platforms/xilinx13_3}).\\
-In the case of the ML605 development board (PCIe) , only ISE v14.7 is required, because the host's gcc-compiler will be used.
+As described in Table~\ref{table:tool-support}, building for OpenCPI board support packages (BSPs) which are Xilinx FPGA-based requires various Xilinx FPGA tools to be installed. \\ \medskip
+In the case of Zynq-7000 based OpenCPI BSPs, the required tools are Vivado 2017.1 \textit{and} Vivado 2013.4's SDK, where the 2013.4 SDK is necessary because OpenCPI's ``\code{xilinx13\_3}'' and ``\code{xilinx13\_4}'' software platforms require an SDK with matching glibc/glibc++ versions. An SDK meeting this requirement can be found explicitly in either ISE 14.7 or Vivado 2013.4 SDK. For more information on this requirement you can reference the README for the \code{xilinx13\_3} software platform. This is located in the core project (\textit{e.g.}: \path{<core-project>/rcc/platforms/xilinx13_3}).\\ \medskip
+In the case of the ML605 development board (PCIe), only ISE v14.7 is required, because the host's gcc-compiler will be used.
 
 \subsubsection{Xilinx Vivado 2017.1 Installation in CentOS~6/7}
 \label{sec:viv}
 \begin{enumerate}
-\item Download the Vivado 2017.1 installation files from Xilinx's download site:
-\url{https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/2017-1.html}. A Xilinx account will be required.
+\item A Xilinx account is required for this step. Download the Vivado 2017.1 installation files from Xilinx's download site:
+\url{https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/2017-1.html}.
 \begin{figure}[ht]
 	\centerline{\includegraphics[scale=0.6]{figures/xilinx_vivado_2017_download}}
 	\caption{Xilinx Vivado 2017.1 Download}
@@ -144,7 +143,7 @@ In the case of the ML605 development board (PCIe) , only ISE v14.7 is required, 
 \code{\% cd Xilinx\_Vivado\_SDK\_2017.1\_0415\_1}\newline
 \code{\% ./xsetup}\newline
 \pagebreak
-\item Run through the installation process. Refer to the images below when applicable.
+\item Step through the installation process. Refer to the images below when applicable.
 \begin{figure}[H]
 	\centerline{\includegraphics[scale=0.4]{figures/xilinx_vivado_2017_install}}
 	\caption{Xilinx Vivado Installer}
@@ -164,7 +163,7 @@ Take note of the installation directory chosen (e.g. \code{/opt/Xilinx}) as well
 % TODO: Make this next section a snippet because it is copypasted a lot
 \subsubsection{OpenCPI Considerations}
 \begin{enumerate}
-\item Note that sourcing the ``\verb+<Vivado-install-dir>/Vivado/<Vivado-version>/settings64.sh+'' script will interfere with OpenCPI's environment setup. Accordingly, it is recommended to always source these scripts and execute any follow-on commands in a \textit{separate terminal}.
+\item Note that sourcing the ``\verb+<Vivado-install-dir>/Vivado/<Vivado-version>/settings64.sh+'' script will interfere with OpenCPI's environment setup. Accordingly, it is \textit{highly} recommended to always source these scripts and execute any follow-on commands in a \textit{separate terminal}.
 \item To use OpenCPI with any Xilinx Vivado installation, it is required to set the following environment variables before running OpenCPI commands. Note that each of the following \code{export} statements is only necessary under the following conditions:
 \begin{itemize}
 \item When using a non-default installation location (i.e. anything other than \path{/opt/Xilinx})
@@ -180,8 +179,8 @@ If OpenCPI has been installed prior to the Vivado installation, and it is desire
 \subsubsection{Xilinx Vivado 2013.4 SDK Only Installation in CentOS~6/7}
 \label{sec:viv_sdk}
 \begin{enumerate}
-\item Download the Vivado 2013.4 Standalone SDK installation files from Xilinx's download site:
-\url{https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive.html}. Navigate to ``2013.4'' $\rightarrow$ ``Software Development Kit''. A Xilinx account will be required.
+\item A Xilinx account is required for this step. Download the Vivado 2013.4 Standalone SDK installation files from Xilinx's download site:
+\url{https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive.html}. Navigate to ``2013.4'' $\rightarrow$ ``Software Development Kit''.
 
 \begin{figure}[H]
 	\centerline{\includegraphics[scale=0.4]{figures/xilinx_vivado_sdk_download}}
@@ -196,7 +195,7 @@ If OpenCPI has been installed prior to the Vivado installation, and it is desire
 \code{\% cd Xilinx\_SDK\_2013.4\_1210\_1}\newline
 \code{\% ./xsetup}\newline
 \pagebreak
-\item Run through the installation process. Refer to the images below when applicable.
+\item Step through the installation process. Refer to the images below when applicable.
 \begin{figure}[H]
 	\centerline{\includegraphics[scale=0.4]{figures/xilinx_vivado_sdk_install}}
 	\caption{Xilinx Vivado SDK Installer}
@@ -219,8 +218,8 @@ Take note of the installation directory chosen (e.g. \code{/opt/Xilinx}) as well
 \label{sec:ise}
 \begin{flushleft}
 \begin{enumerate}
-\item Download the ISE 14.7 installation files from Xilinx's download site:
-\url{https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/design-tools.html}. A Xilinx account will be required.
+\item A Xilinx account is required for this step. Download the ISE 14.7 installation files from Xilinx's download site:
+\url{https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/design-tools.html}.
 \begin{figure}[ht]
 	\centerline{\includegraphics[scale=0.4]{figures/xilinx_ise_download}}
 	\caption{Xilinx ISE Download}
@@ -256,9 +255,14 @@ Take note of the installation directory chosen (e.g. \code{/opt/Xilinx}) as well
 \subsubsection{OpenCPI Considerations}
 \label{sec:iseav}
 \begin{enumerate}
-\item Note that sourcing the ``\verb+<ISE-install-dir>/<version>/LabTools/settings64.sh+'' or ``\verb+<ISE-install-dir>/<version>/LabTools/settings32.sh+'' scripts will interfere with OpenCPI's environment setup. Accordingly, it is recommended to always source these scripts and execute any follow-on commands in a \textit{separate terminal}.
-\item To use OpenCPI with any Xilinx ISE or LabTools installation,  it is required to set the following environment variables before running OpenCPI commands. Note that each of the following \code{export} statements are only necessary when the non-default installation location (i.e. anything other than \path{/opt/Xilinx}) or non-default version (i.e. anything other than \path{14.7}) of the tools were used.
-\subitem If only one of Xilinx ISE or Xilinx LabTools is installed,
+\item Note that sourcing the ``\verb+<ISE-install-dir>/<version>/LabTools/settings64.sh+'' or ``\verb+<ISE-install-dir>/<version>/LabTools/settings32.sh+'' scripts will interfere with OpenCPI's environment setup. Accordingly, it is \textit{highly } recommended to always source these scripts and execute any follow-on commands in a \textit{separate terminal}.
+\item To use OpenCPI with any Xilinx ISE or LabTools installation,  it is required to set the following environment variables before running OpenCPI commands. Note that each of the following \code{export} statements is only necessary under the following conditions:
+\begin{itemize}
+\item When using a non-default installation location (i.e. anything other than \path{/opt/Xilinx})
+\item Non-default version (i.e. anything other than \path{14.7}) of the tools were used.
+\end{itemize}
+
+\subitem If only one of Xilinx LabTools or ISE is installed,
 \subsubitem \code{\% export OCPI\_XILINX\_DIR=<ISE-or-LabTools-install-dir>}
 \subsubitem \code{\% export OCPI\_XILINX\_VERSION=<ISE-or-LabTools-version>}
 \subitem If Xilinx LabTools and ISE are the same version and installed in the same directory,
@@ -280,8 +284,8 @@ If OpenCPI has been installed prior to the ISE installation, and it is desired t
 \label{sec:labtools}
 \begin{flushleft}
 \begin{enumerate}
-\item Download the LabTools 14.7 installation files from Xilinx's download site:
-\url{https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/design-tools.html}. A Xilinx account will be required.
+\item A Xilinx account is required for this step. Download the LabTools 14.7 installation files from Xilinx's download site:
+\url{https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/design-tools.html}.
 \begin{figure}[H]
 	\centerline{\includegraphics[scale=0.4]{figures/xilinx_labtools_download}}
 	\caption{Xilinx LabTools Download}
@@ -295,7 +299,8 @@ If OpenCPI has been installed prior to the ISE installation, and it is desired t
 \code{\% cd Xilinx\_LabTools\_14.7\_1015\_1}\newline
 \code{\% ./xsetup}\newline
 \pagebreak
-\item Run through the installation process. Refer to the images below when applicable. Note that the checkbox for cable drivers is left unchecked. Cable driver installation, if necessary, should be handled after this installation is complete. See section \ref{sec:cable} for more information.
+
+\item Step through the installation process. Refer to the images below when applicable. Note that the checkbox for cable drivers is left unchecked. Cable driver installation, if necessary, should be handled after this installation is complete. See section \ref{sec:cable} for more information.
 \begin{figure}[H]
 	\centerline{\includegraphics[scale=0.4]{figures/xilinx_labtools_install}}
 	\caption{Xilinx LabTools Installer}
@@ -314,7 +319,7 @@ Take note of the installation directory chosen (e.g. \code{/opt/Xilinx}) as well
 
 \subsubsection{OpenCPI Considerations}
 \begin{enumerate}
-\item Note that sourcing the ``\verb+<LabTools-install-dir>/<version>/LabTools/settings64.sh+'' or ``\verb+<LabTools-install-dir>/<version>/LabTools/settings32.sh+'' scripts will interfere with OpenCPI's environment setup. Accordingly, it is recommended to always source these scripts and execute any follow-on commands in a \textit{separate terminal}.
+\item Note that sourcing the ``\verb+<LabTools-install-dir>/<version>/LabTools/settings64.sh+'' or ``\verb+<LabTools-install-dir>/<version>/LabTools/settings32.sh+'' scripts will interfere with OpenCPI's environment setup. Accordingly, it is \textit{highly} recommended to always source these scripts and execute any follow-on commands in a \textit{separate terminal}.
 \item To use OpenCPI with any Xilinx ISE or LabTools installation, it is required to set the environment variables according to Section \ref{sec:iseav} before running OpenCPI commands.
 \end{enumerate}
 
@@ -325,9 +330,11 @@ Take note of the installation directory chosen (e.g. \code{/opt/Xilinx}) as well
 
 \subsection{Xilinx Toolset Licensing}
 \label{xilinx}
-A license, either WebPACK or non-WebPACK, is required for Xilinx Vivado and Xilinx ISE. Xilinx LabTools does not require a license.
+A license, either WebPACK or non-WebPACK, is required for Xilinx Vivado and Xilinx ISE, however the Xilinx LabTools does not require a license.
+
+\subsubsection{Generate and download a license file from Xilinx}
 \begin{enumerate}
-\item The following screenshots show an ISE WebPACK license. Refer to \ref{sec:doc_overview} to determine which license is necessary. To generate a license, navigate to \url{http://www.xilinx.com/getlicense} and login (or create an account). Generate a license file:
+\item The following screenshots show is an example of Xilinx's license website with a ISE WebPACK license selected. Refer to \ref{sec:doc_overview} to determine which license is necessary. To generate a license, navigate to \url{http://www.xilinx.com/getlicense} and login (or create an account). Generate a license file:
 
 \begin{figure}[H]
 	\centerline{\includegraphics[scale=0.5]{./figures/xilinx_license_gen.jpg}}
@@ -342,13 +349,9 @@ A license, either WebPACK or non-WebPACK, is required for Xilinx Vivado and Xili
 \end{figure}
 \end{enumerate}
 
-For use of Xilinx tools separate from OpenCPI, you will need to enable the license through the Xilinx tools.\newline
-
-For Vivado, follow these steps:
+\subsubsection{Load license into Vivado}
 \begin{enumerate}
-
-\item Run ``\verb+source <Vivado-install-dir>/Vivado/<version>/settings64.sh+''.
-
+\item In a terminal, run ``\verb+source <Vivado-install-dir>/Vivado/<version>/settings64.sh+''.
 \item Open up the license manager and load the downloaded license. The license manager can be launched either from the Vivado GUI, or from the command line by running: \\\verb+sudo <Vivado-install-dir>/Vivado/<version>/bin/vlm+\newline
 
 Here, you can either navigate to ``Load License'' and load a copy of the license file, or you can enter the license search paths via ``Manage License Search Paths''.
@@ -359,10 +362,9 @@ Here, you can either navigate to ``Load License'' and load a copy of the license
 \end{figure}
 \end{enumerate}
 
-For ISE, follow these steps:
+\subsubsection{Load license into ISE}
 \begin{enumerate}
-\item Run ``\verb+source <ISE-install-dir>/<version>/ISE_DS/settings64.sh+'' (or settings32.sh if the system has a 32-bit architecture).
-
+\item In a terminal, run ``\verb+source <ISE-install-dir>/<version>/ISE_DS/settings64.sh+'' (or settings32.sh if the system has a 32-bit architecture).
 \item Open up the license manager and load the downloaded license. The license manager can either be launched from the ISE GUI, or launched from the command line by running: \\\verb+sudo <ISE-or-LabTools-install-dir>/<version>/ISE_DS/common/bin/lin[64]/xlcm+
 
 \begin{figure}[H]
@@ -376,17 +378,24 @@ If using a Xilinx node-locked license under CentOS~7, see \href{https://access.r
 \texttt{eth\textit{N}} naming convention.
 
 \subsubsection{OpenCPI Considerations}
-\begin{enumerate}
-\item Note that sourcing the ``\verb+settings64.sh+'' or ``\verb+settings32.sh+'' scripts will interfere with OpenCPI's environment setup. Accordingly, it is recommended to always source these scripts and execute any follow-on commands in a \textit{separate terminal}.
-\item To enable a license for use through OpenCPI, the following is required:
+Note that sourcing the ``\verb+settings64.sh+'' or ``\verb+settings32.sh+'' scripts will interfere with OpenCPI's environment setup. Accordingly, it is \textit{highly} recommended to always source these scripts and execute any follow-on commands in a \textit{separate terminal}. \medskip\newline
+To enable a license for use by OpenCPI, the OpenCPI environment variable which supports locating the Xilinx license listing (file or server) must be configured. Edit the \verb+/opt/opencpi/cdk/env.d/xilinx.sh+ to support either a license file or server: 
+\begin{itemize}
+\item license file: 
+\\ \verb+export OCPI_XILINX_LICENSE_FILE=<PATH_TO_LIC>+
+\item license server:
+\\ \verb+export OCPI_XILINX_LICENSE_FILE=<port>@<server.ip.addr>+
+\end{itemize}
+Alternatively, if using a floating license server, it is possible to set to the license server and Xilinx's environment variable, which will allow use of a local license, e.g. a local WebPACK license, by default and the served floating license when WebPACK license is not sufficient.\footnote{See Xilinx ``\href{https://www.xilinx.com/support/answers/42507.html}{AR\# 42507: What are the search order and locations...}'' and ``\href{https://www.xilinx.com/support/answers/44024.html}{AR\# 44024: If a feature is licensed in multiple locations...}''} \medskip
+\begin{itemize}
+\item license server and local license:
+\\ \verb+export OCPI_XILINX_LICENSE_FILE=<port>@<server.ip.addr>+ \\ \verb+export XILINXD_LICENSE_FILE=<PATH_TO_LOCAL_LIC>+
+\end{itemize}
 
-	\begin{itemize}
-		\item Add \verb+export OCPI_XILINX_LICENSE_FILE=<PATH_TO_LIC>+ to \verb+/opt/opencpi/cdk/env.d/xilinx.sh+. Note that this can instead point to a license server \verb+<port>@<server.ip.addr>+. If using a floating license server, it is possible to set \verb+OCPI_XILINX_LICENSE_FILE+ to the license server in addition to setting \\\verb+export XILINXD_LICENSE_FILE=<PATH_TO_LOCAL_LIC>+. This will allow use of a local license, e.g. a local WebPACK license, by default and the served floating license when WebPACK license is not sufficient.\footnote{See Xilinx ``\href{https://www.xilinx.com/support/answers/42507.html}{AR\# 42507: What are the search order and locations...}'' and ``\href{https://www.xilinx.com/support/answers/44024.html}{AR\# 44024: If a feature is licensed in multiple locations...}''}
-	\end{itemize}
-\end{enumerate}
 
 \subsection{Xilinx Cable Driver Installation in CentOS~6/7}
 \label{sec:cable}
+This section is a collection of notes or links that have been gathered for the installation or verification of Xilinx cable drivers for Vivado and ISE. However, it is not intended to an exhaustive list of instructions.
 \subsubsection{Vivado}
 \begin{flushleft}
 The steps herein are a slightly modified subset of those outlined in \url{https://www.xilinx.com/support/answers/66440.html}.
@@ -415,11 +424,11 @@ The steps herein are a slightly modified subset of those outlined in \url{https:
 \subsubsection{Testing Cable Driver Installation}
 \textbf{Vivado}
 \begin{flushleft}
-In the event that the Xilinx JTAG pod's LED does not illuminate (Amber, or Green) after installing the driver as previously discussed, it is recommended that the user manually attempt to establish a connection to the pod using the Vivado tools. This has shown to successfully recognize the pod and correctly illuminate it's LED.\medskip\newline
+After installing the cable driver as previously discussed, the Xilinx JTAG pod's LED may still not illumniate (Amber or Green).  It has been observed that by attempting to establish a connection to the pod using the Vivado tools, only then will the pod be discovered and correctly illuminate it's LED. If after the cable driver has been load and the JTAG pod's LED is off (while connected to the host), perform the following steps to force pod discovery: \medskip\newline
 \code{\$ cd /opt/Xilinx/Vivado/2017.1} \\
 \code{\$ . ./settings64.sh} \\\medskip
 Once the environment has been configured, launch the Vivado IDE and use the Hardware Manager to scan for JTAG pod. The expected result is for the pod to be recognized by the tools and its LED to illuminate Amber if its JTAG connector is not powered, or Green if the JTAG connect is powered.\newline
-(While not confirm, it is believed that some host system environments are preventing non-interactive driver accesses.)\medskip
+(While this has not been confirmed, it is believed that some host system environments prevent non-interactive driver accesses.)\medskip
 \end{flushleft}
 \textbf{ISE}
 \begin{flushleft}
@@ -576,7 +585,7 @@ These variables can be set automatically upon login for all users if added in \p
 		\end{enumerate}
 \end{flushleft}
 \subsubsection{Compile ISE's simulation libraries}
-	This section provides the steps necessary to compile Xilinx ISE's simulation libraries of the Zynq device, for ModelSim.
+	This section provides the steps necessary to compile Xilinx ISE's simulation libraries of the Zynq-7000 device, for ModelSim.
 
 \begin{flushleft}
 	\begin{enumerate}

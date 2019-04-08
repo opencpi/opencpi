@@ -1,0 +1,3 @@
+verilog xil_defaultlib "../../../../bsv/imports/SyncPulse.v"
+verilog xil_defaultlib "glbl.v"
+nosort

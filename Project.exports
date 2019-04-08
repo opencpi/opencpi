@@ -269,3 +269,6 @@
 =projects/assets/applications/*.xml applications/
 =projects/assets/applications/test.input applications/
 =projects/assets/applications/run.sh applications/
+################################################################################
+# XML files required when building containers that are not real workers
++projects/core/hdl/primitives/platform/*.xml include/hdl/

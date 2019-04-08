@@ -19,6 +19,8 @@
 
 
 """
+DEPRECATION NOTICE: This worker is deprecated and will be removed in OpenCPI 2.0. Use the Zero Pad component for new designs.
+
 This script generates files for the input port for the zero_padding unit tests
 
 There are two arguments:

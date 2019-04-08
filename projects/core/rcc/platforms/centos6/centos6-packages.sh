@@ -82,8 +82,6 @@ PKGS_D+=(hardlink)
 PKGS_D+=(bison)
 #    Needed to build gdb
 PKGS_D+=(flex)
-#    Needed to build gpsd
-PKGS_D+=(scons)
 # docker container missing this	libXdmcp.i686=/lib/libXdmcp.so.6) # AV-3645
 #    for bash completion - a noarch package  (AV-2398)
 # in epel for centos6 - see below PKGS_D+=(bash-completion=/etc/profile.d/bash_completion.sh)

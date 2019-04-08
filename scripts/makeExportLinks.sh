@@ -318,7 +318,7 @@ while read path opts; do
     unset options[0]
     options=(${options[*]})
   done
-  programs=`find -H $path $exclude -name "*_main.cxx"|sed 's=.*src/\(.*\)_main.c.*$=\1='`
+  programs=`find -H $path $exclude -name "[a-zA-Z]*_main.cxx"|sed 's=.*src/\(.*\)_main.c.*$=\1='`
   swig=`find -H $path $exclude -path "*/src/*.i"`
   api_incs=`find -H $path $exclude \( -path "*/include/*Api.h" -o -path "*/include/*Api.hh" \)`
   [ -n "$driver" ] && drivers+=" $(basename $path)"

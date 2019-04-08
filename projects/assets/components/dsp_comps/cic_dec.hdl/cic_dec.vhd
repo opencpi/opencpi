@@ -39,7 +39,7 @@ library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 use ieee.math_real.all;
 library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
 
-architecture rtl of cic_dec_worker is
+architecture rtl of worker is
 
   constant N_c              : integer := to_integer(unsigned(N));
   constant M_c              : integer := to_integer(unsigned(M));
@@ -47,152 +47,53 @@ architecture rtl of cic_dec_worker is
   constant DIN_WIDTH_c      : integer := to_integer(unsigned(DIN_WIDTH));
   constant ACC_WIDTH_c      : integer := to_integer(unsigned(ACC_WIDTH));
   constant DOUT_WIDTH_c     : integer := to_integer(unsigned(DOUT_WIDTH));
-  constant MAX_MESSAGE_VALUES_c : integer := 4096;  -- from iqstream_protocol
 
-  -- WSI Interface
-  signal msg_cnt            : unsigned(integer(ceil(log2(real(MAX_MESSAGE_VALUES_c))))-1 downto 0);
-  signal max_sample_cnt     : unsigned(integer(ceil(log2(real(MAX_MESSAGE_VALUES_c))))-1 downto 0);
-  -- Zero Length Messages
-  type state_zlm_t is (INIT_s, WAIT_s, SEND_s);
-  signal zlm_current_state  : state_zlm_t;
-  signal zlm_take           : std_logic;
-  signal zlm_force_som      : std_logic;
-  signal zlm_force_eom      : std_logic;
-  signal zlm_force_eom_l    : std_logic;
-  --
   signal idata_vld          : std_logic;
   signal odata_vld          : std_logic;
   signal i_out, q_out       : std_logic_vector(DOUT_WIDTH_c-1 downto 0);
+--  signal in_in_eof_r        : bool_t;
 
 begin
 
-  -----------------------------------------------------------------------------
-  -- idata_vld (when in operating state, upstream worker is ready and has 'valid' data
-  -- and downstream workers ready)
-  -----------------------------------------------------------------------------
+  ---------------------------------------------------------------------------------
+  -- Enable input to primitive (idata_vld) and take from input (in_out.take)
+  -- when data is present/valid and output is allowed
+  ---------------------------------------------------------------------------------
 
-  idata_vld <= '1' when ctl_in.is_operating = '1' and out_in.ready = '1' and in_in.ready = '1' and in_in.valid = '1' else '0';
+  idata_vld   <= in_in.valid and out_in.ready;
+  in_out.take <= idata_vld;
 
-  -----------------------------------------------------------------------------
-  -- Take (when in operating state, up/downstream workers ready and not sending a ZLM)
-  -----------------------------------------------------------------------------
+  --------------------------------------------------------------------------------
+  -- Give to output porty when output of primitive is valid and output is allowed)
+  --------------------------------------------------------------------------------
 
-  in_out.take <= '1' when (ctl_in.is_operating = '1' and out_in.ready = '1' and in_in.ready = '1'
-                           and zlm_take = '1') else '0';
-
-  -----------------------------------------------------------------------------
-  -- Give (when in operating state, downstream worker ready & primitive has valid output
-  -- OR the ZLM is detected and the current message must be terminated early)
-  -----------------------------------------------------------------------------
-
-  out_out.give <= '1' when (ctl_in.is_operating = '1' and out_in.ready = '1'
-                            and (odata_vld = '1' or zlm_force_eom = '1')) else '0';
-
-  -----------------------------------------------------------------------------
-  -- Valid (when downstream worker ready & primitive has valid output)
-  -----------------------------------------------------------------------------
-
-  out_out.valid <= '1' when out_in.ready = '1' and odata_vld = '1' else '0';
-
-  out_out.data  <= std_logic_vector(resize(signed(q_out), 16)) & std_logic_vector(resize(signed(i_out), 16));
-
-  -- Since ZeroLengthMessages=true for the output WSI, this signal must be controlled
+  out_out.give        <= to_bool(out_in.ready and odata_vld = '1');
+  out_out.valid       <= odata_vld;
+  out_out.data        <= std_logic_vector(resize(signed(q_out), 16)) & std_logic_vector(resize(signed(i_out), 16));
   out_out.byte_enable <= (others => '1');
-
+  -- out_out.eof         <= in_in_eof_r;
   -----------------------------------------------------------------------------
-  -- Zero-Length Message FSM
+  -- We do not use the default eof-propagation from input to output because
+  -- our output is not continuous, and thus we can have pipelined output data
+  -- to "ship" that occurs AFTER the input happens on input.  In this case
+  -- it is only one cycle, but since the eof input is valid on the next cycle
+  -- after the last input value is taken
+  -- Delay the input EOF according to the known latency of the primitive so that
+  -- we don't assert the output eof while there is still data in the pipeline
   -----------------------------------------------------------------------------
+  -- eof_delay : process (ctl_in.clk)
+  -- begin
+  --   if rising_edge(ctl_in.clk) then
+  --     if (ctl_in.reset = '1') then
+  --       in_in_eof_r <= bfalse;
+  --     elsif its(out_in.ready) and in_in.eof and odata_vld = '0' then
+  --       in_in_eof_r <= btrue;
+  --     end if;
+  --   end if;
+  -- end process;  
+  
 
-  zlm_fsm : process (ctl_in.clk)
-  begin
-    if rising_edge(ctl_in.clk) then
-      if(ctl_in.reset = '1') then
-        zlm_current_state <= INIT_s;
-        zlm_take          <= '1';
-        zlm_force_som     <= '0';
-        zlm_force_eom     <= '0';
-        zlm_force_eom_l   <= '0';
-      else
-        -- defaults
-        zlm_current_state <= zlm_current_state;
-        zlm_force_som     <= '0';
-        zlm_take          <= '1';
-        zlm_force_eom     <= '0';
 
-        case zlm_current_state is
-          when INIT_s =>
-            -- 'Full' ZLM present, send ZLM
-            if (in_in.ready = '1' and in_in.som = '1' and in_in.eom = '1' and in_in.valid = '0' and zlm_force_eom_l = '0') then
-              zlm_current_state <= SEND_s;
-           -- 'Partial' ZLM present, wait for remaining portion of ZLM
-            elsif (in_in.ready = '1' and in_in.som = '1' and in_in.valid = '0') then
-              zlm_current_state <= WAIT_s;
-            -- Observe backpressure
-            elsif (zlm_force_eom = '1' and zlm_force_som = '1' and out_in.ready = '0') then
-              zlm_current_state <= INIT_s;
-              zlm_force_som     <= '1';
-              zlm_force_eom     <= '1';
-              zlm_take          <= '0';
-            end if;
-          when WAIT_s =>
-            zlm_take          <= '1';
-            -- Valid message from upstream, return to ZLM detection
-            if (in_in.ready = '1' and in_in.valid = '1') then
-              zlm_current_state <= INIT_s;
-            -- Remainder of 'partial' ZLM present, send ZLM
-            elsif (in_in.ready = '1' and in_in.eom = '1') then
-              zlm_current_state <= SEND_s;
-            end if;
-          when SEND_s =>
-            zlm_take <= '0';
-            -- Determine if in the middle of a message
-            if (msg_cnt /= 1 and out_in.ready = '1' and zlm_force_eom_l = '0') then
-              zlm_force_eom <= '1';
-              zlm_force_eom_l <= '1';
-            -- Send ZLM
-            elsif (out_in.ready = '1') then
-              zlm_force_eom_l <= '0';
-              zlm_current_state <= INIT_s;
-              zlm_force_som <= '1';
-              zlm_force_eom <= '1';
-            -- Observe backpressure
-            else
-              zlm_current_state <= zlm_current_state;
-              zlm_force_som <= zlm_force_som;
-              zlm_force_eom <= zlm_force_eom;
-            end if;
-        end case;
-
-      end if;
-    end if;
-  end process zlm_fsm;
-
-  -----------------------------------------------------------------------------
-  -- WSI Message Counter
-  -----------------------------------------------------------------------------
-
-  max_sample_cnt <= resize(props_in.messageSize srl 2, max_sample_cnt'length);
-
-  proc_MessageWordCount : process (ctl_in.clk)
-  begin
-    if rising_edge(ctl_in.clk) then
-      if (ctl_in.reset = '1') then
-        msg_cnt   <= (0 => '1', others => '0');
-      elsif (odata_vld = '1' and zlm_force_eom_l = '0') then
-        if (msg_cnt = max_sample_cnt) then
-          msg_cnt <= (0 => '1', others => '0');
-        else
-          msg_cnt <= msg_cnt + 1;
-        end if;
-      end if;
-    end if;
-  end process;
-
-  out_out.som <= '1' when (out_in.ready = '1'
-                           and (msg_cnt = 1 or zlm_force_som = '1')) else '0';
-
-  out_out.eom <= '1' when (out_in.ready = '1'
-                           and (msg_cnt = max_sample_cnt or zlm_force_eom = '1')) else '0';
 
   -----------------------------------------------------------------------------
   -- CIC Decimation primitives (I & Q)

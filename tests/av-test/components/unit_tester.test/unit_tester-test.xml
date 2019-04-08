@@ -1,0 +1,31 @@
+<!-- This is the test xml for testing component "unit_tester" -->
+<Tests timeout='200' ExcludePlatforms='modelsim' UseHDLFileIo='true'>
+  <Input Port='in1' script='generate.py' />
+  <Input Port='in2' script='generate.py' />
+  <Input Port='in3' script='generate.py' />
+
+  <Output Port='out1' script='verify.py 1'/>
+  <Output Port='out2' script='verify.py 2'/>
+  <Output Port='out3' script='verify.py 3'/>
+
+  <Output Name='test_out3' script='verify.py 3'/>
+  <Case OnlyWorkers='unit_tester.hdl'>
+      <property name='prop' values='1'/>
+  </Case>
+  <Case ExcludeWorkers='unit_tester.hdl'>
+      <property name='prop' values='2'/>
+  </Case>
+  <Case OnlyPlatforms='xsim'>
+      <property name='prop' values='3'/>
+  </Case>
+  <Case ExcludePlatforms='xsim'>
+      <property name='prop' values='4'/>
+  </Case>
+  <Case OnlyPlatforms='centos7'>
+      <Output Port='out3' Name='test_out3' />
+      <property name='prop' values='3'/>
+  </Case>
+  <Case >
+     <property name='prop' values='2,3,4' exclude='*sim'/>
+  </Case>
+</Tests>

@@ -21,7 +21,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{OpenCPI\\ \bigskip Matchstiq-Z1 Getting Started Guide}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \input{../../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
 \input{../../../../../../doc/av/tex/snippets/ocpidev_ide.tex}
@@ -64,6 +64,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
             v1.3 & Updated for OpenCPI Release 1.3 & 2/2018 \\
             \hline
             v1.4 & Update descriptions and paths & 9/2018 \\
+            \hline
+            v1.5 & Update  for OpenCPI Release 1.5 & 4/2019 \\
             \hline
 			\end{tabularx}
 		\end{table}
@@ -122,7 +124,7 @@ RCC/software platforms, independent of the final deployed hardware. \\
 \end{table}
 
 \subsection{Installation of provided OpenCPI projects: \textit{core} and \textit{assets}}
-This guide  assumes the user has executed \textit{ocpi-copy-projects}, accepting the default settings, to copy and register the \textit{core} and \textit{assets} projects from the /opt/opencpi/projects for building bitstreams for the Zedboard. Reference the Getting Started Guide for details on \textit{ocpi-copy-projects}.  While registering of the projects is performed during the execution of ocpi-copy-projects, changes to the registry can be made via \code{ocpidev un/register project} or the ANGRYVIPER GUI.\medskip
+This guide  assumes the user has executed \textit{ocpi-copy-projects}, accepting the default settings, to copy and register the \textit{core} and \textit{assets} projects from the /opt/opencpi/projects for building bitstreams for the Matchstiq-Z1. Reference the Getting Started Guide for details on \textit{ocpi-copy-projects}.  While registering of the projects is performed during the execution of ocpi-copy-projects, changes to the registry can be made via \code{ocpidev un/register project} or the ANGRYVIPER GUI.\medskip
 
 \begin{verbatim}
 $ ocpi-copy-projects
@@ -202,15 +204,17 @@ On the front panel of the Matchstiq-Z1, there are three labeled SMB (50 Ohm) con
 \label{sec:SD_Card_Setup}
 The Matchstiq-Z1 SDR is equipped with two SD card slots: one internal and one accessible via the front panel. It is expected that the SDRs are shipped from Epiq Solutions with an SD card installed in the internal slot that is loaded with their embedded environment. Alternatively, when an SD card is installed in the front panel SD slot, the SDR will automatically choose to operate from this SD card rather than the internal SD card. Therefore, a user can easily switch the SDR between operating in the Epiq Solutions or OpenCPI environment.
 
-The Matchstiq-Z1's factory SD card has a non-default formatting, which must be respected for proper operation. This guide assumes that the internal (factory) SD card is being use for OpenCPI and will be reinstalled in the front panel SD card slot. If the user desires the use of a new SD card, the user must ensure that its format matches the factory provided SD card. To gain access to the internal SD card slot, remove the screws from the front and back plates of the SDR and slide the board assembly out of the enclosure. Flip the SD card slot open and lift the card out.
+The Matchstiq-Z1's factory SD card has a non-default formatting, which must be maintained for proper operation. This guide assumes that the internal (factory) SD card is being use for OpenCPI and will be reinstalled in the front panel SD card slot. If the user desires the use of a new SD card, the user must ensure that it is initially imaged from the factory provided SD card, as there is a unique partition with specific content from the OEM. To gain access to the internal SD card slot, remove the screws from the front and back plates of the SDR and slide the board assembly out of the enclosure. Flip the SD card slot open and lift the card out.
+
+\textbf{The \textit{u-boot.bin} from the factory SD card MUST saved, as it is used by the OpenCPI.}
 
 \subsection{Make a backup image of factory SD card (assumes Linux host)}
 This section provides the steps for creating an SD card backup image. It is recommended, because the factory provided SD card does have special formatting and content that may be desired to preserve.
 
 \begin{itemize}
-\item Determine the device file name for the SD card by executing dmesg command below. It will likely be something like \texttt{/dev/sdb} or \texttt{/dev/mmcblk0}.\\
+\item Determine the device file name for the SD card by executing dmesg command below. It will likely be something like \texttt{/dev/sdb} or \texttt{/dev/mmcblk0}.\\ \\
 \texttt{\$ dmesg | tail -n 15} \\
-\item Run the following dd command to make a backup image, where DEVICENAME was determined above. This step should take $\sim15$ minutes depending on the card size.\\ \medskip
+\item Run the following dd command to make a backup image, where DEVICENAME was determined above. This step should take $\sim15$ minutes depending on the card size.\\ \\
 \texttt{\$ dd if=DEVICENAME of=backup.image}
 \end{itemize}
 \noindent To restore the card back to the original contents, run the command ``\texttt{dd of=DEVICENAME if=backup.image}''
@@ -227,8 +231,6 @@ This section provides the steps for creating an SD card backup image. It is reco
 WARNING: The user must ensure that the contents of the SD, match the version of the OpenCPI release that the artifacts were built against.\\ \medskip
 
 When using the factory SD card, all files except the \textit{u-boot.bin} can be ignored or deleted. Any files/directories copied to the ``ATLAS'' partition will appear at \texttt{/mnt/card} on the Matchstiq-Z1.\\ \medskip
-
-\textbf{Note: The RPMs erroneously provides a \textit{boot.bin} that must NOT be copied to the SD card. The \textit{u-boot.bin} from the factory SD card MUST be used.}\\ \medskip
 
 Copy the following files/directories into the ``ATLAS'' partition:
 \begin{verbatim}
@@ -604,10 +606,10 @@ $ hexdump test.output | less
 \section{Intermittent Errors}
 Some tests have had ``Segmentation Faults'' or ``Alignment Errors'' in certain scenarios on the Z1. This seems to happen when both USB ports are used to simultaneously transmit a large amount of data, \textit{e.g.} high log-level output to a USB serial console as well as NFS-mounted output files over a USB-to-Ethernet adapter. The default test setup avoids triggering this by limiting output that is fed to the user, but users should be aware of this issue if non-default test scenarios are attempted. If \texttt{ssh} is used to have all data routed through the USB-to-Ethernet adapter, this failure mode is avoided.
 \section{Using ISE instead of Vivado with the Matchstiq-Z1}
-It is recommended that you use the default toolset (Xilinx Vivado) to build Matchstiq-Z1 bitstreams with OpenCPI. However, if you wish to use ISE instead, reference the README file in \path{assets/hdl/platforms/matchstiq_z1/}, and perform the following steps:
+It is recommended that you use the default toolset (Xilinx Vivado) to build Matchstiq-Z1 bitstreams with OpenCPI. However, if you wish to use ISE instead, reference the README file in \path{assets/hdl/platforms/matchstiq_z1/ise_constraints/}, and perform the following steps:
 \begin{enumerate}
 \item{Modify the target part in \path{assets/hdl/platforms/matchstiq_z1/matchstiq_z1.mk} to use the ISE alias:
-\subitem \code{HdlPart\_matchstiq\_z1=xc7z\_ise\_alias\_020-1-clg484}}
+\subitem \code{HdlPart\_matchstiq\_z1=xc7z020\_ise\_alias-1-clg484}}
 \item{Export the ISE constraints files found in \path{<assets/>hdl/platforms/matchstiq_z1/ise_constraints/} by modifying \code{ExportFiles} variable in \path{assets/hdl/platforms/matchstiq_z1/Makefile}:
 \subitem \code{ExportFiles=ise\_constraints/matchstiq\_z1.ucf ise\_constraints/matchstiq\_z1.ut matchstiq\_z1.mk}}
 \end{enumerate}

@@ -90,7 +90,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -102,7 +102,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \graphicspath{ {figures/} }
 
 \begin{document}
-
+\section*{Zipper Deprecation Notice:}
+Beginning with OpenCPI Version 1.5, support for Lime Microsystems' Zipper card is now deprecated.
 \section*{Summary - \Comp}
 \begin{tabular}{|c|M{13.5cm}|}
 	\hline
@@ -115,7 +116,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & February 2018 \\
+	Release Date      & April 2019 \\
 	\hline
 	Component Library & ocpi.assets.devices     \\
 	\hline
@@ -200,14 +201,21 @@ The main purpose of this worker is to perform a CDC for a data bus. The decision
 \subsection*{\comp.hdl}
 \begin{itemize}
 	\item assets/hdl/devices/lime\_adc.hdl/lime\_adc.vhd
-	\item core/hdl/primitives/util/sync\_status.vhd
-	      \begin{itemize}
-	      	\item Generates the overrun event when the ADC tries to load a sample and the ADC FIFO is full
-	      \end{itemize}
 	\item core/hdl/primitives/util/adc\_fifo.vhd
-	      \begin{itemize}
-	      	\item Performs the clock domain crossing from the sample clock to the control clock domain
-	      \end{itemize}
+    \begin{itemize}
+    		\item Performs the clock domain crossing from the sample clock to the control clock domain
+    \end{itemize}
+	\begin{itemize}
+		\item core/hdl/primitives/util/sync\_status.vhd
+	    \begin{itemize}
+    			\item Generates the overrun event when the ADC tries to load a	sample and the ADC FIFO is full
+		\end{itemize}
+		\item core/hdl/primitives/bsv/imports/SyncFIFO.v
+    		\begin{itemize}
+		    	\item Two-clocked CDC FIFO
+	    \end{itemize}
+	\end{itemize}
+
 \end{itemize}
 \begin{landscape}
 

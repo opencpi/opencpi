@@ -313,6 +313,21 @@ namespace OCPI {
       return false;
     }
 
+    static bool reject(const Assembly::Instance &inst, const Implementation &impl, const char *fmt, ...) {
+      if (OS::logWillLog(OCPI_LOG_INFO)) {
+	std::string reason;
+	va_list ap;
+	va_start(ap, fmt);
+	OU::formatAddV(reason, fmt, ap);
+	va_end(ap);
+	ocpiInfo("For application instance \"%s\" (spec %s), rejected implementation \"%s%s%s\" in "
+		 "\"%s\" due to %s", inst.name().c_str(), impl.m_metadataImpl.specName().c_str(),
+		 impl.m_metadataImpl.cname(), impl.m_staticInstance ? "/" : "",
+		 impl.m_staticInstance ? ezxml_cattr(impl.m_staticInstance, "name") : "",
+		 impl.m_artifact.name().c_str(), reason.c_str());
+      }
+      return false;
+    }
     // Perform connectivity checks for a candidate implementation for this instance
     // Return true if the implementation is still acceptable
     bool Assembly::Instance::
@@ -350,12 +365,10 @@ namespace OCPI {
 	      // We found the assembly connection port
 	      // Now check that the port connected in the assembly has the same
 	      // name as the port connected in the artifact
-	      if (!ap->m_connectedPort) {
-		ocpiInfo("Rejected \"%s\" because artifact has port '%s' connected while "
-			 "application doesn't.", i.m_artifact.name().c_str(),
-			 p->m_name.c_str());
-		return false;
-	      }
+	      if (!ap->m_connectedPort)
+		return reject(*this, i,
+			      "artifact having port \"%s\" connected while application doesn't.",
+			      p->m_name.c_str());
 	      // This check can only be made for the port of the internal connection that is
 	      // for a later instance, since null-named ports are resolved as each
 	      // instance is processed
@@ -364,10 +377,9 @@ namespace OCPI {
 			      c->port->m_name.c_str()) || // port name different
 		   assy.utilInstance(ap->m_connectedPort->m_instance).m_specName !=
 		   c->impl->m_metadataImpl.specName())) {             // or spec name different
-		ocpiInfo("Rejected \"%s\" due to incompatible connection on port \"%s\"",
-			 i.m_artifact.name().c_str(), p->m_name.c_str());
+		reject(*this, i, "incompatible connection on port \"%s\"", p->m_name.c_str());
 		ocpiInfo("Artifact connects it to port '%s' of spec '%s', "
-			 "but application wants port '%s' of spec '%s'",
+			 "but application connects it to port '%s' of spec '%s'",
 			 c->port->m_name.c_str(), c->impl->m_metadataImpl.specName().c_str(),
 			 ap->m_connectedPort->m_name.c_str(),
 			 assy.utilInstance(ap->m_connectedPort->m_instance).m_specName.c_str());

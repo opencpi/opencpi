@@ -1,6 +1,0 @@
-<tests useHDLFileIo='true'>
-  <input port='in' script='generate.py 100 12.5 32767 2048' messagesinfile='1' messagesize='8192' stressormode='full'/>
-  <output port='out' script='verify.py 100' messagesinfile='1' view='view.sh'/>
-  <property name='phs_inc' values='8192'/>
-  <property name='enable' values='0,1'/>
-</tests>

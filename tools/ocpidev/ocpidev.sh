@@ -504,6 +504,14 @@ EOF
 # PackageName defaults to the name of the directory
 # PackagePrefix defaults to local
 # Package defaults to PackagePrefix.PackageName
+#
+# ***************** WARNING ********************
+# When changing the PackageName or PackagePrefix of an existing project the
+# project needs to be both unregistered and re-registered then cleaned and
+# rebuilt. This also includes cleaning and rebuilding any projects that
+# depend on this project.
+# ***************** WARNING ********************
+#
 ${packagename:+PackageName=$packagename}
 ${packageprefix:+PackagePrefix=$packageprefix}
 ${package:+Package=$package}

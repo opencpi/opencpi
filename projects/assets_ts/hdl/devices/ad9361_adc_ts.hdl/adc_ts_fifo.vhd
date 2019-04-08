@@ -56,7 +56,6 @@ architecture rtl of adc_ts_fifo is
   signal fifo_s_enq         : std_logic;
   signal fifo_s_not_full    : std_logic;
   signal fifo_s_not_full_r  : std_logic := '0';
-  signal fifo_full_pulse    : std_logic := '0';
 begin
   -- when FIFO has data to give, ALWAYS dequeue (unless we're operating and wsi is not ready),
   -- note we will dequeue even when not operating (to alleviate forward pressure from ADC),
@@ -101,12 +100,14 @@ begin
     end if;
   end process;
 
-  fifo_full_pulse <= (not fifo_s_not_full) and fifo_s_not_full_r;
-
   overrun_event_reg : process(adc_clk)
   begin
     if rising_edge(adc_clk) then
-      overrun_event_r <= overrun_event;
+      if overrun_event = '1' then
+        overrun_event_r <= '1';
+      elsif fifo_s_enq = '1' then
+        overrun_event_r <= '0';
+      end if;
     end if;
   end process overrun_event_reg;
 

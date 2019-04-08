@@ -157,11 +157,8 @@ begin
   gen2: if mdata_info_width <= 1 and data_width > 0 generate
     MData <= data;
   end generate gen2;
-  -- If there is room in mdatainfo for abort, assign it
-  -- gen3: if mdata_info_width + mdata_width > data_width generate
-    MDataInfo(MDataInfo'left) <= to_bool(abort or state_r = NEED_EOF_e or (eof_now and state_r = BEFORE_SOM_E));
-  -- end generate gen3;
-
+  MDataInfo(MDataInfo'left) <= to_bool(abort or state_r = NEED_EOF_e or
+                                       (hdl_version > 1 and state_r = BEFORE_SOM_E and eof));
   process(Clk) is
     -- procedure to deal with the worker giving data
     procedure do_data is
@@ -226,7 +223,7 @@ begin
                 opcode_r <= opcode;
                 if its(early_som) then
                   state_r <= EARLY_SOM_e;
-                elsif its(eof_now) then
+                elsif hdl_version > 1 and eof then -- allow v2+ to "give" eof
                   state_r <= FINISHED_e;
                 else
                   do_som;

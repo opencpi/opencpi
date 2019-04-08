@@ -52,6 +52,8 @@ if test "$OCPI_CDK_DIR" = ""; then
   # mount -t nfs -o udp,nolock,soft,intr $1:/home/user/core /root/opencpi/mnt/ocpi_core
   # mkdir -p /root/opencpi/mnt/ocpi_assets
   # mount -t nfs -o udp,nolock,soft,intr $1:/home/user/assets /root/opencpi/mnt/ocpi_assets
+  # mkdir -p /root/opencpi/mnt/ocpi_assets_ts
+  # mount -t nfs -o udp,nolock,soft,intr $1:/home/user/assets /root/opencpi/mnt/ocpi_assets_ts
 
   break # this script will be rerun recursively by setup.sh
 fi

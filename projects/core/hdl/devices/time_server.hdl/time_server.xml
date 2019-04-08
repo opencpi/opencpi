@@ -1,4 +1,4 @@
-<HdlDevice language="vhdl">
+<HdlDevice language="vhdl" libraries='platform' sourcefiles='time_service.vhd'>
   <componentspec/>
   <!-- These two properties must be first -->
   <property name='timeNow' type='ulonglong' writable='1' volatile='1'/>

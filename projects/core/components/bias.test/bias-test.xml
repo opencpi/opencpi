@@ -1,7 +1,5 @@
-<tests ExcludeWorkers='bias.hdl'>
+<tests ExcludeWorkers='bias_ver.hdl' timeout='1000'>
   <property name='biasValue' value='0'/>
   <input port='in' stressorMode='full' file='test.input'/>
-  <output port='out' disableBackpressure='false' file='test.input'/>
-  <!-- <input port='in' file='test.input'/> -->
-  <!-- <output port='out' disableBackpressure='true' file='test.input'/> -->
+  <output port='out' file='test.input'/>
 </tests>

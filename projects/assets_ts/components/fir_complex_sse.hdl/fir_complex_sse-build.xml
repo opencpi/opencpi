@@ -1,8 +1,0 @@
-<build>
-  <configuration id='0'>
-    <parameter name='COEFF_WIDTH_p' value='16'/>
-  </configuration>
-  <configuration id='1'>
-    <parameter name='COEFF_WIDTH_p' value='8'/>
-  </configuration>
-</build>

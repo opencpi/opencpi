@@ -553,7 +553,7 @@ emitSignalMacros(FILE *f, Language lang) {
   bool first = true;
   for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
     Signal &s = **si;
-    if (s.m_directionExpr.length() && s.m_direction != Signal::UNUSED) {
+    if (s.m_directionExpr.length() && (s.m_direction != Signal::UNUSED || m_type == Container)) {
       if (first)
 	fprintf(f, "  %s Define signals that are parameterized\n", hdlComment(lang));
       first = false;

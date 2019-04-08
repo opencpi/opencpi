@@ -46,6 +46,8 @@ if test "$OCPI_CDK_DIR" = ""; then
   # mount -t nfs -o udp,nolock,soft,intr $1:/home/user/ocpi_projects/core /mnt/ocpi_core
   # mkdir -p /mnt/ocpi_assets
   # mount -t nfs -o udp,nolock,soft,intr $1:/home/user/ocpi_projects/assets /mnt/ocpi_assets
+  # mkdir -p /mnt/ocpi_assets_ts
+  # mount -t nfs -o udp,nolock,soft,intr $1:/home/user/ocpi_projects/assets_ts /mnt/ocpi_assets_ts
   # Below this line other projects can be included
   # Here is a template of including a BSP project
   # mkdir -p /mnt/bsp_<bsp_name>

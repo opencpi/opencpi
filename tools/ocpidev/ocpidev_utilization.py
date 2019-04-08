@@ -102,7 +102,8 @@ def parse_cl_vars():
     """)
 
     parser = argparse.ArgumentParser(description=description,
-                                     formatter_class=argparse.RawTextHelpFormatter)
+                                     formatter_class=argparse.RawTextHelpFormatter,
+                                     prog="ocpidev utilization")
     parser.print_help = types.MethodType(lambda self,
                                                 _=None: pydoc.pager("\n" + self.format_help()),
                                          parser)
@@ -197,7 +198,8 @@ def set_init_values(args, dir_type):
         args['init_libs'] = True
     if my_noun in ["hdl-platforms", "project"] or dir_type in ["hdl-platforms", "project"]:
         args['init_hdlplats'] = True
-
+    if my_noun == "library" and dir_type == "libraries":
+        args['init_libs_col'] = True
     if my_noun == "workers":
         if dir_type not in ["library", "libraries", "project"]:
             raise ocpiutil.OCPIException('Use of workers noun in an invalid directory type: "' +

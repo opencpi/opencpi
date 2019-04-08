@@ -51,6 +51,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		    \hline
 		    v1.4 & Updated for OpenCPI Release 1.4 & 9/2018 \\
 		    \hline
+		    v1.5 & Updated for OpenCPI Release 1.5 & 4/2019 \\
+		    \hline
 			\end{tabularx}
 		\end{table}
 	\end{center}
@@ -72,14 +74,10 @@ ChipScope Pro\footnote{Full title: ``ChipScope Pro Software and Cores (UG029)''}
 }
 \input{snippets/References_Table}
 \newpage
-\section{gdb}
-info on making sure workers are built with debug hooks
+\section{Debugging RCC Workers}
+RCC workers are built as dynamically loadable shared object files, with the .so suffix.  When an application uses a worker, it will be loaded on demand, even when the executable is statically linked itself.  To debug a worker, it is necessary to first start the debugger on the executable, which is either the ocpirun utility program or an ACI application.  In either case the first step is to run the executable under the debugger, establishing a generic breakpoint to enter the debugger at a point after workers are loaded, but before they are actually run.  Then breakpoints can be placed in the worker code itself. gdb is now provided as a prerequisite for all embedded platforms.  This means that the procedure that is provided below will work on any RCC platform.   
 \subsection{debugging using gdb command line}
 \begin{flushleft}
-RCC workers are built as dynamically loadable shared object files, with the .so suffix.  When an application uses a worker, it will be loaded on demand, even when the executable is statically linked itself.  To debug a worker, it is necessary to first start the debugger on the executable, which is either the ocpirun utility program or an ACI application.  \\
-\vspace{5mm}
-In either case the first step is to run the executable under the debugger, establishing a generic breakpoint to enter the debugger at a point after workers are loaded, but before they are actually run.  Then breakpoints can be placed in the worker code itself. \\
-\vspace{5mm}
 The initial breakpoint should be placed on the OCPI::RCC::Worker::Worker member function (an internal constructor).  This breakpoint will be hit for every worker in the application, after it is loaded, but before it ever is initialized (C) or constructed (C++). Note that although this initial breakpoint is at a constructor, it is not the actual constructor of the C++ worker, and not even in its inheritance hierarchy.\\
 \vspace{5mm}
 To determine whether the worker about to be constructed is the worker of interest, simply examine the ``name'' argument at this breakpoint  This is the instance name for the worker within the application.  If the name indicates a worker of interest you can now establish a breakpoint in the worker, either based on a source line number, or symbols in the worker.  in order to do this do the following:
@@ -106,24 +104,7 @@ There is now a breakpoint inside the worker of interest and the original breakpo
 	    \item yum install ddd
 	\end{itemize}
 To run this tool with an OpenCPI application simply type ddd in a console window and use the gdb console at the bottom the window to input commands.  The user will use the same commands as in the previous section (debugging using gdb command line) to debug a RCC worker.
-
-\subsection{gdb debugging on Zynq}
-\todo{Does not yet work}
-
-%Debugging from a embedded platform such as a zedboard or matchstiq requires extra steps to get working.  A debug server is hosted from the embedded platform and served up to your development pc to connect to for debugging.  Run the following commands on the embedded platform:
-%\begin{itemize}
-%\item gdbserver HOST:1234 ocpirun my\_appplication\_xml
-%\end{itemize}
-
-%Run the following commands on the host PC:
-%\begin{itemize}
-%\item ddd -debugger \$(OCPI\_XILINX\_EDK\_DIR)/gnu/arm/lin/bin/arm-xilinx-linux-gnueabi-gdb %\$(OCPI\_XILINX\_CDK\_DIR)/bin/linux-x13\_3-arm/ocpirun
-%\end{itemize}
-
-%There is now a remote connection to the debug server on the embedded platform.  The user will use the same commands as in the previous section (debugging using gdb command line) to debug a rcc worker.
-
 \end{flushleft}
-\section{ocpihdl}
 \section{FPGA Integrated Logic Analyzers}
 
 \begin{flushleft}
@@ -372,15 +353,9 @@ The generated bitstream contains the debug and ILA cores which will be recognize
 \end{flushleft}
 
 
-\newpage
-
-\begin{appendices}
-\appendix
-\section{Appendix - Acronym/Definitions} \label{App:AppendixA}
 \begin{flushleft}
 \end{flushleft}
 \newpage
 
-\end{appendices}
 
 \end{document}

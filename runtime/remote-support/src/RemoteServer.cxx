@@ -473,7 +473,7 @@ namespace OCPI {
     control(std::string &error) {
       const char *err;
       size_t inst, n;
-      bool get, set, op, wait, hex, getState = ezxml_cattr(m_rx, "getstate") != NULL;
+      bool get, set, op, wait, hex, unreadableOK, getState = ezxml_cattr(m_rx, "getstate") != NULL;
 
       if ((err = OX::getNumber(m_rx, "id",   &inst, NULL, 0, false, true)) ||
 	  (err = OX::getNumber(m_rx, "get",  &n,    &get, 0, false)) ||
@@ -481,6 +481,7 @@ namespace OCPI {
 	  (err = OX::getNumber(m_rx, "op",   &n,    &op,  0, false)) ||
 	  (err = OX::getNumber(m_rx, "wait", &n,    &wait,  0, false)) ||
 	  (err = OX::getBoolean(m_rx, "hex", &hex)) ||
+	  (err = OX::getBoolean(m_rx, "unreadable_ok", &unreadableOK)) ||
 	  inst >= m_members.size() || !m_members[inst].m_worker ||
 	  ((get || set) && n >= m_members[inst].m_worker->nProperties()))
 	return OU::eformat(error, "Control message error: %s", err);
@@ -510,8 +511,10 @@ namespace OCPI {
 	  }
 	  if (get) {
 	    OA::PropertyAttributes a;
+
 	    w.getProperty(p, m_response, *m, offset, dimension,
-			  OA::PropertyOptionList({ hex ? OA::HEX : OA::NONE, OA::APPEND }), &a);
+			  OA::PropertyOptionList({ hex ? OA::HEX : OA::NONE, OA::APPEND,
+				                   unreadableOK ? OA::UNREADABLE_OK : OA::NONE}), &a);
 	  } else
 	    w.setProperty(p, ezxml_txt(m_rx), *m, offset, dimension);
 	} else if (op)

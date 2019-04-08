@@ -38,6 +38,8 @@
  * buffer has been emptied to determine if the internal buffer needs to be resized.
  */
 
+/* DEPRECATION NOTICE: This worker is deprecated and will be removed in OpenCPI 2.0. Use the Zero Pad component for new designs. */
+
 #include "zero_padding-worker.hh"
 #include <cstdio>
 #include <cstring>

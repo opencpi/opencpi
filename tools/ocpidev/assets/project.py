@@ -777,7 +777,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         import _opencpi.assets.registry
         # If registry path is not provided, get the default
         default_registry_path = _opencpi.assets.registry.Registry.get_default_registry_dir()
-        if registry_path is None or registry_path == "":           
+        if registry_path is None or registry_path == "":
             # Get the default project registry set by the environment state
             registry_path = default_registry_path
         reg = self.registry()
@@ -917,12 +917,11 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         enviroment variable
         """
         reg = AssetFactory.factory("registry", Registry.get_registry_dir())
-        json_dict = reg.get_dict()
+        json_dict = reg.get_dict(True)
 
         env_proj_dict = cls.collect_projects_from_path()
         proj_dict = json_dict["projects"]
         proj_dict = ocpiutil.merge_two_dicts(env_proj_dict, proj_dict)
-
         json_dict["projects"] = proj_dict
 
         if details == "simple":

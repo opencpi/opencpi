@@ -17,5 +17,5 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-
+# DEPRECATION NOTICE: This worker is deprecated and will be removed in OpenCPI 2.0. Use the Zero Pad component for new designs.
 $OCPI_PROJECT_DIR/scripts/plotAndFft.py $1 real `echo "$OCPI_TEST_num_zeros+1*100" | bc` 1 &

@@ -43,13 +43,11 @@ fi
 for i in *_test.py; do
   echo "Running: $pyrun_command $i"
   $pyrun_command $i
-  # Run find the corresponding file in the CDK and run the doctest
-  doctest=`echo $OCPI_CDK_DIR/scripts/$i | sed -e 's/_test\.py$/\.py/g'`
-  if [ -e "$doctest" ]; then
-    echo "Running: $pyrun_command $doctest -v"
-    OCPI_CDK_DIR=$(pwd) $pyrun_command $doctest -v
-  fi
 done
+# Run doctest from the CDK 
+find $OCPI_CDK_DIR/$OCPI_TOOL_PLATFORM/lib/_opencpi/util ! -name "__init__.py" -name '*.py' |\
+  xargs python3 -m doctest -v 
+
 if [ "$pyrun_command" == "python3" ]; then
   echo "Skipping coverage report because the coverage command does not exist"
 else

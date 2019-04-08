@@ -53,6 +53,7 @@ begin
       --wsi_nsamps_per_time_in  => props_in.nsamps_per_time,
       --wsi_nsamps_per_time_out => props_out.nsamps_per_time,
       wsi_message_size    => props_in.messagesize,
+      wsi_time_valid      => open,
       adc_clk             => dev_adc_in.adc_clk,
       adc_reset           => open,
       adc_give            => dev_adc_in.adc_give,

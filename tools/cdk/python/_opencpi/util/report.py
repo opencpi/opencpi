@@ -25,8 +25,7 @@ import datetime
 from functools import reduce
 import operator
 import curses
-from .file import str_to_num, isint, isfloat
-from _opencpi.util import OCPIException
+from _opencpi.util import str_to_num, isint, isfloat, OCPIException
 
 # This function first finds the max-length of each 'column' and then iterates
 # through each list and reformats each element to match the length corresponding
@@ -39,8 +38,8 @@ def normalize_column_lengths(lists):
 
     For example (doctest):
     >>> list1, list2 = normalize_column_lengths([["15 chr long str",
-                                                  "this is a longgg string"],
-                                                 ["< 15", "pretty short"]])
+    ...                                          "this is a longgg string"],
+    ...                                          ["< 15", "pretty short"]])
     >>> print (str(list1))
     ['15 chr long str', 'this is a longgg string']
     >>> print (str(list2))
@@ -437,6 +436,7 @@ class Report(object):
 
 if __name__ == "__main__":
     import doctest
+    import sys
     __LOG_LEVEL = os.environ.get('OCPI_LOG_LEVEL')
     __VERBOSITY = False
     if __LOG_LEVEL:
@@ -446,3 +446,4 @@ if __name__ == "__main__":
         except ValueError:
             pass
     doctest.testmod(verbose=__VERBOSITY, optionflags=doctest.ELLIPSIS)
+    sys.exit(doctest.testmod()[0])

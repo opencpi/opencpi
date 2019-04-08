@@ -56,6 +56,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 			\hline
 			v1.4 & Updated recommendations for configuring OCPI\_LIBRARY\_PATH & 9/2018 \\
 			\hline
+			v1.5 & Deprecated Zipper; Moved to Appendix & 3/2019 \\
+			\hline
 			\end{tabularx}
 		\end{table}
 	\end{center}
@@ -74,11 +76,6 @@ This app is supported on the following hardware configurations:
   \item x86/ML605/FMCOMMS2 in FMC LPC slot
   \item x86/ML605/FMCOMMS3 in FMC LPC slot
   \item Matchstiq-Z1
-  \item Zedboard/Zipper/MyriadRF
-  \item x86/Stratix IV GX development kit (230 Edition)/Zipper/MyriadRF in HSMC A slot
-  \item x86/Stratix IV GX development kit (230 Edition)/Zipper/MyriadRF in HSMC B slot
-  \item x86/ML605/Zipper/MyriadRF in FMC LPC slot
-  \item x86/ML605/Zipper/MyriadRF in FMC HPC slot
 \end{itemize}
 
 \section{Description}
@@ -345,56 +342,6 @@ The FSK App may be run in one of five available modes. The modes are \textit{fil
 	\hline
 	\end{tabular}
 
-\subsection{Additional Dependencies for Zipper-related platforms (Zedboard, Stratix IV, ML605)}
-	\begin{tabular}{|c|c|c|c|c|c|}
-	\hline
-	\rowcolor{blue}
-	Application XML & filerw & rx & tx & txrx & bbloopback \\
-	\hline
-	app\_fsk\_rx\_zipper (dependency only, no build required) & • & x & • & • & • \\
-	\hline
-	app\_fsk\_tx\_zipper (dependency only, no build required) & • & • & x & • & • \\
-	\hline
-	app\_fsk\_txrx\_zipper (dependency only, no build required) & • & • & • & x & x \\
-	\hline
-	\rowcolor{blue}
-	RX Path Workers & filerw & rx & tx & txrx & bbloopback \\
-	\hline
-	lime\_adc.hdl & • & x & • & x & x \\
-	\hline
-	\rowcolor{blue}
-	TX Path Workers & filerw & rx & tx & txrx & bbloopback \\
-	\hline
-	lime\_dac.hdl & • & • & x & x & x \\
-	\hline
-	\rowcolor{blue}
-	Endpoint Proxies & filerw & rx & tx & txrx & bbloopback \\
-	\hline
-	zipper\_rx.rcc & • & x & • & x & x \\
-	\hline
-	zipper\_tx.rcc & • & • & x & x & x \\
-	\hline
-	\rowcolor{blue}
-	SPI Command and Control & filerw & rx & tx & txrx & bbloopback \\
-	\hline
-	lime\_rx\_proxy.rcc & • & x & • & x & x \\
-	\hline
-	lime\_rx.hdl & • & x & • & x & x \\
-	\hline
-	lime\_tx\_proxy.rcc & • & • & x & x & x \\
-	\hline
-	lime\_tx.hdl & • & • & x & x & x \\
-	\hline
-	lime\_spi.hdl & • & x & x & x & x \\
-	\hline
-	\rowcolor{blue}
-	I2C Command and Control & filerw & rx & tx & txrx & bbloopback \\
-	\hline
-	si5351\_proxy.rcc & • & x & x & x & x \\
-	\hline
-	si5351.hdl & • & x & x & x & x \\
-	\hline
-	\end{tabular}
 
 	\newpage
 \begin{landscape}
@@ -419,7 +366,7 @@ To build for the host platform (which is the case if ML605 or Stratix IV platfor
 \subsection{Baud Synchronization}
 The input filename for the application is idata/Os.jpeg. It is modified from an original JPEG image (see Figure \ref{fig:os_pic}) with data prepended to it for baud synchronization purposes (240 bytes of an alternating 1-0 pattern followed by 2 bytes are the value 0xFACE). In the receive data stream, real\_digitizer.rcc worker makes symbol/bit decisions and only sends out bits that occur after the first detected 0xFACE bit pattern (b1111101011001110).
 \subsection{Sample test setup}
-The test setup varies per mode of operation. The base test setup includes a hardware platform of choice and appropriate power and USB cables (Matchstiq-Z1 and Zedboard/Zipper use the USB cable to access the terminal via a program such as \textit{screen} or over a USB-over-Ethernet connection; Stratix IV and ML605 require a USB cable for JTAG loading). All other test modes expand upon this base configuration, and may or may not include additional RF cabling or external equipment.\par\medskip
+The test setup varies per mode of operation. The base test setup includes a hardware platform of choice and appropriate power and USB cables (Matchstiq-Z1 uses the USB cable to access the terminal via a program such as \textit{screen} or over a USB-over-Ethernet connection; Stratix IV and ML605 require a USB cable for JTAG loading). All other test modes expand upon this base configuration, and may or may not include additional RF cabling or external equipment.\par\medskip
 \noindent The \textit{filerw} mode requires only the base test setup since no transceiver operations are actuated (data passes to and from the FPGA in a ``loopback'' fashion). Upon application execution, the expected result is written to odata/out\_app\_fsk\_filerw.bin, which is a transmitted copy of the input file idata/Os.jpeg, without the prepended synchronizing pattern.\par\medskip
 \noindent The \textit{bbloopback} mode is similar to the \textit{filerw} mode, but data goes beyond the FPGA through the radio's built-in analog baseband loopback, and back into the FPGA. Because the data never reaches the TX/RX connectors, no external RF cabling is required. The expected result is a transmitted copy of the idata/Os.jpeg file as the output odata/out\_app\_fsk\_bbloopback.bin, without the prepended synchronizing pattern. Since this test is executed for a duration, rather than total image recognition, it is not uncommon that the output file will be larger than the actual size of the input image.\par\medskip
 \noindent The next mode is the \textit{rx} mode, which requires the base test setup with an RX antenna, as well as another transmitter (such as another platform running the \textit{tx} mode) in order to broadcast a known FSK signal. Optionally, a spectrum analyzer may be connected to the transmitter to visually verify that the signal being fed into the radio's RX input is an FSK signal at the correct RF frequency and bandwidth. The output is written to the file odata/out\_app\_fsk\_rx.bin, without the prepended synchronizing pattern. Since this test is executed for a duration, rather than total image recognition, it is not uncommon that the output file will be larger than the actual size of the input image.\par\medskip
@@ -596,80 +543,7 @@ For these platforms, follow the instructions contained in the FSK application's 
 \par\medskip
 
 \newpage
-\noindent\textbf{Recommended Library Path for Stratix IV GX230/Zipper in HSMC A}\\
 
-\noindent
-\noindent\textbf{\textit{rx}}\\
-\noindent
-\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.dc_offset_iq_imbalance_mixer_cic_dec_\| \\
-\verb|rp_cordic_fir_real_alst4_alst4_zipper_hsmc_alst4_port_a_rx_cnt_1rx_0tx_thruasm_zipper_\| \\
-\verb|hsmc_a_alst4.hdl.0.alst4.gz\| \\
-\verb|:../../core/artifacts:../../artifacts| \\
-
-\noindent\textbf{\textit{tx}}\\
-\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.mfsk2_zp16_fir_real_phase_to_amp_cordic_cic_int_\| \\
-\verb|alst4_alst4_zipper_hsmc_alst4_port_a_tx_cnt_0rx_1tx_thruasm_zipper_hsmc_a_alst4.hdl.0.alst4.gz\| \\
-\verb|:../../core/artifacts:../../artifacts| \\
-
-\noindent\textbf{\textit{txrx/bbloopback}}\\
-\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.fsk_modem_alst4_alst4_zipper_hsmc_alst4_\| \\
-\verb|port_a_rx_tx_cnt_1rx_1tx_thruasm_zipper_hsmc_a_alst4.hdl.0.alst4.gz\| \\
-\verb|:../../core/artifacts:../../artifacts| \\
-\par\medskip
-
-\noindent\textbf{Recommended Library Path for Stratix IV GX230/Zipper in HSMC B}\\
-
-\noindent\textbf{\textit{rx}}\\
-\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.dc_offset_iq_imbalance_mixer_cic_dec_rp_cordic_fir\| \\
-\verb|_real_alst4_alst4_zipper_hsmc_alst4_port_b_rx_cnt_1rx_0tx_thruasm_zipper_hsmc_b_alst4.hdl.0.alst4.gz\| \\
-\verb|:../../../core/artifacts:../../artifacts| \\
-
-\noindent\textbf{\textit{tx}}\\
-\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.mfsk2_zp16_fir_real_phase_to_amp_cordic_cic_int\| \\
-\verb|_alst4_alst4_zipper_hsmc_alst4_port_b_tx_cnt_0rx_1tx_thruasm_zipper_hsmc_b_alst4.hdl.0.alst4.gz\| \\
-\verb|:../../../core/artifacts:../../artifacts| \\
-
-\noindent\textbf{\textit{txrx/bbloopback}}\\
-\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.fsk_modem_alst4_alst4_zipper_hsmc_alst4_\| \\
-\verb|port_b_rx_tx_cnt_1rx_1tx_thruasm_zipper_hsmc_b_alst4.hdl.0.alst4.gz\| \\
-\verb|:../../../core/artifacts:../../artifacts| \\
-\par\medskip
-
-\pagebreak
-
-\noindent\textbf{Recommended Library Path for ML605/Zipper in FMC LPC}\\
-
-\noindent\textbf{\textit{rx}}\\
-\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.dc_offset_iq_imbalance_mixer_cic_dec_rp_cordic\| \\
-\verb|_fir_real_ml605_ml605_zipper_fmc_lpc_rx_cnt_1rx_0tx_thruasm_zipper_lpc_ml605.hdl.0.ml605.gz\| \\
-\verb|:../../../core/artifacts:../../artifacts| \\
-
-\noindent\textbf{\textit{tx}}\\
-\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.fsk_modem_ml605_ml605\| \\
-\verb|_zipper_fmc_lpc_rx_tx_cnt_1rx_1tx_thruasm_zipper_lpc_ml605.hdl.0.ml605.gz\| \\
-\verb|:../../../core/artifacts:../../artifacts| \\
-
-\noindent\textbf{\textit{txrx/bbloopback}}\\
-\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.fsk_modem_ml605_ml605\| \\
-\verb|_zipper_fmc_lpc_rx_tx_cnt_1rx_1tx_thruasm_zipper_lpc_ml605.hdl.0.ml605.gz\| \\
-\verb|:../../../core/artifacts:../../artifacts| \\
-\par\medskip
-
-\noindent\textbf{Example ML605/Zipper in FMC HPC}\\
-\noindent\textbf{\textit{rx}}\\
-\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.dc_offset_iq_imbalance_mixer_cic_dec_rp_cordic\| \\
-\verb|_fir_real_ml605_ml605_zipper_fmc_hpc_rx_cnt_1rx_0tx_thruasm_zipper_hpc_ml605.hdl.0.ml605.gz\| \\
-\verb|:../../../core/artifacts:../../artifacts| \\
-
-\noindent\textbf{\textit{tx}}\\
-\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.mfsk2_zp16_fir_real_phase_to_amp_cordic_cic_int\| \\
-\verb|_ml605_ml605_zipper_fmc_hpc_tx_cnt_0rx_1tx_thruasm_zipper_hpc_ml605.hdl.0.ml605.gz\| \\
-\verb|:../../../core/artifacts:../../artifacts| \\
-
-\noindent\textbf{\textit{txrx/bbloopback}}\\
-\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.fsk_modem_ml605_ml605\| \\
-\verb|_zipper_fmc_hpc_rx_tx_cnt_1rx_1tx_thruasm_zipper_hpc_ml605.hdl.0.ml605.gz\| \\
-\verb|:../../../core/artifacts:../../artifacts| \\
 \pagebreak
 
 \subsection{Expected results}
@@ -702,8 +576,6 @@ For these platforms, follow the instructions contained in the FSK application's 
     the same clock, carrier recovery is not
     expected to be an issue.
 
-  \item For more information on known limitations when using the Zipper-related platforms (Zedboard, Stratix IV, ML605), see the document Myriad-RF\_1\_Zipper\_Limitations included with this project.
-  \item  On x86 host machines with more than one Stratix IV and/or ML605s plugged into PCIe slots, this app will assume that the first found Stratix IV/ML605 has a Zipper/MyriadRF plugged in. The first found Stratix IV/ML605 will be used during execution. While there are means to address this issue, they have not been implemented for the current release.
 \end{itemize}
 
 \section{Appendix A: Worker Parameters}
@@ -972,7 +844,243 @@ mfsk2\_zp16\_fir\_real\_phase\_to\_amp\_cordic\_cic\_int\_matchstiq\_z1\_matchst
 	\end{minipage}
 	\end{itemize}
 \pagebreak
-\subsection{Zedboard/Zipper}
+
+
+
+\subsection{ML605/FMCOMMS2/3}
+	\noindent\textbf{filerw (FMCOMMS2/3 not required)}
+	\begin{itemize}
+	\begin{minipage}[t]{.5\textwidth}
+	\item fsk\_filerw\_ml605\_base.bitz
+	\item target-centos7/file\_read\_s.so
+	\item target-centos7/Baudtracking\_simple\_s.so
+	\end{minipage}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-centos7/real\_digitizer\_s.so
+	\item target-centos7/file\_write\_s.so
+	\end{minipage}
+	\end{itemize}
+
+	\noindent\textbf{rx}
+	\begin{itemize}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-centos7/file\_read\_s.so
+	\item target-centos7/Baudtracking\_simple\_s.so
+	\item target-centos7/real\_digitizer\_s.so
+	\end{minipage}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-centos7/zipper\_rx\_s.so
+	\item target-centos7/lime\_rx\_proxy\_s.so
+	\item target-centos7/si5351\_proxy\_s.so
+	\end{minipage}
+	\end{itemize}
+	\noindent For FMCOMMS2/3 plugged into FMC LPC:
+	\begin{itemize}
+	\item dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_timestamper\_ml605\_cfg\_1rx\_0tx \\
+\_fmcomms\_2\_3\_lpc\_lvds\_cnt\_1rx\_0tx\_thruasm\_fmcomms\_2\_3\_lpc\_LVDS\_ml605.bitz
+	\end{itemize}
+	\noindent For FMCOMMS2/3 plugged into FMC HPC:
+	\begin{itemize}
+	\item dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_timestamper\_ml605\_cfg\_1rx\_0tx \\
+\_fmcomms\_2\_3\_hpc\_lvds\_cnt\_1rx\_0tx\_thruasm\_fmcomms\_2\_3\_hpc\_LVDS\_ml605.bitz
+	\end{itemize}
+
+	\noindent\textbf{tx}
+	\begin{itemize}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-centos7/file\_read\_s.so
+	\item target-centos7/zipper\_tx\_s.so
+	\end{minipage}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-centos7/lime\_tx\_proxy\_s.so
+	\item target-centos7/si5351\_proxy\_s.so
+	\end{minipage}
+	\end{itemize}
+	For Zipper plugged into FMC LPC:
+	\begin{itemize}
+		\item mfsk2\_zp16\_fir\_real\_phase\_to\_amp\_cordic\_cic\_int\_ml605\_cfg\_0rx\\
+\_1tx\_fmcomms\_2\_3\_lpc\_lvds\_cnt\_0rx\_1tx\_thruasm\_fmcomms\_2\_3\_lpc\_LVDS\_ml605.bitz
+	\end{itemize}
+
+	\noindent\textbf{txrx/bbloopback}
+	\begin{itemize}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-centos7/file\_read\_s.so
+	\item target-centos7/Baudtracking\_simple\_s.so
+	\item target-centos7/real\_digitizer\_s.so
+	\item target-centos7/zipper\_rx\_s.so
+	\end{minipage}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-centos7/zipper\_tx\_s.so
+	\item target-centos7/lime\_rx\_proxy\_s.so
+	\item target-centos7/lime\_tx\_proxy\_s.so
+	\item target-centos7/si5351\_proxy\_s.so
+	\end{minipage}
+	\end{itemize}
+	For Zipper plugged into FMC LPC:
+	\begin{itemize}
+		\item fsk\_modem\_ml605\_cfg\_1rx\_1tx\_fmcomms\_2\_3\_lpc\_lvds\_cnt\_1rx\_1tx\\
+\_thruasm\_fmcomms\_2\_3\_lpc\_LVDS\_ml605.bitz
+	\end{itemize}
+
+
+
+
+
+
+
+\section{Appendix C: Deprecated Zipper}
+Beginning with OpenCPI Version 1.5, Support for Lime Microsystems' Zipper card is now deprecated, and the following have been removed from the main body of this document:\medskip
+
+\subsection{Supported Hardware Setups}
+This app is supported on the following hardware configurations:
+\begin{itemize}
+  \item Zedboard/Zipper/MyriadRF
+  \item x86/Stratix IV GX development kit (230 Edition)/Zipper/MyriadRF in HSMC A slot
+  \item x86/Stratix IV GX development kit (230 Edition)/Zipper/MyriadRF in HSMC B slot
+  \item x86/ML605/Zipper/MyriadRF in FMC LPC slot
+  \item x86/ML605/Zipper/MyriadRF in FMC HPC slot
+\end{itemize}
+
+\subsection{Known Issues}
+\noindent
+\begin{itemize}
+  \item For more information on known limitations when using the Zipper-related platforms (Zedboard, Stratix IV, ML605), see the document Myriad-RF\_1\_Zipper\_Limitations included with this project.
+  \item  On x86 host machines with more than one Stratix IV and/or ML605s plugged into PCIe slots, this app will assume that the first found Stratix IV/ML605 has a Zipper/MyriadRF plugged in. The first found Stratix IV/ML605 will be used during execution. While there are means to address this issue, they have not been implemented for the current release.
+\end{itemize}
+
+\subsection{Additional Dependencies for Zipper-related platforms (Zedboard, Stratix IV, ML605)}
+	\begin{tabular}{|c|c|c|c|c|c|}
+	\hline
+	\rowcolor{blue}
+	Application XML & filerw & rx & tx & txrx & bbloopback \\
+	\hline
+	app\_fsk\_rx\_zipper (dependency only, no build required) & • & x & • & • & • \\
+	\hline
+	app\_fsk\_tx\_zipper (dependency only, no build required) & • & • & x & • & • \\
+	\hline
+	app\_fsk\_txrx\_zipper (dependency only, no build required) & • & • & • & x & x \\
+	\hline
+	\rowcolor{blue}
+	RX Path Workers & filerw & rx & tx & txrx & bbloopback \\
+	\hline
+	lime\_adc.hdl & • & x & • & x & x \\
+	\hline
+	\rowcolor{blue}
+	TX Path Workers & filerw & rx & tx & txrx & bbloopback \\
+	\hline
+	lime\_dac.hdl & • & • & x & x & x \\
+	\hline
+	\rowcolor{blue}
+	Endpoint Proxies & filerw & rx & tx & txrx & bbloopback \\
+	\hline
+	zipper\_rx.rcc & • & x & • & x & x \\
+	\hline
+	zipper\_tx.rcc & • & • & x & x & x \\
+	\hline
+	\rowcolor{blue}
+	SPI Command and Control & filerw & rx & tx & txrx & bbloopback \\
+	\hline
+	lime\_rx\_proxy.rcc & • & x & • & x & x \\
+	\hline
+	lime\_rx.hdl & • & x & • & x & x \\
+	\hline
+	lime\_tx\_proxy.rcc & • & • & x & x & x \\
+	\hline
+	lime\_tx.hdl & • & • & x & x & x \\
+	\hline
+	lime\_spi.hdl & • & x & x & x & x \\
+	\hline
+	\rowcolor{blue}
+	I2C Command and Control & filerw & rx & tx & txrx & bbloopback \\
+	\hline
+	si5351\_proxy.rcc & • & x & x & x & x \\
+	\hline
+	si5351.hdl & • & x & x & x & x \\
+	\hline
+	\end{tabular}
+ 
+\medskip
+
+\subsection{Zipper Recommended Library Path}
+\noindent\textbf{Recommended Library Path for Stratix IV GX230/Zipper in HSMC A}\\
+
+\noindent
+\noindent\textbf{\textit{rx}}\\
+\noindent
+\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.dc_offset_iq_imbalance_mixer_cic_dec_\| \\
+\verb|rp_cordic_fir_real_alst4_alst4_zipper_hsmc_alst4_port_a_rx_cnt_1rx_0tx_thruasm_zipper_\| \\
+\verb|hsmc_a_alst4.hdl.0.alst4.gz\| \\
+\verb|:../../core/artifacts:../../artifacts| \\
+
+\noindent\textbf{\textit{tx}}\\
+\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.mfsk2_zp16_fir_real_phase_to_amp_cordic_cic_int_\| \\
+\verb|alst4_alst4_zipper_hsmc_alst4_port_a_tx_cnt_0rx_1tx_thruasm_zipper_hsmc_a_alst4.hdl.0.alst4.gz\| \\
+\verb|:../../core/artifacts:../../artifacts| \\
+
+\noindent\textbf{\textit{txrx/bbloopback}}\\
+\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.fsk_modem_alst4_alst4_zipper_hsmc_alst4_\| \\
+\verb|port_a_rx_tx_cnt_1rx_1tx_thruasm_zipper_hsmc_a_alst4.hdl.0.alst4.gz\| \\
+\verb|:../../core/artifacts:../../artifacts| \\
+\par\medskip
+
+\noindent\textbf{Recommended Library Path for Stratix IV GX230/Zipper in HSMC B}\\
+
+\noindent\textbf{\textit{rx}}\\
+\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.dc_offset_iq_imbalance_mixer_cic_dec_rp_cordic_fir\| \\
+\verb|_real_alst4_alst4_zipper_hsmc_alst4_port_b_rx_cnt_1rx_0tx_thruasm_zipper_hsmc_b_alst4.hdl.0.alst4.gz\| \\
+\verb|:../../../core/artifacts:../../artifacts| \\
+
+\noindent\textbf{\textit{tx}}\\
+\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.mfsk2_zp16_fir_real_phase_to_amp_cordic_cic_int\| \\
+\verb|_alst4_alst4_zipper_hsmc_alst4_port_b_tx_cnt_0rx_1tx_thruasm_zipper_hsmc_b_alst4.hdl.0.alst4.gz\| \\
+\verb|:../../../core/artifacts:../../artifacts| \\
+
+\noindent\textbf{\textit{txrx/bbloopback}}\\
+\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.fsk_modem_alst4_alst4_zipper_hsmc_alst4_\| \\
+\verb|port_b_rx_tx_cnt_1rx_1tx_thruasm_zipper_hsmc_b_alst4.hdl.0.alst4.gz\| \\
+\verb|:../../../core/artifacts:../../artifacts| \\
+\par\medskip
+
+
+\noindent\textbf{Recommended Library Path for ML605/Zipper in FMC LPC}\\
+
+\noindent\textbf{\textit{rx}}\\
+\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.dc_offset_iq_imbalance_mixer_cic_dec_rp_cordic\| \\
+\verb|_fir_real_ml605_ml605_zipper_fmc_lpc_rx_cnt_1rx_0tx_thruasm_zipper_lpc_ml605.hdl.0.ml605.gz\| \\
+\verb|:../../../core/artifacts:../../artifacts| \\
+
+\noindent\textbf{\textit{tx}}\\
+\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.fsk_modem_ml605_ml605\| \\
+\verb|_zipper_fmc_lpc_rx_tx_cnt_1rx_1tx_thruasm_zipper_lpc_ml605.hdl.0.ml605.gz\| \\
+\verb|:../../../core/artifacts:../../artifacts| \\
+
+\noindent\textbf{\textit{txrx/bbloopback}}\\
+\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.fsk_modem_ml605_ml605\| \\
+\verb|_zipper_fmc_lpc_rx_tx_cnt_1rx_1tx_thruasm_zipper_lpc_ml605.hdl.0.ml605.gz\| \\
+\verb|:../../../core/artifacts:../../artifacts| \\
+\par\medskip
+
+\noindent\textbf{Example ML605/Zipper in FMC HPC}\\
+\noindent\textbf{\textit{rx}}\\
+\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.dc_offset_iq_imbalance_mixer_cic_dec_rp_cordic\| \\
+\verb|_fir_real_ml605_ml605_zipper_fmc_hpc_rx_cnt_1rx_0tx_thruasm_zipper_hpc_ml605.hdl.0.ml605.gz\| \\
+\verb|:../../../core/artifacts:../../artifacts| \\
+
+\noindent\textbf{\textit{tx}}\\
+\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.mfsk2_zp16_fir_real_phase_to_amp_cordic_cic_int\| \\
+\verb|_ml605_ml605_zipper_fmc_hpc_tx_cnt_0rx_1tx_thruasm_zipper_hpc_ml605.hdl.0.ml605.gz\| \\
+\verb|:../../../core/artifacts:../../artifacts| \\
+
+\noindent\textbf{\textit{txrx/bbloopback}}\\
+\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.fsk_modem_ml605_ml605\| \\
+\verb|_zipper_fmc_hpc_rx_tx_cnt_1rx_1tx_thruasm_zipper_hpc_ml605.hdl.0.ml605.gz\| \\
+\verb|:../../../core/artifacts:../../artifacts| \\
+
+
+\pagebreak
+
+\subsection{Artifacts: Zedboard/Zipper}
 	\noindent\textbf{filerw (zipper not required)}
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
@@ -1034,7 +1142,7 @@ mfsk2\_zp16\_fir\_real\_phase\_to\_amp\_cordic\_cic\_int\_matchstiq\_z1\_matchst
 	\end{itemize}
 
 \pagebreak
-\subsection{Stratix IV/Zipper}
+\subsection{Artifacts: Stratix IV/Zipper}
 	\noindent\textbf{filerw (zipper not required)}
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
@@ -1120,93 +1228,8 @@ mfsk2\_zp16\_fir\_real\_phase\_to\_amp\_cordic\_cic\_int\_matchstiq\_z1\_matchst
 
 
 
-
-
 \pagebreak
-\subsection{ML605/FMCOMMS2/3}
-	\noindent\textbf{filerw (FMCOMMS2/3 not required)}
-	\begin{itemize}
-	\begin{minipage}[t]{.5\textwidth}
-	\item fsk\_filerw\_ml605\_base.bitz
-	\item target-centos7/file\_read\_s.so
-	\item target-centos7/Baudtracking\_simple\_s.so
-	\end{minipage}
-	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/real\_digitizer\_s.so
-	\item target-centos7/file\_write\_s.so
-	\end{minipage}
-	\end{itemize}
-
-	\noindent\textbf{rx}
-	\begin{itemize}
-	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/file\_read\_s.so
-	\item target-centos7/Baudtracking\_simple\_s.so
-	\item target-centos7/real\_digitizer\_s.so
-	\end{minipage}
-	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/zipper\_rx\_s.so
-	\item target-centos7/lime\_rx\_proxy\_s.so
-	\item target-centos7/si5351\_proxy\_s.so
-	\end{minipage}
-	\end{itemize}
-	\noindent For FMCOMMS2/3 plugged into FMC LPC:
-	\begin{itemize}
-	\item dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_timestamper\_ml605\_cfg\_1rx\_0tx \\
-\_fmcomms\_2\_3\_lpc\_lvds\_cnt\_1rx\_0tx\_thruasm\_fmcomms\_2\_3\_lpc\_LVDS\_ml605.bitz
-	\end{itemize}
-	\noindent For FMCOMMS2/3 plugged into FMC HPC:
-	\begin{itemize}
-	\item dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_timestamper\_ml605\_cfg\_1rx\_0tx \\
-\_fmcomms\_2\_3\_hpc\_lvds\_cnt\_1rx\_0tx\_thruasm\_fmcomms\_2\_3\_hpc\_LVDS\_ml605.bitz
-	\end{itemize}
-
-	\noindent\textbf{tx}
-	\begin{itemize}
-	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/file\_read\_s.so
-	\item target-centos7/zipper\_tx\_s.so
-	\end{minipage}
-	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/lime\_tx\_proxy\_s.so
-	\item target-centos7/si5351\_proxy\_s.so
-	\end{minipage}
-	\end{itemize}
-	For Zipper plugged into FMC LPC:
-	\begin{itemize}
-		\item mfsk2\_zp16\_fir\_real\_phase\_to\_amp\_cordic\_cic\_int\_ml605\_cfg\_0rx\\
-\_1tx\_fmcomms\_2\_3\_lpc\_lvds\_cnt\_0rx\_1tx\_thruasm\_fmcomms\_2\_3\_lpc\_LVDS\_ml605.bitz
-	\end{itemize}
-
-	\noindent\textbf{txrx/bbloopback}
-	\begin{itemize}
-	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/file\_read\_s.so
-	\item target-centos7/Baudtracking\_simple\_s.so
-	\item target-centos7/real\_digitizer\_s.so
-	\item target-centos7/zipper\_rx\_s.so
-	\end{minipage}
-	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/zipper\_tx\_s.so
-	\item target-centos7/lime\_rx\_proxy\_s.so
-	\item target-centos7/lime\_tx\_proxy\_s.so
-	\item target-centos7/si5351\_proxy\_s.so
-	\end{minipage}
-	\end{itemize}
-	For Zipper plugged into FMC LPC:
-	\begin{itemize}
-		\item fsk\_modem\_ml605\_cfg\_1rx\_1tx\_fmcomms\_2\_3\_lpc\_lvds\_cnt\_1rx\_1tx\\
-\_thruasm\_fmcomms\_2\_3\_lpc\_LVDS\_ml605.bitz
-	\end{itemize}
-
-
-
-
-
-
-
-\pagebreak
-\subsection{ML605/Zipper}
+\subsection{Artifacts: ML605/Zipper}
 	\noindent\textbf{filerw (zipper not required)}
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}

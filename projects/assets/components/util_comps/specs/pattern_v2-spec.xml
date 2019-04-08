@@ -8,7 +8,7 @@
 
     <Property Name="numMessagesMax" Parameter="true" Type="uLong" Default="5" Description="Max number of messages to send."/>
 
-    <Property Name="messagesToSend" Type="uLong" Volatile="true" Writable="true" Default="5" Description="Counter of messages to send. This value must be
+    <Property Name="messagesToSend" Type="uLong" Volatile="true" Initial="true" Default="5" Description="Counter of messages to send. This value must be
     less than or equal to numMessagesMax. Decrements as they are sent."/>
 
     <Property Name="messagesSent" Type="uLong" Volatile="true" Description="Messages sent counter. Initialized to 0."/>
@@ -24,7 +24,7 @@
     always be 2 since there are 2 message fields; the number of data bytes and opcode. So the default value must not be changed."/>
 
     <Property Name="messages" Type="uLong" ArrayDimensions="numMessagesMax, numMessageFields" Initial="true" Description="Multidimensional array that defines
-    the record of messages to send, as well as, defines the number of data bytes and an opcode for each message."/>
+    the record of messages to send, as well as, defines the number of data bytes and an 8 bit opcode for each message."/>
 
     <Property Name="data" Type="uLong" ArrayLength="numDataWords" Initial="true" Description="Data buffer containing the data to be sent."/>
 </ComponentSpec>

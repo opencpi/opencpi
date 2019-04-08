@@ -1,0 +1,131 @@
+<!--  ___________________________________________________________________    -->
+<!-- +                                                                   +   -->
+<!-- |                       ad9361_config_proxy.rcc                     |   -->
+<!-- +___________________________________________________________________+   -->
+<!--   ^                                                                     -->
+<!--   |  slave                                                              -->
+<!--   |  interface                                                          -->
+<!--   |                                                                     -->
+<!--  _V_______________________                                              -->
+<!-- +                         +                                             -->
+<!-- | ad9361_config_ts.hdl    |                                             -->
+<!-- +_________________________+                                             -->
+<!--                                                                         -->
+<RccWorker language='c++' slave='ad9361_config_ts.hdl' spec='ad9361_config_proxy-spec'
+	   controloperations='initialize'
+	   staticprereqlibs='ad9361'
+	   sourcefiles='ad9361_platform.cc'
+	   >
+
+  <!--**** PROPERTIES CORRESPONDING TO libad9361 "STANDARD" API (ad9361_api.h)****-->
+  <specproperty name='ad9361_init'                           writesync='true'/>
+  <specproperty name='ad9361_rf_phy'         readsync='true'                 />
+  <specproperty name='en_state_machine_mode' readsync='true' writesync='true'/>
+  <specproperty name='rx_rf_gain'            readsync='true' writesync='true'/>
+  <specproperty name='rx_rf_bandwidth'       readsync='true' writesync='true'/>
+  <specproperty name='rx_sampling_freq'      readsync='true' writesync='true'/>
+  <specproperty name='rx_lo_freq'            readsync='true' writesync='true'/>
+  <specproperty name='rx_lo_int_ext'                         writesync='true'/>
+  <specproperty name='rx_rssi'               readsync='true'                 />
+  <specproperty name='rx_gain_control_mode'  readsync='true' writesync='true'/>
+  <specproperty name='rx_fir_config_write'                   writesync='true'/>
+  <specproperty name='rx_fir_config_read'    readsync='true'                 />
+  <specproperty name='rx_fir_en_dis'         readsync='true' writesync='true'/>
+  <specproperty name='rx_rfdc_track_en_dis'  readsync='true' writesync='true'/>
+  <specproperty name='rx_bbdc_track_en_dis'  readsync='true' writesync='true'/>
+  <specproperty name='rx_quad_track_en_dis'  readsync='true' writesync='true'/>
+  <specproperty name='rx_rf_port_input'      readsync='true' writesync='true'/>
+  <specproperty name='rx_fastlock_store'                     writesync='true'/>
+  <specproperty name='rx_fastlock_recall'                    writesync='true'/>
+  <specproperty name='rx_fastlock_load'                      writesync='true'/>
+  <specproperty name='rx_fastlock_save'                      writesync='true'/>
+  <specproperty name='tx_attenuation'        readsync='true' writesync='true'/>
+  <specproperty name='tx_rf_bandwidth'       readsync='true' writesync='true'/>
+  <specproperty name='tx_sampling_freq'      readsync='true' writesync='true'/>
+  <specproperty name='tx_lo_freq'            readsync='true' writesync='true'/>
+  <specproperty name='tx_lo_int_ext'                         writesync='true'/>
+  <specproperty name='tx_fir_config_write'                   writesync='true'/>
+  <specproperty name='tx_fir_config_read'    readsync='true'                 />
+  <specproperty name='tx_fir_en_dis'         readsync='true' writesync='true'/>
+  <specproperty name='tx_rssi'               readsync='true'                 />
+  <specproperty name='tx_rf_port_output'     readsync='true' writesync='true'/>
+  <specproperty name='tx_auto_cal_en_dis'    readsync='true' writesync='true'/>
+  <specproperty name='tx_fastlock_store'                     writesync='true'/>
+  <specproperty name='tx_fastlock_recall'                    writesync='true'/>
+  <specproperty name='tx_fastlock_load'                      writesync='true'/>
+  <specproperty name='tx_fastlock_save'                      writesync='true'/>
+  <specproperty name='trx_path_clks'         readsync='true' writesync='true'/>
+  <specproperty name='no_ch_mode'                            writesync='true'/>
+  <!--specproperty name='do_mcs'/--> <!-- TODO / FIXME - fill in this functionality, which would require synchronization with another instance of this worker somehow... -->
+  <specproperty name='trx_fir_en_dis'                        writesync='true'/>
+  <specproperty name='trx_rate_gov'          readsync='true' writesync='true'/>
+  <specproperty name='do_calib'                              writesync='true'/>
+  <specproperty name='trx_load_enable_fir'                   writesync='true'/>
+  <specproperty name='do_dcxo_tune_coarse'                   writesync='true'/>
+  <specproperty name='do_dcxo_tune_fine'                     writesync='true'/>
+  <specproperty name='temperature'           readsync='true'                 />
+
+  <!--****** PROPERTIES CORRESPONDING TO libad9361 "ADVANCED" API (ad9361.h) *****-->
+  <specproperty name='bist_loopback'         readsync='true' writesync='true'/>
+  <specproperty name='bist_prbs'             readsync='true' writesync='true'/>
+  <specproperty name='bist_tone'             readsync='true' writesync='true'/>
+
+  <!--  PROPERTIES CORRESPONDING TO FUNCTIONALITY IMPLEMENTED OUTSIDE libad9361   -->
+  <specproperty name='DATA_CLK_Delay'        readsync='true'                />
+  <specproperty name='Rx_Data_Delay'         readsync='true'                />
+  <specproperty name='FB_CLK_Delay'          readsync='true'                />
+  <specproperty name='Tx_Data_Delay'         readsync='true'                />
+  <specproperty name='THB3_Enable_and_Interp' readsync='true'                />
+  <specproperty name='THB2_Enable'           readsync='true'                 />
+  <specproperty name='THB1_Enable'           readsync='true'                 />
+  <specproperty name='RHB3_Enable_and_Decimation' readsync='true'            />
+  <specproperty name='RHB2_Enable'           readsync='true'                 />
+  <specproperty name='RHB1_Enable'           readsync='true'                 />
+  <specproperty name='DAC_Clk_div2'          readsync='true'                 />
+  <specproperty name='BBPLL_Divider'         readsync='true'                 />
+  <specproperty name='Fractional_BB_Frequency_Word' readsync='true'          />
+  <specproperty name='Integer_BB_Frequency_Word'    readsync='true'          />
+  <specproperty name='BBPLL_Ref_Clock_Scaler'       readsync='true'          />
+  <specproperty name='Tx_BBF_Tune_Divider'   readsync='true'                 />
+  <specproperty name='Tx_Secondary_Filter_Resistor'  readsync='true'         />
+  <specproperty name='Tx_Secondary_Filter_Capacitor' readsync='true'         />
+  <specproperty name='Rx_BBF_Tune_Divide'    readsync='true'                 />
+  <specproperty name='bb_pll_is_locked'      readsync='true'                 />
+  <specproperty name='rx_pll_is_locked'      readsync='true'                 />
+  <specproperty name='rx_fastlock_delete'                    writesync='true'/>
+  <specproperty name='tx_pll_is_locked'      readsync='true'                 />
+  <specproperty name='tx_fastlock_delete'                    writesync='true'/>
+  <specproperty name='rx_vco_divider'        readsync='true'                 />
+  <specproperty name='rx_vco_n_integer'      readsync='true'                 />
+  <specproperty name='rx_vco_n_fractional'   readsync='true'                 />
+  <specproperty name='Rx_Ref_Divider'        readsync='true'                 />
+  <specproperty name='tx_vco_divider'        readsync='true'                 />
+  <specproperty name='tx_vco_n_integer'      readsync='true'                 />
+  <specproperty name='tx_vco_n_fractional'   readsync='true'                 />
+  <specproperty name='Tx_Ref_Divider'        readsync='true'                 />
+  <specproperty name='Tx_Channel_Swap'       readsync='true'                 />
+  <specproperty name='Rx_Channel_Swap'       readsync='true'                 />
+  <specproperty name='LVDS'                  readsync='true'                 />
+  <specproperty name='single_port'           readsync='true'                 />
+  <specproperty name='swap_ports'            readsync='true'                 />
+  <specproperty name='half_duplex'           readsync='true'                 />
+  <specproperty name='data_rate_config'      readsync='true'                 />
+  <specproperty name='DATA_CLK_P_rate_Hz'    readsync='true'                 />
+  <specproperty name='BIST_Mask_Channel_2_Q_data' readsync='true' writesync='true'/>
+  <specproperty name='BIST_Mask_Channel_2_I_data' readsync='true' writesync='true'/>
+  <specproperty name='BIST_Mask_Channel_1_Q_data' readsync='true' writesync='true'/>
+  <specproperty name='BIST_Mask_Channel_1_I_data' readsync='true' writesync='true'/>
+
+  <!-- This property would ideally exist in the OCS, but was added to this OWD
+       instead in order to maintain backwards compatibility of workers based on
+       the OCS. -->
+  <property name='digital_rx_block_delay_sec' type='struct'
+                                              sequencelength='2'
+                                              volatile='true'
+                                              readsync='true'
+                                              description='See UG-570 equation 14.'>
+    <member name='rf_port' type='enum' enums='RX1,RX2'/>
+    <member name='delay_sec' type='double'/>
+  </property>
+
+</RccWorker>

@@ -50,7 +50,13 @@ endif
 # The "generate" goal is the generic one for workers, tests, etc.
 .PHONY: skeleton generate
 generate: skeleton
+# When the skeleton is created or updated we make sure the ../lib/workers file is updated.
+# This ensures that the workers file will be correct even if the worker is never built for a particular
+# target.
 skeleton:  $(ImplHeaderFiles) $(SkelFiles)
+	$(AT)$(and $(filter $(call OcpiGetDirType,$(DirContainingLib)),library),\
+	    make -C $(DirContainingLib) workersfile speclinks)
+
 all: skeleton
 
 $(SkelFiles): $(GeneratedDir)/%$(SkelSuffix) : $$(Worker_%_xml) | $(GeneratedDir)

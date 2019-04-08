@@ -96,9 +96,7 @@ library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.all; use ocpi.types.all; use ocpi.wsi.all; use ocpi.util.all;
 library bsv; use bsv.bsv.all;
 architecture rtl of slave is
-  signal reset_i : Bool_t; -- internal version of output to worker
-  signal reset_n : Bool_t; -- internal assert-low reset (to avoid silly isim warning).
-
+  signal reset_i         : Bool_t; -- internal version of output to worker
   -- FIXME: a opcode field is per message, could be optimized
   constant data_width : natural := n_bytes * byte_width;
   constant fifo_width : natural := data_width +         -- actual data bits
@@ -131,111 +129,105 @@ architecture rtl of slave is
   signal seen_any_r     : bool_t; -- have we seen any messages at all?
   signal at_end_r       : bool_t; -- was the last thing taken an eom, eof, abort?
   signal v1_eof_r       : bool_t; -- a v1 synthesized zlm_eof was taken
-  signal trailing_eom_r : bool_t; -- a trailing eom was enqueued in previous cycle
-  -- signals derived from OCP
+  signal eom_added_r    : bool_t; -- an EOM was added to the last worker deque
+  -- signals derived from OCP fed into the fifo (other than raw OCP signals)
   signal ocp_last       : std_logic;
-  signal ocp_valid      : std_logic;
+  signal ocp_data       : std_logic_vector(data_width - 1 downto 0);
+  signal ocp_busy_r     : bool_t; -- busy output to OCP
   -- input signals to the fifo;
   signal fifo_in        : std_logic_vector(fifo_width - 1 downto 0);
-  signal fifo_enq, fifo_deq : std_logic;
+  signal fifo_enq, fifo_deq : bool_t;
   -- output signals from the fifo
-  signal fifo_not_empty : std_logic;
-  signal fifo_not_full_next : std_logic;
-  signal fifo_not_full  : std_logic;
   signal fifo_out       : std_logic_vector(fifo_width - 1 downto 0);
+  signal fifo_count_r   : unsigned(2 downto 0); -- 0, 1, 2, 3 4, all valid
   -- derived from fifo outputs
-  signal fifo_ready : bool_t;
-  signal fifo_valid : bool_t;
-  signal fifo_last :  Bool_t; -- internal metadata
-  signal fifo_eof, zlm_eof : Bool_t;
-  signal force_eom :  bool_t;
-  signal ready_i : bool_t; -- internal ready, prequalified by wci_is_operating
-  signal eom_i : bool_t;
-  signal my_data : std_logic_vector(data_width - 1 downto 0);
+  signal fifo_ready   : bool_t; -- fifo output is ready for worker
+  signal fifo_valid   : bool_t; -- the fifo output is presenting valid
+  signal fifo_eom     : bool_t; -- the fifo output is presenting EOM
+  signal fifo_eof     : bool_t; -- the fifo is presenting EOF
+  -- internal combinatorials
+  signal zlm_eof      : bool_t; -- a v1 zlm0 for eof is needed
+  signal trailing_eom : bool_t; -- a trailing eom is enqueued *behind* the current non-eom output
+  signal teom_deq     : bool_t; -- dequeue and discard a trailing eom now
+  signal eom_i        : bool_t; -- internal eom: original or added from trailing  or v1 zlm0 for EOF
+  signal ready_i      : bool_t; -- internal ready, prequalified by wci_is_operating
+  -- FIFO internal state - our customized 3 deep FIFO
+  signal fifo_in_r, fifo_middle_in_r, fifo_middle_out_r, fifo_out_r : std_logic_vector(fifo_width-1 downto 0);
 begin
   -- Combi resets:
   --   We get wci reset and wsi peer reset (from master)
   --   We produce wsi peer reset (from slave)
   -- Worker sees reset if wci is doing it or we're not started yet or peer is reset
   reset_i  <= wci_reset or not MReset_n; -- FIXME WHEN own_clock
-  reset_n  <= not reset_i;
   reset    <= reset_i; -- in wci clock domain for now
-  -- Pear sees reset if wci is doing it or we're not started
+  -- Peer sees reset if wci is doing it or we're not started
   SReset_n <= not wci_reset; -- FIXME WHEN OWN CLOCK
+  ----------------------------------
+  -- fifo inputs - keep decoding minimumal on input side since that is perhaps a synthesis/routing
+  -- boundary.  We still enqueue trailing eoms to avoid conditional enqueue
   -- If there are parts of bytes in data_info_width, combine them nicely for the worker
   -- This also covers the case of zero-width data
   gen0: if mdata_info_width > 1 generate
     gen1: for i in 0 to n_bytes-1 generate
-      my_data(i*byte_width + 7 downto i*byte_width) <= MData(i*8+7 downto i*8);
-      my_data(i*byte_width + byte_width-1 downto i*byte_width + byte_width - (byte_width - 8)) <=
+      ocp_data(i*byte_width + 7 downto i*byte_width) <= MData(i*8+7 downto i*8);
+      ocp_data(i*byte_width + byte_width-1 downto i*byte_width + byte_width - (byte_width - 8)) <=
         MDataInfo(i*(byte_width-8) + (byte_width-8)-1 downto i*(byte_width-8));
     end generate gen1;
   end generate gen0;
   -- If there are no partial bytes in datainfo, the worker's data is just MData.
   gen2: if mdata_info_width <= 1 and data_width > 0 generate
-    my_data <= MData;
+    ocp_data <= MData;
   end generate gen2;
-  ----------------------------------
-  -- fifo inputs - keep decoding to a minimum on the input side since that is perhaps a synthesis/routing
-  -- boundary.  We still enqueue trailing eoms to avoid conditional enqueue
   ocp_last   <= MDataLast when early_request else MReqLast;
-  ocp_valid  <= to_bool(MByteEn /= slv0(MByteEn'length));
-  fifo_enq   <= MDataValid when early_request else to_bool(MCmd = ocpi.ocp.MCmd_WRITE);
-  fifo_in    <= pack(my_data,
+  fifo_in    <= pack(ocp_data,
                      MByteEn,
                      ocp_last,
                      MDataInfo(MDataInfo'left), -- abort or eof
                      MBurstLength,              -- per OCP
-                     MReqInfo);                 -- opcode which may be 1 bit wide even when there no opcode bits
-  fifo_deq   <= (trailing_eom_r and fifo_last and fifo_not_empty) or 
-                (take and ready_i and not fifo_eof); -- eof persists
+                     MReqInfo);                 -- opcode which may be 1 bit wide even w/ no opcode
+  fifo_enq   <= MDataValid when early_request else to_bool(MCmd = ocpi.ocp.MCmd_WRITE);
   ----------------------------------
-  -- fifo outputs
-  fifo_eof     <= fifo_out(abort_bit);
+  -- fifo outputs and dequeing etc.
+  fifo_eof     <= fifo_out(abort_bit) and at_end_r;
   data         <= fifo_out(data_bits downto enable_bits+1);
   byte_enable  <= fifo_out(enable_bits downto last_bit+1);
-  fifo_last    <= fifo_out(last_bit);
+  fifo_eom    <= fifo_out(last_bit);
   burst_length <= fifo_out(burst_bits downto opcode_bits+1);
   opcode       <= fifo_out(opcode_bits downto 0) when not zlm_eof else (others => '0');
   fifo_valid   <= to_bool(byte_enable /= slv0(n_bytes) and not its(fifo_eof));
+  -- is a trailing EOM queued up *behind* the fifo's output which is not EOM (ignoring fifo status)
+  trailing_eom <= to_bool(not its(fifo_eom) and fifo_middle_out_r(last_bit) = '1' and
+                          fifo_middle_out_r(enable_bits downto last_bit+1) = slv0(n_bytes));
+  -- deque/discard a trailing eom now?
+  teom_deq     <= to_bool(fifo_count_r /= 0 and eom_added_r);
+  fifo_deq     <= to_bool(not its(fifo_eof) and       -- EOFs are sticky
+                          (teom_deq or                -- discard trailing EOMs after valid
+                           (take and its(ready_i)))); -- dequeue from worker
   ----------------------------------
   -- signals based on state and fifo outputs
   -- fifo_ready holds non-EOM valid data from being taken until it knows what's next
   -- it also masks trailing EOMs coming out of the FIFO
   -- it answers the question: are the fifo outputs currently something the worker should look at?
-  fifo_ready   <= fifo_not_empty and not (trailing_eom_r and fifo_last) and
-                  (fifo_last or not fifo_valid or
-                   not fifo_not_full or
-                   (fifo_enq and ocp_valid));
+  fifo_ready   <= to_bool((fifo_count_r /= 0 and ((fifo_eom and its(fifo_valid)) or zlm_eof)) or
+                          (fifo_count_r > 1 and not its(teom_deq)));
   zlm_eof      <= to_bool(fifo_eof and its(at_end_r) and hdl_version < 2);
   -- final filtering of "ready" for the user based on eof and isoperating
   ready_i      <= wci_is_operating and fifo_ready and (not fifo_eof or to_bool(hdl_version < 2));
-  force_eom    <= trailing_eom_r and fifo_not_empty and not fifo_last;
   ----------------------------------
   -- Signals to worker
   ready        <= ready_i and not v1_eof_r; -- suppress ready after v1 eof
   som          <= at_end_r or zlm_eof;
   valid        <= ready_i and fifo_valid;  -- prequalified so it can be used directly by workers
-  eom_i        <= fifo_last or zlm_eof or force_eom;
+  eom_i        <= fifo_eom or zlm_eof or trailing_eom;
   eom          <= eom_i;
   abort        <= fifo_eof and not at_end_r;
-  eof          <= wci_is_operating and fifo_not_empty and fifo_eof and fifo_last and at_end_r;
-
-  -- Instantiate and connect the FIFO
-  fifo : FIFO2X
-    generic map(width                       => fifo_width)
-    port    map(clk                         => Clk,
-                rst                         => reset_n,
-                d_in                        => fifo_in,
-                enq                         => fifo_enq,
-                full_n                      => fifo_not_full,
-                full1_n                     => fifo_not_full_next,
-                d_out                       => fifo_out,
-                deq                         => fifo_deq,
-                empty_n                     => fifo_not_empty,
-                clr                         => '0');
-  -- FIXME WHEN OWN CLOCK
-  SThreadBusy(0) <= reset_i or not wci_is_operating or not fifo_not_full_next;
+  eof          <= to_bool(wci_is_operating and fifo_count_r /= 0 and fifo_eof and
+                          its(fifo_eom or at_end_r));
+  -- Signals to OCP - cannot be based on fifo_deq
+  -- SThreadBusy(0) <= fifo_busy;
+  -- ocp is busy if it cannot enqueue in the next cycle
+  SThreadBusy(0) <= to_bool((fifo_count_r = 3 and fifo_enq) or fifo_count_r = 4);
+  --SThreadBusy(0) <= ocp_busy_r; 
   -- True once
   first_take <= take and ready_i and not seen_any_r;
   -- keep track of message state as it comes out the back of the fifo
@@ -246,20 +238,103 @@ begin
         seen_any_r     <= bfalse;
         at_end_r       <= btrue;
         v1_eof_r       <= bfalse;
-        trailing_eom_r <= bfalse;
+        eom_added_r    <= bfalse;
       elsif its(fifo_eof) and ready_i and hdl_version >=2 then
         report "FIFOEOF and READY" severity failure;
       else
-        if its(fifo_enq) then
-          trailing_eom_r  <= ocp_last and not ocp_valid and fifo_not_empty and not fifo_last;
-        end if;
         if ready_i and take then
-          at_end_r <= eom_i;
-          seen_any_r <= btrue;
+          eom_added_r <= trailing_eom;
+          at_end_r    <= eom_i;
+          seen_any_r  <= btrue;
           if its(zlm_eof) then
-            v1_eof_r <= btrue;
+            v1_eof_r  <= btrue;
           end if;
+        elsif its(fifo_deq) then
+          eom_added_r <= bfalse;
         end if;
+        -- ocp_busy_r    <= (to_bool(fifo_count_r = 3) and
+        --                   not (fifo_deq and not fifo_enq and ocp_busy_r)) or
+        --                  (to_bool(fifo_count_r = 2) and
+        --                   not ((fifo_enq and fifo_deq and ocp_busy_r) or
+        --                        (not (fifo_enq) and fifo_deq) or
+        --                        (not fifo_enq and not fifo_deq and ocp_busy_r))) or
+        --                  (to_bool(fifo_count_r = 1) and
+        --                   (fifo_enq) and not (fifo_deq) and not (ocp_busy_r));
+      end if;
+    end if;
+  end process;
+  -- The 4 deep very specific FIFO that helps with routing, OCP pipelining and trailing EOM handling
+  -- The input side cannot depend on what is happening on the output side
+  -- We need a fifo that will tell us when there are two slots left.  It would be nice to find
+  -- one and not use this one.
+  fifo_out  <= fifo_out_r;
+  fifo: process(Clk) is
+  begin
+    if rising_edge(clk) then
+      if its(reset_i) then
+        fifo_count_r <= (others => '0');
+      else
+        case fifo_count_r is
+          when "000" =>
+            assert not its(fifo_deq) severity failure;
+            if its(fifo_enq) then
+              fifo_out_r   <= fifo_in;
+              fifo_count_r <= "001";
+            end if;
+          when "001" =>
+            if its(fifo_enq) then
+              if its(fifo_deq) then
+                fifo_out_r    <= fifo_in;
+              else
+                fifo_middle_out_r <= fifo_in;
+                fifo_count_r  <= "010";
+              end if;
+            elsif its(fifo_deq) then
+              fifo_count_r    <= "000";
+            end if;
+          when "010" =>
+            if its(fifo_enq) then
+              if its(fifo_deq) then
+                fifo_middle_out_r <= fifo_in;
+                fifo_out_r        <= fifo_middle_out_r;
+              else
+                fifo_middle_in_r  <= fifo_in;
+                fifo_count_r      <= "011";
+              end if;
+            elsif its(fifo_deq) then
+              fifo_out_r      <= fifo_middle_out_r;
+              fifo_count_r    <= "001";
+            end if;
+          when "011" =>
+            if its(fifo_enq) then
+              if its(fifo_deq) then
+                fifo_middle_in_r  <= fifo_in;
+                fifo_middle_out_r <= fifo_middle_in_r;
+                fifo_out_r        <= fifo_middle_out_r;
+              else
+                fifo_in_r         <= fifo_in;
+                fifo_count_r      <= "100";
+              end if;
+            elsif its(fifo_deq) then
+              fifo_out_r        <= fifo_middle_out_r;
+              fifo_middle_out_r <= fifo_middle_in_r;
+              fifo_count_r      <= "010";
+            end if;
+          when "100" =>
+            if its(fifo_enq) then
+              assert its(fifo_deq) severity failure;
+              fifo_in_r         <= fifo_in;
+              fifo_middle_in_r  <= fifo_in_r;
+              fifo_middle_out_r <= fifo_middle_in_r;
+              fifo_out_r        <= fifo_middle_out_r;
+            elsif its(fifo_deq) then
+              fifo_out_r        <= fifo_middle_out_r;
+              fifo_middle_out_r <= fifo_middle_in_r;
+              fifo_middle_in_r  <= fifo_in_r;
+              fifo_count_r      <= "011";
+            end if;
+          when others => null;
+        end case;
       end if;
     end if;
   end process;

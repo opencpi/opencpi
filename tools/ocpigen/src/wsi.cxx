@@ -36,7 +36,6 @@ WsiPort(Worker &w, ezxml_t x, DataPort *sp, int ordinal, const char *&err)
 			    DISTRIBUTION_ATTRS, PARTITION_ATTRS,
 			    (void*)0)) ||
       (err = OE::getBoolean(x, "InsertEOM", &m_insertEOM)) ||
-      (err = OE::getBoolean(x, "WorkerEOF", &m_workerEOF)) ||
       (err = OE::getBoolean(x, "Abortable", &m_abortable)) ||
       (err = OE::getBoolean(x, "RegRequest", &m_regRequest)) ||
       (err = OE::getBoolean(x, "EarlyRequest", &m_earlyRequest)))
@@ -56,7 +55,6 @@ WsiPort(const WsiPort &other, Worker &w , std::string &a_name, size_t count,
   m_earlyRequest = other.m_earlyRequest;
   // The attributes that aren't interface-related
   m_insertEOM = false;
-  m_workerEOF = false;
   m_regRequest = false;
 }
 

@@ -28,6 +28,7 @@
 #include "hdl.h"
 #include "hdl-device.h"
 namespace OU=OCPI::Util;
+namespace OF=OCPI::OS::FileSystem;
 
 const char *Worker::
 addParamConfigSuffix(std::string &s) {
@@ -518,7 +519,7 @@ equal(ParamConfig &other) {
 }
 
 const char *Worker::
-parseBuildFile(bool optional, bool *missing) {
+parseBuildFile(bool optional, bool *missing, const std::string *parent) {
   const char *err;
   std::string fname;
   if (missing)
@@ -554,7 +555,7 @@ parseBuildFile(bool optional, bool *missing) {
   ezxml_t x;
   std::string xfile;
   std::string empty;
-  if ((err = parseFile(fname.c_str(), empty, "build", &x, xfile, false, true, optional)))
+  if ((err = parseFile(fname.c_str(), parent ? *parent : empty, "build", &x, xfile, false, true, optional)))
     return err;
   if ((err = parseBuildXml(x, xfile)))
     return OU::esprintf("when processing build file \"%s\": %s", xfile.c_str(), err);
@@ -910,12 +911,13 @@ getParamConfig(const char *id, const ParamConfig *&config) {
 // Note this worker will then be parameter-value-specific.
 // If instancePVs is NULL, use paramconfig
 const char *Worker::
-setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig) {
+setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig,
+	       const std::string *parent) {
   const char *err;
   // So we have parameter configurations
   // FIXME: we could cache this parsing in one place, but workers can still be
   // parameterized by xml attribute values, so it can't simply be cached in a Worker object.
-  if ((err = parseBuildFile(paramConfig == 0)))
+  if ((err = parseBuildFile(paramConfig == 0, NULL, parent)))
     return err;
   if (m_paramConfigs.size() == 0) {
     // FIXME: check whether it is ever possible to have no paramconfigs any more...
@@ -1081,8 +1083,12 @@ parse(ezxml_t x, const char *buildFile) {
     return NULL;
   // Everything from here down is OWD-only
   for (OU::TokenIter ti(ezxml_cattr(x, "sourcefiles")); ti.token(); ti.next()) {
-    if (!OS::FileSystem::exists(ti.token()))
-      fprintf(stderr, "Warning:  the source file: \"%s\" does not exist\n", ti.token());
+#if 0  // this is only sensible when reading the OWD in the worker's own directory
+    // FIXME: make this conditional on that case some how.
+    std::string file(OF::joinNames(OF::directoryName(m_worker.m_file), ti.token()));
+    if (!OS::FileSystem::exists(file))
+      fprintf(stderr, "Warning:  the source file: \"%s\" does not exist\n", file.c_str());
+#endif
     m_sourceFiles.push_back(ti.token());
   }
   for (OU::TokenIter ti(ezxml_cattr(x, "libraries")); ti.token(); ti.next())

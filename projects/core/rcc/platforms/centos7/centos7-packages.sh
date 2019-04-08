@@ -83,8 +83,6 @@ PKGS_D+=(bash-completion=/etc/profile.d/bash_completion.sh)
 PKGS_D+=(bison)
 #    Needed to build gdb
 PKGS_D+=(flex)
-#    Needed to build gpsd
-PKGS_D+=(scons)
 ##########################################################################################
 # S. yum-installed and but not rpm-required - conveniences or required for source environment
 # While some manual installations require git manually installed before this,

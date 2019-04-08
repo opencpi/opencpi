@@ -25,8 +25,7 @@ import logging
 from glob import glob
 import subprocess
 import re
-from .file import cd, set_vars_from_make
-from _opencpi.util import OCPIException
+from _opencpi.util import cd, set_vars_from_make, OCPIException
 
 def get_make_vars_rcc_targets():
     """
@@ -406,7 +405,7 @@ def get_all_projects():
 # Directory types that may contain sub-assets
 COLLECTION_DIRTYPES = ["project", "applications", "library", "libraries", "hdl-library",
                        "hdl-platform", "hdl-platforms", "hdl-assemblies", "hdl-primitives",
-                       "rcc-platforms", "component"]
+                       "rcc-platforms", "component", "workers", "tests"]
 
 # pylint:disable=too-many-arguments
 # pylint:disable=too-many-branches
@@ -453,16 +452,16 @@ def get_ocpidev_working_dir(origin_path=".", noun="", name=".",
         The library, platform arguments are location-directives or modifiers
         that dictate where to the asset should be found.
     """
-
     logging.debug("Getting ocpidev working dir from options:\n" +
                   str((origin_path, noun, name, library, hdl_library, hdl_platform)))
 
     # If the noun is project, append name to origin_path to ensure we operate from within a project
     # from here forward
+    if not name:
+        name = "."
     if noun == "project":
         origin_path = origin_path + "/" + name
         name = "."
-
     if not is_path_in_project(origin_path):
         # pylint:enable=undefined-variable
         raise OCPIException("Path \"" + os.path.realpath(origin_path) + "\" is not in a project, " +
@@ -472,7 +471,7 @@ def get_ocpidev_working_dir(origin_path=".", noun="", name=".",
     # if this is a collection type, we care about the current directory's dirtype,
     # otherwise we want the current asset's containing collection's dirtype
     cur_dirtype = get_dirtype(origin_path)
-    if cur_dirtype is not None and cur_dirtype in COLLECTION_DIRTYPES:
+    if cur_dirtype is not None and cur_dirtype in [COLLECTION_DIRTYPES, "test"]:
         # operating on a collection-type, so just proceed as usual
         working_dir = origin_path
         dirtype = cur_dirtype
@@ -486,6 +485,7 @@ def get_ocpidev_working_dir(origin_path=".", noun="", name=".",
         # information as we move to the parent collection
         if (name is None or name == ".") and get_dirtype(origin_path) is not None:
             name = os.path.basename(os.path.realpath(origin_path))
+            dirtype = get_dirtype(origin_path)
 
     # error checking
     if (library is not None or hdl_library is not None) and dirtype in ["library", "hdl-library"]:
@@ -493,7 +493,7 @@ def get_ocpidev_working_dir(origin_path=".", noun="", name=".",
         raise OCPIException("[hdl-]library option cannot be provided when operating in a " +
                             "directory of [hdl-]library type.")
         # pylint:enable=undefined-variable
-    if (hdl_platform is not None) and dirtype in "hdl_platform":
+    if (hdl_platform is not None) and dirtype in ["hdl_platform"]:
         # pylint:disable=undefined-variable
         raise OCPIException("hdl-platform option cannot be provided when operating in a " +
                             "directory of hdl-platform type.")
@@ -525,6 +525,8 @@ def get_ocpidev_working_dir(origin_path=".", noun="", name=".",
 
     elif dirtype == "hdl-platform":
         hdl_platform = working_basename
+    elif dirtype == "test" and name == "." and not noun:
+        name = os.path.basename(os.path.realpath("."))
 
     logging.debug("Getting ocpidev working dir from options (auxiliary function):\n" +
                   str((noun, name, library, hdl_library, hdl_platform, dirtype)))
@@ -532,8 +534,8 @@ def get_ocpidev_working_dir(origin_path=".", noun="", name=".",
     # If no noun was specified, and the dirtype is a collection, set noun to dirtype
     # For example, if a command was run in hdl/assemblies, but no noun was specified,
     # then just set the noun to hdl-assemblies
-    if noun == "":
-        noun = dirtype if dirtype in COLLECTION_DIRTYPES else ""
+    if not noun:
+        noun = dirtype if dirtype in [COLLECTION_DIRTYPES, "test"] else ""
 
     # Now that the current state/directory has been converted to location directives,
     # call this helper function to convert or state-less asset-description to an
@@ -629,11 +631,11 @@ def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platfo
         >>> _get_asset_dir(library="components", hdl_library="devices", hdl_platform="matchstiq_z1")
         Traceback (most recent call last):
             ...
-        OCPIException: ...
+        _opencpi.util.OCPIException: library and hdl_library are mutually exclusive.
         >>> _get_asset_dir(noun="INVALID")
         Traceback (most recent call last):
             ...
-        OCPIException: ...
+        _opencpi.util.OCPIException: Invalid noun provided: INVALID
     """
     #TODO if i do show project in a lower level dir it should use find project top to locate the
     # directory of the project
@@ -660,14 +662,17 @@ def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platfo
     elif noun in ["hdl-assembly", "hdl-assemblies"]:
         asset = "hdl/assemblies"
     elif noun == "component":
+        print("pwd=" + os.getcwd())
         if hdl_library:
-            asset = "hdl/" +  hdl_library + "/specs/" + name
+            asset = get_component_filename("hdl/" +  hdl_library + "/specs/", name)
         elif library:
-            asset = library + "/specs/" + name
+            asset = get_component_filename(library + "/specs/", name)
         elif hdl_platform:
-            asset = "hdl/platforms/" +  hdl_platform + "/devices/specs/" + name
+            asset = get_component_filename("hdl/platforms/" +  hdl_platform + "/devices/specs/",
+                                           name)
         else:
-            asset = "specs/" + name
+            asset = get_component_filename("specs/", name)
+
     elif noun == "hdl-platform" or hdl_platform is not None:
         # hdl platform is specified in some way
 
@@ -700,7 +705,7 @@ def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platfo
         if noun == "library" and name is not "." and library is not None:
             # pylint:disable=undefined-variable
             raise OCPIException("Could not choose between two library directories: '" +
-                                name + "' and '" + library + "'.")
+                                str(name) + "' and '" + str(library) + "'.")
             # pylint:enable=undefined-variable
         # default library if needed
         library = name if library is None else library
@@ -734,15 +739,19 @@ def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platfo
 
         # When locating a project, it is either the current project (name is none), or the
         # the directory is specified by name
-        asset = "." if name is None else name
-    elif noun is None:
-        # when no noun or location-directive gives direction regarding where to look for an
+        use_name = name is not None and os.path.basename(os.path.realpath(".")) != name
+        asset = "." if not use_name else name
+    elif not noun:
+        # when no noun or alocation-directive gives direction regarding where to look for an
         # asset, assume the top-level of the project
         asset = "."
+        noun = get_dirtype()
     else:
         # pylint:disable=undefined-variable
         raise OCPIException("Invalid noun provided: " + str(noun))
         # pylint:enable=undefined-variable
+    if noun == "libraries" and library is None:
+        asset = name
 
     # If the asset-type/noun is a collection-type, then we already know its location.
     #     E.g. If the noun is 'library' (a collection-type) and the name is 'dsp_comps',
@@ -751,15 +760,38 @@ def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platfo
     #     E.g. If library directives describe a collection-type/asset named 'components/dsp_comps',
     #          and the noun is 'worker' with name 'complex_mixer.hdl', then this will result in
     #          'components/dsp_comps/complex_mixer.hdl
-    if noun in COLLECTION_DIRTYPES or name is None:
+    if noun in COLLECTION_DIRTYPES or not name:
         return asset
     else:
         return asset + "/" + name
 # pylint:disable=too-many-statements
 # pylint:disable=too-many-branches
 
+def get_component_filename(library, name):
+    """
+    >>> os.mknod("/tmp/my_file-spec.xml")
+    >>> get_component_filename("/tmp", "my_file-spec.xml")
+    '/tmp/my_file-spec.xml'
+    >>> get_component_filename("/tmp", "my_file-spec")
+    '/tmp/my_file-spec.xml'
+    >>> get_component_filename("/tmp", "my_file")
+    '/tmp/my_file-spec.xml'
+    >>> os.remove("/tmp/my_file-spec.xml")
+    >>> os.mknod("/tmp/my_file_spec.xml")
+    >>> get_component_filename("/tmp", "my_file")
+    '/tmp/my_file_spec.xml'
+    >>> os.remove("/tmp/my_file_spec.xml")
+    """
+    basename = library + "/" + name
+    end_list = ["", ".xml", "_spec.xml", "-spec.xml"]
+    for ending in end_list:
+      if os.path.exists(basename + ending):
+          return basename + ending
+    return basename
+
 if __name__ == "__main__":
     import doctest
+    import sys
     __LOG_LEVEL = os.environ.get('OCPI_LOG_LEVEL')
     __VERBOSITY = False
     if __LOG_LEVEL:
@@ -769,3 +801,4 @@ if __name__ == "__main__":
         except ValueError:
             pass
     doctest.testmod(verbose=__VERBOSITY, optionflags=doctest.ELLIPSIS)
+    sys.exit(doctest.testmod()[0])

@@ -51,22 +51,28 @@ override Platforms:=$(call Unique,$(strip $(Platforms) $(Platform)))
 export Platforms # why?
 # Read in the database of actual RCC and HDL, setting RccPlatforms if it has not been set.
 # We use rcc-make.mk rather than rcc-targets.mk because it ALSO sets a default RCC platform etc.
+# We also do not want to use the default RCC platform if Platforms/Platform is set
+ifdef Platforms
+  ifeq ($(origin RccPlatforms),undefined)
+    RccPlatforms:=
+  endif
+endif
 include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
 include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
 
 # Now check all platforms for validity, even the hdl:rcc pairs
 $(foreach p,$(subst :, ,$(Platform)),$(if $(filter $p,$(RccAllPlatforms) $(HdlAllPlatforms)),,\
-  $(error Platform $p is specified but non-existent, RCC or HDL.  HDL platforms may not be built yet.)))
+  $(error Platform $p is specified but non-existent, RCC or HDL.  HDL platforms may not be built yet)))
 
 # Check that all RCC platforms and the second of pairs are valid RCC platforms
 $(foreach p,$(RccPlatforms),$(if $(filter $p,$(RccAllPlatforms)),,\
-  $(error RCC platform $p is specified but not a known RCC platform.)))
+  $(error RCC platform $p is specified but not a known RCC platform)))
 
 # Check that all HDL platforms and the first of pairs are valid HDL platforms
 HdlPlatforms:=$(call Unique,$(strip $(HdlPlatforms) $(HdlPlatform)))
 $(foreach h,$(HdlPlatforms) $(foreach p,$(Platforms),$(and $(findstring :,$p),$(word 1,$(subst :, ,$p)))),\
   $(if $(filter $h,$(HdlAllPlatforms)),,\
-    $(error HDL platform $h is specified but not a known HDL platform.)))
+    $(error HDL platform $h is specified but not a known HDL platform)))
 # Add any RCC platforms in $(Platforms) to the RCC platforms list (not second of pairs though)
 override \
 RccPlatforms:=$(call Unique,$(RccPlatforms)\
@@ -149,8 +155,8 @@ cleandriver:
 	       $(foreach t,$(RccTarget_$p),\
 	         $(foreach o,$(call RccOs,$t),\
 	           if test -d os/$o/driver; then \
-	             echo Cleaning the $o kernel driver for $(call RccRealPlatform,$p); \
-		     $(MAKE) -C os/$o/driver OcpiPlatform=$p topclean; \
+	             echo Cleaning the $o kernel driver for $(call RccRealPlatforms,$p); \
+		     $(MAKE) -C os/$o/driver OCPI_TARGET_PLATFORM=$p topclean; \
 	           else \
 	             echo There is no kernel driver for the OS '"'$o'"', so none cleaned. ; \
 	           fi;))) \
@@ -170,6 +176,16 @@ cleaneverything distclean: clean cleandriver cleanpackaging
 	       ! -path "*/rcc/platforms/*" -a ! -path "./prerequisites*" \)  \
              \) -exec rm -r {} \;
 	$(AT)rm -r -f exports
+
+# Documentation (AV-4402)
+.PHONY: doc
+.SILENT: doc
+# This hack determines how many jobs you are allowing by pulling bytes out of the make
+# jobserver https://stackoverflow.com/a/48865939/836748
+doc:
+	$(AT)rm -rf doc/{pdfs,html}
+	$(AT)+[[ "${MAKEFLAGS}" =~ --jobserver[^=]+=([0-9]+),([0-9]+) ]] && ( J=""; while read -t0 -u $${BASH_REMATCH[1]}; do read -N1 -u $${BASH_REMATCH[1]}; J="$${J}$${REPLY}"; done; JOBS="$$(expr 1 + $${#J})" doc/generator/genDocumentation.sh; echo -n $$J >&$${BASH_REMATCH[2]} ) || doc/generator/genDocumentation.sh
+
 
 ##########################################################################################
 # Goals, variables and macros that are about packaging the CDK, whether tarball, rpm, etc.
@@ -342,6 +358,7 @@ $(ProjectGoals):
 projects:
 	$(AT)$(call DoProjects,build)
 	$(AT)$(call DoProjects,test)
+	$(AT)$(DoExports)
 
 testprojects:
 	$(AT)$(call DoProjects,runtest)
@@ -381,6 +398,8 @@ The valid goals that accept platforms (using RccPlatform(s) or Platforms(s)) are
      prerequisites      - Forces a (re)build of the prerequisites for the specified platforms.
                         - Downloads will be downloaded if they are not present already.
      cleanprerequisites - Clean out all built, downloaded prerequisites.
+     doc                - Creates PDFs from LaTeX and Open/LibreOffice source.
+                        - Requires additional software and tries to help identify missing reqs.
 
 Variables that are useful for most goals:
 

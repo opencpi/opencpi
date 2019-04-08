@@ -1,0 +1,18 @@
+<!--
+    Only 1 DIN_WIDTH_p (16) is currently supported.
+    Endian-ness must be considered when modifying this parameter.
+-->
+<build>
+  <configuration id='0'>
+    <parameter name='M_p' value='2'/>
+    <parameter name='DIN_WIDTH_p' value='16'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+  <configuration id='1'>
+    <parameter name='M_p' value='4'/>
+    <parameter name='DIN_WIDTH_p' value='16'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+</build>

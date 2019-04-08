@@ -229,21 +229,21 @@ assets/hdl/primitives/zynq/zynq\_pkg.vhd
 	\item
 assets/hdl/primitives/zynq/zynq\_ps.vhd
 	\item
-assets/hdl/primitives/axi/axi\_pkg.vhd
+core/hdl/primitives/axi/axi\_pkg.vhd
 	\item
-assets/hdl/primitives/axi/axi2cp.vhd
+core/hdl/primitives/axi/axi2cp.vhd
 	\item
-assets/hdl/primitives/sdp/sdp2axi\_rd.vhd
+core/hdl/primitives/sdp/sdp2axi\_rd.vhd
 	\item
-assets/hdl/primitives/sdp/sdp2axi.vhd
+core/hdl/primitives/sdp/sdp2axi.vhd
 	\item
-assets/hdl/primitives/sdp/sdp2axi\_wd.vhd
+core/hdl/primitives/sdp/sdp2axi\_wd.vhd
 	\item
-assets/hdl/primitives/sdp/sdp\_axi\_pkg.vhd
+core/hdl/primitives/sdp/sdp\_axi\_pkg.vhd
 	\item
-assets/hdl/primitives/sdp/sdp\_pkg.vhd
+core/hdl/primitives/sdp/sdp\_pkg.vhd
 	\item
-assets/hdl/primitives/sdp/sdp\_body.vhd
+core/hdl/primitives/sdp/sdp\_body.vhd
 \end{itemize}
 
 \begin{landscape}
@@ -439,8 +439,8 @@ No slots exist in this platform.
 All control clocking in the Matchstiq-Z1 platform originates from the PS7 processing clock 1 (FCLK1), which is set to 100 MHz.
 
 \subsection*{Sampling Domain}
-The sampling clock domain originates from  the CLK0 output of a SI5338 clock generator, which is connected directly to the Zynq FPGA. The platform worker converts this clock from differential to single ended and outputs this converted clock to the Lime transceiver.\par\medskip
-\noindent This clock returns as an input to the Zynq FPGA aligned with the ADC data. This clock is connected as an input signal to the lime\_adc and lime\_dac device workers. See the diagram below for more details.\par\medskip
+The sampling clock domain originates from  the CLK0 output of a SI5338 clock generator, which is connected directly to the Zynq-7000 FPGA. The platform worker converts this clock from differential to single ended and outputs this converted clock to the Lime transceiver.\par\medskip
+\noindent This clock returns as an input to the Zynq-7000 FPGA aligned with the ADC data. This clock is connected as an input signal to the lime\_adc and lime\_dac device workers. See the diagram below for more details.\par\medskip
 \begin{figure}[ht]
 	\centerline{\includegraphics[scale=0.5]{matchstiq_sample_clock_diagram}}
 	\caption{Clock Diagram showing default configuration}
@@ -457,11 +457,6 @@ The sampling clock domain originates from  the CLK0 output of a SI5338 clock gen
 \begin{flushleft}
  To be detailed in a future release.
 \end{flushleft}
-\section*{Example Design}
-This example design provides the infrastructure necessary to stream samples to/from the DAC/ADC interfaces to file.\par\medskip
-
-\noindent To build the example design, enter the example\_design directory and type `make'.\par\medskip
-
-\noindent To run the example design, NFS mount the example\_design directory on the Matchstiq-Z1 and run the executable in the xilinx13\_3 directory.\par\bigskip
-
+\section*{Reference Applications}
+The FSK and Rx reference applications are both supported by the OpenCPI enabled Matchstiq-Z1 BSP. 
 \end{document}

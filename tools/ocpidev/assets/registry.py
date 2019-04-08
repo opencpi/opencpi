@@ -47,8 +47,8 @@ class Registry(ShowableAsset):
         self.__projects = {}
         for proj in glob(self.directory + '/*'):
             pid = os.path.basename(proj)
-            self.__projects[pid] = (AssetFactory.factory("project", proj, **kwargs)
-                                    if os.path.exists(proj) else None)
+            if os.path.exists(proj):
+                self.__projects[pid] = AssetFactory.factory("project", proj, **kwargs)
 
     def contains(self, package_id=None, directory=None):
         """
@@ -427,15 +427,20 @@ class Registry(ShowableAsset):
             print()
     # pylint:enable=unused-argument
 
-    def get_dict(self):
+    def get_dict(self, get_package):
         """
         return a dictonary with with information about the registry
         """
         proj_dict = {}
         for proj in self.__projects:
             if self.__projects[proj]:
-                proj_dict[proj] = {"real_path":self.__projects[proj].directory,
-                                   "exists":(os.path.exists(self.__projects[proj].directory) and
+                if get_package:
+                    package_id = self.__projects[proj].package_id
+                else:
+                    package_id = proj
+                proj_dict[package_id] = {
+                    "real_path":self.__projects[proj].directory,
+                    "exists":(os.path.exists(self.__projects[proj].directory) and
                                              os.path.isdir(self.__projects[proj].directory))}
 
         json_dict = {"registry_location": self.directory}
@@ -447,7 +452,7 @@ class Registry(ShowableAsset):
         show information about the registry in the format specified by details
         (simple, table, or json)
         """
-        reg_dict = self.get_dict()
+        reg_dict = self.get_dict(False)
         if details == "simple":
             print(" ".join(sorted(reg_dict["projects"])))
         elif details == "table":

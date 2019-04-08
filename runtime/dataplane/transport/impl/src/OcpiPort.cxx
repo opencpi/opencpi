@@ -1520,6 +1520,7 @@ getNextEmptyInputBuffer(uint8_t *&data, size_t &length) {
   }
   return NULL;
 }
+#if 0
 void Port::
 sendInputBuffer(BufferUserFacet &ib, size_t length, uint8_t opcode) {
   OU::SelfAutoMutex guard(getCircuit());
@@ -1544,7 +1545,7 @@ getNextFullOutputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode) {
   }
   return NULL;
 }
-
+#endif
 void Port::
 releaseOutputBuffer(BufferUserFacet &ob) {
   OU::SelfAutoMutex guard(getCircuit());
@@ -1661,12 +1662,14 @@ sendZcopyInputBuffer(BufferUserFacet &buf, size_t len, uint8_t op, bool end)
   Buffer *src_buf = static_cast<Buffer*>(&buf);
   src_buf->getMetaData()->ocpiMetaDataWord.length = (uint32_t)len;
   src_buf->getMetaData()->ocpiMetaDataWord.opCode = op;
+  src_buf->getMetaData()->ocpiMetaDataWord.end = end ? 1u : 0;
   src_buf->getMetaData()->ocpiMetaDataWord.timestamp = 0x01234567;
   src_buf->getMetaData()->ocpiMetaDataWord.xferMetaData = packXferMetaData(len, op, end);
-  ocpiLog(9,"METAZ: @%p %x %x %x %x", src_buf->getMetaData(),
+  ocpiLog(9,"METAZ: @%p %x %x %x %u %x", src_buf->getMetaData(),
 	  src_buf->getMetaData()->ocpiMetaDataWord.length,
 	  src_buf->getMetaData()->ocpiMetaDataWord.opCode,
 	  src_buf->getMetaData()->ocpiMetaDataWord.timestamp,
+	  src_buf->getMetaData()->ocpiMetaDataWord.end,
 	  src_buf->getMetaData()->ocpiMetaDataWord.xferMetaData);
   Circuit *c = getCircuit();
   OU::SelfAutoMutex guard(c); // FIXME: refactor to make this a circuit method
@@ -1691,15 +1694,17 @@ sendOutputBuffer( BufferUserFacet* buf, size_t length, uint8_t opcode, bool end,
   // Put the actual opcode and data length in the meta-data
   b->getMetaData()->ocpiMetaDataWord.opCode = opcode;
   b->getMetaData()->ocpiMetaDataWord.length = OCPI_UTRUNCATE(uint32_t,length);
+  b->getMetaData()->ocpiMetaDataWord.end = end ? 1u : 0;
   if (!b->getMetaData()->ocpiMetaDataWord.timestamp)
     b->getMetaData()->ocpiMetaDataWord.timestamp = b->getTid() << 1 | 1;
   else
     b->getMetaData()->ocpiMetaDataWord.timestamp +=
       OCPI_UTRUNCATE(uint32_t, getBufferCount() << 1);
   b->getMetaData()->ocpiMetaDataWord.xferMetaData = packXferMetaData(length, opcode, end);
-  ocpiLog(9,"METAs: @%p %x %x %x %x sz %zu %zu", b->getMetaData(),
+  ocpiLog(9,"METAs: @%p %x %x %u %x %x sz %zu %zu", b->getMetaData(),
 	  b->getMetaData()->ocpiMetaDataWord.length,
 	  b->getMetaData()->ocpiMetaDataWord.opCode,
+	  b->getMetaData()->ocpiMetaDataWord.end,
 	  b->getMetaData()->ocpiMetaDataWord.timestamp,
 	  b->getMetaData()->ocpiMetaDataWord.xferMetaData,
 	  sizeof(RplMetaData), sizeof(BufferMetaData));

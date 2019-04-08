@@ -30,6 +30,7 @@ namespace Util {
 /*! @brief Template type-agnostic equality comparison. This is a necessary
  *         workaround for equality comparison for floats:
  *         "warning: comparing floating point with == or != is unsafe"
+ *  @todo / FIXME - remove this function and all uses of it
  ******************************************************************************/
 template<typename T> bool is_equal(const T x, const T y) {
   const bool eq = (!(x > y)) && (!(x < y));

@@ -330,7 +330,9 @@ ToolsDir=$(eval $(OcpiEnsureToolPlatform))$(OCPI_CDK_DIR)/$(OCPI_TOOL_DIR)/bin
 # Here are the environment variables that might be set in the "make" environment,
 # that must be propagated to ocpigen.
 OcpiGenEnv=\
+    OCPI_PROJECT_DIR="$(OCPI_PROJECT_DIR)" \
     OCPI_PREREQUISITES_DIR="$(OCPI_PREREQUISITES_DIR)" \
+    OCPI_PROJECT_DEPENDENCIES="$(OcpiGetProjectDependencies)" \
     OCPI_HDL_PLATFORM_PATH="$(subst $(Space),:,$(strip \
                               $(call OcpiRelativePathsInsideProjectOrImports,.,$(subst :, ,$(OCPI_HDL_PLATFORM_PATH)))))" \
     OCPI_ALL_PLATFORMS="$(strip $(HdlAllPlatforms:%=%.hdl) $(RccAllPlatforms:%=%.rcc) $(OclAllPlatforms:%=%.ocl))"\

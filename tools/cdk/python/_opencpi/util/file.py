@@ -448,6 +448,7 @@ def rchop(thestring, ending):
 
 if __name__ == "__main__":
     import doctest
+    import sys
     __LOG_LEVEL = os.environ.get('OCPI_LOG_LEVEL')
     __VERBOSITY = False
     if __LOG_LEVEL:
@@ -457,3 +458,4 @@ if __name__ == "__main__":
         except ValueError:
             pass
     doctest.testmod(verbose=__VERBOSITY, optionflags=doctest.ELLIPSIS)
+    sys.exit(doctest.testmod()[0])

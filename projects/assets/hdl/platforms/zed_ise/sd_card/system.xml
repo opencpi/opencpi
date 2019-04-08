@@ -7,7 +7,7 @@
   <container>
     <rcc load='1'/>
     <hdl load='1'>
-     <device name='PL:0' platform='matchstiq_z1'/>
+     <device name='PL:0' platform='zed_ise'/>
     </hdl>
   </container>
   <transfer smbsize='128K'>

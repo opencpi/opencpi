@@ -146,7 +146,7 @@ setPortMasks(OcpiPortMask *rpm) {
   }
 }
 void RunCondition::
-activate(OCPI::OS::Timer &tmr, unsigned nPorts) {
+activate(OCPI::OS::Timer &tmr, unsigned nPorts) const {
   if (m_timeout)
     tmr.reset(m_usecs / 1000000, (m_usecs % 1000000) * 1000);
   // fix up default run condition when there are no ports at all
@@ -160,7 +160,7 @@ activate(OCPI::OS::Timer &tmr, unsigned nPorts) {
   m_inUse = true;
 }
 bool RunCondition::
-shouldRun(OCPI::OS::Timer &timer, bool &timedOut, bool &bail) {
+shouldRun(OCPI::OS::Timer &timer, bool &timedOut, bool &bail) const {
   if (!m_portMasks) // no port mask array means run all the time
     return true;
   if (m_timeout && timer.expired()) {

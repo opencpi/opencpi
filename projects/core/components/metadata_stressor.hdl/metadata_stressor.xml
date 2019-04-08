@@ -1,6 +1,4 @@
-<!-- <HdlWorker language='vhdl' spec='metadata_stressor-spec'> -->
 <HdlWorker language='vhdl' spec='metadata_stressor-spec' version='2'>
-
   <Property Name="DATA_WIDTH_p" Type="ulong" Parameter="true" Default="32"
             Description="Determines the width of the buses in and out of the worker."/>
 

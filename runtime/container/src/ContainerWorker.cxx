@@ -274,6 +274,8 @@ namespace OCPI {
 	a.isParameter = prop.m_isParameter;
 	a.isHidden = prop.m_isHidden;
 	a.isInitial = prop.m_isInitial;
+	a.isVolatile = prop.m_isVolatile;
+	a.isWritable = prop.m_isWritable;
 	a.isDebug = prop.m_isDebug;
 	a.isWorker = prop.m_isImpl;
 	a.isCached = false;     // set by lower levels if cached
@@ -316,7 +318,8 @@ namespace OCPI {
 	if (hasOption(options, OA::PropertyOption::UNREADABLE_OK)) {
 	  if (a_attributes)
 	    a_attributes->isUnreadable = true;
-	  val.clear();
+	  if (!hasOption(options, OA::PropertyOption::APPEND))
+	    val.clear();
 	  return;
 	} else
 	  throw OU::Error("For getting debug property \"%s\": worker is not in debug mode",
@@ -388,8 +391,11 @@ namespace OCPI {
     Cache *Worker::
     getCache(const OA::PropertyInfo &info, size_t offset, const OU::Member &m, bool *dirty,
 	     OA::PropertyOptionList &options, OA::PropertyAttributes *a_attributes) const {
-      if (dirty)
+      if (dirty) {
 	*dirty = false;
+	if (info.m_readSync)
+	  propertyRead(info.m_ordinal);
+      }
       if (info.m_isVolatile || (hasOption(options, OA::PropertyOption::UNCACHED) && info.m_isReadable))
 	return NULL;
       if (m_cache.size() <= info.m_ordinal)
@@ -419,7 +425,7 @@ namespace OCPI {
     // Basic setting without any data type information
     void Worker::
     setData(const OA::PropertyInfo &info, Cache *cache, size_t offset, const uint8_t *data,
-	    size_t nBytes, size_t nBits, size_t sequenceOffset, size_t sequenceLength) const {
+	    size_t nBytes, size_t nBits, size_t sequenceOffset, size_t sequenceLength, bool last) const {
       switch (nBits) {
       case 8:
 	setProperty8(info, offset, *data); break;
@@ -440,6 +446,8 @@ namespace OCPI {
       }
       if (cache)
 	cache->fill(offset + sequenceOffset, nBits ? nBits/8 : nBytes, data);
+      if (last && info.m_writeSync)
+	propertyWritten(info.m_ordinal); // Some has been written
     }
     // Basic getting of possibly-cached data without any data type information
     // There are basically two different modes as seen by the caller
@@ -504,7 +512,7 @@ namespace OCPI {
 	    cache->setDirty(offset, m.m_nBytes); // make it all dirty so dirty is not sparse
 	  for (unsigned n = 0; n < v.m_nTotal; n++) {
 	    size_t l = (sp[n] ? strlen(sp[n]) : 0) + 1;
-	    setData(info, cache, offset, (uint8_t *)(sp[n] ? sp[n] : ""), l);
+	    setData(info, cache, offset, (uint8_t *)(sp[n] ? sp[n] : ""), l, 0, 0, 0, !m.m_isSequence);
 	    offset += OU::roundUp(m.m_stringLength + 1, 4);
 	  }
 	} else {
@@ -537,7 +545,7 @@ namespace OCPI {
 	    }
 	  } else
 	    data = v.m_pUChar;
-	  setData(info, cache, offset, data, nBytes);
+	  setData(info, cache, offset, data, nBytes, 0, 0, 0, !m.m_isSequence);
 	  delete [] alloc; // may be null if not serialized (not struct)
 	}
         if (m.m_isSequence)
@@ -553,8 +561,6 @@ namespace OCPI {
 	  cache->setDirty(mOffset, m.m_nBytes); // make it all dirty so dirty is not sparse
       } else
 	setData(info, cache, mOffset, &v.m_UChar, 0, m.m_nBits);
-      if (info.m_writeSync)
-	propertyWritten(info.m_ordinal); // Some has been written
     }
     void Worker::
     getProperty(const OA::PropertyInfo &info, OU::Value &v, const OU::Member &m,
@@ -566,8 +572,6 @@ namespace OCPI {
 	v = *m.m_default;
 	return;
       }
-      if (info.m_readSync)
-	propertyRead(info.m_ordinal);
       bool dirty;
       Cache *cache = getCache(info, mOffset, m, &dirty, options, a_attributes);
       if (m.m_baseType == OA::OCPI_Struct || m.m_isSequence || m.m_arrayRank > 0) {

@@ -1,0 +1,44 @@
+
+--Breakdown of hdl/:--
+
+This tree holds code and tools specific to the HDL model and associated hardware (FPGAs).
+
+The "primitives" directory supplies low level/primitive utility libraries
+and cores used to build application workers, device workers and other infrastructure modules.
+
+The "devices" directory holds device workers that may use primitives, and are optionally
+used in platforms (i.e. they are included when an app needs them, but not otherwise).
+Workers under this directory are intended to be generic and reusable across cards and
+platforms. Examples are dram (with memory controller), gbe, adc, dac, flash memory, etc.
+
+The "cards" directory holds specs and device workers (unique to a card) for "plug-in"
+cards that plug into slots in a platform.  E.g. FMC-based cards.
+
+The "platforms" directory holds platform worker and configuration(s) which are comprised of
+OpenCPI IP and parameters used to build "platform cores" that are combined with
+applications to make bitstreams.
+A "platform" is a particular chip on a board with various devices attached.  As is the
+case for most of the currently supported boards, only one FPGA is present, therefore
+a "platform" is simply considered a board. However when there are multiple supported FPGAs
+on a board, a "platform" is not a board, but one of the chips on the board.
+
+The "assemblies" directory holds assembly configurations built into bitstreams, consisting of
+workers, which will build/synthesize for particular platforms.  The workers in such an assembly
+are essentially a pre-connected, pre-instanced subset of an application.
+
+
+--A word on where workers are built:--
+
+HDL OpenCPI components/workers are not located in this directory tree and therefore
+are not built here. They are built under the top level "components" directory where
+multiple authoring model implementations of the same components are built,
+i.e. a heterogeneous component library.
+
+Device workers are built in either the "devices" directory, the "cards" directory or
+in a {platform}/devices/ directory.
+
+Platform workers and platform configurations are built in the directory under
+"platforms" for that platform.
+
+Assemblies and Containers (bitstreams) are built in in the "assemblies" directory,
+under a directory named for the assembly.

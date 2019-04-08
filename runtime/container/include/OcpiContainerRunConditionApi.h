@@ -56,18 +56,22 @@ typedef uint32_t OcpiPortMask;
 typedef uint8_t OcpiBoolean;
 const OcpiPortMask OCPI_ALL_PORTS = (~(OcpiPortMask)0);
 const OcpiPortMask OCPI_NO_PORTS = ((OcpiPortMask)0);
+// From the user/worker point of view, runconditions are const when activated.
+// under the covers a few things are changeable by the implementation.
+// The m_portMasks member in particular is modified for compatibility reasons if there
+// are no ports at all.
 class RunCondition {
   friend class OCPI::RCC::Worker;
   friend class OCPI::OCL::Worker;
 public: // Should these be protected with friends reading?
-  OcpiPortMask *m_portMasks;  // the masks used for checking
+  mutable OcpiPortMask *m_portMasks;  // the masks used for checking
   OcpiBoolean   m_timeout;    // is timeout enabled?
   uint32_t      m_usecs;      // usecs of timeout, zero is valid
-  bool          m_inUse;      // Are we currently registered? (AV-4722)
+  mutable bool  m_inUse;      // Are we currently registered? (AV-4722)
  private:
   OcpiPortMask  m_myMasks[3]; // non-allocated masks used almost all the time
   OcpiPortMask *m_allocated;  // NULL or allocated
-  bool          m_hasRun;     // Have we run since being activated?
+  mutable bool  m_hasRun;     // Have we run since being activated?
  protected:
   OcpiPortMask  m_allMasks;   // summary of all masks in the list
  public:
@@ -121,13 +125,13 @@ public: // Should these be protected with friends reading?
  private:
   void initMasks(OcpiPortMask first, va_list ap);
   void setMasks(OcpiPortMask first, va_list ap);
-  void activate(OCPI::OS::Timer &tmr, unsigned nPorts);
+  void activate(OCPI::OS::Timer &tmr, unsigned nPorts) const;
   // Return true if should run based on non-port info
   // Set timedout if we are running due to timeout.
   // Set hasRun
   // Set bail if should NOT run based on non-port info
  protected:
-  bool shouldRun(OCPI::OS::Timer &tmr, bool &timedout, bool &bail);
+  bool shouldRun(OCPI::OS::Timer &tmr, bool &timedout, bool &bail) const;
 };
 }} // OCPI::API::
 #endif // __cplusplus

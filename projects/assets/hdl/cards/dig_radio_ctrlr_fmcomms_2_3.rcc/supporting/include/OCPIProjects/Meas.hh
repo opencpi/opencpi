@@ -54,9 +54,31 @@ public    : std::string m_unit;
 private   : meas_type_t m_type;
 
 public    : Meas(meas_type_t type);
-public    : void append_to_ostream(std::ostream& os) const;
+public    : meas_type_t get_type() const;
 
 }; // class Meas
+
+template<class T>
+std::ostream& operator<< (std::ostream& os,
+                          const Meas<T>& meas) {
+
+  os << std::setprecision(std::numeric_limits<T>::digits10+1);
+  os << meas.m_value << meas.m_unit;
+  if(meas.get_type() == meas_type_t::NOMINAL) {
+    os << " (nominal)";
+  }
+  if(meas.get_type() == meas_type_t::THEORETICAL) {
+    os << " (theoretical)";
+  }
+  if(meas.get_type() == meas_type_t::MEASURED) {
+    os << " (measured)";
+  }
+  if(meas.get_type() == meas_type_t::EXACT) {
+    os << " (exact)";
+  }
+
+  return os;
+}
 
 } // namespace RadioCtrlr
 

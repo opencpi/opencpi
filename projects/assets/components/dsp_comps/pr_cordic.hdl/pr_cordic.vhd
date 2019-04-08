@@ -104,7 +104,7 @@ begin
       if(ctl_in.reset = '1') then
         scnt     <= 0;
         hold_off <= '0';
-      elsif (scnt = STAGES_c+1) then
+      elsif (scnt = STAGES_c+1 and idata_vld = '1') then
         hold_off <= '1';
       elsif (idata_vld = '1') then
         scnt <= scnt + 1;

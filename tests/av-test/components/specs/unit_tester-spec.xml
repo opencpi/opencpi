@@ -1,0 +1,15 @@
+<!-- This is the spec file (OCS) for: unit_tester
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<ComponentSpec>
+  <Property type="short" name="prop" />
+
+  <DataInterfaceSpec Name="in1" Producer="false"/>
+  <DataInterfaceSpec Name="in2" Producer="false"/>
+  <DataInterfaceSpec Name="in3" Producer="false"/>
+
+  <DataInterfaceSpec Name="out1" Producer="true"/>
+  <DataInterfaceSpec Name="out2" Producer="true"/>
+  <DataInterfaceSpec Name="out3" Producer="true"/>
+</ComponentSpec>

@@ -439,7 +439,7 @@ typedef struct {
    // access the current run condition
    const RunCondition *getRunCondition() const;
    // Change the current run condition - if NULL, revert to the default run condition
-   void setRunCondition(RunCondition *rc);
+   void setRunCondition(const RunCondition *rc);
    virtual uint8_t *rawProperties(size_t &size) const;
    RCCResult setError(const char *fmt, ...);
    bool willLog(unsigned level) const;

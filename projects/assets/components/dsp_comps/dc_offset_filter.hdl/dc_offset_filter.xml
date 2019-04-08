@@ -1,4 +1,4 @@
-<HdlWorker Language="vhdl" Spec="dc_offset_filter-spec.xml">
+<HdlWorker Language="vhdl" Spec="dc_offset_filter-spec.xml" version='2'>
 
   <Property Name="DATA_WIDTH_p" Type="ulong" Parameter="true" Readable="true" Default="16"/>
 
@@ -9,6 +9,6 @@
   <Property Name="peak" Type="short" Volatile="true"/>
 
   <StreamInterface Name="in"  DataWidth="32" ZeroLengthMessages="true"/>
-  <StreamInterface Name="out" DataWidth="32" ZeroLengthMessages="true"/>
+  <StreamInterface Name="out" DataWidth="32" ZeroLengthMessages="true" inserteom='1'/>
 
 </HdlWorker>

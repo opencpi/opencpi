@@ -24,6 +24,7 @@
 # to the assembly's directory, ending in the name of the assembly.
 HdlMode:=container
 Model:=hdl
+override XmlIncludeDirs:=$(XmlIncludeDirs) $(OCPI_CDK_DIR)/include/hdl
 $(infox MYCL:$(ComponentLibraries):$(ComponentLibrariesInternal):$(XmlIncludeDirs))
 ifndef HdlPlatforms
 HdlPlatforms:=$(HdlPlatform)

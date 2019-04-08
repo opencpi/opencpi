@@ -92,6 +92,7 @@ namespace {
   }
   Workers workers;
   unsigned matchedWorkers = 0; // count them even if they are not built or usable
+  std::string testFile;
   WorkersIter findWorker(const char *name, Workers &ws) {
     for (auto wi = ws.begin(); wi != ws.end(); ++wi) {
         std::string workername; //need the worker name and the model in order to make comparison
@@ -266,11 +267,11 @@ namespace {
       return NULL;
     }
     const char *err;
-    Worker *w = Worker::create(file.c_str(), empty, argPackage, NULL, NULL, NULL, 0, err);
+    Worker *w = Worker::create(file.c_str(), testFile, argPackage, NULL, NULL, NULL, 0, err);
     bool missing;
     if (!err && (matchSpec ? w->m_specName == matchName :
                  w->m_emulate && w->m_emulate->m_implName == matchName) &&
-        !(err = w->parseBuildFile(true, &missing))) {
+        !(err = w->parseBuildFile(true, &missing, &testFile))) {
       if (verbose)
         fprintf(stderr,
                 "Found worker for %s:  %s\n", matchSpec ? "this spec" : "emulating this worker",
@@ -288,6 +289,7 @@ namespace {
           std::string workerNames;
           if ((err = OU::file2String(workerNames, "../lib/workers", ' ')))
             return err;
+	  addDep("../lib/workers", false); // if we add or remove a worker from the library...
           for (OU::TokenIter ti(workerNames.c_str()); ti.token(); ti.next()) {
             if ((err = tryWorker(ti.token(), w->m_implName, false, false)))
               return err;
@@ -385,10 +387,13 @@ namespace {
         m_port = static_cast<DataPort *>(p);
       }
       if (name) {
-        if (inouts)
-          for (unsigned n = 0; n < inouts->size()-1; n++)
-            if (!strcasecmp(name, (*inouts)[n].m_name.c_str()))
+        if (inouts) {
+          for (unsigned n = 0; n < inouts->size()-1; n++) {
+            if (!strcasecmp(name, (*inouts)[n].m_name.c_str())) {
               return OU::esprintf("name \"%s\" is a duplicate %s name", name, OE::ezxml_tag(x));
+            }
+          }
+        }
         m_name = name;
       }
       return NULL;
@@ -546,6 +551,7 @@ namespace {
                 InputOutput *ios = findIO(a, dp.isDataProducer() ? outputs : inputs);
                 if (!ios)
                   return OU::esprintf("No global %s defined with name: \"%s\"", tag, a);
+                ios->m_port = &dp;
                 m_ports.push_back(*ios);
                 myIo = &m_ports.back();
               } else {
@@ -649,7 +655,7 @@ namespace {
           return OU::esprintf("the onlyplatforms and excludeplatforms attributes cannot both occur");
         if ((err = OU::parseList(a, doOnlyPlatform, this)))
           return err;
-      } else if ((a = ezxml_cattr(x, "excludeplatforms")) && 
+      } else if ((a = ezxml_cattr(x, "excludeplatforms")) &&
                  (err = OU::parseList(a, doExcludePlatform, this)))
         return err;
       // Parse explicit property values for this case, which will override
@@ -936,10 +942,12 @@ namespace {
 
         for (unsigned n = 0; n < m_ports.size(); n++) {
           InputOutput &io = m_ports[n];
-          if (!io.m_port->isDataProducer() && io.m_script.size()) {
-            if ((err = generateFile(first, "inputs", "input port", s,
-                                    io.m_port->OU::Port::m_name, io.m_script, env, file)))
-              return err;
+          if (io.m_port) {
+            if (!io.m_port->isDataProducer() && io.m_script.size()) {
+              if ((err = generateFile(first, "inputs", "input port", s,
+                                      io.m_port->OU::Port::m_name, io.m_script, env, file)))
+                return err;
+            }
           }
         }
       }
@@ -1019,6 +1027,7 @@ namespace {
         const DataPort *first = NULL, *firstEm = NULL;
         for (unsigned n = 0; n < m_ports.size(); n++) {
           const DataPort &p = *m_ports[n].m_port;
+          if (&p != NULL) {
           if (p.isDataProducer()) {
             if (!first)
               first = &p;
@@ -1040,6 +1049,7 @@ namespace {
             else
               assert("port is neither worker or emulator?" == 0);
           }
+        }
         }
         std::string app("<application");
         if (m_done.size())
@@ -1306,6 +1316,7 @@ namespace {
         // Figure out which platforms will not support this subcase
         assert(pc.params.size() == m_settings.params.size());
         Strings excludedPlatforms; // for the subcase
+        Strings excludedPlatformsMerge; //need a temp variable when merging subcase and test platforms
         for (unsigned n = 0; n < pc.params.size(); n++) {
           Param
             &cp = m_settings.params[n], // case param
@@ -1321,9 +1332,11 @@ namespace {
           if (!cp.m_param || cp.m_uValues.empty()) // empty is generated - no exclusions
             continue;
           Param::Attributes *attrs = NULL;
-          for (unsigned i = 0; !attrs && i < cp.m_uValues.size(); i++)
-            if (sp.m_uValue == cp.m_uValues[i])
+          for (unsigned i = 0; !attrs && i < cp.m_uValues.size(); i++) {
+            if (sp.m_uValue == cp.m_uValues[i]) {
               attrs = &cp.m_attributes[i];
+            }
+          }
           assert(attrs);
           for (auto si = allPlatforms.begin(); si != allPlatforms.end(); ++si) {
             const char *p = si->c_str();
@@ -1334,34 +1347,41 @@ namespace {
             // If all values for this platform are not explicit
             if (cp.m_explicitPlatforms.find(p) == cp.m_explicitPlatforms.end()) {
               if (attrs->m_excluded.find(p) != attrs->m_excluded.end() ||
-                  (attrs->m_included.size() && attrs->m_included.find(p) == attrs->m_included.end()))
-                excludedPlatforms.insert(p);
-            } else if (attrs->m_only.find(p) == attrs->m_only.end())
+                  (attrs->m_included.size() && attrs->m_included.find(p) == attrs->m_included.end())) {
+                excludedPlatformsMerge.insert(p);
+              }
+            } else if (attrs->m_only.find(p) == attrs->m_only.end()) {
               // This value is not specifically set for this platform.  Exclude the platform.
-              excludedPlatforms.insert(p);
+              excludedPlatformsMerge.insert(p);
+            }
           }
         }
         // add per-case excluded platforms from the test xml to the list
-        if (excludedPlatforms.size())
-          m_excludePlatforms.insert(excludedPlatforms.begin(), excludedPlatforms.end());
+        if (excludedPlatformsMerge.size() > 0) {
+          excludedPlatforms.insert(excludedPlatformsMerge.begin(), excludedPlatformsMerge.end());
+        }
+        if (m_excludePlatforms.size() > 0){
+          excludedPlatforms.insert(m_excludePlatforms.begin(), m_excludePlatforms.end());
+        }
 
         // Now that all platforms exclusions have been collected, generate list
         fprintf(out, "    <subcase id='%u'", s);
-        if (m_excludePlatforms.size() && !onlyPlatforms.size() && !m_onlyPlatforms.size()) {
-          fprintf(out, " excludeplatforms='");
-          for (auto si = m_excludePlatforms.begin(); si != m_excludePlatforms.end(); ++si)
-            fprintf(out, "%s%s", si == m_excludePlatforms.begin() ? "" : " ",
-                    si->c_str());
+        if (excludedPlatforms.size() && !onlyPlatforms.size() && !m_onlyPlatforms.size()) {
+          fprintf(out, " exclude='");
+          for (auto si = excludedPlatforms.begin(); si != excludedPlatforms.end(); ++si) {
+            fprintf(out, "%s%s", si == excludedPlatforms.begin() ? "" : " ", si->c_str());
+          }
     	  fprintf(out, "'");
         }
         // Now we know which platforms should be included
-        if (m_onlyPlatforms.size()){
-          fprintf(out, " onlyplatforms='");
-          for (auto si = m_onlyPlatforms.begin(); si != m_onlyPlatforms.end(); ++si)
+        if (m_onlyPlatforms.size()) {
+          fprintf(out, " only='");
+          for (auto si = m_onlyPlatforms.begin(); si != m_onlyPlatforms.end(); ++si) {
             fprintf(out, "%s%s", si == m_onlyPlatforms.begin() ? "" : " ", si->c_str());
+          }
           fprintf(out, "'");
         } else if (onlyPlatforms.size()) {
-          fprintf(out, " onlyplatforms='");
+          fprintf(out, " only='");
           for (auto si = onlyPlatforms.begin(); si != onlyPlatforms.end(); ++si) {
             const char *p = si->c_str();
             if (m_excludePlatforms.size()  && m_excludePlatforms.find(p) != m_excludePlatforms.end())
@@ -1506,6 +1526,7 @@ namespace {
     const char *err;
     if ((err = OU::file2String(workerNames, "../lib/workers", ' ')))
       return err;
+    addDep("../lib/workers", false); // if we add or remove a worker from the library...
     for (OU::TokenIter ti(workerNames.c_str()); ti.token(); ti.next())
       if ((err = tryWorker(ti.token(), specName, true, false)))
         return err;
@@ -1648,19 +1669,19 @@ const char *
 createTests(const char *file, const char *package, const char */*outDir*/, bool a_verbose) {
   verbose = a_verbose;
   const char *err;
-  std::string parent, xfile, specFile;
+  std::string parent, specFile;
   ezxml_t xml, xspec;
   if (!file || !file[0]) {
     static char x[] = "<tests/>";
     xml = ezxml_parse_str(x, strlen(x));
-  } else if ((err = parseFile(file, parent, "tests", &xml, xfile, false, false, false)) ||
+  } else if ((err = parseFile(file, parent, "tests", &xml, testFile, false, false, false)) ||
              (err = OE::checkAttrs(xml, "spec", "timeout", "duration", "onlyWorkers",
                                    "excludeWorkers", "useHDLFileIo", "mode", "onlyPlatforms",
                                    "excludePlatforms", NULL)) ||
              (err = OE::checkElements(xml, "property", "case", "input", "output", NULL)))
     return err;
   // ================= 1. Get the spec
-  if ((err = getSpec(xml, xfile, package, xspec, specFile, specName)) ||
+  if ((err = getSpec(xml, testFile, package, xspec, specFile, specName)) ||
       (err = OE::getNumber(xml, "duration", &duration)) ||
       (err = OE::getNumber(xml, "timeout", &timeout)))
     return err;
@@ -1979,6 +2000,9 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   bool hdlFileIO;
   if ((err = OE::getBoolean(xml, "UseHdlFileIO", &hdlFileIO)))
     return err;
+  const char *env = getenv("OCPI_FORCE_HDL_FILE_IO");
+  if (env)
+    hdlFileIO = env[0] == '1';
   bool seenHDL = false;
   Strings assyDirs;
   std::string assemblies("gen/assemblies");

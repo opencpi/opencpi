@@ -21,7 +21,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{OpenCPI\\ \bigskip ZedBoard Getting Started Guide}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \input{../../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
 \input{../../../../../../doc/av/tex/snippets/ocpidev_ide.tex}
@@ -57,15 +57,17 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 			\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
 		    \hline
 		    v1.1 & Initial Release & 3/2017 \\
-            \hline
-            v1.2 & Updated for OpenCPI Release 1.2 & 8/2017 \\
-            \hline
-            v1.3 & Updated for OpenCPI Release 1.3 & 2/2018 \\
-            \hline
-            pre-v1.4 & Fixed inaccurate description for hardware jumper configuration, OpenCPI-SD-zed directory path, and MAC address modification instructions for multiple ZedBoards on the same network. & 4/2018 \\
-            \hline
-            v1.4 & Update descriptions and paths & 9/2018 \\
-            \hline
+				\hline
+				v1.2 & Updated for OpenCPI Release 1.2 & 8/2017 \\
+				\hline
+				v1.3 & Updated for OpenCPI Release 1.3 & 2/2018 \\
+				\hline
+				pre-v1.4 & Fixed inaccurate description for hardware jumper configuration, OpenCPI-SD-zed directory path, and MAC address modification instructions for multiple ZedBoards on the same network. & 4/2018 \\
+				\hline
+				v1.4 & Update descriptions and paths & 9/2018 \\
+				\hline
+				v1.5 & Deprecated Zipper & 4/2019 \\
+				\hline
 			\end{tabularx}
 		\end{table}
 	\end{center}
@@ -171,7 +173,7 @@ See the ANGRYVIPER Team's Getting Started Guide for additional information conce
 \begin{itemize}
 \item \textbf{Digilent Zedboard}\\ \medskip
 It is expected that this evaluation board includes a power supply, micro-USB to USB cable, micro-USB to female-USB adapter and standard SD card (4GB). \\ \medskip
-OpenCPI has been tested on revisions C and D of the Zedboard. However, limitations have been observed for both revisions when used with the Zipper daughter card, details are provided in Myriad-RF\_1\_Zipper\_Limitations.pdf.\\ \medskip
+OpenCPI has been tested on revisions C and D of the Zedboard.\\ \medskip
 The micro-USB serial port located on the top-side of the ZedBoard labeled UART, can be used to access the serial connection with the processor.\medskip
 
 \begin{figure}[H]
@@ -197,18 +199,11 @@ An Ethernet port is available on the Zedboard and is required when the Network m
 \end{figure}
 
 \item \textbf{OpenCPI Zedboard BSP supported daughter cards (OPTIONAL)}\\
-The ZedBoard has a FMC LPC slot that is used to connect plug-in modules or daughter cards. Currently, OpenCPI supports three FMC daughter cards, which may be installed on the Zedboard:
+The ZedBoard has a FMC LPC slot that is used to connect plug-in modules or daughter cards. Currently, OpenCPI supports two FMC daughter cards, which may be installed on the Zedboard:
 \begin{itemize}
 	\item Analog Devices FMCOMMS2
 	\item Analog Devices FMCOMMS3
-	\item Lime Microsystems' Zipper card with the MyriadRF-1
 \end{itemize} \medskip
-
-\begin{figure}[ht]
-	\centerline{\includegraphics[scale=0.05]{zed_zipper}}
-	\caption{ZedBoard With Zipper and MyriadRF-1 Connected to the FMC Slot}
-	\label{fig:zed_zipper}
-\end{figure}
 
 \item \textbf{Access to a network which supports DHCP. (Network Mode)}
 
@@ -614,5 +609,18 @@ $ ocpidev build --hdl-platform zed_ise
 \section{Driver Notes}
 \input{../../../../../../doc/av/tex/snippets/Driver_Snippet.tex}
 %
+\section{Deprecated Zipper}
+\begin{flushleft}
+Beginning with OpenCPI Version 1.5, support for Lime Microsystems' Zipper card is now deprecated, and the following note and figure have been removed from the main body of this Getting Started Guide:\medskip
+
+OpenCPI has been tested on revisions C and D of the Zedboard. However, limitations have been observed for both revisions when used with the Zipper daughter-card, details are provided in Myriad-RF\_1\_Zipper\_Limitations.pdf.
+\end{flushleft}
+
+\begin{figure}[ht]
+	\centerline{\includegraphics[scale=0.05]{zed_zipper}}
+	\caption{ZedBoard With Zipper and MyriadRF-1 Connected to the FMC Slot}
+	\label{fig:zed_zipper}
+\end{figure}
+
 \end{appendices}
 \end{document}

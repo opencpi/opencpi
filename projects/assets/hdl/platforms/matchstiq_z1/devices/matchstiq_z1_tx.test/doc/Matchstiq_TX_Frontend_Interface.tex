@@ -88,7 +88,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -113,7 +113,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & February 2018 \\
+	Release Date      & April 2019 \\
 	\hline
 	Component Library & ocpi.assets.platforms.matchstiq\_z1.devices \\
 	\hline
@@ -147,7 +147,7 @@ The RF section only has one device which is a VGA in the LMS6002D transceiver.\p
 \subsection*{Tuning}
 The LMS6002D transceiver converts the signal from baseband to RF using one mixing phase.
 \subsection*{Sample Rate}
-The sampling clock domain originates from  the CLK0 output of a SI5338 clock generator, which is connected directly to the Zynq FPGA. The platform worker outputs this clock to the Lime transceiver.  This clock returns as an input to the Zynq FPGA aligned with the ADC data. This means that on the Matchstiq-Z1 platform, the TX and RX sample clocks are connected together so they will need to be the same value unless changes are made to the BSP by the user.
+The sampling clock domain originates from  the CLK0 output of a SI5338 clock generator, which is connected directly to the Zynq-7000 FPGA. The platform worker outputs this clock to the Lime transceiver.  This clock returns as an input to the Zynq-7000 FPGA aligned with the ADC data. This means that on the Matchstiq-Z1 platform, the TX and RX sample clocks are connected together so they will need to be the same value unless changes are made to the BSP by the user.
 \newpage
 
 \section*{Block Diagrams}

@@ -515,6 +515,8 @@ emitXmlWorker(FILE *f, bool verbose) {
     fprintf(f, " requiredWorkGroupSize='%zu'", m_requiredWorkGroupSize);
   if (m_version) // keep old distinction between zero and 1 even though they are really the same
     fprintf(f, " version='%u'", m_version);
+  if (m_workerEOF)
+    fprintf(f, " workerEOF='1'");
   fprintf(f, ">\n");
   if (m_scalable) {
     OU::Port::Scaling s;

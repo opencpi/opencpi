@@ -20,16 +20,36 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Release Notes}
-\def\docVersion{1.4.0}
+\def\docVersion{1.5.0}
 %----------------------------------------------------------------------------------------
 \input{snippets/LaTeX_Header.tex}
 \usepackage{multicol}
 \setlength{\parindent}{0pt} % Don't indent all paragraphs
 \newcommand{\forceindent}{\leavevmode{\parindent=1em\indent}}
 \newcommand{\ocpidev}{\code{ocpidev} }
+% \newcommand{\bugref}[1]{\hyperref[bug:#1]{AV-#1}: \nameref*{bug:#1}}
+\newcommand{\bugref}[1]{\nameref*{bug:#1} (cf.~\ref{bug:#1})}
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\small{\docTitle}}
+%----------------------------------------------------------------------------------------
+% This command will make diffs look better in the future...
+\newcommand{\beginoldnotes}{
+% Demote sectional commands from here on out - https://tex.stackexchange.com/a/61803
+% This lets us just move the text from above and add a new "origsection" header
+\let\origsection\section%
+\let\section\subsection%
+\let\subsection\subsubsection%
+\let\subsubsection\paragraph%
+\let\paragraph\subparagraph%
+% Make section numbers (Roman)-(Roman).(Arabic) instead of previously defined (Roman)-(Arabic).(Arabic), e.g. old release's II-3 becomes B-II.3 not B-2.3
+\renewcommand\thesection{\Roman{section}}
+\renewcommand\thesubsection{\thesection-\Roman{subsection}}
+\newpage
+\begin{appendices}
+The Release Notes from previous releases are included here as reference for still-existing bugs, relevant upgrading notes for users of very old versions, etc.
+}
+% end of endofnewreleasenotes
 %----------------------------------------------------------------------------------------
 \begin{document}
 \maketitle
@@ -56,6 +76,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 			v1.3.1 & Updates for 1.3.1 release & 3/2018 \\
 			\hline
 			v1.4.0 & Updates for 1.4.0 release and moved previous to appendices & 10/2018 \\
+			\hline
+			v1.5.0 & Updates for 1.5.0 release & 4/2019 \\
 			\hline
 			\end{tabularx}
 		\end{table}
@@ -86,7 +108,114 @@ The \href{sec:appendices}{appendices} contain the Release Notes from previously 
 \subsection{Previously Documented Deficiencies}
 \fi
 
-% \origsection{Release 1.4.0}
+% \origsection{Release 1.5.0}
+\section{Enhancements}
+\subsection{New Digital Radio Controller Front-End Control Paradigm} % AV-3840
+\label{sec:15_drc}
+This new OpenCPI Specification File (OCS) represents a ``\textit{digital radio controller}.''
+A \textit{digital radio} exposes at least one interface containing digitized
+Radio Frequency (RF) samples to an OpenCPI Application.
+Each interface includes samples which were ultimately received (RX) or will
+be transmitted (TX).
+Each interface, including the characteristics of its RF
+source or destination, is represented as a \textit{data stream}.
+A \textit{digital radio controller} controls the configurations which
+characterize the RF source or destination of each
+\textit{data stream}'s samples, \textit{e.g.} tuning
+frequency.\\
+
+For more information, consult \path{Dig_Radio_Ctrlr.pdf}.
+\subsection{New Time-Based Protocol (``\code{ComplexShortWithMetadata-prot}'') (Technology Preview)} % AV-4804
+\label{sec:15_protocol}
+One of the major improvements as of 1.5 is to have timestamped data flow from end-to-end using the ``RxApp'' on an E3xx example platform. To achieve this, ``\path{ComplexShortWithMetadata-prot}'' was created. The source to this Protocol (\path{<core>/specs/}) has various comments explaining the new opcodes and arguments as well as example usage.
+\subsection{New Time-Based Assets Project (``\code{assets\_ts}'') (Technology Preview)} % AV-5217
+\label{sec:15_assets_ts}
+The workers required to achieve the previously mentioned goal of timestamped data within ``RxApp'' were derived from those within ``assets'' but are now in their own Project, ``assets\_ts''.
+\subsection{New HDL Worker Port Interfaces} % AV-4961
+\label{sec:15_smart_wrappers}
+A new HDL Worker port interface is now available that considerably reduces code complexity when a worker ``doesn't care'' about message boundaries, \textit{e.g.} when streaming sequences of data. This interface is currently requested by noting in the OWD that it is ``\texttt{version=2}'' and this interface will become the default in OpenCPI 2.0. Additional information can be found in the \textit{Component Development Guide}.
+\subsection{\ocpidev Improvements} % AV-3298 et al
+\label{sec:15_ocpidev}
+The \ocpidev tool has been significantly improved, including:
+\begin{itemize}
+\setlength\itemsep{0em} %tighten
+\item ability to show \code{utilization} of various HDL Workers and Assemblies % AV-3298
+\item \code{show component} shows information about Components, including Properties and Ports % AV-5034
+\item \code{show worker} information about Workers, including Properties and Ports % AV-4116
+\end{itemize}
+See \ref{sec:15_ocpidev_changes} for \ocpidev command changes.
+\subsection{New ``Zed'' RCC Platform: \code{xilinx13\_4}} % AV-4848
+\label{sec:15_new_zed_rcc}
+With the introduction of the RCC Platform \path{xilinx13_4} to support the E310 in 1.4, with release 1.5 there are now RPMs available pairing the Zed with both \path{xilinx13_3} and \path{xilinx13_4}. The RPMs follow the naming convention \textit{opencpi-hw-platform-zed-\textless RCCPlatform\textgreater}. See the \textit{Zed Getting Started Guide} for more information.
+\subsection{\code{gdb} and \code{rsync} Provided on \code{xilinx13\_3} and \code{xilinx13\_4} RCC Platforms} % AV-5094
+Both of these tools are very helpful with development and an ARM-compiled version is now provided in the SD card images provided by OpenCPI. Out of the box, \path{rsync} must be run \textit{from the radio} targeting the development host; more information is available in the applicable \textit{Getting Started Guides}.
+\section{Changes and Notes}
+\subsection{Deprecation of the ``Readable'' Attribute}
+\label{sec:15_readable}
+The ``\code{readable}'' Property Accessibility Attribute has been deprecated and replaced with ``\code{readback}.'' \textit{However}, its use case is very rare and specific; by default all Properties are ``readable'' in the usual context of the term.
+Additional information can be found in the \textit{Component Development Guide}.
+
+\subsection{Deprecation of Zipper RF Interface Board}
+\label{sec:15_zipper} % AV-5257
+The \href{https://wiki.myriadrf.org/Zipper_Interface_Board}{Myriad RF Zipper Interface Board} has been unavailable for purchase for a considerable time. While OpenCPI still \textit{theoretically} supports it, limited available quantities have resulted in its removal from the list of officially supported (and therefore tested) platforms. Support infrastructure has been moved to the ``\texttt{inactive}'' project.
+\subsection{E3xx PPS Discipline}
+\label{sec:15_e3xx_gps} % AV-4994
+The ``e3xx'' Platform Worker timebase interface's PPS disciplining was previously limited to only the E310/E312's ``SYNC'' SMB connector (GPS PPS disciplining was not possible). The source selection is now exposed as a parameter on the Platform Worker.
+\subsection{``\code{new\_project\_source}'' script removed} % AV-4482
+\label{sec:15_new_project_source}
+The utility script noted in \ref{sec:13_restructure} has been replaced by the more versatile ``\path{ocpi-copy-projects}'' script. This new utility is in the user's path and has a ``\texttt{--help}'' option.
+\subsection{RCC Worker Parameter Macros Stricter} % AV-5105
+If an RCC Worker had been using the undocumented / internal ``macro form'' of a parameter, \textit{e.g.} ``\path{PARAM_biasValue()}'', that form will no longer work. Instead, RCC Workers \textit{must} use the documented form, \textit{e.g.} ``\path{BIAS_PARAM_BIASVALUE}''\footnote{These examples are from the \path{bias_param.c} worker, comparing 1.4 to 1.5.}.
+\subsection{\ocpidev Changes}
+\label{sec:15_ocpidev_changes}
+\begin{itemize}
+\setlength\itemsep{0em} %tighten
+\item The \code{show projects} command no longer shows tests and primitives with low verbosity (``\path{-v}''); use high verbosity instead (``\path{-vv}'')\footnote{Any automated parsing of data should be using JSON interface, which also needs this additional verbosity.}. % AV-4963
+\end{itemize}
+\subsection{``\code{myClock}'' HDL Code Deprecated / Removed} % AV-5235
+\label{sec:15_myclock}
+While revamping and examining the framework's ability to use multiple clocks within HDL Workers, it was found that the ``\code{myClock}'' capability was documented but likely never fully worked. This feature is \textit{planned} to be restored \textit{and tested} for the 1.6 release using a different XML attribute name.
+\subsection{Infrastructure OWDs Moved} % AV-5172 AV-5173 AV-5174 AV-5175
+Various OWDs\footnote{The OWDs explicitly were \path{metadata.xml}, \path{ocscp.xml}, \path{time_client.xml}, and \path{unoc_node.xml}.} were incorrectly located within the ``core'' Project's ``\path{specs}'' directory, even though they are infra\-structure Workers that an end user shouldn't need to be concerned with. They have been moved out to reduce confusion and clutter.
+\subsection{RPM Upgrade Notes} % AV-5245
+Some previous RPM-based installations may not have proper dependencies documented for some sub-packages, \textit{e.g.} version 1.4 of \path{opencpi-hw-platform-e3xx-xilinx13_4} requires ``\path{opencpi},'' not \textit{explicitly} ``\path{opencpi} version 1.4.'' This may cause version mismatches when upgrading; \textbf{ensure all packages currently installed on a system are \textit{explicitly} added to the \path{yum} command line when upgrading.}
+
+\section{Major Known Deficiencies}
+\label{sec:15_bugs}
+\subsection{``udev'' Radio Rules Sometimes Does Not Work} % AV-5275
+\label{bug:5275}
+Starting with 1.4, some RPMs pre-install symlinks for rules in \path{/etc/udev/rules.d/} for certain radio platforms, \textit{e.g.} a rule to create a symlink from \path{/dev/matchstiq_z1_0} to \path{/dev/ttyUSB0}. If the OpenCPI installation location is on a different partition than the host machine's root partition, the symlinks for these rules may be broken at boot-time because the target partition is not yet mounted when \path{udev} is reading the rules. To fix this, the command ``\code{sudo udevadm control --reload}'' should be executed upon a full boot. With CentOS~7, a \href{https://askubuntu.com/a/679600/139131}{custom \path{systemd} service can be implemented}.
+
+\subsection{Previously Documented Deficiencies}
+The following deficiencies are still present in 1.5:
+\begin{itemize}
+\setlength\itemsep{0em} %tighten
+\item \bugref{693}
+\item \bugref{1035}
+\item \bugref{1392}
+\item \bugref{2241} %% MIGHT BE FIXED FINAL RELEASE
+\item \bugref{2400}
+\item \bugref{2477}
+\item \bugref{3193}
+\item \bugref{3783}
+\item \bugref{2811}
+\item \bugref{4307}
+\end{itemize}
+
+The following previously-documented deficiencies have been fixed in this release:
+\begin{itemize}
+\setlength\itemsep{0em} %tighten
+\item \bugref{4173}
+\item \bugref{4278}
+\item \bugref{4486}
+\item \bugref{4526}
+\end{itemize}
+
+% === End of 1.5
+
+\beginoldnotes
+
+\origsection{Release 1.4.0}
 \section{Enhancements}
 
 \subsection{Support for Ettus E310 Platform} % AV-4247
@@ -256,36 +385,25 @@ The Component Unit Test infrastructure has been enhanced (cf. Section~\ref{sec:1
 The following deficiencies are still present in 1.4:
 \begin{itemize}
 \setlength\itemsep{0em} %tighten
-\item \ref{bug:693}: 32-bit Architecture File Size Limit
-\item \ref{bug:1035}: HDL Assembly Filename Constraint
-\item \ref{bug:1392}: Maximum Message Length in PCI-Based Platforms
-\item \ref{bug:2241}: Properties Before Raw Properties Cannot Have Parameterized Lengths
-\item \ref{bug:2400}: MAC Address on ZedBoard
-\item \ref{bug:2477}: PCI-Based Platforms Not Always Detected in Remote Tests
-\item \ref{bug:3193}: Lime RX/TX Proxy Tests on CentOS6
-\item \ref{bug:3783}: PCI Platforms Can Only Transmit Using One Channel
+\item \bugref{693}
+\item \bugref{1035}
+\item \bugref{1392}
+\item \bugref{2241}
+\item \bugref{2400}
+\item \bugref{2477}
+\item \bugref{3193}
+\item \bugref{3783}
 \end{itemize}
 
 The following previously-documented deficiencies have been fixed in this release:
 \begin{itemize}
 \setlength\itemsep{0em} %tighten
-\item \ref{bug:1385}: XML Parser Mixed-Case Issue\footnote{The opening and closing tags must still match, \textit{e.g.} \texttt{<Element>} pairs with \texttt{</Element>} but not \texttt{</element>}.}
-\item \ref{bug:1585}: Platform Development Guide
+\item \bugref{1385}
+\item \bugref{1585}
 \end{itemize}
 
-% Demote sectional commands from here on out - https://tex.stackexchange.com/a/61803
-% This lets us just move the text from above and add a new "origsection" header
-\let\origsection\section%
-\let\section\subsection%
-\let\subsection\subsubsection%
-\let\subsubsection\paragraph%
-\let\paragraph\subparagraph%
-% Make section numbers (Roman)-(Roman).(Arabic) instead of previously defined (Roman)-(Arabic).(Arabic), e.g. old release's II-3 becomes B-II.3 not B-2.3
-\renewcommand\thesection{\Roman{section}}
-\renewcommand\thesubsection{\thesection-\Roman{subsection}}
-\newpage
-\begin{appendices}
-The Release Notes from previous releases are included here as reference for still-existing bugs, relevant upgrading notes for users of very old versions, etc.
+% === End of 1.4
+
 \origsection{Release 1.3.1}
 \label{sec:appendices}
 \section{Enhancements}
@@ -384,6 +502,7 @@ The full-OSS OpenCPI code base has imported previously-written code that allows 
 This section describes items that may cause users of previous versions to modify their code, build system, etc.
 
 \subsection{Major Project Restructuring} % AV-3048, AV-3411, AV-3568
+\label{sec:13_restructure}
 Starting with Release 1.3, the CDK is no longer a top-level Project. All Components that were previously found in the CDK, \textit{e.g.} \code{file\_read}, have migrated to \code{ocpi.core}. The previously-documented ``Base Project'' has been removed; it was the RPM-specific manner of separating the CDK from the core components needed to run OpenCPI. The various items (cards, devices, specs, etc) that were previously found in the Base Project have been distributed into one of three new Projects. The previously non-OSS proprietary items have been redistributed within the new Projects as well. The Projects are:
 \begin{itemize}
 \setlength\itemsep{0em} %tighten
@@ -430,31 +549,31 @@ In the FSK reference application, \path{zero_padding.hdl} was replaced by two ne
 The following deficiencies are still present in 1.3:
 \begin{itemize}
 \setlength\itemsep{0em} %tighten
-\item \ref{bug:693}: 32-bit Architecture File Size Limit
-\item \ref{bug:1035}: HDL Assembly Filename Constraint
-\item \ref{bug:1385}: XML Parser Mixed-Case Issue
-\item \ref{bug:1392}: Maximum Message Length in PCI-Based Platforms
-\item \ref{bug:1585}: Platform Development Guide
-\item \ref{bug:2241}: Properties Before Raw Properties Cannot Have Parameterized Lengths
-\item \ref{bug:2400}: MAC Address on ZedBoard
-\item \ref{bug:2477}: PCI-Based Platforms Not Always Detected in Remote Tests
-\item \ref{bug:3193}: Lime RX/TX Proxy Tests on CentOS6
+\item \bugref{693}
+\item \bugref{1035}
+\item \bugref{1385}
+\item \bugref{1392}
+\item \bugref{1585}
+\item \bugref{2241}
+\item \bugref{2400}
+\item \bugref{2477}
+\item \bugref{3193}
 \end{itemize}
 
 The following previously-documented deficiencies have been fixed in this release:
 \begin{itemize}
 \setlength\itemsep{0em} %tighten
-\item \ref{bug:1645}: Driver Failing to Allocate Memory on Zynq-Based Platforms
-\item \ref{bug:3031}: Built Projects Cannot Be Moved
-\item \ref{bug:3099}: HDL Workers Cannot Send SOM Without Valid Data
-\item \ref{bug:3107}: File\_Read and File\_Write Cannot Handle ZLM Mid-file
-\item \ref{bug:3109}: SDP Cannot Handle More Than One ZLM Per Application Run
+\item \bugref{1645}
+\item \bugref{3031}
+\item \bugref{3099}
+\item \bugref{3107}
+\item \bugref{3109}
 \end{itemize}
 
 The following previously-documented deficiencies will \textit{not} be fixed:
 \begin{itemize}
 \setlength\itemsep{0em} %tighten
-\item \ref{bug:3170}: Simulation of Primitive Cores Needs \texttt{Makefile} Modified - It was determined that this is not a bug. For primitive cores, if a user sets the \code{SourceFiles} variable, they must explicitly list all files, including \path{*_pkg.vhd} files. This is true for \textit{all} platforms.
+\item \bugref{3170}: It was determined that this is not a bug. For primitive cores, if a user sets the \code{SourceFiles} variable, they must explicitly list all files, including \path{*_pkg.vhd} files. This is true for \textit{all} platforms.
 \end{itemize}
 
 % === End of 1.3
@@ -555,11 +674,11 @@ The proxy tests for the Lime transceiver use a feature of C++11 that is not supp
 The following deficiencies are still present in 1.2:
 \begin{itemize}
 \setlength\itemsep{0em} %tighten
-\item \ref{bug:693}: 32-bit Architecture File Size Limit
-\item \ref{bug:1035}: HDL Assembly Filename Constraint
-\item \ref{bug:2400}: MAC Address on ZedBoard
-\item \ref{bug:1392}: Maximum Message Length in PCI-Based Platforms
-\item \ref{bug:1585}: Platform Development Guide
+\item \bugref{693}
+\item \bugref{1035}
+\item \bugref{2400}
+\item \bugref{1392}
+\item \bugref{1585}
 \end{itemize}
 
 \section{Addenda to Previous Release Notes}

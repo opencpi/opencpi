@@ -79,7 +79,8 @@ class AssetFactory():
                    "application":   _opencpi.assets.application.Application,
                    "applications":  _opencpi.assets.application.ApplicationsCollection,
                    "library":       _opencpi.assets.library.Library,
-                   #"libraries":    LibrariesCollection, # TODO implement this class
+                   "libraries":     _opencpi.assets.library.LibraryCollection,
+                   "multi-lib":     _opencpi.assets.library.LibraryCollection,
                    "project":       partial(cls.__get_or_create, _opencpi.assets.project.Project),
                    "registry":      partial(cls.__get_or_create, _opencpi.assets.registry.Registry)}
 

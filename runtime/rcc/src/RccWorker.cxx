@@ -40,9 +40,9 @@ Worker(Application & app, Artifact *art, const char *a_name, ezxml_t impl, ezxml
 					    a_hasMaster, a_member, a_crewSize, wParams),
     OCPI::Time::Emit(&parent().parent(), "Worker", a_name),
     m_entry(art ? art->getDispatch(ezxml_cattr(impl, "name")) : NULL), m_user(NULL),
-    m_dispatch(NULL), m_portInit(0), m_context(NULL), m_mutex(app.container()),
-    m_runCondition(NULL), m_errorString(NULL), enabled(false), hasRun(false),
-    sourcePortCount(0), targetPortCount(0), m_nPorts(nPorts()), worker_run_count(0),
+    m_dispatch(NULL), m_portInit(0), m_context(NULL), m_firstInput(NULL), m_eofSent(RCC_NO_PORTS),
+    m_mutex(app.container()), m_runCondition(NULL), m_errorString(NULL), enabled(false),
+    hasRun(false), sourcePortCount(0), targetPortCount(0), m_nPorts(nPorts()), worker_run_count(0),
     m_transport(app.parent().getTransport()), m_taskSem(0)
 {
    memset(&m_info, 0, sizeof(m_info));
@@ -400,6 +400,10 @@ rccTake(RCCPort *rccPort, RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
    // FIXME: this can change on connections
    m_context->ports[mp.m_ordinal].current.maxLength = l_port->getData().data.desc.dataBufferSize;
    m_context->ports[mp.m_ordinal].containerPort = l_port;
+   if (mp.m_provider && (!m_firstInput ||
+			 (m_firstInput->metaPort &&
+			  mp.m_ordinal < m_firstInput->metaPort->m_ordinal)))
+     m_firstInput = &m_context->ports[mp.m_ordinal];
    return *l_port;
  }
 
@@ -420,8 +424,8 @@ rccTake(RCCPort *rccPort, RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
    assert(!OU::Worker::m_ports); // no metadata ports here
    OU::Worker::m_nPorts++;
    assert(m_dispatch);
-   if (m_dispatch->optionallyConnectedPorts & (1 << portId))
-     optionalPorts() |= (1 << portId);
+   if (m_dispatch->optionallyConnectedPorts & (1u << portId))
+     optionalPorts() |= (1u << portId);
    return createPort(*pmd, props);
  }
  OC::Port &Worker::
@@ -439,7 +443,7 @@ rccTake(RCCPort *rccPort, RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
  void Worker::
  portIsConnected(unsigned ordinal) {
    ocpiDebug("Worker '%s', port %u is connected", name().c_str(), ordinal);
-   m_context->connectedPorts |= (1 << ordinal);
+   m_context->connectedPorts |= (1u << ordinal);
  }
 
  void Worker::
@@ -497,6 +501,41 @@ checkError() const {
   }
 }
 
+// return true if should not run this time
+bool Worker::
+doEOF() {
+  bool
+    fallThrough = false, // record whether there are output ports that handle EOFs
+    moreOutputs = false; // record whether there are not-ready output ports that need EOFs
+  // First input has an EOF, and it does not want to handle it by itself.
+  // But if any output port needs to handle it, then we must give it to the input anyway.
+  RCCPort *rccPort = m_context->ports;
+  for (unsigned n = 0, mask = 1; n < m_nPorts; n++, rccPort++, mask <<= 1)
+    if (!rccPort->metaPort->m_provider) { // if output
+      if (rccPort->metaPort->m_workerEOF) // if it is handling the EOF itself
+	fallThrough = true; // some output is handled by the worker, so we have to give this eof anyway
+      else if (!(m_eofSent & mask)) {
+	if (rccPort->current.data) {
+	  rccPort->current.length_ = 0;
+	  rccPort->current.opCode_ = 0;
+	  rccPort->current.eof_ = true;
+	  rccPort->containerPort->advanceRcc(0);
+	  m_eofSent |= mask;
+	} else
+	  moreOutputs = true;
+      }
+    }
+  if (moreOutputs)
+    return true; // we need to propagate the input EOF to more outputs
+  if (!fallThrough) {
+    // all outputs have propagated, and there are no ports that handle EOFs, so we're done
+    enabled = false;
+    setControlState(OU::Worker::FINISHED);
+    return true;
+  }
+  return false;
+}
+
 void Worker::
 run(bool &anyone_run) {
   checkControl();
@@ -511,8 +550,10 @@ run(bool &anyone_run) {
   bool didCallBack = false;
   RCCPort *rccPort = m_context->ports;
   for (unsigned n = 0; n < m_nPorts; n++, rccPort++)
-    if (rccPort->callBack && m_context->connectedPorts & (1 << n) &&
+    if (rccPort->callBack && m_context->connectedPorts & (1u << n) &&
 	rccPort->containerPort->checkReady()) {
+      if (rccPort == m_firstInput && checkEOF() && doEOF())
+	return;
       if (rccPort->callBack(m_context, rccPort, RCC_OK) == RCC_OK)
 	didCallBack = true;
       else {
@@ -552,6 +593,8 @@ run(bool &anyone_run) {
       if ((pm & readyMask) == (pm & ~(RCC_ALL_PORTS << m_nPorts)))
 	break;
     if (!pm)
+      return;
+    if (checkEOF() && doEOF())
       return;
   } while (0);
   assert(enabled);
@@ -662,7 +705,7 @@ OCPI_CONTROL_OPS
     {
       RCCPort *rccPort = m_context->ports;
       for (unsigned n = 0; n < m_nPorts; n++, rccPort++)
-	if (m_context->connectedPorts & (1 << n))
+	if (m_context->connectedPorts & (1u << n))
 	  if (!(rccPort->connectedCrewSize = rccPort->containerPort->nOthers()))
 	    rccPort->connectedCrewSize = 1;
     }
@@ -994,7 +1037,7 @@ OCPI_CONTROL_OPS
        m_worker.m_runCondition == &m_worker.m_defaultRunCondition ?
        NULL : m_worker.m_runCondition;
    }
-   void RCCUserWorker::setRunCondition(RunCondition *rc) {
+   void RCCUserWorker::setRunCondition(const RunCondition *rc) {
      m_worker.setRunCondition(rc ? *rc : m_worker.m_defaultRunCondition);
    }
    bool RCCUserWorker::isOperating() const {
@@ -1267,7 +1310,7 @@ OCPI_CONTROL_OPS
    isConnected() {
      return m_rccPort.containerPort &&
        m_rccPort.containerPort->parent().m_context->connectedPorts &
-       (1 << m_rccPort.containerPort->ordinal());
+       (1u << m_rccPort.containerPort->ordinal());
    }
    RCCOrdinal RCCUserPort::
    ordinal() const { return (RCCOrdinal)m_rccPort.containerPort->ordinal(); }

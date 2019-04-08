@@ -1,6 +1,6 @@
 ./bootstrap/include/xm/fortran.h
 ./bootstrap/include/xm/xmpfc.cnf
-./doc/av/tex/generator/pdfmarks
+./doc/generator/pdfmarks
 ./platforms/zynq/ntpclient
 ./projects/assets/hdl/platforms/matchstiq_z1/ise_constraints/matchstiq_z1.ut
 ./projects/assets/hdl/platforms/matchstiq_z1/sd_card/iveia-atlas-i-z7e.dtb

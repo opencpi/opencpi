@@ -213,7 +213,7 @@ namespace OCPI {
 		      OCPI::API::PropertyAttributes *a_attributes = NULL) const;
       void setData(const OCPI::API::PropertyInfo &info, Cache *cache, size_t offset,
 		   const uint8_t *data, size_t nBytes, size_t nBits = 0, size_t sequenceOffset = 0,
-		   size_t sequenceLength = 0) const;
+		   size_t sequenceLength = 0, bool last = true) const;
       const uint8_t *getData(const OCPI::API::PropertyInfo &info, Cache *cache, bool dirty,
 			     size_t offset, uint8_t *&data, size_t nBytes, size_t nBits = 0) const;
     public:
@@ -293,10 +293,10 @@ namespace OCPI {
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
 
       inline void getRawPropertyBytes(size_t offset, uint8_t *buf, size_t count) {
-	getPropertyBytes(*m_firstRaw, m_firstRaw->m_offset + offset, buf, count, 0, false);
+	getPropertyBytes(*m_firstRaw, offset, buf, count, 0, false);
       }
       inline void setRawPropertyBytes(size_t offset, const uint8_t *buf, size_t count) {
-	setPropertyBytes(*m_firstRaw, m_firstRaw->m_offset + offset, buf,count, 0);
+	setPropertyBytes(*m_firstRaw, offset, buf,count, 0);
       }
 
     };

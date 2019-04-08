@@ -1,0 +1,7 @@
+vhdl xil_defaultlib "../../../sync_bit.vhd"
+vhdl xil_defaultlib "../../../sync_bit_ack.vhd"
+vhdl xil_defaultlib "../UUT_jig.vhd"
+vhdl xil_defaultlib "../../../src_sim/sim_source.vhd"
+vhdl xil_defaultlib "../../../src_sim/sim_verify.vhd"
+vhdl xil_defaultlib "../UUT_tb.vhd"
+nosort

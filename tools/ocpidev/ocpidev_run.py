@@ -27,7 +27,8 @@ import types
 import _opencpi.assets.factory as ocpifactory
 import _opencpi.util as ocpiutil
 
-NOUNS = ["test", "tests", "library", "application", "applications", "project"]
+NOUNS = ["test", "tests", "library", "application", "applications", "project", "libraries"]
+NOUNS_NO_LIBS = ["test", "tests", "library", "application", "applications", "project"]
 MODES = ["all", "gen", "gen_build", "prep_run_verify", "prep", "run", "prep_run", "verify", "view",
          "clean_all", "clean_run", "clean_sim"]
 
@@ -61,7 +62,8 @@ def parse_cl_vars():
                    "    ocpidev run -l <library_dir>  --mode gen_build test <test_name>\n")
 
     parser = argparse.ArgumentParser(description=description,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+                                     formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     prog="ocpidev run")
     parser.print_help = types.MethodType(lambda self,
                                                 _=None: pydoc.pager("\n" + self.format_help()),
                                          parser)
@@ -75,7 +77,7 @@ def parse_cl_vars():
             exit(1)
             ), parser)
     parser.add_argument("noun", type=str, nargs='?', help="This is the noun to run.  The only " +
-                        "valid options are " + ",".join(NOUNS) + ".", choices=NOUNS)
+                        "valid options are " + ",".join(NOUNS_NO_LIBS) + ".", choices=NOUNS_NO_LIBS)
     parser.add_argument("name", default=None, type=str, action="store", nargs='?',
                         help="This is the name of the test or application to run.")
     parser.add_argument("-v", "--verbose", action="store_true", help="Be verbose with output.")
@@ -175,8 +177,10 @@ def set_init_values(args, dir_type):
     Determine which contents of library and project objects need to be initialized and set the
     corresponding kwargs values
     """
-    if args['noun'] == "library":
+    if args['noun'] in ["library", "libraries"]:
         args['init_tests'] = True
+    if args['noun'] == "libraries":
+        args['init_libs_col'] = True
     if args['noun'] == "project":
         args['init_libs'] = True
         args['init_tests'] = True
@@ -185,7 +189,6 @@ def set_init_values(args, dir_type):
     if args['noun'] == "tests":
         args['init_libs'] = True
         args['init_tests'] = True
-        #TODO add libraries here and libraries collection to allow call in a libraries directory
         if dir_type in ["library", "project"]:
             args['noun'] = dir_type
         else:
@@ -221,9 +224,12 @@ def main():
                     raise ocpiutil.OCPIException("Invalid directory type \"" + str(dir_type) +
                                                  "\" Valid directory types are: " +
                                                  ", ".join([n for n in NOUNS if n != "tests"]))
+            if ocpiutil.get_dirtype(directory) == "libraries" and args['noun'] == "library":
+                args['noun'] = "libraries"
             set_init_values(args, dir_type)
-            ocpiutil.logging.debug("creating asset as the following \nname: " + str(name) + "\n" +
-                                   "directory: " + str(directory) + "\nargs: " + str(args))
+            ocpiutil.logging.debug("creating asset as the following \nnoun: " + args['noun'] +
+                                   "\nname: " + str(name) + "\n" + "directory: " + str(directory) +
+                                   "\nargs: " + str(args))
             my_asset = ocpifactory.AssetFactory.factory(args['noun'], directory,
                                                         name, **args)
             sys.exit(my_asset.run())

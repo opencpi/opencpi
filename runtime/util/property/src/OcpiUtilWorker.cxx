@@ -105,6 +105,7 @@ namespace OCPI {
       const char *err = OE::getRequiredString(xml, m_name, "name", "worker");
       if (err ||
 	  (err = OE::getNumber8(xml, "version", &m_version)) ||
+	  (err = OE::getBoolean(xml, "workerEOF", &m_workerEOF)) ||
 	  (err = OE::getRequiredString(xml, m_model, "model", "worker")))
 	return err;
       if (!OE::getOptionalString(xml, m_specName, "specName"))
@@ -114,7 +115,7 @@ namespace OCPI {
 	if (ezxml_cchild(xml, "slave"))
 	  return esprintf("cannot have slave elements when you have a slave attribute");
 	m_slaves.push_back(slave);
-      } else      
+      } else
 	for (ezxml_t cx = ezxml_cchild(xml, "slave"); cx; cx = ezxml_cnext(cx)) {
 	  const char *w = ezxml_cattr(cx, "worker");
 	  if (!w)

@@ -46,17 +46,18 @@ Hardware prerequisites are as follows.
 \item An ML605 board, which has undergone an OpenCPI-specific initial one-time hardware setup \cite{ml605_hardware_setup} and is plugged into a PCIE slot of an x86 computer.
 \item Optionally, one of the following FMC card configurations in Table  \ref{table:supported_slots} may exist
 \end{itemize}
+
 \begin{center}
         \begin{table}[!htbp]
         \centering
         \caption{OpenCPI-supported ML605 hardware FMC slot configurations}
         \label{table:supported_slots}
-        \begin{tabular}{c|c|c|}
-                \cline{2-3}
-                & FMC LPC slot & FMC HPC slot \\ \hline
-                \multicolumn{1}{|c|}{Zipper LPC setup} & Modified\cite{zipper_mods} Zipper/MyriadRF & (empty)\\
+        \begin{tabular}{|c|c|c|}
+                \cline{2-3} \hline
+                 & FMC LPC slot & FMC HPC slot \\ \hline
+                \multicolumn{1}{|c|}{Zipper LPC setup (Deprecated Support as of OpenCPI 1.5)} & Modified\cite{zipper_mods} Zipper/MyriadRF & (empty)\\ 
                 \multicolumn{1}{|c|}{ } & transceiver card & \\ \hline
-                \multicolumn{1}{|c|}{Zipper HPC setup} & (empty) & Modified\cite{zipper_mods} Zipper/MyriadRF \\
+                \multicolumn{1}{|c|}{Zipper HPC setup (Deprecated Support as of OpenCPI 1.5)} & (empty) & Modified\cite{zipper_mods} Zipper/MyriadRF \\
                 \multicolumn{1}{|c|}{ } & & transceiver card \\ \hline
                 \multicolumn{1}{|c|}{FMCOMMS2 LPC setup} & FMCOMMS2 & (empty)\\
                 \multicolumn{1}{|c|}{ } & transceiver card & \\ \hline
@@ -83,6 +84,42 @@ Hardware prerequisites are as follows.
 
 \section{Driver Notes}
 \input{../../../../../../doc/av/tex/snippets/Driver_Snippet.tex }
+
+\section{Loading the OpenCPI driver}
+When OpenCPI is installed via RPMs, the OpenCPI driver should have been installed. However, when developing with source OpenCPI, the user is required to manage the loading of the OpenCPI driver. \\
+The following terminal outputs are intended to provide the user with expected behavior of when the driver is not and is loaded. The user should note that only when the driver is installed can the ml605 be discovered as a valid OpenCPI container.
+
+\begin{lstlisting}
+ocpidriver unload
+The driver module was successfully unloaded.
+
+ocpidriver load
+Found generic reserved DMA memory on the linux boot command line and assuming it is for OpenCPI: [memmap=128M$0x1000000]
+Driver loaded successfully.
+
+ocpidriver unload
+The driver module was successfully unloaded.
+
+ocpirun -C
+OCPI( 2:816.0497): When searching for PCI device '0000:03:00.0': Can't open /dev/mem, forgot to load the driver? sudo?
+OCPI( 2:816.0499): When searching for PCI device '0000:08:00.0': Can't open /dev/mem, forgot to load the driver? sudo?
+OCPI( 2:816.0544): In HDL Container driver, got PCI search error: Can't open /dev/mem, forgot to load the driver? sudo?
+Available containers:
+ #  Model Platform       OS     OS-Version  Arch     Name
+ 0  rcc   centos7        linux  c7          x86_64   rcc0
+ 
+ocpidriver load
+Found generic reserved DMA memory on the linux boot command line and assuming it is for OpenCPI: [memmap=128M$0x1000000]
+Driver loaded successfully.
+
+ocpirun -C
+Available containers:
+ #  Model Platform       OS     OS-Version  Arch     Name
+ 0  hdl   ml605                                      PCI:0000:08:00.0
+ 1  hdl   alst4                                      PCI:0000:03:00.0
+ 2  rcc   centos7        linux  c7          x86_64   rcc0
+\end{lstlisting}
+
 
 \section{Proof of Operation}
 The following commands may be run in order to verify correct OpenCPI operation on the x86/ML605 system.\\ \\

@@ -1,4 +1,4 @@
-<tests timeout='1500' useHDLFileIo='true'>
+<tests timeout='20000' useHDLFileIo='true'>
  <input port='in' stressorMode='full' script='generate.py 32767' messagesize='8192'/>
  <output port='out' script='verify.py 32767' view='view.sh'/>
  <property name='R' values='2048,8191,8192' exclude='*sim'/>

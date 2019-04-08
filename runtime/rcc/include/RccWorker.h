@@ -67,6 +67,14 @@ namespace OCPI {
       void run(bool &anyRun);
       void advanceAll();
       void portError(std::string&error);
+      bool doEOF();
+      // EOF propagation for V2+ RCC workers
+      // If workereof is set on the first input, then all handling is by the worker
+      // Otherwise it is per-output-port
+      inline bool checkEOF() const {
+	return m_version >= 2 && m_firstInput && !m_firstInput->metaPort->m_workerEOF && 
+	  m_firstInput->current.data && m_firstInput->current.eof_;
+      }
     public:
       RCCResult setError(const char *fmt, va_list ap);
       inline RCCWorker &context() const { return *m_context; }
@@ -158,7 +166,7 @@ namespace OCPI {
     private:
       void initializeContext();
       void checkError() const;
-      inline void setRunCondition(RunCondition &rc) {
+      inline void setRunCondition(const RunCondition &rc) {
         if (m_runCondition) // there is no RunCondition::deactivate()
           m_runCondition->m_inUse = false;
         m_runCondition = &rc;
@@ -172,10 +180,12 @@ namespace OCPI {
       unsigned         m_portInit; // This counts up as C++ user ports are constructed
       // Our context
       RCCWorker       *m_context;
+      RCCPort         *m_firstInput; // easy way to find first input port
+      RCCPortMask     m_eofSent;     // record EOF propagation
       OCPI::OS::Mutex &m_mutex;
       RunCondition     m_defaultRunCondition; // run condition we create
       RunCondition     m_cRunCondition;       // run condition we use when C-language RC changes
-      RunCondition    *m_runCondition;        // current active run condition used in dispatching
+      const RunCondition *m_runCondition;        // current active run condition used in dispatching
 
       // Mutable since this is a side effect of clearing the worker-set error when reported
       mutable char     *m_errorString;         // error string set via "setError"
