@@ -353,7 +353,7 @@ static int mymain(const char **ap) {
 	app.initialize();
 	app.start();
 
-	unsigned timeout =
+	unsigned long timeout =
 	  options.timeout() ? options.timeout() :
 	  options.duration() < 0 ? -options.duration() : // legacy negative
 	  options.duration() ? options.duration() :

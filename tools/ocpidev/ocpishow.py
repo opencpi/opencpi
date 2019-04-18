@@ -244,64 +244,65 @@ def main():
     action = "show"
     try:
         cur_dir = args['cur_dir']
-        dir_type = ocpiutil.get_dirtype()
-        # args['name'] could be None if no name is provided at the command line
-        name = args.get("name", None)
-        if not name:
-            name = ""
-        # Now that we have grabbed name, delete it from the args that will be passed into the
-        # AssetFactory because name is explicitly passed to AssetFactory as a separate argument
-        del args['name']
-        check_scope_options(args.get("scope", None), noun)
-        if noun in ["registry", "projects"]:
-            directory = ocpiregistry.Registry.get_registry_dir()
-        elif noun not in ["libraries", "hdlplatforms", "hdltargets", "rccplatforms", "rcctargets",
-                          "platforms", "targets", "workers", "components"]:
-            directory = ocpiutil.get_ocpidev_working_dir(origin_path=cur_dir,
-                                                         noun=noun,
-                                                         name=name,
-                                                         library=args['library'],
-                                                         hdl_library=args['hdl_library'],
-                                                         hdl_platform=args['hdl_plat_dir'])
-        elif noun in ["libraries", "tests", "workers", "components"]:
-            if args.get("scope", None) == "local":
-                directory = ocpiutil.get_path_to_project_top()
-            elif args.get("scope", None) == "global":
+        with ocpiutil.cd(cur_dir):
+            dir_type = ocpiutil.get_dirtype()
+            # args['name'] could be None if no name is provided at the command line
+            name = args.get("name", None)
+            if not name:
+                name = ""
+            # Now that we have grabbed name, delete it from the args that will be passed into the
+            # AssetFactory because name is explicitly passed to AssetFactory as a separate argument
+            del args['name']
+            check_scope_options(args.get("scope", None), noun)
+            if noun in ["registry", "projects"]:
                 directory = ocpiregistry.Registry.get_registry_dir()
-        else:
-            directory = ""
+            elif noun not in ["libraries", "hdlplatforms", "hdltargets", "rccplatforms",
+                              "rcctargets", "platforms", "targets", "workers", "components"]:
+                directory = ocpiutil.get_ocpidev_working_dir(origin_path=cur_dir,
+                                                             noun=noun,
+                                                             name=name,
+                                                             library=args['library'],
+                                                             hdl_library=args['hdl_library'],
+                                                             hdl_platform=args['hdl_plat_dir'])
+            elif noun in ["libraries", "tests", "workers", "components"]:
+                if args.get("scope", None) == "local":
+                    directory = ocpiutil.get_path_to_project_top()
+                elif args.get("scope", None) == "global":
+                    directory = ocpiregistry.Registry.get_registry_dir()
+            else:
+                directory = ""
 
-        ocpiutil.logging.debug('Choose directory "' + directory + '" to operate in')
-        if noun is None:
-            noun = dir_type
-        #TODO the noun libraries could be an asset or a plural need to add logic to deal with
-        #     determining which one it is.  for now we are going to assume that it is always a
-        #     plural
+            ocpiutil.logging.debug('Choose directory "' + directory + '" to operate in')
+            if noun is None:
+                noun = dir_type
+            #TODO the noun libraries could be an asset or a plural need to add logic to deal with
+            #     determining which one it is.  for now we are going to assume that it is always a
+            #     plural
 
-        # If name is not set, set it to the current directory's basename
-        if name == "." and dir_type in DIR_TYPES:
-            name = os.path.basename(os.path.realpath(cur_dir))
-        set_init_values(args, noun, )
-        plural_noun_list = NOUN_PLURALS + ["hdlplatforms", "hdltargets", "rccplatforms",
-                                           "rcctargets", "platforms", "targets"]
-        if noun in plural_noun_list:
-            (noun, action) = get_noun_from_plural(args, noun, args.get("scope", None))
-        ocpiutil.logging.debug('Choose noun: "' + str(noun) + '" and action: "' + action +'"')
-        if noun not in [None, "hdlplatforms", "hdltargets", "rccplatforms", "rcctargets",
-                        "platforms", "targets", "projects"]:
-            # pylint:disable=unused-variable
-            ocpiutil.logging.debug("constructing asset noun: " + noun + " directory: " + directory +
-                                   "args : " + str(args))
-            my_asset = ocpifactory.AssetFactory.factory(noun, directory, "", **args)
-            action = ("my_asset." + action + '("' + args["details"] + '", ' +
-                      str(args["verbose"]) + ')')
-            # pylint:enable=unused-variable
+            # If name is not set, set it to the current directory's basename
+            if name == "." and dir_type in DIR_TYPES:
+                name = os.path.basename(os.path.realpath("."))
+            set_init_values(args, noun, )
+            plural_noun_list = NOUN_PLURALS + ["hdlplatforms", "hdltargets", "rccplatforms",
+                                               "rcctargets", "platforms", "targets"]
+            if noun in plural_noun_list:
+                (noun, action) = get_noun_from_plural(args, noun, args.get("scope", None))
+            ocpiutil.logging.debug('Choose noun: "' + str(noun) + '" and action: "' + action +'"')
+            if noun not in [None, "hdlplatforms", "hdltargets", "rccplatforms", "rcctargets",
+                            "platforms", "targets", "projects"]:
+                # pylint:disable=unused-variable
+                ocpiutil.logging.debug("constructing asset noun: " + noun + " directory: " +
+                                       directory + "args : " + str(args))
+                my_asset = ocpifactory.AssetFactory.factory(noun, directory, "", **args)
+                action = ("my_asset." + action + '("' + args["details"] + '", ' +
+                          str(args["verbose"]) + ')')
+                # pylint:enable=unused-variable
 
-        ocpiutil.logging.debug("running show action: '" + action + "'")
-        # not using anything that is user defined so eval is fine
-        # pylint:disable=eval-used
-        eval(action)
-        # pylint:enable=eval-used
+            ocpiutil.logging.debug("running show action: '" + action + "'")
+            # not using anything that is user defined so eval is fine
+            # pylint:disable=eval-used
+            eval(action)
+            # pylint:enable=eval-used
     except ocpiutil.OCPIException as ex:
         ocpiutil.logging.error(ex)
 

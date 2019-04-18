@@ -54,7 +54,7 @@ function getProjectPathAndRegistered {
 function findInProjectPath {
   for p in $(getProjectPathAndRegistered); do
     [ -d $p/exports ] && p=$p/exports
-    if [ "$OCPI_LOG_LEVEL" -gt 7 ]; then
+    if [ "${OCPI_LOG_LEVEL:-0}" -gt 7 ]; then
       echo "OCPI(           ): looking for $p/$2/$1" # TODO / FIXME - add timestamp similar to rest of debug printouts
     fi
     if [ -e $p/$2/$1 ] ; then

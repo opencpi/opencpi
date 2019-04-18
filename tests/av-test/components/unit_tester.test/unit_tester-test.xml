@@ -1,5 +1,5 @@
 <!-- This is the test xml for testing component "unit_tester" -->
-<Tests timeout='200' ExcludePlatforms='modelsim' UseHDLFileIo='true'>
+<Tests timeout='200' ExcludePlatforms='modelsim' UseHDLFileIo='false'>
   <Input Port='in1' script='generate.py' />
   <Input Port='in2' script='generate.py' />
   <Input Port='in3' script='generate.py' />

@@ -242,7 +242,7 @@ data_bramW_in <= std_logic_vector(in_in.data and valid_bytes);
 
 -- Write to data BRAM when data is valid, when metadata and
 -- data not full (when stopOnFull = true).
-data_bramW_write <= capture_vld and (not dataDisable) and (not metadataDisable);
+data_bramW_write <= capture_vld and (not dataDisable) and (not metadataDisable) and (not finished);
 
 -- Metadata to place into metadata BRAM
 metadata_bramW_in <= in_in.opcode &
@@ -250,7 +250,7 @@ metadata_bramW_in <= in_in.opcode &
                      std_logic_vector(time_in.fraction) & s_som_fraction & s_som_seconds;
 
 -- Write to metadata BRAM when there is an eom. And if stopOnFull is true write when metadata not full.
-metadata_bramW_write <= eom and (not metadataDisable);
+metadata_bramW_write <= eom and (not metadataDisable) and (not finished);
 
 
 -- Since metadata is the first raw property, assign raw.data to metadata until
@@ -291,7 +291,6 @@ zlm_detector : util.util.zlm_detector
     take => take,
     eozlm_pulse => open,
     eozlm => zlm);
-
 
 dataBram : component util.util.BRAM2
 generic map(PIPELINED  => 0,
@@ -425,7 +424,7 @@ begin
   if rising_edge(ctl_in.clk) then
     if (ctl_in.reset = '1' or eom = '1') then
       messageSize <= (others =>'0');
-    elsif (capture_vld = '1') then
+    elsif (capture_vld = '1' and finished = '0') then
         messageSize <= messageSize + bytes;
     end if;
   end if;
@@ -441,7 +440,7 @@ begin
         dataCount <= (others => '0');
         data_bramW_addr <= (others => '0');
         dataDisable <= '0';
-      elsif capture_vld = '1' then
+      elsif (capture_vld = '1' and finished = '0') then
 
           if ((stopOnFull = true and (not (dataCount = numDataWords) and not (metadataCount = numRecords))) or stopOnFull = false) then
             dataCount <= dataCount + 1;
@@ -473,7 +472,7 @@ begin
         metadataCount <= (others => '0');
         metadata_bramW_addr <= (others => '0');
         metadataDisable <= '0';
-      elsif eom = '1' then
+      elsif (eom = '1' and finished = '0') then
 
            if ((stopOnFull = true and not (metadataCount = numRecords)) or stopOnFull = false) then
              metadataCount <= metadataCount + 1;
@@ -517,8 +516,8 @@ begin
   end process buffer_full;
 
 -- Determines when the worker is finished.
--- For stopOnEOF, if there is a EOF and has been GIVEN (if output connected),
--- and stopOnEOF is true then set finished to true.
+-- For stopOnEOF, if there is a ZLM and has been GIVEN (if output connected),
+-- the input opcode is equal to 0, and stopOnEOF is true then set finished to true.
 -- For stopOnZLM, if there is a ZLM and has been GIVEN (if output connected),
 -- the input opcode is equal to stopZLMOpcode, and stopOnZLM is true then set finished to true.
 finish : process (ctl_in.clk)
@@ -526,9 +525,9 @@ finish : process (ctl_in.clk)
       if rising_edge(ctl_in.clk) then
         if ctl_in.reset = '1' then
           finished <= '0';
-          elsif ((give = '1' or outNotConnected = '1') and
-                ((in_in.eof = '1' and props_in.stopOnEOF) or
-                (zlm = '1' and to_uchar(in_in.opcode) = props_in.stopZLMOpcode and props_in.stopOnZLM))) then
+          elsif (zlm = '1' and (give = '1' or outNotConnected = '1') and
+                 ((props_in.stopOnEOF and unsigned(in_in.opcode) = 0) or
+                  (to_uchar(in_in.opcode) = props_in.stopZLMOpcode and props_in.stopOnZLM))) then
             finished <= '1';
         end if;
       end if;

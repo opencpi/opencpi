@@ -272,8 +272,11 @@ class ShowableComponent(ShowableAsset):
         prop_dict = {}
         for prop in self.property_list:
             if verbose > 0 or prop.get("hidden", "0") == "0":
+                combined_reads = prop.get("readable", "0") +  prop.get("readback", "0")
+                # doing an or on string values is set to "1" if either readable or readback are "1"
+                readback = "0" if combined_reads == "00" else "1"
                 prop_detatils = {"accessibility": {"initial" : prop.get("initial", "0"),
-                                                   "readable" : prop.get("readable", "0"),
+                                                   "readback" : readback,
                                                    "writable" : prop.get("writable", "0"),
                                                    "volatile" : prop.get("volatile", "0"),
                                                    "parameter" : prop.get("parameter", "0"),
@@ -281,7 +284,7 @@ class ShowableComponent(ShowableAsset):
                                  "name" : prop.get("name", "N/A"),
                                  "type" : prop.get("type", "ULong")}
 
-                required_details = ["initial", "readable", "writable", "volatile", "parameter",
+                required_details = ["initial", "readback", "writable", "volatile", "parameter",
                                     "padding", "type", "name", "specparameter", "specinitial",
                                     "specwritable", "specreadable", "specvolitile"]
                 if verbose <= 0:

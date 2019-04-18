@@ -40,13 +40,12 @@ $(warning SIM_TIME is currently $(SIM_TIME)s; this might not be sufficient under
 endif
 endif
 
-RCCWORKER=$(WORKER).rcc
-space:=
-space+=
-ARTIFACT_DIRS=$(subst $(space),,$(foreach artdir,$(shell (cd $(OCPI_CDK_DIR) && find . -type d -name artifacts )),\$${OCPI_CDK_DIR}/$(artdir):))
-SUPPORT_PATH:=$(subst $(space),:,$(foreach worker, $(RCCWORKER) advanced_pattern.rcc,$(wildcard $(shell pwd)/../../$(worker)/target-*)))
-SUPPORT_PATH_REMOTE:=export OCPI_LIBRARY_PATH=$(ARTIFACT_DIRS):../../lib/rcc:../../../../exports/lib
-EXPORT_PATH := export OCPI_LIBRARY_PATH=:$(OCPI_LIBRARY_PATH):$(ARTIFACT_DIRS):../../lib/rcc:../../../../exports/lib:$(SUPPORT_PATH) && set -o pipefail && $(PRE_HOOK)
+
+# NOTE: This is probably broken for remote tests. Consider it local-only at this time.
+
+
+SUPPORT_PATH_REMOTE:=export OCPI_LIBRARY_PATH=$(shell pwd)/../../../../imports/
+EXPORT_PATH := export OCPI_LIBRARY_PATH=:$(shell pwd)/../../../../imports/ && set -o pipefail && $(PRE_HOOK)
 
 ifneq (,$(filter verify,$(MAKECMDGOALS)))
 export NO_AUTOCONFIG_WARNING=1

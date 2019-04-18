@@ -1,26 +1,34 @@
 <!-- This is the test xml for testing component "metadata_stressor" -->
 <Tests UseHDLFileIo='true'>
-<!-- these two tests can fail because of AV-4720 and will be added back once that is resolved -->
-
   <!-- these cases are testing weird combinations of swms and zlms -->
+  <!-- 1 Tests the component with crafted ZLMs and SWMs -->
   <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
-    <input Port='in' MessagesInFile='true' StressorMode='full' script='generate.py 0 4'/>
-    <property name='mode' values='bypass'/>
+    <input Port='in' MessagesInFile='true' script='generate.py 0 4'/>
+    <property name='mode' values='full'/>
+    <property name='insert_nop' values='1'/>
+    <property name='enable_take_lsfr' values='1'/>
+    <property name='enable_give_lsfr' values='1'/>
     <output Port='out' Script='verify.py' MessagesInFile='true'/>
   </case>
-
+<!-- 2 Tests the component with eight byte messages -->
   <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
-    <input Port='in' MessagesInFile='true' StressorMode='full' script='generate.py 0 2'/>
-    <property name='mode' values='bypass'/>
+    <input Port='in' MessagesInFile='true' script='generate.py 0 2'/>
+    <property name='mode' values='full'/>
+    <property name='insert_nop' values='1'/>
+    <property name='enable_take_lsfr' values='1'/>
+    <property name='enable_give_lsfr' values='1'/>
     <output Port='out' Script='verify.py' MessagesInFile='true'/>
   </case>
-
+<!-- 3 Tests the component with a single zlm -->
   <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
-    <input Port='in' MessagesInFile='true' StressorMode='full' script='generate.py 0 3'/>
-    <property name='mode' values='bypass'/>
+    <input Port='in' MessagesInFile='true' script='generate.py 0 3'/>
+    <property name='mode' values='full'/>
+    <property name='insert_nop' values='1'/>
+    <property name='enable_take_lsfr' values='1'/>
+    <property name='enable_give_lsfr' values='1'/>
     <output Port='out' Script='verify.py' MessagesInFile='true'/>
   </case>
-
+<!-- 4 Tests the component with crafted ZLMs and SWMs -->
   <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
     <input port='in' script='generate.py 4096 1' messagesInFile='true' />
     <property name='mode' values='full,metadata,data'/>
@@ -30,55 +38,50 @@
     <output port='out' script='verify.py' messagesInFile='true' stopOnEOF='true'/>
   </case>
 
-  <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
-    <input port='in' script='generate.py 4096 1' messagesInFile='true' />
-    <property name='mode' values='full,metadata,data'/>
-    <output port='out' script='verify.py' messagesInFile='true' stopOnEOF='true'/>
-  </case>
-
-  <!-- these cases are testing ending on different states -->
+  <!-- Cases 5-11 test ending on different states -->
+<!-- 5 -->
   <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
     <input port='in' script='generate.py 90 0' messageSize='4' stressorMode='full'/>
     <property name='mode' values='full'/>
     <property name='insert_nop' values='0,1'/>
     <output port='out' script='verify.py' stopOnEOF='true'/>
   </case>
-
+<!-- 6 -->
   <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
     <input port='in' script='generate.py 91 0' messageSize='4' stressorMode='full'/>
     <property name='mode' values='full'/>
     <property name='insert_nop' values='0,1'/>
     <output port='out' script='verify.py' stopOnEOF='true'/>
   </case>
-
+<!-- 7 -->
   <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
     <input port='in' script='generate.py 92 0' messageSize='4' stressorMode='full'/>
     <property name='mode' values='full'/>
     <property name='insert_nop' values='0,1'/>
     <output port='out' script='verify.py' stopOnEOF='true'/>
   </case>
-
+<!-- 8 -->
   <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
     <input port='in' script='generate.py 93 0' messageSize='4' stressorMode='full'/>
     <property name='mode' values='full'/>
     <property name='insert_nop' values='0,1'/>
     <output port='out' script='verify.py' stopOnEOF='true'/>
   </case>
-
+<!-- 9 -->
   <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
     <input port='in' script='generate.py 94 0' messageSize='4' stressorMode='full'/>
     <property name='mode' values='full'/>
     <property name='insert_nop' values='0,1'/>
     <output port='out' script='verify.py' stopOnEOF='true'/>
   </case>
-
+<!-- 10 -->
   <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
     <input port='in' script='generate.py 95 0' messageSize='4' stressorMode='full'/>
     <property name='mode' values='full'/>
     <property name='insert_nop' values='0,1'/>
     <output port='out' script='verify.py' stopOnEOF='true'/>
   </case>
-
+<!-- 11 -->
   <case timeout='120' ExcludeWorkers='metadata_stressor.rcc'>
     <input port='in' script='generate.py 96 0' messageSize='4' stressorMode='full'/>
     <property name='mode' values='full'/>
@@ -86,7 +89,7 @@
     <output port='out' script='verify.py' stopOnEOF='true'/>
   </case>
 
-  <!-- these cases are testing more common operations -->
+  <!-- 12 Tests most of the functionality under more common conditions -->
   <case timeout='240' ExcludeWorkers='metadata_stressor.rcc'>
     <input port='in' script='generate.py 4096 0' messageSize='128' stressorMode='full'/>
     <property name='mode' values='metadata, data, full'/>
@@ -99,14 +102,7 @@
     <output port='out' script='verify.py' stopOnEOF='true'/>
   </case>
 
-  <!-- <case duration='100' ExcludeWorkers='metadata_stressor.rcc'>
-    <input port='in' script='generate.py 4096 0' messageSize='128' stressorMode='full'/>
-    <property name='allow_zlms' values='1'/>
-    <property name='mode' values='metadata,full'/>
-    <property name='insert_nop' values='0,1'/>
-    <output port='out' script='verify.py' stopOnEOF='false'/>
-  </case> -->
-
+  <!-- 13 Tests the RCC version of this component -->
   <case timeout='120' ExcludeWorkers='metadata_stressor.hdl'>
     <input port='in' script='generate.py 4096 0'/>
     <output port='out' script='verify.py'/>

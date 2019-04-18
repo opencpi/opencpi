@@ -77,7 +77,7 @@ class Worker(ShowableComponent):
                     access_dict["specinitial"] = prop.get("specinitial", "0")
                     access_dict["specparameter"] = prop.get("specparameter", "0")
                     access_dict["specwritable"] = prop.get("specwritable", "0")
-                    access_dict["specreadable"] = prop.get("specreadable", "0")
+                    access_dict["specreadback"] = prop.get("specreadable", "0")
                     access_dict["specvolitile"] = prop.get("specvolitile", "0")
         slave_dict = {}
         for slave in self.slave_list:

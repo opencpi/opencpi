@@ -25,6 +25,7 @@ import logging
 from glob import glob
 import subprocess
 import re
+import copy
 from _opencpi.util import cd, set_vars_from_make, OCPIException
 
 def get_make_vars_rcc_targets():
@@ -471,7 +472,9 @@ def get_ocpidev_working_dir(origin_path=".", noun="", name=".",
     # if this is a collection type, we care about the current directory's dirtype,
     # otherwise we want the current asset's containing collection's dirtype
     cur_dirtype = get_dirtype(origin_path)
-    if cur_dirtype is not None and cur_dirtype in [COLLECTION_DIRTYPES, "test"]:
+    col_and_test = copy.deepcopy(COLLECTION_DIRTYPES)
+    col_and_test.append("test")
+    if cur_dirtype is not None and cur_dirtype in col_and_test:
         # operating on a collection-type, so just proceed as usual
         working_dir = origin_path
         dirtype = cur_dirtype
@@ -527,16 +530,17 @@ def get_ocpidev_working_dir(origin_path=".", noun="", name=".",
         hdl_platform = working_basename
     elif dirtype == "test" and name == "." and not noun:
         name = os.path.basename(os.path.realpath("."))
-
     logging.debug("Getting ocpidev working dir from options (auxiliary function):\n" +
                   str((noun, name, library, hdl_library, hdl_platform, dirtype)))
 
     # If no noun was specified, and the dirtype is a collection, set noun to dirtype
     # For example, if a command was run in hdl/assemblies, but no noun was specified,
     # then just set the noun to hdl-assemblies
-    if not noun:
-        noun = dirtype if dirtype in [COLLECTION_DIRTYPES, "test"] else ""
 
+    if not noun:
+        col_and_test = copy.deepcopy(COLLECTION_DIRTYPES)
+        col_and_test.append("test")
+        noun = dirtype if dirtype in col_and_test else ""
     # Now that the current state/directory has been converted to location directives,
     # call this helper function to convert or state-less asset-description to an
     # asset-directory from a project top
@@ -662,7 +666,6 @@ def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platfo
     elif noun in ["hdl-assembly", "hdl-assemblies"]:
         asset = "hdl/assemblies"
     elif noun == "component":
-        print("pwd=" + os.getcwd())
         if hdl_library:
             asset = get_component_filename("hdl/" +  hdl_library + "/specs/", name)
         elif library:
@@ -731,7 +734,10 @@ def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platfo
         asset = "hdl/" + hdl_library
 
     elif noun in library_assets:
-        asset = "components/"
+        if get_dirtype("..") == "library" and get_dirtype("../..") == "libraries":
+            asset =  "components/" + os.path.basename(os.path.realpath("..")) + "/"
+        else:
+            asset = "components/"
 
     elif noun in ["project", "workers", "tests"]:
         # If we have gotten this far and a "workers" or "tests" is discovered, the only
@@ -751,7 +757,9 @@ def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platfo
         raise OCPIException("Invalid noun provided: " + str(noun))
         # pylint:enable=undefined-variable
     if noun == "libraries" and library is None:
-        asset = name
+        if name and name != ".":
+            asset = name
+
 
     # If the asset-type/noun is a collection-type, then we already know its location.
     #     E.g. If the noun is 'library' (a collection-type) and the name is 'dsp_comps',

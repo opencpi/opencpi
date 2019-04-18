@@ -28,12 +28,8 @@ Two test cases are used for all of the worker's various configurations:
 1. Unity Gain Reponse to DC input (constant value)
 2. A tone at 50.0 Hz sampled @ 1024000/R.
  
-Two factors were considered when the amount of input test data was generated,
-for each test case and the configuration of the worker under test:
-1) More than one input message of maximum size (8192 bytes) was passed into the
-worker under test.
-2) The worker under test outputted multiple data messages of 8192 bytes,
-and that the total amount of output data was large enough to perform quality FFTs.
+A factor which was considered when the amount of input test data was generated
+was the total amount of output data was large enough to perform quality FFTs.
 """
 import sys
 import os.path
@@ -59,8 +55,7 @@ print '    UUT:(N=%d, M=%d, R=%d) Test Data:(%d)' % (N,M,R,Ft)
 
 # Select test data to generate: DC or a Tone
 if (Ft == 0): # Generate DC data
-    # Sample Frequency was chosen to generate > 8192 bytes of input data
-    Fs = float(3072)           # sample frequency
+    Fs = float(256)            # sample frequency
     Ts = 1.0 / Fs;             # sampling interval
     t = np.arange(0,1,Ts,dtype=np.float)
     T1 = 0.0

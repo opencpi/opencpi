@@ -211,9 +211,9 @@ else: # Measure and compare power of tone(s)
     #print 'DBG: float(T2)/(float(Fs)/2.0)*float(len(IFFT)/2.0)=', float(T2)/(float(Fs)/2.0)*float(len(IFFT)/2.0)
     #print 'DBG: float(T3)/(float(Fs)/2.0)*float(len(IFFT)/2.0)=', float(T3)/(float(Fs)/2.0)*float(len(IFFT)/2.0)
     #input: three tones in range DC to +Fs/2
-    IPowerT1 = 20*np.log10(IFFT[float(T1)/(float(Fs)/2.0)*float(len(IFFT)/2.0)]+eps)
-    IPowerT2 = 20*np.log10(IFFT[float(T2)/(float(Fs)/2.0)*float(len(IFFT)/2.0)]+eps)
-    IPowerT3 = 20*np.log10(IFFT[float(T3)/(float(Fs)/2.0)*float(len(IFFT)/2.0)]+eps)
+    IPowerT1 = 20*np.log10(IFFT[int(round(float(T1)/(float(Fs)/2.0)*float(len(IFFT)/2.0)))]+eps)
+    IPowerT2 = 20*np.log10(IFFT[int(round(float(T2)/(float(Fs)/2.0)*float(len(IFFT)/2.0)))]+eps)
+    IPowerT3 = 20*np.log10(IFFT[int(round(float(T3)/(float(Fs)/2.0)*float(len(IFFT)/2.0)))]+eps)
     print "    Input Tone 1 power level =", IPowerT1, "dBm"
     print "    Input Tone 2 power level =", IPowerT2, "dBm"
     print "    Input Tone 3 power level =", IPowerT3, "dBm"
@@ -222,10 +222,10 @@ else: # Measure and compare power of tone(s)
     #print 'DBG: float(T2)/(float(Fs_dec)/2.0)*float(len(OFFT)/2.0)=', float(T2)/(float(Fs_dec)/2.0)*float(len(OFFT)/2.0)
     #print 'DBG: float(T3)/(float(Fs_dec)/2.0)*float(len(OFFT)/2.0)=', float(T3)/(float(Fs_dec)/2.0)*float(len(OFFT)/2.0)
     #output: two tones in range DC to +Fs/2
-    OPowerT1 = 20*np.log10(OFFT[float(T1)/(float(Fs_dec)/2.0)*float(len(OFFT)/2.0)]+eps)
-    OPowerT2 = 20*np.log10(OFFT[float(T2)/(float(Fs_dec)/2.0)*float(len(OFFT)/2.0)]+eps)
+    OPowerT1 = 20*np.log10(OFFT[int(round(float(T1)/(float(Fs_dec)/2.0)*float(len(OFFT)/2.0)))]+eps)
+    OPowerT2 = 20*np.log10(OFFT[int(round(float(T2)/(float(Fs_dec)/2.0)*float(len(OFFT)/2.0)))]+eps)
     #output: one filtered tone in range -Fs/2 to DC
-    OPowerT3 = 20*np.log10(OFFT[float(-T3)/(float(Fs_dec)/2.0)*float(len(OFFT)/2.0)]+eps)
+    OPowerT3 = 20*np.log10(OFFT[int(round(float(-T3)/(float(Fs_dec)/2.0)*float(len(OFFT)/2.0)))]+eps)
     print "    Output Tone 1 power level =", OPowerT1, "dBm"
     print "    Output Tone 2 power level =", OPowerT2, "dBm"
     print "    Output Tone 3 power level =", OPowerT3, "dBm"

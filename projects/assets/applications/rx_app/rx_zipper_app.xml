@@ -3,14 +3,11 @@
   <!-- RX Chain -->
   <Instance Component="ocpi.assets.devices.rf_rx"/>
   <Instance Component="ocpi.assets.devices.qadc" model="hdl">
-    <Property Name="messageSize" Value="16352"/>
   </Instance>
   <Instance Component="ocpi.assets.dsp_comps.dc_offset_filter">
-    <Property Name="messageSize" Value="16352"/>
     <Property Name="bypass" Value="false"/>
   </Instance>
   <Instance Component="ocpi.assets.dsp_comps.iq_imbalance_fixer">
-    <Property Name="messageSize" Value="16352"/>
     <Property Name="enable" Value="true"/>
     <Property Name="log2_averaging_length" Value="11"/>
   </Instance>
@@ -18,14 +15,12 @@
     <Property Name="NCO_DATA_WIDTH_p" Value="12"/>
     <Property Name="INPUT_DATA_WIDTH_p" Value="12"/>
     <Property Name="mag" Value="1024"/>
-    <Property Name="messageSize" Value="16352"/>
   </Instance>
   <Instance Component="ocpi.assets.dsp_comps.cic_dec">
     <Property Name="N" Value="3"/>
     <Property Name="M" Value="1"/>
     <Property Name="R" Value="8"/>
     <Property Name="ACC_WIDTH" Value="25"/>
-    <Property Name="messageSize" Value="16352"/>
   </Instance>
   <Instance Component="ocpi.assets.util_comps.timestamper"/>
   <!-- Command and Control -->

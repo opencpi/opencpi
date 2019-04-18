@@ -1,4 +1,4 @@
-<tests useHDLFileIo='true'>
+<tests useHDLFileIo='false'>
   <input port='in' stressorMode='full' script='generate.py 16 1 16384 4096' messagesize='16384'/>
   <output port='out' script='verify.py' view='view.sh'/>
   <property name='enable_select' values='0,1'/>

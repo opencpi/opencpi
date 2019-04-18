@@ -48,10 +48,18 @@ endif
 RCCWORKER=$(WORKER).rcc
 space:=
 space+=
-ARTIFACT_DIRS=$(subst $(space),,$(foreach artdir,$(shell (cd $(OCPI_CDK_DIR) && find . -type d -name artifacts )),\$${OCPI_CDK_DIR}/$(artdir):))
+
+
+# NOTE: This is just plain broken. Until AV-5383 / AV-5381 / AV-4641 it is local-only
+
+
+# MY_REG=$(if $(OCPI_PROJECT_REGISTRY_DIR),$(OCPI_PROJECT_REGISTRY_DIR),$(OCPI_CDK_DIR)/../project-registry)
+# ARTIFACT_DIRS=$(subst $(space),,$(foreach artdir,$(shell (cd ../../../imports/ && find -L . -type d -name artifacts 2>/dev/null )),../../../imports/$(artdir):))
 SUPPORT_PATH:=$(subst $(space),:,$(foreach worker, $(RCCWORKER) advanced_pattern.rcc file_write_demux.rcc,$(wildcard $(shell pwd)/../../$(worker)/target-*)))
-SUPPORT_PATH_REMOTE:=export OCPI_LIBRARY_PATH=$(ARTIFACT_DIRS):../../lib/rcc:../../../../exports/lib
-EXPORT_PATH := export OCPI_LIBRARY_PATH=:$(OCPI_LIBRARY_PATH):$(ARTIFACT_DIRS):../../lib/rcc:../../../../exports/lib:$(SUPPORT_PATH) && set -o pipefail && $(PRE_HOOK)
+# SUPPORT_PATH_REMOTE:=export OCPI_LIBRARY_PATH=$(ARTIFACT_DIRS):../../lib/rcc:../../../../exports/lib
+SUPPORT_PATH_REMOTE:=export OCPI_LIBRARY_PATH=$(shell pwd)/../../../../imports/
+# EXPORT_PATH := export OCPI_LIBRARY_PATH=:$(OCPI_LIBRARY_PATH):$(ARTIFACT_DIRS):../../lib/rcc:../../../../exports/lib:$(SUPPORT_PATH) && set -o pipefail && $(PRE_HOOK)
+EXPORT_PATH := export OCPI_LIBRARY_PATH=:$(shell pwd)/../../../../imports/ && set -o pipefail && $(PRE_HOOK)
 
 ifneq (,$(filter verify,$(MAKECMDGOALS)))
 export NO_AUTOCONFIG_WARNING=1
@@ -174,7 +182,7 @@ testgen: generate.sh verify.sh
 testrun: launchlisteners
 # The 'bash -c' is needed to interpret the ${OCPI_CDK_DIR} that's there for embedded systems from ARTIFACT_DIRS
 ifeq (,$(REMOTE))
-	bash -c "ulimit -n 1400; $(EXPORT_PATH) time $(VG) ocpirun $(DEBUG) -m UUT=rcc -t -$(SIM_TIME) application.xml $(POST_HOOK)" > ocpirun.log 2>&1
+	bash -c "ulimit -n 2048; $(EXPORT_PATH) time $(VG) ocpirun $(DEBUG) -m UUT=rcc -t -$(SIM_TIME) application.xml $(POST_HOOK)" > ocpirun.log 2>&1
 else
 	echo "Remotely run: \" ($(SUPPORT_PATH_REMOTE) && cd $(TEST) && $(PRE_HOOK) time ocpirun $(DEBUG) -m UUT=rcc -t -$(SIM_TIME) application.xml $(POST_HOOK) > ocpirun.log 2>&1) \""
 	read -p "Press Enter when ocpirun is finished: " x

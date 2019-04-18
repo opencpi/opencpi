@@ -1928,7 +1928,7 @@ namespace OCPI {
       m_application.setDelayedProperties();
     }
     bool Application::
-    wait(unsigned timeout_us, bool timeOutIsError) {
+    wait(unsigned long timeout_us, bool timeOutIsError) {
       // FIXME: Right now, delayed properties don't (AV-4901):
       // (a) respect duration/timeout
       // (b) don't get accounted for when delaying timeout_us

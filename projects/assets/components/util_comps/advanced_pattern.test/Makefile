@@ -40,6 +40,8 @@ $(warning SIM_TIME is currently $(SIM_TIME)s; this might not be sufficient under
 endif
 endif
 
+# NOTE: This is probably broken for remote tests. Consider it local-only at this time.
+
 RCCWORKER=$(WORKER).rcc
 space:=
 space+=
@@ -50,8 +52,6 @@ EXPORT_PATH := export OCPI_LIBRARY_PATH=:$(OCPI_LIBRARY_PATH):\${OCPI_CDK_DIR}/c
 ifneq (,$(filter verify,$(MAKECMDGOALS)))
 export NO_AUTOCONFIG_WARNING=1
 endif
-
-# include ../zero_padding.test/setup.mk
 
 RCC_CONTAINERS?=$(shell echo "$(CONTAINERS)" | grep -c rcc)
 

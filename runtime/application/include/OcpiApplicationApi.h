@@ -59,7 +59,7 @@ namespace OCPI {
       // Set the delayed properties on schedule
       void setDelayedProperties();
       // return true if timed out, unless timeOutIsError, in which case throw exception
-      bool wait(unsigned timeout_us = 0, bool timeOutIsError = false);
+      bool wait(unsigned long timeout_us = 0, bool timeOutIsError = false);
       // do functional (not cleanup) things at the end of execution
       void finish();
       // Suspension, that can be resumed with "start".

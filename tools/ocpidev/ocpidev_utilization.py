@@ -215,55 +215,56 @@ def main():
     args = parse_cl_vars()
     try:
         cur_dir = args['cur_dir']
-        cur_dir_basename = os.path.basename(os.path.realpath(cur_dir))
+        with ocpiutil.cd(cur_dir):
+            cur_dir_basename = os.path.basename(os.path.realpath("."))
 
-        name = args['name']
-        # Now that we have grabbed name, delete it from the args that will be passed into the
-        # AssetFactory because name is explicitly passed to AssetFactory as a separate argument
-        del args['name']
+            name = args['name']
+            # Now that we have grabbed name, delete it from the args that will be passed into the
+            # AssetFactory because name is explicitly passed to AssetFactory as a separate argument
+            del args['name']
 
-        # From the current directory and directory-modifier options, determine
-        # the directory to operate from for this ocpidev command
-        directory = ocpiutil.get_ocpidev_working_dir(origin_path=cur_dir,
-                                                     noun=args.get("noun", ""),
-                                                     name=name,
-                                                     library=args['library'],
-                                                     hdl_library=args['hdl_library'],
-                                                     hdl_platform=args['hdl_plat_dir'])
+            # From the current directory and directory-modifier options, determine
+            # the directory to operate from for this ocpidev command
+            directory = ocpiutil.get_ocpidev_working_dir(origin_path=".",
+                                                         noun=args.get("noun", ""),
+                                                         name=name,
+                                                         library=args['library'],
+                                                         hdl_library=args['hdl_library'],
+                                                         hdl_platform=args['hdl_plat_dir'])
 
-        ocpiutil.logging.debug('Choose directory "' + directory + '" to operate in')
+            ocpiutil.logging.debug('Choose directory "' + directory + '" to operate in')
 
-        dir_type = ocpiutil.get_dirtype(directory)
+            dir_type = ocpiutil.get_dirtype(directory)
 
-        # Check dir_type for errors:
-        # If there is no noun, and the working directory is not a supported type
-        if args['noun'] is None and dir_type not in DIR_TYPES:
-            raise ocpiutil.OCPIException('Invalid directory type "' + str(dir_type) +
-                                         '" Valid directory types are: ' +
-                                         ", ".join(DIR_TYPES))
+            # Check dir_type for errors:
+            # If there is no noun, and the working directory is not a supported type
+            if args['noun'] is None and dir_type not in DIR_TYPES:
+                raise ocpiutil.OCPIException('Invalid directory type "' + str(dir_type) +
+                                             '" Valid directory types are: ' +
+                                             ", ".join(DIR_TYPES))
 
-        # If name is not set, set it to the current directory's basename
-        if name == "." and dir_type in DIR_TYPES:
-            name = cur_dir_basename
+            # If name is not set, set it to the current directory's basename
+            if name == "." and dir_type in DIR_TYPES:
+                name = cur_dir_basename
 
-        # Initialize settings to be used by Asset classes
-        set_init_values(args, dir_type)
+            # Initialize settings to be used by Asset classes
+            set_init_values(args, dir_type)
 
-        # Check worker authoring model and strip authoring model for Worker construction
-        if args['noun'] == "worker" or (args['noun'] is None and dir_type == "worker"):
-            if not name.endswith(".hdl"):
-                ocpiutil.logging.warning("Can only show utilization for workers of authoring " +
-                                         "model 'hdl'.")
-                sys.exit()
-            name = name.rsplit('.', 1)[0]
+            # Check worker authoring model and strip authoring model for Worker construction
+            if args['noun'] == "worker" or (args['noun'] is None and dir_type == "worker"):
+                if not name.endswith(".hdl"):
+                    ocpiutil.logging.warning("Can only show utilization for workers of authoring " +
+                                             "model 'hdl'.")
+                    sys.exit()
+                name = name.rsplit('.', 1)[0]
 
-        ocpiutil.logging.debug("Creating asset object with the following \nname: " +
-                               str(name) + "\n" + "directory: " + str(directory) +
-                               "\nargs: " + str(args))
+            ocpiutil.logging.debug("Creating asset object with the following \nname: " +
+                                   str(name) + "\n" + "directory: " + str(directory) +
+                                   "\nargs: " + str(args))
 
-        my_asset = ocpifactory.AssetFactory.factory(dir_type, directory, name, **args)
+            my_asset = ocpifactory.AssetFactory.factory(dir_type, directory, name, **args)
 
-        my_asset.show_utilization()
+            my_asset.show_utilization()
 
     except ocpiutil.OCPIException as ex:
         ocpiutil.logging.error(ex)

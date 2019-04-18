@@ -91,6 +91,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \def\docTitle{Component Data Sheet}
 \def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
+
+\usepackage{listings}
+
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\small{\docTitle}}
@@ -123,10 +126,39 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	Tested Platforms  & centos7, xilinx13\_3, xilinx13\_4 \\
 	\hline
 \end{tabular}
+\begin{center}
+  \textit{\textbf{Revision History}}
+\end{center}
+\begin{tabular}{|p{2cm}|p{12cm}|p{2.11cm}|}
+  \hline
+  \rowcolor{blue}
+  \textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+  \hline
+  v1.0 & Initial release. & 2/2016 \\
+  % If you look through the git history, this file appears to have undergone a
+  % 'git mv' such that it was associated with an entirely different component,
+  % and then another 'git mv' to revert back. These moves occurred before 1.1 and
+  % after 1.3 releases, so it appears that this datasheet for real digitizer
+  % didn't even exist for releases 1.1, 1.2, and 1.3.
+  \hline
+  v1.4 & Updated formatting, block diagram, and performance and resource utilization. Updated source dependencies to reflect new assets project directory name. & 9/2018 \\
+  \hline
+  v1.5 & Added \verb+enable_printing+ and \verb+sync_criteria_met+ properties to \comp{}.rcc. Also added functional diagram and xilinx13\_4 as a tested platform. & 4/2019 \\
+  \hline
+\end{tabular}
 
 \section*{Worker Implementation Details}
 \subsection*{\comp.rcc}
-This worker takes single samples and turns them into bits and packs them into a stream of words (16 bits) intended to be written to file.  If a positive sample comes in, a 1 is packed into the output word.  If a negative sample comes in, a 0 is packed into the output word.  All data is discarded before it receives the initialization sequence 0xFACE.  After the initialization sequence is received, data then starts to be passed to the output port.
+This worker performs symbol decisions by decoding signed real Q0.15 symbols into bits. Each positive symbol is decoded to a 1 and each negative symbol is decoded into a 0.
+Once the sync criteria is met, the decoded bits are packed into 16-bit words which are subsequently sent to the output port.
+The sync criteria is met when a) the \verb+need_sync+ property has a value of false, or b) the first 0xFACE sequence occurs in the decoded bits. When the first 0xFACE sequence occurs in the decoded bits and the \verb+enable_printing+ is true, the following is printed to stdout:
+\lstset{language=bash, backgroundcolor=\color{lightgray}, columns=flexible,
+        breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily,
+        showstringspaces=false,upquote=true, aboveskip=\baselineskip,
+        belowskip=\baselineskip}
+\begin{lstlisting}
+sync pattern 0xFACE found
+\end{lstlisting}
 
 \section*{Block Diagrams}
 \subsection*{Top level}
@@ -139,9 +171,9 @@ This worker takes single samples and turns them into bits and packs them into a 
 			every edge/.style={draw,thick}
 		]
 		\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
-		\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in'' \\ Signed real samples};
-		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' \\ Signed real samples};
-		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+need_sync+};
+		\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in'' \\ Signed real symbols (Q0.15)};
+		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' \\ Decoded bits packed into 16-bit words};
+		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+need_sync+, \\ \verb+enable_printing+, \\ \verb+sync_criteria_met+};
 		\path[->]
 		(R3)edge []	node [] {} (R2)
 		(R2)edge []	node [] {} (R4)
@@ -149,7 +181,18 @@ This worker takes single samples and turns them into bits and packs them into a 
 		(R5)edge []	node [] {} (R2)
 		;
 	\end{tikzpicture}
+  \captionof{figure}{\comp{}.rcc Worker Diagram}
 \end{center}
+
+\begin{center}
+  \begin{figure}[h]
+    \centering\captionsetup{type=figure}\includegraphics[scale=0.14]{Real_Digitizer_Diagram}
+    \captionof{figure}{\comp{}.rcc Functional Diagram}
+    \label{fig:blockdiagram}
+  \end{figure}
+\end{center}
+
+
 
 \section*{Source Dependencies}
 \subsection*{\comp.rcc}
@@ -172,7 +215,19 @@ This worker takes single samples and turns them into bits and packs them into a 
 
 	\section*{Worker Properties}
 	\subsection*{\comp.rcc}
-	Control Operations: Start
+	Control Operations: Start \\ \\
+	\begin{scriptsize}
+		\begin{tabular}{|p{3cm}|p{1.5cm}|c|c|c|c|c|p{7cm}|}
+			\hline
+			\rowcolor{blue}
+			Name             & Type & SequenceLength & ArrayDimensions & Accessibility    & Valid Range & Default & Usage                                                                                                                                                                                \\
+			\hline
+			\verb+enable_printing+ & Bool & -              & -               & Writable & Standard    & True    & Enable stdout/stderr printing. \\
+			\hline
+			\verb+sync_criteria_met+ & Bool & -              & -               & Volatile & Standard    & -       & Indicates either 0xFACE found or \verb+need_sync+ is false. \\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
 
 	\section*{Component Ports}
 	\begin{scriptsize}
@@ -181,9 +236,9 @@ This worker takes single samples and turns them into bits and packs them into a 
 			\rowcolor{blue}
 			Name & Producer & Protocol          & Optional & Advanced & Usage               \\
 			\hline
-			in   & false    & rstream\_protocol & false    & -        & Signed real samples \\
+			in   & false    & rstream\_protocol & false    & -        & Signed real symbols (Q0.15) \\
 			\hline
-			out  & true     & rstream\_protocol & false    & -        & Signed real samples \\
+			out  & true     & rstream\_protocol & false    & -        & Decoded bits packed in 16-bit words \\
 			\hline
 		\end{tabular}
 	\end{scriptsize}

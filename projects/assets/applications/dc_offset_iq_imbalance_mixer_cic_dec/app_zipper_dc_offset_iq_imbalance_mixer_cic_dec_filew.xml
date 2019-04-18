@@ -4,14 +4,11 @@
   <Instance Component="ocpi.assets.devices.si5351"/>
   <Instance Component="ocpi.core.devices.time_server"/>
   <Instance Component="ocpi.assets.devices.qadc" model="hdl">
-    <property Name="messageSize" Value="16352"/>
   </Instance>
   <Instance Component="ocpi.assets.dsp_comps.dc_offset_filter">
-    <property Name="messageSize" Value="16352"/>
     <property Name="bypass" Value="false"/>
   </Instance>
   <Instance Component="ocpi.assets.dsp_comps.iq_imbalance_fixer">
-    <property Name="messageSize" Value="16352"/>
     <property Name="enable" Value="true"/>
     <property Name="log2_averaging_length" Value="11"/>
   </Instance>
@@ -19,7 +16,6 @@
     <property Name="NCO_DATA_WIDTH_p" Value="12"/>
     <property Name="INPUT_DATA_WIDTH_p" Value="12"/>
     <property Name="mag" Value="2048"/>
-    <property Name="messageSize" Value="16352"/>
     <property Name="phs_inc" Value="0x10AA"/>
   </Instance>
   <Instance Component="ocpi.assets.dsp_comps.cic_dec">
@@ -27,7 +23,6 @@
     <property Name="M" Value="1"/>
     <property Name="R" Value="8"/>
     <property Name="ACC_WIDTH" Value="25"/>
-    <property Name="messageSize" Value="16352"/>
   </Instance>
 
   <!-- RCC Components -->

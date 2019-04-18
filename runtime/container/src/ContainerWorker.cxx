@@ -649,8 +649,14 @@ namespace OCPI {
 	p.m_default->unparse(value, NULL, false, hex);
 	return true;
       }
+      OA::PropertyAttributes attrs;
       getProperty(p, value, p, 0, 0,
-		  OA::PropertyOptionList({ hex ? OA::HEX : OA::NONE, uncached ? OA::UNCACHED : OA::NONE}));
+		  OA::PropertyOptionList({ hex ? OA::HEX : OA::NONE,
+			uncached ? OA::UNCACHED : OA::NONE,
+			unreadablep ? OA::UNREADABLE_OK : OA::NONE}),
+		  &attrs);
+      if (attrs.isUnreadable && unreadablep)
+	*unreadablep = true;
       return true;
     }
     // batch setting with lots of error checking - all or nothing
