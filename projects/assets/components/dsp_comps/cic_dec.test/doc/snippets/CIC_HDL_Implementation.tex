@@ -1,0 +1,13 @@
+\subsection*{\comp.hdl}
+\subsubsection*{Number of Stages}
+\begin{flushleft}
+	The generic \verb+N+ sets the number of integrators and comb stages in the filter.	Increasing the number of stages increases the attenuation in the sidelobes and decreases the 3dB bandwidth of the passband. The recommended range for this parameter is 3 to 6. Consult the reference material for an in depth discussion of the frequency response of the filter as a function of the generics in this module.
+\end{flushleft}
+\subsubsection*{Bit Growth}
+\begin{flushleft}
+	For this design, the output data width for the comb stages is configurable via	\verb+ACC_WIDTH+. To adjust for bit growth in the data path and to ensure no quantization error at the output, this equation should be used to determine the value of \verb+ACC_WIDTH+.
+
+	\begin{equation} \label{eq:acc_width}
+		ACC\_WIDTH = N*CEIL(log_2(R*M))+DIN\_WIDTH
+	\end{equation}
+\end{flushleft}

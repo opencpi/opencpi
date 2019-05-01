@@ -64,7 +64,9 @@ architecture rtl of alst4_worker is
     unoc_in_take            : in  std_logic);
   end component pci_alst4;
 begin
-  timebase_out.clk   <= sys0_clk;
+  -- Switched time clock to control clock for AV-5438 AV-5407
+  --timebase_out.clk   <= sys0_clk;
+  timebase_out.clk   <= ctl_clk;
   timebase_out.reset <= not ctl_rst_n;
   timebase_out.ppsIn <= '0';
 

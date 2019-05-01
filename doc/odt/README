@@ -1,8 +1,26 @@
-(This file is obsolete - these documents are being moved to LaTeX)
+This directory contains OpenOffice/LibreOffice Writer documents for OpenCPI.
+Some documents have been converted to LaTex and they are in ../tex and this file does not apply to those.
 
-This directory contains OpenOffice/LibreOffice documents for OpenCPI.
-They all use the template here named shared/OCPI_ODT.ott, which must be imported
+=== Templates
+
+These documents all use the template here named shared/OCPI_ODT.ott, which must be imported
 into LibreOffice before editing any of these odt documents.
+
+To be sure your template is current, with no documents open, do:
+1. Go to file->templates->manage templates, set upper right pull-down to "my templates"
+2. Click-right on the OCPI_ODT template and delete it (this sometimes crashes LO, but does delete the template)
+3. In manage templates, click "import" and select the "my templates" category, and select shared/OCPI_ODT.ott
+
+If the template is edited modified (inside LO), it should be re-exported into the shared directory.
+Exporting a template will not overwrite the template file -- the destination file must be deleted first.
+
+When the template is changed (i.e. by importing it), the next time you load a document it will ask if you want to
+update with the changed template or "keep old styles".  Do *NOT* say "keep old styles" since this
+permanently disassociates the document from the template.  To re-associate the document with the template
+you must create a new empty file from the template and copy-paste the whole disassociated
+document into the new empty one.
+
+=== Creating PDFs
 
 After editing a document, the Export PDF function under the file menu should be used
 to place the PDF in the ../pdf directory, and that PDF file should be part of the commit.
@@ -11,10 +29,8 @@ Set "pages and bookmarks" as the initial view.
 Also, export as html in ../html using the Writer2xhtml extension.
 Use HTML5 export, and select "put images in a subdirectory".
 
-Similarly, if the template is edited, it should be re-exported into the shared directory.
-
-If any editing of these ODT documents is touched, the template should be imported
-first.
+If any editing of these ODT documents is done, the template should be imported
+first so you are using the current template.
 
 Look at the "diagrams.txt" file if you are adding or editing diagrams in these
 documents. They are currently edited in PowerPoint, and not yet included in the repo.

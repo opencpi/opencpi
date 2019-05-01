@@ -275,8 +275,4 @@ ocpi_comp=$OCPI_CDK_DIR/scripts/ocpidev_bash_complete
   echo "Below are all OCPI_* environment variables now set:" >&2
   env | grep OCPI | sort >&2
 }
-# In case they have any old paths stored in their bash hash, rescan the path:
-for tool in ${OCPI_CDK_DIR}/${OCPI_TOOL_DIR}/bin/*; do
-  hash -p ${tool} $(basename ${tool}) &>/dev/null || :
-done
 return 0

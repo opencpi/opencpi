@@ -787,7 +787,8 @@ namespace OCPI {
       struct Intercept : public IdentResolver {
 	Value &value;
 	Resolver *resolver;
-	Intercept(Value &v, Resolver *a_r) : value(v), resolver(a_r) {}
+	mutable bool usedVariable; // did we actually use a real variable?
+	Intercept(Value &v, Resolver *a_r) : value(v), resolver(a_r), usedVariable(false) {}
 	const char *getValue(const char *sym, ExprValue &val) const {
 	  if (value.m_vt->m_baseType == OA::OCPI_Enum)
 	    for (size_t n = 0; n < value.m_vt->m_nEnums; n++)
@@ -795,8 +796,11 @@ namespace OCPI {
 		val.setNumber(n);
 		return NULL;
 	      }
-	  return resolver && resolver->resolver ? resolver->resolver->getValue(sym, val) :
-	    "no symbols available for identifier in expression";
+	  if (resolver && resolver->resolver) {
+	    usedVariable = true;
+	    return resolver->resolver->getValue(sym, val);
+	  }
+	  return "no symbols available for identifier in expression";
 	}
       } mine(*this, r);
       const char *err;
@@ -804,7 +808,7 @@ namespace OCPI {
       if (!(err = evalExpression(start, ev, &mine, end)) &&
 	  !(err = ev.getTypedValue(*this, nSeq * m_vt->m_nItems + nArray)) &&
 	  r->isVariable)
-	*r->isVariable = ev.isVariable();
+	*r->isVariable = mine.usedVariable; // use mine, not ev.isVariable() since it might be enum tag
       return err;
     }
 

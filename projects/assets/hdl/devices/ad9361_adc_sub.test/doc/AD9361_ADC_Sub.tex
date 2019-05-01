@@ -94,7 +94,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -108,20 +108,19 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \begin{document}
 
 \section*{Summary - \Comp}
-\begin{tabular}{|c|M{13.5cm}|}
+\begin{longtable}{|p{\dimexpr0.5\textwidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.5\textwidth-2\tabcolsep\relax}|}
 	\hline
 	\rowcolor{blue}
 	                  &                  \\
+	\hline
+	Package Prefix    & ocpi.assets.devices     \\
 	\hline
 	Name              & \comp            \\
 	\hline
 	Worker Type       & Device           \\
 	\hline
-	Version           & v\docVersion     \\
-	\hline
-	Release Date      & October 2018         \\
-	\hline
-	Component Library & ocpi.assets.devices     \\
+	OpenCPI Release & v\docVersion ~ (released 4/2019) \\
 	\hline
 	Workers           & \comp.hdl        \\
 	\hline
@@ -134,7 +133,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
   \item Ettus E310 (Vivado only, application for testing exists in e310 project)
 \end{itemize} \\
 	\hline
-\end{tabular}
+\end{longtable}
 
 \section*{Functionality}
 	The \Comp{} is a subdevice worker whose primary purpose is to de-interleave the AD9361 IC pin-provided time-interleaved RX data streams (independent of which of the IC's P0/P1 buses the RX data stream came from). De-interleaving occurs according to the timing diagrams specified in \cite{adi_ug570}. This worker ingests RX data from devsignals from ad9361\_data\_sub.hdl\cite{data_sub_comp_datasheet}, de-interleaves it into at most two 12-bit (Q0.11) RX channel data buses, and makes each channel bus available to an instance of the supported ad9361\_adc.hdl device worker via a devsignal port.
@@ -736,7 +735,7 @@ assets/applications/ad9361\_adc\_test).
  \begin{thebibliography}{1}
 
 \bibitem{ad9361} AD9361 Datasheet and Product Info \\
-\url{http://www.analog.com/en/products/rf-microwave/integrated-transceivers-transmitters-receivers/wideband-transceivers-ic/ad9361.html}
+\url{https://www.analog.com/en/products/ad9361.html}
  \bibitem{adi_ug570} AD9361 Reference Manual UG-570\\
  AD9361\_Reference\_Manual\_UG-570.pdf
  \bibitem{adi_ug671} AD9361 Register Map Reference Manual UG-671\\

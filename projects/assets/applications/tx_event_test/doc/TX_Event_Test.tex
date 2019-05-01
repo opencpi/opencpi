@@ -21,7 +21,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{OpenCPI\\ TX Event Test App Guide}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \input{../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
 \date{Version \docVersion} % Force date to be blank and override date with version
@@ -37,25 +37,24 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \begin{document}
 \maketitle
 %\thispagestyle{fancy}
-\newpage
 	\begin{center}
 	\textit{\textbf{Revision History}}
 		\begin{table}[H]
 		\label{table:revisions} % Add "[H]" to force placement of table
-			\begin{tabularx}{\textwidth}{|c|X|l|}
+\begin{longtable}{|p{\dimexpr0.15\textwidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.65\textwidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.2\textwidth-2\tabcolsep\relax}|}
 			\hline
 			\rowcolor{blue}
 			\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
 		    \hline
-		    v1.4 & Initial Release & 8/2018 \\
+		    v1.4 & Initial release. & 8/2018 \\
+		    \hline
+		    v1.5 & Version bump only. & 4/2019 \\
 			\hline
-			\end{tabularx}
+			\end{longtable}
 		\end{table}
 	\end{center}
-
-\newpage
-\tableofcontents
-\pagebreak
 
 \section{Description}
 This application directory containts several OAS files which allow for the testing of the \verb+tx_event+ protocol using the \verb+qdac+ component's \verb+event_in+ port in multiple scenarios include both \verb+event_in+ port connected and unconnected. The application transmits a single tone at a frequency set via the \verb+tx+ component's \verb+frequency_MHz+ property in each OAS. OAS files exist for each supported hardware setup for two different behaviors: 1) transmitted tone is toggled (on/off) at a rate of once per second (\verb+event_in+ port is connected), and 2) transmitted tone is constant over duration of application (\verb+event_in+ port is unconnected). The application duration is set via ocpirun ... -t $<$duration\_sec$>$ ...).

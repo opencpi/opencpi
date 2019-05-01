@@ -20,6 +20,8 @@
 """
 CIC Decimator: Verify output data
 
+Tested numpy version(s): 1.7.1
+
 Verify args:
 1. amplitude used to generate input data file
 2. name of output data file
@@ -36,6 +38,223 @@ import sys
 import opencpi.colors as color
 import numpy as np
 
+class SampledData:
+  def __init__(self, data, fs):
+      """
+      Parameters
+      ----------------
+      data
+          Sampled data.
+      fs
+          Sampling frequency of sampled data in Hz.
+      """
+      self.data = data
+      self.fs = fs
+
+  def get_time_series(self, start_time):
+      return start_time + (np.arange(len(self.data),dtype=float) / self.fs)
+
+class DFTResult:
+    """
+    Represents the result of a one-dimensional Discrete Fourier Transform. For
+    more info, see
+    https://en.wikipedia.org/wiki/Discrete_Fourier_transform.
+    """
+    def __init__(self, sampled_data, n = None):
+        """
+        Parameters
+        ----------------
+        sampled_data
+            Sampled data on which DFT will be calculated.
+        n
+            Length of the transformed axis of the output.
+        """
+        self.amplitudes = np.fft.fft(sampled_data.data, n)
+        end = sampled_data.fs*(1-(1/n))
+        self.freq_bins = np.arange(0., end, sampled_data.fs/n)
+
+    def get_num_dft_points(self):
+        return len(self.amplitudes)
+
+    def get_unity_magnitude_normalization_factor(self):
+        """
+        Returns
+        ----------------
+            Returns amplitude relative to sampled_data unity, e.g. if
+            sampled_data is a complex sinusoid of magnitude 1, the maximum value
+            within the DFT result should be close to 1 after the result is
+            multiplied by the value returned.
+        """
+        return 1. / self.get_num_dft_points()
+
+class DFTCalculator():
+    """
+    Calculates a one-dimensional Discrete Fourier Transform. For more info, see
+    https://en.wikipedia.org/wiki/Discrete_Fourier_transform.
+    """
+    def __init__(self, sampled_data):
+        self.sampled_data = sampled_data
+
+    def calc(self, n = None):
+        """
+        Parameters
+        ----------------
+        n
+            Length of the transformed axis of the output.
+        """
+        self.result = DFTResult(self.sampled_data, n)
+        return self.result
+
+    def get_idx_of_nearest_freq_in_result(self, f):
+        """ This has been verified both for positive and negative frequencies.
+        Parameters
+        ----------------
+        f
+            Frequency value in Hz.
+        """
+        fs = self.sampled_data.fs
+        idx = int(round(float(f)/float(fs)*float(len(self.result.amplitudes))))
+        return idx % self.result.get_num_dft_points()
+
+    def get_freq_for_idx_in_result(self, idx):
+        """
+        Parameters
+        ----------------
+        idx
+            Zero-based index of DFT result, where 0 corresponds to 0 Hz, and the
+            last index of the DFT result plus one corresponds to fs Hz.
+        """
+        fs = self.sampled_data.fs
+        return float(idx)/float(self.result.get_num_dft_points())*float(fs)
+
+    def get_nearest_freq_in_result(self, f):
+        """
+        Parameters
+        ----------------
+        f
+            Frequency value in Hz.
+        """
+        idx = self.get_idx_of_nearest_freq_in_result(f)
+        return self.get_freq_for_idx_in_result(idx)
+
+    def get_magnitude_of_nearest_freq_in_result(self, f,
+            unit = "dB_relative_to_unity"):
+        """
+        Parameters
+        ----------------
+        f
+            Frequency value in Hz.
+        Returns
+        ----------------
+            When unit is "dB_relative_to_unity", returns amplitude in dB
+            relative to sampled_data unity, e.g. if sampled_data is a complex
+            sinusoid of amplitude 1, the returned value should be
+            close to 0 dB.
+        """
+        eps = pow(10, -10) # error factor to avoid divide by zero in log10
+        idx = self.get_idx_of_nearest_freq_in_result(f)
+        if unit == None:
+            factor = 1
+        elif unit == "dB_relative_to_unity":
+            factor = self.result.get_unity_magnitude_normalization_factor()
+        else:
+            msg = "unit was was unsupported value of " + unit
+            msg += ", supported values are None and dB_relative_to_unity"
+            raise Exception(msg)
+        abs_amp = abs(self.result.amplitudes[idx] * factor)
+        ret = 20*np.log10(abs_amp + eps)
+        return ret
+
+    def get_max_magnitude_of_positive_freqs(self,
+        unit = "dB_relative_to_unity"):
+        eps = pow(10, -10) # error factor to avoid divide by zero in log10
+        if unit == None:
+            factor = 1
+        elif unit == "dB_relative_to_unity":
+            factor = self.result.get_unity_magnitude_normalization_factor()
+        else:
+            msg = "unit was was unsupported value of " + unit
+            msg += ", supported values are None and dB_relative_to_unity"
+            raise Exception(msg)
+        nn = self.result.get_num_dft_points()
+        result_pos_freqs = self.result.amplitudes[0:(nn/2)-1]
+        tmp = 20*np.log10(abs(result_pos_freqs) + eps)
+        ret = tmp[np.argmax(tmp)]
+        return ret
+
+    def get_max_magnitude_of_negative_freqs(self,
+        unit = "dB_relative_to_unity"):
+        eps = pow(10, -10) # error factor to avoid divide by zero in log10
+        if unit == None:
+            factor = 1
+        elif unit == "dB_relative_to_unity":
+            factor = self.result.get_unity_magnitude_normalization_factor()
+        else:
+            msg = "unit was was unsupported value of " + unit
+            msg += ", supported values are None and dB_relative_to_unity"
+            raise Exception(msg)
+        nn = self.result.get_num_dft_points()
+        result_neg_freqs = self.result.amplitudes[nn/2:nn-1]
+        tmp = 20*np.log10(abs(result_neg_freqs) + eps)
+        ret = tmp[np.argmax(tmp)]
+        return ret
+
+def calc_nearest_freq_and_mag(desired_freq, calc, pre_msg):
+    nearest_freq = calc.get_nearest_freq_in_result(desired_freq)
+    mag = calc.get_magnitude_of_nearest_freq_in_result(desired_freq,
+        unit="dB_relative_to_unity")
+    msg = pre_msg + 'Tone at   ' + str(nearest_freq) + ' Hz has magnitude of '
+    msg += str(mag) + '\tdB relative to unity'
+    print(msg)
+    return [nearest_freq, mag]
+
+def test_expected_min_gain_diff(freq, in_calc, out_calc, min_allowed_gain_diff_dB):
+    """
+    Parameters
+    ----------------
+    freq
+        Frequency in Hz for tone to be tested
+    in_calc
+        DFTCalculator object for data input to iq_imbalance_fixer
+    out_calc
+        DFTCalculator object for data output from iq_imbalance_fixer
+    min_allowed_gain_diff_dB
+        Minimum pre-to-post tone gain difference for which a test will succeed.
+    """
+    [in_freq, in_mag]   = calc_nearest_freq_and_mag(freq, in_calc,  "Input        ")
+    [out_freq, out_mag] = calc_nearest_freq_and_mag(freq, out_calc, "Output       ")
+
+    gain = out_mag - in_mag
+    if abs(gain) < min_allowed_gain_diff_dB:
+        msg = 'FAILED, Tone in->out gain = ' + str(gain)
+        msg += " dB, which was less than the minimum "
+        msg += "allowed difference of " + str(min_allowed_gain_diff_dB) + " dB"
+        print(color.RED + color.BOLD + msg + color.END)
+        sys.exit(1)
+
+def test_expected_max_gain_diff(freq, in_calc, out_calc, max_allowed_gain_diff_dB):
+    """
+    Parameters
+    ----------------
+    freq
+        Frequency in Hz for tone to be tested
+    in_calc
+        DFTCalculator object for data input to iq_imbalance_fixer
+    out_calc
+        DFTCalculator object for data output from iq_imbalance_fixer
+    max_allowed_gain_diff_dB
+        Maximum pre-to-post tone gain difference for which a test will succeed.
+    """
+    [in_freq, in_mag]   = calc_nearest_freq_and_mag(freq, in_calc,  "Input        ")
+    [out_freq, out_mag] = calc_nearest_freq_and_mag(freq, out_calc, "Output       ")
+
+    gain = out_mag - in_mag
+    if abs(gain) > max_allowed_gain_diff_dB:
+        msg = 'FAILED, Tone in->out gain = ' + str(gain)
+        msg += " dB, which was greater than the maximum "
+        msg += "allowed difference of " + str(max_allowed_gain_diff_dB) + " dB"
+        print(color.RED + color.BOLD + msg + color.END)
+        sys.exit(1)
 
 def myround(x, base=8):
     return base * round(float(x) / base)
@@ -120,8 +339,8 @@ else: # Measure and compare power of tone(s)
     start_time = datetime.datetime.now()
     print '    Start time =', start_time
 
-    ifile_nsamples = ifile_nbytes / 4
     ofile_nsamples = ofile_nbytes / 4
+    ifile_nsamples = ifile_nbytes / 4
 
     #print 'DBG: ifile_nbytes=%d ifile_nsamples=%d' % (ifile_nbytes, ifile_nsamples)
     #print 'DBG: ofile_nbytes=%d ofile_nsamples=%d' % (ofile_nbytes, ofile_nsamples)
@@ -133,71 +352,36 @@ else: # Measure and compare power of tone(s)
     complex_odata = np.array(np.zeros(ofile_nsamples), dtype=np.complex)
     for i in xrange(0,ofile_nsamples):
         complex_odata[i] = complex(odata['real_idx'][i], odata['imag_idx'][i])
-    IFFT = 1.0/(ifile_nsamples/2) * abs(np.fft.fft(complex_idata,ifile_nsamples/2))
-    OFFT = 1.0/(ofile_nsamples) * abs(np.fft.fft(complex_odata,ofile_nsamples))
-    eps = pow(10, -10) #Error factor to avoid divide by zero in log10
-    #print 'DBG: len(IFFT)=%d \nDBG: len(OFFT)=%d' % (len(IFFT), len(OFFT))
+
+    in_calc = DFTCalculator(SampledData(complex_idata, Fs))
+    out_calc = DFTCalculator(SampledData(complex_odata, Fs_dec))
+    in_calc.calc(n = ifile_nsamples/2)
+    out_calc.calc(n = ofile_nsamples)
+    #in_calc.plot()
+    #out_calc.plot()
 
     # Report time needed to perform FFTs
     end_time = datetime.datetime.today()
     print '    End time =', end_time
     print '    Elapsed time:', end_time - start_time
 
-    #print 'DBG: float(T1)/(float(Fs)/2.0)*float(len(IFFT)/2.0)=', float(T1)/(float(Fs)/2.0)*float(len(IFFT)/2.0)
-    #print 'DBG: float(T2)/(float(Fs)/2.0)*float(len(IFFT)/2.0)=', float(T2)/(float(Fs)/2.0)*float(len(IFFT)/2.0)
-    #print 'DBG: float(T3)/(float(Fs)/2.0)*float(len(IFFT)/2.0)=', float(T3)/(float(Fs)/2.0)*float(len(IFFT)/2.0)
-    #input: three tones in range DC to +Fs/2
-    IPowerT1 = 20*np.log10(IFFT[float(T1)/(float(Fs)/2.0)*float(len(IFFT)/2.0)]+eps)
-    IPowerT2 = 20*np.log10(IFFT[float(T2)/(float(Fs)/2.0)*float(len(IFFT)/2.0)]+eps)
-    IPowerT3 = 20*np.log10(IFFT[float(T3)/(float(Fs)/2.0)*float(len(IFFT)/2.0)]+eps)
-    print "    Input Tone 1 power level =", IPowerT1, "dBm"
-    print "    Input Tone 2 power level =", IPowerT2, "dBm"
-    print "    Input Tone 3 power level =", IPowerT3, "dBm"
-
-    #print 'DBG: float(T1)/(float(Fs_dec)/2.0)*float(len(OFFT)/2.0)=', float(T1)/(float(Fs_dec)/2.0)*float(len(OFFT)/2.0)
-    #print 'DBG: float(T2)/(float(Fs_dec)/2.0)*float(len(OFFT)/2.0)=', float(T2)/(float(Fs_dec)/2.0)*float(len(OFFT)/2.0)
-    #print 'DBG: float(T3)/(float(Fs_dec)/2.0)*float(len(OFFT)/2.0)=', float(T3)/(float(Fs_dec)/2.0)*float(len(OFFT)/2.0)
-    #output: two tones in range DC to +Fs/2
-    OPowerT1 = 20*np.log10(OFFT[float(T1)/(float(Fs_dec)/2.0)*float(len(OFFT)/2.0)]+eps)
-    OPowerT2 = 20*np.log10(OFFT[float(T2)/(float(Fs_dec)/2.0)*float(len(OFFT)/2.0)]+eps)
-    #output: one filtered tone in range -Fs/2 to DC
-    OPowerT3 = 20*np.log10(OFFT[float(-T3)/(float(Fs_dec)/2.0)*float(len(OFFT)/2.0)]+eps)
-    print "    Output Tone 1 power level =", OPowerT1, "dBm"
-    print "    Output Tone 2 power level =", OPowerT2, "dBm"
-    print "    Output Tone 3 power level =", OPowerT3, "dBm"
-
     # Perform calculations comparing output power to input power
     # Note: Comparison values were determined empirically across entire test suite
-    diffT1 = abs(OPowerT1 - IPowerT1)
     if (M == 2 and R == 8192):
-        if (diffT1 < 37.0) :
-            print "    FAIL, Output Tone 1 power level = ", OPowerT1, "dBm", diffT1
-            sys.exit(1)
+        test_expected_min_gain_diff(T1, in_calc, out_calc, 37.0)
     elif (M == 2 and R == 8191):
-        if (diffT1 < 46.0) :
-            print "    FAIL, Output Tone 1 power level = ", OPowerT1, "dBm", diffT1
-            sys.exit(1)
+        test_expected_min_gain_diff(T1, in_calc, out_calc, 39.0)
     elif (R == 8191):
-        if (diffT1 < 15.0):
-            print "    FAIL, Output Tone 1 power level = ", OPowerT1, "dBm", diffT1
-            sys.exit(1)
-    elif diffT1 > 8.0 :
-        print "    FAIL, Output Tone 1 power level = ", OPowerT1, "dBm", diffT1
-        sys.exit(1)
+        test_expected_min_gain_diff(T1, in_calc, out_calc, 8.6)
+    else:
+        test_expected_max_gain_diff(T1, in_calc, out_calc, 8.0)
 
-    diffT2 = abs(OPowerT2 - IPowerT2)
     if (R >= 8191):
-        if (diffT2 < 37.0) :
-            print "    FAIL, Output Tone 1 power level =", OPowerT2, "dBm", diffT2
-            sys.exit(1)
-    elif diffT2 > 8.0 :
-        print "    FAIL, Output Tone 2 power level =", OPowerT2, "dBm", diffT2
-        sys.exit(1)
+        test_expected_min_gain_diff(T2, in_calc, out_calc, 37.0)
+    else:
+        test_expected_max_gain_diff(T2, in_calc, out_calc, 8.0)
 
-    diffT3 = abs(OPowerT3 - IPowerT3)
-    if diffT3 < 57.0 :
-        print "    FAIL, Output Tone 3 power level =", OPowerT3, "dBm", diffT3
-        sys.exit(1)
+    test_expected_min_gain_diff(T3, in_calc, out_calc, 57.0)
 
 print '    Data matched expected results.'
 print '    ' + color.GREEN + color.BOLD + 'PASSED' + color.END

@@ -2,9 +2,9 @@ In this directory you would have your compiler and your kernel source tree.
 
 The kernel should be located here and is found by the framework by setting the variable OcpiKernelDir in epiq_matchstiq.mk .
 
-For more information on how to create the kernel yourself see os/linux/driver/README in the opencpi source tree.
+For more information on how to create the kernel yourself, see os/linux/driver/README in the opencpi source tree.
 
-Below is an example of the layout that compiler.tar should match. The compiler.tar is used by install-cs_lite_match.sh .
+Below is a partial example of the layout that compiler.tar should match. The compiler.tar is used by install-cs_lite_match.sh .
 
 drwxr-xr-x root/root         0 2016-06-02 08:23 opt/CodeSourcery/
 drwxr-xr-x root/root         0 2016-06-02 08:23 opt/CodeSourcery/Sourcery_G++_Lite/

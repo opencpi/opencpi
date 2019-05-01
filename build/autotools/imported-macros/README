@@ -1,5 +1,5 @@
-This directory contains autoconf macros copied here as needed from the repository at:
+This directory contains autoconf macros copied here as needed from the repository at
 https://www.gnu.org/software/autoconf-archive
+
 Every now and again it is probably worth checking for updates.
 The version number is the "#serial" tag in the source file.
-

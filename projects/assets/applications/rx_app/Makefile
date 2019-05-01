@@ -112,13 +112,13 @@ IF_TUNE_FREQ_MHZ=0.1
 ----------------------------------------------------------------------------
 4) Verification of output data: (development system)
 SAMP_RATE_HZ=2500000
-python ./scripts/plotAndFftAndTime.py odata/rx_app_shortened.out complex 65536 $$SAMP_RATE_HZ 16352 &
+python ./scripts/plotAndFftAndTime.py odata/rx_app_shortened.out complex 65536 $$SAMP_RATE_HZ 8192 &
 
 Verify that the signal generator tone exists at 700,000 Hz in the plotted baseband signal FFT (calculated as signal generator frequency - RF tune frequency - IF tune frequency = 2400.8 MHz - 2400 MHz - 0.1 MHz = 700,000Hz).
 
 Alternatively, use non-shortened rx_app_raw.out (results in potentially slow plot script)
 SAMP_RATE_HZ=2500000
-python ./scripts/plotAndFftAndTime.py odata/rx_app_raw.out complex 65536 $$SAMP_RATE_HZ 16352 &
+python ./scripts/plotAndFftAndTime.py odata/rx_app_raw.out complex 65536 $$SAMP_RATE_HZ 8192 &
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 endef

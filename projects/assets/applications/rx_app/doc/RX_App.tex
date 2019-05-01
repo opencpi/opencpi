@@ -21,7 +21,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{OpenCPI\\ Rx App Guide}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \input{../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
 \date{Version \docVersion} % Force date to be blank and override date with version
@@ -32,44 +32,25 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \usepackage{graphicx}
 \graphicspath{ {figures/} }
 \usepackage{textcomp}
-\lstset{ % https://tex.stackexchange.com/a/116572
-  basicstyle=\ttfamily,
-  columns=fullflexible,
-  % frame=single,
+
+% note that postbreak breaks copy/paste
+\lstset{
+  language=bash,
+  backgroundcolor=\color{lightgray},
+  columns=flexible,
   breaklines=true,
-  showstringspaces=true,
-  showspaces=true,
-  postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
-}
+  prebreak=\textbackslash,
+  basicstyle=\ttfamily,
+  showstringspaces=false,
+  upquote=true,
+  %postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space}, % https://tex.stackexchange.com/a/116572
+  aboveskip=\baselineskip,
+  belowskip=\baselineskip}
+
 \begin{document}
 \maketitle
 %\thispagestyle{fancy}
 
-% AV-4723 blurb start
-\begin{center}
-\framebox{\parbox{0.8\linewidth}{\centering
-\textcolor{red}{WARNING:}
-Run-time failures have been observed for several unit tests and applications on PCIe-based platforms.
-The work around requires modifying the \textbf{buffersize} attribute of the PL to PS (egress) boundary connection, as defined in the OAS. An example for modifying the OAS for executing on PCIe-based platforms is provided in a below section.
-
-% INCLUDE IN AFFECTED UNIT TESTS DOCUMENTATION
-%Specifically, the following XML change must be made to resolve this issue for the unit tests and reference applications:\\
-%\begin{lstlisting}[showspaces=false]
-%  <Connection>
-%   <Port Instance="last_PL_worker" Name="out"/>
-%   <Port Instance="first_PS_worker" Name="in" Buffersize="8192" Buffercount="4"/>
-%  </Connection>
-%\end{lstlisting}
-
-% INCLUDE IN FIR_COMPLEX_SSE.TEST UNIT TEST DOCUMENTATION
-%An additional change is required for fir\_complex\_sse.test, in that the fir\_complex\_sse.hdl's messageSize property must be be reduced from 8192 to 4096.\\ \medskip
-%\begin{lstlisting}[showspaces=false]
-%  <property name='messageSize' value='4096'>
-%\end{lstlisting}
-
-\PackageWarning{}{AV-4723} }}
-\end{center}
-% AV-4723 blurb end
 \newpage
 
 	\begin{center}
@@ -91,7 +72,7 @@ The work around requires modifying the \textbf{buffersize} attribute of the PL t
 			\hline
 			v1.4 & Updated recommendations for configuring OCPI\_LIBRARY\_PATH & 9/2018 \\
 			\hline
-			v1.5 & Deprecated Zipper; See Appendix C & 3/2019 \\
+			v1.5 & Updated messageSize value and deprecated Zipper; See Appendix C & 4/2019 \\
 			\hline
 			\end{tabularx}
 		\end{table}
@@ -118,19 +99,19 @@ This app is supported on the following hardware configurations:
 \end{itemize}
 
 \section{Description}
-A block diagram of the RX app (for Stratix IV GX230 / Zipper on HSMC B specifically) can be seen in Figures \ref{fig:rx_app_left} and \ref{fig:rx_app_right}. Complex samples from the ADC are ingested into the FPGA, processed, potentially timestamped, and written to file. Note: See Appendix C regarding deprecated support for Zipper.
+A block diagram of the RX app can be seen in Figures \ref{fig:rx_app_left} and \ref{fig:rx_app_right}. Complex samples from the ADC are ingested into the FPGA, processed, potentially timestamped, and written to file.
 \pagebreak
 \begin{landscape}
 	\begin{figure}[H]
 	 	\centering
 		\includegraphics[scale=.65, trim={0 0 6cm 0}]{rx_app_left}
-		\caption{RX App Block Diagram for Stratix IV GX230 with Zipper on HSMC B (1/2)}
+		\caption{RX App Block Diagram for Stratix IV GX230 (note Zipper is now deprecated) (1/2)}
 		\label{fig:rx_app_left}
 	\end{figure}
 	\begin{figure}[H]
 	 	\centering
 		\includegraphics[scale=.65, trim={0 0 1cm 0}]{rx_app_right}
-		\caption{RX App Block Diagram for Stratix IV GX230 with Zipper on HSMC B (2/2)}
+		\caption{RX App Block Diagram for Stratix IV GX230 (note Zipper is now deprecated) (2/2)}
 		\label{fig:rx_app_right}
 	\end{figure}
 \end{landscape}
@@ -214,12 +195,12 @@ The FPGA portion of the application consists of the dc\_offset\_iq\_imbalance\_m
 \end{landscape}
 
 \subsection{Executable}
-\noindent The software portion of the application consists of a C++ program written using the OpenCPI C++ API, RCC endpoint proxy workers for command and control functionality, and the file\_write.rcc RCC app worker for capturing data. For more implementation details on the endpoint proxy, see the matchstiq\_z1\_rx.rcc,  zipper\_rx.rcc, or fmcomms\_2\_3\_rx.rcc component datasheets. The C++ program instantiates and OpenCPI application object using one of the application XML files: rx\_fmcomms\_2\_app.xml, rx\_fmcomms\_3\_app.xml, rx\_matchstiq\_z1\_app.xml, rx\_zipper\_app.xml. Each of these files contain all of the property settings for the components in the application, except the configuration of the endpoint proxy for controlling RF hardware. These settings are passed on the command line to the approriate endpoint proxy worker and set using the ACI.\par\bigskip
+\noindent The software portion of the application consists of a C++ program written using the OpenCPI C++ API, RCC endpoint proxy workers for command and control functionality, and the file\_write.rcc RCC app worker for capturing data. For more implementation details on the endpoint proxy, see the matchstiq\_z1\_rx.rcc or fmcomms\_2\_3\_rx.rcc component datasheets. The C++ program instantiates an OpenCPI application object using one of the application XML files: rx\_fmcomms\_2\_app.xml, rx\_fmcomms\_3\_app.xml, or rx\_matchstiq\_z1\_app.xml. Each of these files contain all of the property settings for the components in the application, except the configuration of the endpoint proxy for controlling RF hardware. These settings are passed on the command line to the approriate endpoint proxy worker and set using the ACI.\par\bigskip
 To build for the host platform (centos6/centos7 - which is the case if ML605 or Stratix IV platform is intended to be used), run the following commands from the \textit{rx\_app} directory:\par\medskip
 \texttt{ ocpidev build}\par\medskip
 \noindent To build for the Zedboard or Matchstiq-Z1 (which run the xilinx13\_3 PetaLinux operating system), run the following command from the \textit{rx\_app} directory:\par\medskip
 \texttt{ ocpidev build --rcc-platform xilinx13\_3 }\par\medskip
-\noindent For optimal throughput, the file write RCC component writes directly to RAM via a Linux RAMdisk at runtime, and the application copies the data from RAM to a file in the application directory (odata/rx\_app\_raw.out) RX data capture is complete. The executable creates an additional shortened copy of this data (odata/rx\_app\_shortened.out) which omits some number of bytes from the beginning of the data. This is done because some of the components include feedback loops which require some setup time before functioning as desired.
+\noindent For optimal throughput, the file write RCC component writes directly to RAM via a Linux RAMdisk at runtime, and the application copies the data from RAM to a file in the application directory (odata/rx\_app\_raw.out) once RX data capture is complete. The executable creates an additional shortened copy of this data (odata/rx\_app\_shortened.out) which omits some number of bytes from the beginning of the data. This is done because some of the components include feedback loops which require some setup time before functioning as desired.
 \section{Testing the Application}
 \subsection{Sample Test Setup}
 \noindent To verify functionality of the application, a transmitter broadcasting a known signal is needed. Optionally, a spectrum analyzer to compare the transmitter output to the received data is a useful verification tool.\par\medskip
@@ -237,7 +218,7 @@ To build for the host platform (centos6/centos7 - which is the case if ML605 or 
 \noindent Before running the application, the location of the required deployable artifacts must be specified in the OCPI\_LIBRARY\_PATH environment variable. Each RCC worker and the FPGA image exist as an artifact which should be included. Furthermore, artifacts differ depending on which mode the application is to be run in. Appendix B includes a list of the artifacts required for each platform and mode.
 \newpage
 \subsection{Arguments to executable}
-\noindent There are eleven arguments to the RX app executable. They primarily configure the RF front end of the Platform Unit Test using the matchstiq\_z1\_rx.rcc/zipper\_rx.rcc components. Additionally, the application can be configured by setting properties in the application XML file: rx\_app.xml. Descriptions of properties can be found in the individual component datasheets. Valid ranges for each argument can be printed out by running the executable with no arguments.\par\medskip
+\noindent There are eleven arguments to the RX app executable. They primarily configure the RF front end of the Platform Unit Test using the matchstiq\_z1\_rx.rcc worker. Additionally, the application can be configured by setting properties in the application XML file: rx\_app.xml. Descriptions of properties can be found in the individual component datasheets. Valid ranges for each argument can be printed out by running the executable with no arguments.\par\medskip
 
 \noindent The arguments to the executable are summarized in the below table: \\ \\
 	\begin{tabular}{|l|l|}
@@ -263,21 +244,11 @@ To build for the host platform (centos6/centos7 - which is the case if ML605 or 
 	\hline
 	enable\_timestamps & Enable timestamp insertion in between messages\\
 	\hline
-	frontend     & Only required for Zedboard or ML605, (FMCOMMS2 or FMCOMMS3 or zipper) \\
+	frontend     & Only required for Zedboard or ML605, (FMCOMMS2 or FMCOMMS3) \\
 	\hline
 	sma\_channel & (optional) specify which PCB SMA is used when FMCOMMS2/3 is used (RX1A or RX2A) \\
 	\hline
 	\end{tabular} \medskip
-
-\noindent\textcolor{red}{WARNING:}
-Run-time failures have been observed for several unit tests and applications on PCIe-based platforms. The work around requires modifying the \textbf{buffersize} attribute of the PL to PS (egress) boundary connection, as defined in the OAS. \\
-While the explicit PS to PL connection is explicitly define, the \textbf{buffersize} must be changed from 16352 to 8192, as shown in the example below:
-\begin{lstlisting}[showspaces=false]
-<Connection>
-  <Port Instance="timestamper" Name="out" Buffercount="2"/>
-  <Port Instance="file_write" Name="in" Buffersize="8192" Buffercount="7"/>
-</Connection>
-\end{lstlisting}
 
 \subsection{Library Path Requirements}
 \noindent Prior to running the application, the environment variable OCPI\_LIBRARY\_PATH must be configure, such that, all of the Rx application's run-time artifacts can be located. OpenCPI conveniently provides access to a project's run-time artifacts at the top-level of each project in a directory called artifacts. Reference the OpenCPI Application Development Guide for more about OCPI\_LIBRARY\_PATH. \par\medskip
@@ -342,7 +313,7 @@ For these platforms, follow the instructions contained in the Rx application's M
 
 \par\medskip
 \noindent The output file can then be plotted with the python script with the following syntax and the output can be seen below:\par\medskip
-\noindent\texttt{python ./scripts/plotAndFftAndTime.py odata/rx\_app\_raw.out complex 18000 256000 16352}\par
+\noindent\texttt{python ./scripts/plotAndFftAndTime.py odata/rx\_app\_raw.out complex 18000 256000 8192}\par
 	\begin{figure}[h]
 	 	\centering
 		\includegraphics[scale=.2]{rx_app_iq_plot}
@@ -355,15 +326,18 @@ For these platforms, follow the instructions contained in the Rx application's M
 		\label{fig:rx_app_fft_plot}
 	\end{figure}
 \noindent Alternatively, the shortened file can be plotted which will ignore optionally unwanted startup data:\par\medskip
-\noindent\texttt{python ./scripts/plotAndFftAndTime.py odata/rx\_app\_shortened.out complex 18000 256000 16352}\par\medskip
+\noindent\texttt{python ./scripts/plotAndFftAndTime.py odata/rx\_app\_shortened.out complex 18000 256000 8192}\par\medskip
 \noindent The default sample rate for the GNUradio block diagram is 512 kS/s. It is recommended that when using RX app with this input signal that a sample rate close to 512 kS/s be used. Higher sample rates are still valid, but may produce plots that look drastically different than those shown here.\par\medskip
 \newpage
 \noindent Timestamps are embedded, optionally, in the output file, and in addition to plotting, the script parses out and prints the timestamps. An example output gathered using the syntax above:\par\medskip
-\scriptsize\noindent\texttt{Timestamp at index: 000000000 :  1.0728292 Seconds: 0x1 Fraction: 0x12a4eec4  \\
-Timestamp at index: 000008180 :  1.0887978 Seconds: 0x1 Fraction: 0x16bb73ba ('Delta: 0.0159686', 'Expected:, 0.0159688')\\
-Timestamp at index: 000016360 :  1.1047664 Seconds: 0x1 Fraction: 0x1ad1f906 ('Delta: 0.0159686', 'Expected:, 0.0159688')}\par\medskip
-\noindent\small A small discrepancy (+/- 10) between Delta and Expected is typical. The difference is an artifact of the resolution of the fractional part of the timestamp applied in the timestamper HDL component. More information can be found in the timestamper component datasheet.\par\medskip
-\par\medskip
+\scriptsize\noindent\texttt{Timestamp at index: 000000000 :  0.1098613 Seconds: 0x0 Fraction: 0x1c1fde17 \\ 
+Timestamp at index: 000004100 :  0.1106804 Seconds: 0x0 Fraction: 0x1c558dd0 ('Delta: 0.0008192', 'Expected:, 0.0008192') \\
+Timestamp at index: 000008200 :  0.1114996 Seconds: 0x0 Fraction: 0x1c8b3d89 ('Delta: 0.0008192', 'Expected:, 0.0008192') \\
+Timestamp at index: 000012300 :  0.1123188 Seconds: 0x0 Fraction: 0x1cc0ed6d ('Delta: 0.0008192', 'Expected:, 0.0008192') \\
+Timestamp at index: 000016400 :  0.1131380 Seconds: 0x0 Fraction: 0x1cf69d27 ('Delta: 0.0008192', 'Expected:, 0.0008192') \\
+Timestamp at index: 000020500 :  0.1139572 Seconds: 0x0 Fraction: 0x1d2c4ce0 ('Delta: 0.0008192', 'Expected:, 0.0008192')}\par\medskip
+
+%\noindent\small A small discrepancy (+/- 10) between Delta and Expected is typical. The difference is an artifact of the resolution of the fractional part of the timestamp applied in the timestamper HDL component. More information can be found in the timestamper component datasheet.\par\medskip
 
 \subsection{Using a RF Signal Generator}
 \noindent An arbitrary RF signal generator can be used with RX app instead of the Ettus N210. \\
@@ -383,7 +357,6 @@ Timestamp at index: 000016360 :  1.1047664 Seconds: 0x1 Fraction: 0x1ad1f906 ('D
 \subsubsection{Example 1 - Execution (remote system)}
 An example run with an IF tune freq of 0.1 MHz would be as follows.
 \\\noindent\textbf{FMCOMMS2 card}
-\lstset{language=bash, backgroundcolor=\color{lightgray}, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
 \begin{lstlisting}
 SAMP_RATE_MHZ=2.5
 RF_TUNE_FREQ_MHZ=2400
@@ -408,7 +381,7 @@ IF_TUNE_FREQ_MHZ=0.1
 Verify that the signal generator tone exists at 700,000 Hz in the plotted baseband signal FFT (calculated as signal generator frequency - RF tune frequency - IF tune frequency = 2400.8 MHz - 2400 MHz - 0.1 MHz = 700,000Hz).
 \begin{lstlisting}
 SAMP_RATE_HZ=2500000
-python ./scripts/plotAndFftAndTime.py odata/rx_app_shortened.out complex 65536 $SAMP_RATE_HZ 16352 &
+python ./scripts/plotAndFftAndTime.py odata/rx_app_shortened.out complex 65536 $SAMP_RATE_HZ 8192 &
 \end{lstlisting}
         \begin{figure}[H]
         \begin{minipage}{.5\textwidth}
@@ -450,7 +423,7 @@ IF_TUNE_FREQ_MHZ=0
 Verify that the signal generator tone exists at 800,000 Hz in the plotted baseband signal FFT (calculated as signal generator frequency - RF tune frequency - IF tune frequency = 2400.8 MHz - 2400 MHz - 0 MHz = 800,000Hz).
 \begin{lstlisting}
 SAMP_RATE_HZ=2500000
-python ./scripts/plotAndFftAndTime.py odata/rx_app_shortened.out complex 65536 $SAMP_RATE_HZ 16352 &
+python ./scripts/plotAndFftAndTime.py odata/rx_app_shortened.out complex 65536 $SAMP_RATE_HZ 8192 &
 \end{lstlisting}
         \begin{figure}[H]
         \begin{minipage}{.5\textwidth}

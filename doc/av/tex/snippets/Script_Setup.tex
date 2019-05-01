@@ -1,0 +1,80 @@
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+
+\section{Script Setup}
+There are two type of setups or modes for running applications on any embedded radio: Network and Standalone. In Network mode, a development system hosts the OpenCPI tree as an NFS server to the \radioName \space which is an NFS client. This configuration provides quick and dynamic access to all of OpenCPI, and presumably any applications, components and bitstreams. In Standalone mode, all the artifacts are located on the SDR's local storage (\textit{e.g.} SD card) and no network connection is required. This may be more suited for \textit{deployment} scenarios in which network connection is not possible or practical. Network mode is generally preferred during the development process.
+
+\begin{flushleft}
+
+\subsection{Setting up the Network and Standalone Mode scripts}
+
+For each mode, a startup script is used to configure the environment of the embedded system. The OpenCPI framework provides a default script for each mode. The default scripts are to be copied and modified per the user's requirements.\par\medskip
+
+\subsubsection{Network Mode}
+1) Make a copy of the default script for editing. \\ \medskip
+\begin{texttt}
+\$ cp /run/media/<user>/\copyLoc/opencpi/default\_mynetsetup.sh \textbackslash\\
+/run/media/<user>/\copyLoc/opencpi/mynetsetup.sh
+\end{texttt}\medskip
+
+2) Edit the copy
+\begin{enumerate}
+\item In \texttt{mynetsetup.sh}, uncomment the following lines which are necessary for mounting \textit{core} and \textit{assets} project: \\ \medskip
+
+\begin{texttt}
+mkdir -p \mountPoint ocpi\_core \\
+mount -t nfs -o udp,nolock,soft,intr \$1:/home/user/ocpi\_projects/core \mountPoint ocpi\_core \\
+mkdir -p \mountPoint ocpi\_assets \\
+mount -t nfs -o udp,nolock,soft,intr \$1:/home/user/ocpi\_projects/assets \mountPoint ocpi\_assets\\
+\end{texttt}
+ \item Edit \texttt{/home/user/ocpi\_projects/core} and \texttt{/home/user/ocpi\_projects/assets} to reflect the paths to the \textit{core} and \textit{assets} project on the host, e.g.:\\ \medskip
+\begin{texttt}
+mkdir -p \mountPoint ocpi\_core \\
+mount -t nfs -o udp,nolock,soft,intr \$1:/home/johndoe/ocpi\_projects/core \mountPoint ocpi\_core\\
+mkdir -p \mountPoint ocpi\_assets \\
+mount -t nfs -o udp,nolock,soft,intr \$1:/home/johndoe/ocpi\_projects/assets \mountPoint ocpi\_assets\\
+\end{texttt}
+\ifx\bspProj\undefined
+%do nothing 
+\else 
+\begin{texttt}
+mkdir -p \mountPoint \bspProj \\
+mount -t nfs -o udp,nolock,soft,intr \$1:/home/johndoe/ocpi\_projects/\bspProj \space \textbackslash \\
+\mountPoint \bspProj \\
+\end{texttt}
+\fi
+\end{enumerate}
+
+\subsubsection{Standalone Mode}
+In this mode, all OpenCPI artifacts that are required to run any application on the \radioName \space must be copied onto the SD card.  Building the provided projects to obtain such artifacts is discussed in Section \ref{sec:Building OpenCPI projects}. Once the artifacts have been created, they must be copied to the SD card in Section \ref{sec:SD_Card_Setup}. In general, any required \texttt{.so} (RCC workers), \texttt{.bit.gz} (hdl assemblies), and application XMLs or executables must be copied to the ATLAS partition of the SD card. \medskip
+
+1) Make a copy of the default script for editing \\ \medskip
+\begin{texttt}
+\$ cp /run/media/<user>/\copyLoc/opencpi/default\_mynetsetup.sh \textbackslash \\
+/run/media/<user>/\copyLoc/opencpi/mynetsetup.sh
+\end{texttt}\medskip
+
+2) Edit the copy \\ \medskip
+Unlike Network mode, there is no required modifications to this script. \medskip
+
+3) Copy any additional artifacts to SD card's \texttt{opencpi/\rccplatform/artifacts/} directory \medskip
+
+
+

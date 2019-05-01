@@ -2425,9 +2425,9 @@ emitSkelHDL() {
       fprintf(f,
 	      "library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;\n"
 	      "library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions\n"
-	      "architecture rtl of %s_worker is\n"
+	      "architecture rtl of %s%sworker is\n"
 	      "begin\n",
-	      m_implName);
+	      m_version < 2 ? m_implName : "", m_version < 2 ? "_" : "");
       for (unsigned i = 0; i < m_ports.size(); i++)
 	m_ports[i]->emitSkelSignals(f);
       if (m_signals.size())

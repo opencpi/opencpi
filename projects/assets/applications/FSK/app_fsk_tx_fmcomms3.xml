@@ -46,10 +46,9 @@
     <Property Name="fileName" Value="idata/Os.jpeg"/>
     <Property Name="messagesInFile" Value="false"/>
     <Property Name="opcode" Value="1"/>
-    <Property Name="messageSize" Value="8192"/>
     <Property Name="granularity" Value="1"/>
   </Instance>
-  
+
   <!-- RCC Proxies -->
 
   <!-- must be instantiated in this app because ocpi.core tx requires control
@@ -58,13 +57,13 @@
 
   <!-- TX Chain -->
   <!-- Command and Control -->
-  
+
   <!-- RCC Frontend Proxies -->
   <!-- TX Chain -->
   <Instance Component="ocpi.core.tx">
     <Property Name="TYPE_p" Value="fmcomms3"/>
   </Instance>
-  
+
   <!-- Connections -->
   <!-- TX Chain -->
   <Connection>

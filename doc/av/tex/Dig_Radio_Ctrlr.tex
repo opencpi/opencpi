@@ -93,7 +93,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{\color{red}vdevelop}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -106,7 +106,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \begin{document}
 
 \section*{Summary - \Comp}
-\begin{longtable}{|p{3cm}|p{13.84cm}|}
+\begin{longtable}{|p{\dimexpr0.5\textwidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.5\textwidth-2\tabcolsep\relax}|}
 	\hline
 	\rowcolor{blue}
 	                  &                                        \\
@@ -115,18 +116,20 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Name              & \comp                                  \\
 	\hline
-	Version           & v\docVersion (release date \color{red}pre-release) \\
+	OpenCPI Release Version & v\docVersion ~(release date 4/2019) \\
 	\hline
 \end{longtable}
 
 \begin{center}
   \textit{\textbf{Revision History}}
-  \begin{longtable}{|p{2cm}|p{12cm}|p{2.4cm}|}
+  \begin{longtable}{|p{\dimexpr0.15\textwidth-2\tabcolsep\relax}
+                    |p{\dimexpr0.65\textwidth-2\tabcolsep\relax}
+                    |p{\dimexpr0.2\textwidth-2\tabcolsep\relax}|}
     \hline
     \rowcolor{blue}
     \textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
     \hline
-    \color{red}vdevelop & Initial Release & \color{red}pre-release \\
+    v1.5 & Initial Release & 4/2019 \\
     \hline
   \end{longtable}
 \end{center}

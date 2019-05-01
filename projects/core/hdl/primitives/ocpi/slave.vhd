@@ -207,9 +207,10 @@ begin
   -- signals based on state and fifo outputs
   -- fifo_ready holds non-EOM valid data from being taken until it knows what's next
   -- it also masks trailing EOMs coming out of the FIFO
-  -- it answers the question: are the fifo outputs currently something the worker should look at?
-  fifo_ready   <= to_bool((fifo_count_r /= 0 and ((fifo_eom and its(fifo_valid)) or zlm_eof)) or
-                          (fifo_count_r > 1 and not its(teom_deq)));
+  -- it answers the questino: are the fifo outputs currently something the worker should look at?
+  fifo_ready   <= to_bool(not its(teom_deq) and
+                          (fifo_count_r > 1 or
+                           (fifo_count_r = 1 and ((fifo_eom and its(fifo_valid or at_end_r)) or zlm_eof))));
   zlm_eof      <= to_bool(fifo_eof and its(at_end_r) and hdl_version < 2);
   -- final filtering of "ready" for the user based on eof and isoperating
   ready_i      <= wci_is_operating and fifo_ready and (not fifo_eof or to_bool(hdl_version < 2));

@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Generic RF Interface Guide}
-\def\docVersion{\color{red}vdevelop}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \input{snippets/LaTeX_Header.tex}
 \date{Version \docVersion} % Force date to be blank and override date with version
@@ -46,7 +46,9 @@ The rx\_spec and tx\_spec component specs covered by this document are not recom
 	\textit{\textbf{Revision History}}
 		\begin{table}[H]
 		\label{table:revisions} % Add "[H]" to force placement of table
-			\begin{tabularx}{\textwidth}{|c|X|l|}
+      \begin{longtable}{|p{\dimexpr0.15\textwidth-2\tabcolsep\relax}
+                        |p{\dimexpr0.65\textwidth-2\tabcolsep\relax}
+                        |p{\dimexpr0.2\textwidth-2\tabcolsep\relax}|}
 			\hline
 			\rowcolor{blue}
 			\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
@@ -55,9 +57,9 @@ The rx\_spec and tx\_spec component specs covered by this document are not recom
 		    \hline
 		    v1.2 & Updated for Release 1.2 & 8/2017 \\
 		    \hline
-        \color{red}vdevelop & Not recommended for new designs warning added. & \color{red}pre-release \\
+        v1.5 & Not recommended for new designs warning added & 4/2019 \\
 		    \hline
-			\end{tabularx}
+			\end{longtable}
 		\end{table}
 	\end{center}
 

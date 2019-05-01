@@ -1,19 +1,21 @@
-% Generated on Fri Oct  5 08:45:35 2018
+% Generated on Tue Apr 30 11:23:58 2019
 
 % It is best to wrap this table in \begin{landscape} and \end{landscape} in its including doc
 \begin{tiny}
     \begin{longtable}[l]{* {9}{|c}|}
     \captionsetup{justification=raggedright,singlelinecheck=false}
-    \caption{Resource Utilization Table for worker: metadata\_stressor}\\
+    \caption{Resource Utilization Table for worker "metadata\_stressor"}\\
         \hline
         \rowcolor{blue}
             Configuration & OCPI Target & Tool    & Version & Device          & Registers (Typ) & LUTs (Typ) & Fmax (MHz) (Typ) & Memory/Special Functions \\
             \hline
-            0             & zynq        & Vivado  & 2017.1  & xc7z020clg400-3 & 364             & 449        & N/A              & N/A \\
+            0             & zynq\_ise   & ISE     & 14.7    & 7z010clg400-3   & 463             & 903        & 304.897          & N/A \\
             \hline
-            0             & stratix4    & Quartus & 17.1.0  & N/A             & 388             & 557        & N/A              & N/A \\
+            0             & zynq        & Vivado  & 2017.1  & xc7z020clg400-3 & 467             & 554        & N/A              & N/A \\
             \hline
-            0             & virtex6     & ISE     & 14.7    & 6vcx75tff484-2  & 362             & 802        & 294.583          & N/A \\
+            0             & stratix4    & Quartus & 17.1.0  & N/A             & 492             & 668        & N/A              & N/A \\
+            \hline
+            0             & virtex6     & ISE     & 14.7    & 6vcx75tff484-2  & 463             & 837        & 231.085          & N/A \\
             \hline
         \end{longtable}
 \end{tiny}

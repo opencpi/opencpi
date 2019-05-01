@@ -21,16 +21,15 @@ from __future__ import print_function
 import sys
 import re
 import textwrap
-#import xml.etree.ElementTree as ET
-from lxml import etree
-import os
+import xml.etree.ElementTree as ET
 
 lcName = ''
 ucName = ''
 properties = []
 ports = []
 
-def parseComponentSpec (root):
+def parseXML (xml):
+   root = xml.getroot()
    global properties
    global port
    for port in root.iter("DataInterfaceSpec"):
@@ -45,19 +44,6 @@ def parseComponentSpec (root):
       properties.append(prop)
    for prop in root.iter("property"):
       properties.append(prop)
-
-def raiseExceptionMultipleEmbeddedComponentSpec(elem):
-   raise Exception("invalid XML: multiple embedded " + elem + " elements found")
-
-def parseEmbeddedComponentSpec (root):
-   numComps = 0
-   for elem in ["ComponentSpec", "componentspec"]:
-      for comp in root.iter(elem):
-         print("DEBUG: found embedded component spec")
-         numComps += 1
-         if(numComps > 1):
-            raiseExceptionMultipleEmbeddedComponentSpec(elem)
-         parseComponentSpec(comp)
 
 def parseName (myName):
    global ucName
@@ -106,31 +92,20 @@ def genAccess (prop):
      commaStr = ""
    return readStr + commaStr + writeStr
 
-def latexify(string):
-   return string.replace('_','\_').replace('&','\&')
-
-def getDescriptionLatexString(prop):
-   descrStr = prop.get("Description")
-   if (type(descrStr) is not str):
-      descrStr = prop.get("description")
-   if (descrStr is None):
-      descrStr = "-"
-   return latexify(descrStr)
-
 def printSpecTable (outFile):
-   outFile.write("\\begin{longtable}{|p{4cm}|p{1.5cm}|c|c|c|p{1.5cm}|p{1cm}|p{5cm}|}\n")
+   outFile.write("\\begin{tabular}{|p{2cm}|p{1.5cm}|c|c|c|p{1.5cm}|p{1cm}|p{7cm}|}\n")
    outFile.write("\\hline\n")
    outFile.write("\\rowcolor{blue}\n")
-   outFile.write("Name                 & Type   & SequenceLength & ArrayDimensions & Accessibility       & Valid Range & Default & Description\n")
+   outFile.write("Name                 & Type   & SequenceLength & ArrayDimensions & Accessibility       & Valid Range & Default & Usage\n")
    outFile.write("\\\\\n")
    for prop in properties:
       nameStr = prop.get("Name")
       if (type(nameStr) is str):
-         nameStr = latexify(nameStr)
+         nameStr = nameStr.replace('_','\_')
       else:
          nameStr = prop.get("name")
          if (type(nameStr) is str):
-            nameStr = latexify(nameStr)
+            nameStr = nameStr.replace('_','\_')
       typeStr = prop.get("Type")
       if (type(typeStr) is not str):
          typeStr = prop.get("type")
@@ -139,20 +114,15 @@ def printSpecTable (outFile):
          defaultStr = prop.get("default")
       if (type(defaultStr) is not str):
          defaultStr = "-"
-      descrStr = getDescriptionLatexString(prop)
       accsessStr = genAccess(prop)
       outFile.write("\\hline\n")
-      outFile.write(str(nameStr) + " & " + typeStr + "  & - & - & " + accsessStr + " & -  &"+ defaultStr + " & " + descrStr + "\n")
+      outFile.write(str(nameStr) + " & " + typeStr + "  & - & - & " + accsessStr + " & -  &"+ defaultStr +" & -\n")
       outFile.write("\\\\\n")
    outFile.write("\\hline\n")
-   outFile.write("\\end{longtable}\n")
-
-def deleteFile(fileName):
-   print("INFO : deleting file", fileName)
-   os.remove(fileName)
+   outFile.write("\\end{tabular}\n")
 
 def printWorkerTable(outFile):
-   raise Exception("no worker file parsing options yet")
+   print("no worker file parsing options yet")
 
 def printPortTable (outFile):
    outFile.write("\\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|c|M{9cm}|}\n")
@@ -170,7 +140,7 @@ def printPortTable (outFile):
          if (type(protStr) is str):
             protStr = protStr.replace('_','\_')
       if (type(nameStr) is str):
-         aameStr = nameStr.replace('_','\_')
+         nameStr = nameStr.replace('_','\_')
       else:
          nameStr = port.get("name")
          if (type(nameStr) is str):
@@ -209,88 +179,53 @@ def printIntTable (outFile):
    outFile.write("\\hline\n")
    outFile.write("\\end{tabular}\n")
 
-def shouldExitBecauseFileOverwriteUnallowed(fileName):
-   res = None
-   if(os.path.isfile(fileName)):
-      msg = "WARN : file " + fileName + " already exists, overwrite (y or n)? "
-      isYesOrNo = False
-      while not isYesOrNo:
-         res = raw_input(msg)
-         isYesOrNo |= (res == "y")
-         isYesOrNo |= (res == "n")
-   return (res != None) and (res != "y")
-
 def usage():
     print("Usage: docGen.py SPECFILE")
     print(textwrap.fill("""Generate an OpenCPI Worker data sheet called 'newFile.tex' based on a skeleton LaTeX file (snippets/Component_Template.tex) and the Worker specification file that is passed into the script"""))
 
 def main():
-   outFile = None
-   inFile = None
-   try:
-      if (len(sys.argv) < 2) or (sys.argv[1] == "--help") or (sys.argv[1] == "-help"):
-         usage()
-         sys.exit(1)
+   if (len(sys.argv) < 2) or (sys.argv[1] == "--help") or (sys.argv[1] == "-help"):
+      usage()
+      sys.exit(1)
+   skeletonFileName = "./snippets/Component_Template.tex"
+   specFileName =  sys.argv[1]
+   outFileName = "newFile.tex"
 
-      specFileName =  sys.argv[1]
+   inFile = open(skeletonFileName, 'r')
+   outFile = open(outFileName, 'wr')
+   tree = ET.parse(specFileName)
+   currentLine = 'a thing'
+   parseName(specFileName)
+   parseXML(tree)
+   while currentLine != '':
+      currentLine = inFile.readline()
+      if currentLine == '%GEN_COMPLC_NAME\n':
+         outFile.write ("\def\comp{"+ lcName +"}\n")
+         outFile.write (currentLine)
+      elif currentLine == '%GEN_COMPUC_NAME\n':
+         outFile.write ("\def\Comp{"+ ucName +"}\n")
+         outFile.write (currentLine)
+      elif currentLine == '%GEN_SPEC_TABLE\n':
+         if (properties != []):
+             printSpecTable(outFile)
+         outFile.write (currentLine)
+      elif currentLine == '%GEN_WORKER_TABLE\n':
+         if (properties != []):
+            printWorkerTable(outFile)
+         outFile.write (currentLine)
+      elif currentLine == '%GEN_PORT_TABLE\n':
+         if (ports != []):
+            printPortTable(outFile)
+         outFile.write (currentLine)
+      elif currentLine == '%GEN_INTERFACE_TABLE\n':
+         if (ports != []):
+            printIntTable(outFile)
+         outFile.write (currentLine)
+      else:
+         outFile.write (currentLine)
 
-      outFileName = "newFile.tex"
-      if shouldExitBecauseFileOverwriteUnallowed(outFileName):
-         print("INFO : exiting WITHOUT generating documentation")
-         exit(0)
-      outFile = open(outFileName, 'wr')
-
-      skeletonFileName = os.path.dirname(os.path.realpath(__file__))
-      skeletonFileName += "/snippets/Component_Template.tex"
-      inFile = open(skeletonFileName, 'r')
-
-      print("INFO : parsing", specFileName)
-      tree = etree.parse(specFileName)
-      #print(tree)
-      tree.xinclude()
-      currentLine = 'a thing'
-      parseName(specFileName)
-      parseComponentSpec(tree.getroot())
-      parseEmbeddedComponentSpec(tree.getroot())
-      while currentLine != '':
-         currentLine = inFile.readline()
-         if currentLine == '%GEN_COMPLC_NAME\n':
-            outFile.write ("\def\comp{"+ lcName +"}\n")
-            outFile.write (currentLine)
-         elif currentLine == '%GEN_COMPUC_NAME\n':
-            outFile.write ("\def\Comp{"+ ucName +"}\n")
-            outFile.write (currentLine)
-         elif currentLine == '%GEN_SPEC_TABLE\n':
-            if (properties != []):
-                printSpecTable(outFile)
-            outFile.write (currentLine)
-         elif currentLine == '%GEN_WORKER_TABLE\n':
-            #if (properties != []):
-            #   printWorkerTable(outFile)
-            outFile.write (currentLine)
-         elif currentLine == '%GEN_PORT_TABLE\n':
-            if (ports != []):
-               printPortTable(outFile)
-            outFile.write (currentLine)
-         elif currentLine == '%GEN_INTERFACE_TABLE\n':
-            if (ports != []):
-               printIntTable(outFile)
-            outFile.write (currentLine)
-         else:
-            outFile.write (currentLine)
-      msg = "INFO : documentation has been generated in Latex source file:"
-      print(msg, outFile.name)
-   
-      inFile.close()
-      outFile.close()
-   except Exception as err:
-      print("ERROR: caught exception:", err)
-      if inFile != None:
-         inFile.close()
-      if outFile != None:
-         outFile.close()
-         deleteFile(outFile.name)
-      exit(1)
+   inFile.close()
+   outFile.close()
 
 if __name__ == '__main__':
    main()

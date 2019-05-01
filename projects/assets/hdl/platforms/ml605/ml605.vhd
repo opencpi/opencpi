@@ -52,8 +52,8 @@ architecture rtl of ml605_worker is
   --signal ila_trigger            : std_logic_vector(7 downto 0);
 begin
   ctl_rst            <= not ctl_rst_n;
-  timebase_out.clk   <= sys0_clk;
-  timebase_out.reset <= sys0_rst;
+  timebase_out.clk   <= ctl_clk; -- changed from sys0_clk because of AV-5437
+  timebase_out.reset <= not ctl_rst_n; -- changed from sys0_rst because of AV-5437
   timebase_out.ppsIn <= ppsExtIn;
   ppsOut             <= timebase_in.ppsOut;
   -- Provide the highest available quality clock and reset used for the time server,

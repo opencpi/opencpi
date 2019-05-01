@@ -31,6 +31,6 @@ When available, the driver will attempt to make use of the CMA region for direct
 alloc_contig_range test_pages_isolated([memory start], [memory end]) failed
 \end{lstlisting}
 
-This is a kernel warning, but does not indicate that a memory allocation failure occurred, only that the CMA engine could not allocate memory in the first pass. Its default behavior is to make a second pass and if that succeeded the end user should not see any more error messages. An actual allocation failure will generate unambiguous error messages.
+This is a kernel warning, but does not indicate that a memory allocation failure occurred, only that the CMA engine could not allocate memory in the first pass. Its default behavior is to make a second pass, and if that succeeded, the end user should not see any more error messages. This message cannot be suppressed, but can be safely ignored. An actual allocation failure will generate unambiguous error messages.
 
 \setlength{\parindent}{\savedparindentdrvr}%

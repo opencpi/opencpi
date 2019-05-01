@@ -176,13 +176,13 @@ begin
   -- Byte enables have to be buffered differently because of the possibility of trying to
   -- generate a trailing eom after having received a trailing eom
   -- blindly buffering will cause loss of data in that case
-        if (in_in.byte_enable = be_zero and (output_state = valid or output_state = valid_buf or
-                output_state = val_eom or output_state = swm)) then
-          out_be <= (others => '1');
-        elsif (val_take = '1' and give_en = '1' and enable = '1') then
+        -- if (in_in.byte_enable = be_zero and (output_state = valid or output_state = valid_buf or
+        --         output_state = val_eom or output_state = swm)) then
+        --   out_be <= (others => '1');
+        -- elsif (val_take = '1' and give_en = '1' and enable = '1') then
+        if (ready_for_in_port_data = '1') then
           out_be   <= in_in.byte_enable;
         end if;
-
 -- This logic handles zlms in the general case
         if (zlm_detected = '1' and output_state /= prop_nil) then
           zlm_queued <= '1';

@@ -1,0 +1,23 @@
+\section*{Theory}
+\begin{flushleft}
+	The Complex Mixer worker inputs complex signed samples and performs a complex multiply with a digital sine wave produced by an numerically controlled oscillator (NCO). The resulting output data is a frequency shifted version of the input data.\medskip
+
+	The magnitude of the frequency shift is determined by the output frequency of the NCO, which can be calculated with the following equation:
+
+	\begin{equation} \label{eq:nco_output_freq}
+		nco\_output\_freq = sample\_freq*\frac{phs\_inc}{2^{phs\_acc\_width}}
+	\end{equation}
+
+	In this component, \verb+phs_inc+ is runtime configurable and has a data type of 16 bit signed short. \verb+phs_acc_width+ is fixed at 16. The input clock frequency is the sample rate of the samples. The amplitude of the NCO's sine wave is also runtime configurable via the \verb+mag+ property. Note that the \verb+mag+ property value should only ever be set to a value within the following range in order for the worker to operate properly.
+
+	\begin{equation} \label{eq:mag_limits_freq}
+		-2^{(NCO\_DATA\_WIDTH\_p-1)} <= mag <= 2^{(NCO\_DATA\_WIDTH\_p-1)}-1
+	\end{equation}
+
+	A positive and negative \verb+phs_inc+ will mix up and down, respectively. The following equation can be used as an aid for setting the \verb+phs_inc+ to have the desired mixing affect.\medskip
+
+	\begin{equation} \label{eq:positive_phs_inc_mixes_up}
+		x_{out}[n] = x_{in}[n] * \dfrac{mag}{2^{NCO\_DATA\_WIDTH\_p-1}} * e^{\big(j2\pi\big(sample\_freq * \dfrac{phs\_inc \; * \; n}{2^{phs\_acc\_width}}\big) + phs\_init\big)} \;\; \forall \;\; n, \; n \ge 0
+	\end{equation}
+
+\end{flushleft}

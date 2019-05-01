@@ -58,6 +58,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \usepackage{rotating} % for sideways table
 \usepackage{pifont}   % for sideways table
 \usepackage{pdflscape} % for landscape view
+\usepackage{longtable}
 %----------------------------------------------------------------------------------------
 % Table packages
 %----------------------------------------------------------------------------------------
@@ -87,7 +88,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -111,7 +112,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           &  v\docVersion \\
 	\hline
-	Release Date      &  April 2019 \\
+	Release Date      &  4/2019 \\
 	\hline
 	Component Library &   ocpi.core\\
 	\hline
@@ -120,6 +121,22 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	Tested Platforms  &  isim, xsim, modelsim, xilinx13\_3, xilinx13\_4, centos6, centos7\\
 	\hline
 \end{tabular}
+
+\begin{center}
+  \textit{\textbf{Revision History}}
+\end{center}
+\begin{longtable}{|p{\dimexpr0.15\textwidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.65\textwidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.2\textwidth-2\tabcolsep\relax}|}
+  \hline
+  \rowcolor{blue}
+  \textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+  \hline
+  v1.4 & Initial release. & 9/2019 \\
+  \hline
+  v1.5 & Changed all readable properties to readback.  Also updated the end of file descriptions with smart wrapper updates.  & 4/2019 \\
+  \hline
+\end{longtable}
 
 \section*{Functionality}
 \begin{flushleft}
@@ -135,6 +152,7 @@ agnostic as to the protocol of the component connected to the input port.
 In data streaming mode, the contents of the file becomes the payloads of the stream of
 messages arriving at the input port. No message lengths or opcodes are recorded in
 the output file.
+\newpage
 \subsubsection*{Messaging Mode}
 In messaging mode, the contents of the output file are written as a sequence of defined
 messages, with an 8-byte header in the file itself preceding the data for each message
@@ -146,12 +164,8 @@ that a header will be written but no data will follow the header in the file.\\
 \subsection*{No Protocol}
 The port on the component has no protocol specified in order to support interfacing with any protocol.  This means that the created data file is formatted to match the protocol of the output port of the connected worker.
 \subsection*{End of File Handling}
-When the File\_Write component receives a zero-length message, it will interpret it as
-the end of data if the \textit{stopOnEOF} property is true (the default). In this case it will
-declare itself ``done'', and not write any further messages to the file (and not write the
-zero-length message to the file either). If \textit{stopOnEOF} is false, and it is in messaging mode, it will write the zero-length message to the file like any other message (with a
-header, but with no data).
-\input{snippets/ZLM_snippet.tex}
+When the File\_Write component receives a end of file notification, it will interpret it as
+the end of data and declare itself ``done'', and not write any further messages to the file. 
 \end{flushleft}
 
 \section*{Worker Implementation Details}
@@ -163,7 +177,7 @@ This worker will only run on simulator platforms.  This includes isim, xsim, and
 \begin{flushleft}
 This worker in implemented in the C language version of the RCC model.  Most new workers are implemented in the C++ language version of the RCC model.
 \end{flushleft}
-
+\newpage
 \section*{Source Dependencies}
 \subsection*{\comp.rcc}
 \begin{itemize}
@@ -197,7 +211,7 @@ bytesWritten & uLongLong  & - & - & Volatile & -  &- & The number of bytes writt
 messagesWritten & uLongLong  & - & - & Volatile & -  &- & The number of messages written to file.  Useful for debugging data flow issues.
 \\
 \hline
-stopOnEOF & bool  & - & - & Initial & -  &true & The flag used to enable or disable the zero length message that puts the component into the done state.
+stopOnEOF & bool  & - & - & Initial & -  &true & Property has no functionality, exists for backwards compatibility purposes.  
 \\
 \hline
 \end{tabular}

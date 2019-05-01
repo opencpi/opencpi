@@ -89,7 +89,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -103,16 +103,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \begin{document}
 \section*{Summary - \Comp}
 
-% AV-4723 blurb start
-\begin{center}
-\framebox{\parbox{0.8\linewidth}{\centering
-\textcolor{red}{WARNING:}
-Run-time failures have been observed for several unit tests and applications on PCIe-based platforms.
-The work around requires modifying the \textbf{buffersize} attribute of the PL to PS (egress) boundary connection, as defined in the OAS. An example for modifying the OAS for executing on PCIe-based platforms is provided in a below section.
-\PackageWarning{}{AV-4723} }}
-\end{center}
-% AV-4723 blurb end
-
 \begin{tabular}{|c|M{13.5cm}|}
 	\hline
 	\rowcolor{blue}
@@ -124,7 +114,7 @@ The work around requires modifying the \textbf{buffersize} attribute of the PL t
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & February 2018 \\
+	Release Date      & 4/2019 \\
 	\hline
 	Component Library & ocpi.assets.util\_comps                                        \\
 	\hline
@@ -171,7 +161,7 @@ The work around requires modifying the \textbf{buffersize} attribute of the PL t
 		\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
 		\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in'' \\ Signed real samples};
 		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' \\ Signed real samples};
-		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{hold, ref, mu, messageSize};
+		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{hold, ref, mu};
 		\path[->]
 		(R3)edge []	node [] {} (R2)
 		(R2)edge []	node [] {} (R4)
@@ -183,77 +173,72 @@ The work around requires modifying the \textbf{buffersize} attribute of the PL t
 
 \subsection*{State Machine}
 \begin{flushleft}
-	Only one finite-state machine (FSM) is implemented by this worker. The FSM supports Zero-Length Messages.
+	There are no finite-state machines (FSM) implemented in the user-code of this worker.
 \end{flushleft}
-{\centering\captionsetup{type=figure}\includegraphics[scale=0.7]{zlm_fsm}\par\captionof{figure}{Zero-Length Message FSM}\label{fig:zlm_fsm}}
-\begin{flushleft}
-        Note: In future releases this finite-state machine will be replaced with a register-delay based mechanism, currently exemplified in the dc offset filter
-\end{flushleft}
-\newpage
 
 \section*{Source Dependencies}
 \subsection*{\comp.hdl}
 \begin{itemize}
 	\item assets/components/util\_comps/agc\_real.hdl/agc\_real.vhd
 	\item assets/hdl/primitives/util\_prims/util\_prims\_pkg.vhd
-		\subitem assets/hdl/primitives/util\_prims/agc/src/agc.vhd
+	\begin{itemize}
+		\item assets/hdl/primitives/util\_prims/agc/src/agc.vhd
+	\end{itemize}
 \end{itemize}
 
 \begin{landscape}
-	\section*{Component Spec Properties}
-		N/A
+\section*{Component Spec Properties}
+	N/A
 
-	\section*{Worker Properties}
-	\subsection*{\comp.hdl}
-	\begin{scriptsize}
-		\begin{tabular}{|c|c|c|c|c|c|c|c|p{6.9cm}|}
-			\hline
-			\rowcolor{blue}
-			Type     & Name                & Type   & SequenceLength & ArrayDimensions & Accessibility       & Valid Range & Default & Usage                                        \\
-			\hline
-			Property & \verb+DATA_WIDTH_p+ & UShort & -              & -               & Readable, Parameter & 1-16        & 16      & Worker internal non-sign-extended data width \\
-			\hline
-			Property & \verb+AVG_WINDOW_p+ & UShort & -              & -               & Readable, Parameter & 4-256       & 16      & Length of the averaging buffer; should be a power of two \\
-			\hline
-			Property & hold                & Bool   & -              & -               & Readable, Writable  & Standard    & false   & Hold disables the gain differential feedback circuit, thus maintaining the current gain \\
-			\hline
-			Property & ref                 & UShort & -              & -               & Readable, Writable  & 1 to $2^{\verb+DATA_WIDTH_p+}-1$ & 0x3FFF & Desired output amplitude expressed in percentage of full scale expected peak value in rms \\
-			\hline
-			Property & mu                  & UShort & -              & -               & Readable, Writable  & 1 to $2^{\verb+DATA_WIDTH_p+}-1$ & N/A & Feedback coefficient used to control the response time of the circuit; expressed as mu*fullscale \\
-			\hline
-			Property & messageSize         & UShort & -              & -               & Readable, Writable  & 8192        & 8192    & Number of bytes in output message                            \\
-			\hline
-		\end{tabular}
-	\end{scriptsize}
+\section*{Worker Properties}
+\subsection*{\comp.hdl}
+\begin{scriptsize}
+	\begin{tabular}{|c|c|c|c|c|c|c|c|p{6.9cm}|}
+		\hline
+		\rowcolor{blue}
+		Type     & Name                & Type   & SequenceLength & ArrayDimensions & Accessibility       & Valid Range & Default & Usage                                        \\
+		\hline
+		Property & \verb+DATA_WIDTH_p+ & UShort & -              & -               & Readable, Parameter & 1-16        & 16      & Worker internal non-sign-extended data width \\
+		\hline
+		Property & \verb+AVG_WINDOW_p+ & UShort & -              & -               & Readable, Parameter & 4-256       & 16      & Length of the averaging buffer; should be a power of two \\
+		\hline
+		Property & hold                & Bool   & -              & -               & Readable, Writable  & Standard    & false   & Hold disables the gain differential feedback circuit, thus maintaining the current gain \\
+		\hline
+		Property & ref                 & UShort & -              & -               & Readable, Writable  & 1 to $2^{\verb+DATA_WIDTH_p+}-1$ & 0x3FFF & Desired output amplitude expressed in percentage of full scale expected peak value in rms \\
+		\hline
+		Property & mu                  & UShort & -              & -               & Readable, Writable  & 1 to $2^{\verb+DATA_WIDTH_p+}-1$ & N/A & Feedback coefficient used to control the response time of the circuit; expressed as mu*fullscale \\
+		\hline
+	\end{tabular}
+\end{scriptsize}
 
-	\section*{Component Ports}
-	\begin{scriptsize}
-		\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|c|M{9cm}|}
-			\hline
-			\rowcolor{blue}
-			Name & Producer & Protocol          & Optional & Advanced & Usage               \\
-			\hline
-			in   & false    & rstream\_protocol & false    & -        & Real signed samples \\
-			\hline
-			out  & true     & rstream\_protocol & false    & -        & Real signed samples \\
-			\hline
-		\end{tabular}
-	\end{scriptsize}
+\section*{Component Ports}
+\begin{scriptsize}
+	\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|c|M{9cm}|}
+		\hline
+		\rowcolor{blue}
+		Name & Producer & Protocol          & Optional & Advanced & Usage               \\
+		\hline
+		in   & false    & rstream\_protocol & false    & -        & Real signed samples \\
+		\hline
+		out  & true     & rstream\_protocol & false    & -        & Real signed samples \\
+		\hline
+	\end{tabular}
+\end{scriptsize}
 
-	\section*{Worker Interfaces}
-	\subsection*{\comp.hdl}
-	\begin{scriptsize}
-		\begin{tabular}{|M{2cm}|M{1.5cm}|c|c|M{12cm}|}
-			\hline
-			\rowcolor{blue}
-			Type            & Name & DataWidth & Advanced                & Usage               \\
-			\hline
-			StreamInterface & in   & 16        & ZeroLengthMessages=true & Signed real samples \\
-			\hline
-			StreamInterface & out  & 16        & ZeroLengthMessages=true & Signed real samples \\
-			\hline
-		\end{tabular}
-	\end{scriptsize}
+\section*{Worker Interfaces}
+\subsection*{\comp.hdl}
+\begin{scriptsize}
+	\begin{tabular}{|M{2cm}|M{1.5cm}|c|c|M{12cm}|}
+		\hline
+		\rowcolor{blue}
+		Type            & Name & DataWidth & Advanced                & Usage               \\
+		\hline
+		StreamInterface & in   & 16        & ZeroLengthMessages=true & Signed real samples \\
+		\hline
+		StreamInterface & out  & 16        & ZeroLengthMessages=true & Signed real samples \\
+		\hline
+	\end{tabular}
+\end{scriptsize}
 \end{landscape}
 
 \section*{Control Timing and Signals}
@@ -270,16 +255,6 @@ The work around requires modifying the \textbf{buffersize} attribute of the PL t
 \input{../../\ecomp.hdl/utilization.inc}
 \end{landscape}
 \section*{Test and Verification}
-
-\noindent\textcolor{red}{WARNING:}
-Run-time failures have been observed for several unit tests and applications on PCIe-based platforms. The work around requires modifying the \textbf{buffersize} attribute of the PL to PS (egress) boundary connection, as defined in the OAS. \\
-The OAS XML must be changed to resolve this issue for the unit tests as shown below:\\
-\begin{lstlisting}[showspaces=false]
-  <Connection>
-   <Port Instance="last_PL_worker" Name="out"/>
-   <Port Instance="first_PS_worker" Name="in" Buffersize="8192" Buffercount="4"/>
-  </Connection>
-\end{lstlisting}
 
 \begin{flushleft}
 	A single test case is implemented to validate the AGC Real component. An input file is generated with a single tone at Fs/16 Hz, where Fs = 100 Hz, but applies 20\% of the maximum amplitude to the first quarter of the file, 90\% maximum amplitude to the second quarter of the file, 20\% maximum amplitude to the third quarter of the file, and 30\% maximum amplitude to the fourth quarter of the file. The real waveform is then scaled to fixed-point signed 16-bit integers. Time and frequency domain plots may be viewed in Figures \ref{fig:in_time_tone} and \ref{fig:in_freq_tone} below, respectively.

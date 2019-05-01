@@ -98,7 +98,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Worker Data Sheet}
-\def\docVersion{\color{red}vdevelop}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -110,30 +110,37 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \begin{document}
 
-\section*{Summary - \Comp}
-\begin{longtable}{|p{4cm}|p{12.84cm}|}
+\section*{Summary - FMCOMMS2/3 Digital Radio Controller Worker}
+\begin{longtable}{|p{\dimexpr0.5\textwidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.5\textwidth-2\tabcolsep\relax}|}
 	\hline
 	\rowcolor{blue}
 	                  &                                        \\
 	\hline
 	Package Prefix    & ocpi.core \\
 	\hline
-	Component Name    & dig\_radio\_ctrlr \\
+	Component         & dig\_radio\_ctrlr \\
 	\hline
-	Worker Name       & \comp                                  \\
+	Name              & \comp                                  \\
 	\hline
-	OpenCPI Release Version & v\docVersion (release data \color{red}pre-release) \\
+	Authoring Model   & rcc                                    \\
+	\hline
+	Version          & 1 \\
+	\hline
+	OpenCPI Release & v\docVersion ~ (released 4/2019) \\
 	\hline
 \end{longtable}
 
 \begin{center}
   \textit{\textbf{Revision History}}
-  \begin{longtable}{|p{2cm}|p{12cm}|p{2.4cm}|}
+  \begin{longtable}{|p{\dimexpr0.15\textwidth-2\tabcolsep\relax}
+                    |p{\dimexpr0.65\textwidth-2\tabcolsep\relax}
+                    |p{\dimexpr0.2\textwidth-2\tabcolsep\relax}|}
     \hline
     \rowcolor{blue}
     \textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
     \hline
-    \color{red}vdevelop & Initial Release & \color{red}pre-release \\
+    v1.5 & Initial release. & 4/2019 \\
     \hline
   \end{longtable}
 \end{center}

@@ -95,7 +95,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -114,22 +114,23 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \begin{document}
 
 \section*{Summary - \Comp}
-\begin{tabular}{|c|M{13.85cm}|}
+\begin{longtable}{|p{\dimexpr0.5\textwidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.5\textwidth-2\tabcolsep\relax}|}
 	\hline
 	\rowcolor{blue}
 	                  &                  \\
+	\hline
+	Package Prefix    & ocpi.assets.devices     \\
 	\hline
 	Name              & \comp            \\
 	\hline
 	Worker Type       & Device Proxy     \\
 	\hline
-	Version           & v\docVersion{}   \\
-	\hline
-	Release Date      & October 2018         \\
-	\hline
-	Component Library & ocpi.assets.devices     \\
+	OpenCPI Release & v\docVersion ~ (released 4/2019) \\
 	\hline
 	Workers           & \comp.rcc        \\
+	\hline
+	Slaves            & ad9361\_config.hdl \\
 	\hline
 	Tested Platforms  &
 \begin{itemize}
@@ -141,22 +142,26 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \end{itemize} \\
 
 	\hline
-\end{tabular}
+\end{longtable}
 
 	\begin{center}
 	\textit{\textbf{Revision History}}
 		\begin{table}[H]
 		\label{table:revisions} % Add "[H]" to force placement of table
-			\begin{tabularx}{\textwidth}{|c|X|l|}
+      \begin{longtable}{|p{\dimexpr0.15\textwidth-2\tabcolsep\relax}
+                        |p{\dimexpr0.75\textwidth-2\tabcolsep\relax}
+                        |p{\dimexpr0.1\textwidth-2\tabcolsep\relax}|}
 			\hline
 			\rowcolor{blue}
 			\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
 		    \hline
-		    v1.3 & Initial Release & Aug 2017 \\
+		    v1.3 & Initial release & 8/2017 \\
 		    \hline
-        v1.4 & \begin{itemize} \item Worker updated to latest No-OS 2017\_R1 release - rx\_rf\_gain default values removed from OCS as they conflicted with the default startup RX gain mode which is non-manual \item Default value removed from \verb+en_state_machine_mode+ property to avoid confusion (state now handled by tx event port on ad9361\_config.hdl \end{itemize} & Oct 2018 \\
+        v1.4 & \begin{itemize} \item Worker updated to latest No-OS 2017\_R1 release - \verb+rx_rf_gain+ default value removed from OCS as they conflicted with the default startup RX gain mode which is non-manual \item Default value removed from \verb+en_state_machine_mode+ property to avoid confusion (state now handled by tx event port on ad9361\_config.hdl) \end{itemize} & 10/2018 \\
 		    \hline
-			\end{tabularx}
+		    v1.5 & \begin{itemize} \item Added \verb+digital_rx_block_delay+ worker property \item Updated new source dependencies \end{itemize} & 4/2019 \\
+		    \hline
+			\end{longtable}
 		\end{table}
 	\end{center}
 
@@ -174,7 +179,7 @@ No-OS features ``platform layers'' which are .c/.h files which implement hardwar
 \end{itemize}
 \end{sloppypar}
 \noindent
-The No-OS API calls often require passing integer values which, according to the No-OS documentation, are intended to correlate with C macros. For example, the No-OS ad9361\_set\_rx\_fir\_en\_dis() function has a argument of type uint8\_t, but the comments indicate its value should be one of the ENABLE or DISABLE ad9361\_api.h integer macros:\pagebreak
+The No-OS API calls often require passing integer values which, according to the No-OS documentation, are intended to correlate with C macros. For example, the No-OS ad9361\_set\_rx\_fir\_en\_dis() function has a argument of type uint8\_t, but the comments indicate its value should be one of the ENABLE or DISABLE ad9361\_api.h integer macros:
 \begin{lstlisting}
 /**
  * Enable/disable the RX FIR filter.
@@ -386,7 +391,8 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
 			\verb+BIST_Mask_Channel_2_Q_data+,
 			\verb+BIST_Mask_Channel_2_I_data+,
 			\verb+BIST_Mask_Channel_1_Q_data+,
-			\verb+BIST_Mask_Channel_1_I_data+
+			\verb+BIST_Mask_Channel_1_I_data+, \\
+			\verb+digital_rx_block_delay_sec+
 };
     \node[rectangle,draw=white,fill=white](R2)[below= of R1] { Slave: ad9361\_config.hdl};
     \path[<->]
@@ -396,12 +402,17 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
     ;
   \end{tikzpicture}
 \end{center}
+\pagebreak
 \section*{Source Dependencies}
 \subsection*{\comp.rcc}
 \begin{itemize}
 	\item assets/hdl/devices/\comp{}.rcc/\comp{}.cc
 	\item assets/hdl/devices/\comp{}.rcc/ad9361\_platform.cc
 	\item assets/hdl/devices/\comp{}.rcc/parameters.h
+	\item assets/hdl/devices/\comp{}.rcc/supporting/include/OCPIProjects/AD9361ConfigProxy.hh
+	\item assets/hdl/devices/\comp{}.rcc/supporting/include/OCPIProjects/LogForwarder.hh
+	\item assets/hdl/devices/\comp{}.rcc/supporting/src/OCPIProjects/AD9361ConfigProxy.cc
+	\item assets/hdl/devices/\comp{}.rcc/supporting/src/OCPIProjects/LogForwarder.cc
 	\item libad9361.a (no-OS static library installed with OpenCPI)
 \end{itemize}
 \begin{landscape}
@@ -894,10 +905,18 @@ Secondary Tx filter capacitor, which, along with the secondary Tx Resistor, sets
 	\section*{Worker Properties}
 	\subsection*{\comp.rcc}
 	\begin{scriptsize}
-		\begin{longtable}{|p{2cm}|p{4cm}|p{1cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{1cm}|p{4.58cm}|}
+    \begin{longtable}{|p{\dimexpr0.10\linewidth-2\tabcolsep\relax}
+                      |p{\dimexpr0.20\linewidth-2\tabcolsep\relax}
+                      |p{\dimexpr0.05\linewidth-2\tabcolsep\relax}
+                      |p{\dimexpr0.1\linewidth-2\tabcolsep\relax}
+                      |p{\dimexpr0.1\linewidth-2\tabcolsep\relax}
+                      |p{\dimexpr0.1\linewidth-2\tabcolsep\relax}
+                      |p{\dimexpr0.1\linewidth-2\tabcolsep\relax}
+                      |p{\dimexpr0.1\linewidth-2\tabcolsep\relax}
+                      |p{\dimexpr0.15\linewidth-2\tabcolsep\relax}|}
 			\hline
 			\rowcolor{blue}
-			Scope        & Name                 & Type & SequenceLength & ArrayDimensions & Accessibility & Valid Range        & Default & Usage                                                                                                                  \\
+			Scope        & Name                 & Type & SequenceLength & ArrayDimensions & Accessibility & Valid Range        & Default & Description                                                                                                            \\
 			\hline
 			SpecProperty & \verb+ad9361_init+ & - & - & - & WriteSync & - & - & - \\
 			\hline
@@ -1070,20 +1089,44 @@ Secondary Tx filter capacitor, which, along with the secondary Tx Resistor, sets
 			SpecProperty & \verb+BIST_Mask_Channel_1_Q_data+ & - & - & - & ReadSync, WriteSync & - & - & - \\
 			\hline
 			SpecProperty & \verb+BIST_Mask_Channel_1_I_data+ & - & - & - & ReadSync, WriteSync & - & - & - \\
+      \hline
+      Property & \verb+digital_rx_block_delay_sec+ & Struct (see \hyperlink{tab11}{Table 11}) & 2 & - & Volatile, ReadSync & - &   & See UG-570 equation 14.\\
 			\hline
 		\end{longtable}
 	\end{scriptsize}
-\pagebreak
+	Table \hypertarget{tab11}{11}: Structure declaration for \comp{}.rcc bist\_tone property.\\
+  \begin{scriptsize}
+  \begin{longtable}{|p{\dimexpr0.3\linewidth-2\tabcolsep\relax}
+                    |p{\dimexpr0.3\linewidth-2\tabcolsep\relax}
+                    |p{\dimexpr0.4\linewidth-2\tabcolsep\relax}|}
+    \hline
+    \cellcolor{blue} Name & \cellcolor{blue} Type & \cellcolor{blue} Valid Range \\
+    \hline
+    rf\_port & Enum & RX1,RX2 \\
+    \hline
+    delay\_sec & Double & Standard\\
+    \hline
+  \end{longtable}
+  \end{scriptsize}
+
+
+
+
 	\section*{Component Ports}
 	\begin{scriptsize}
-		\begin{tabular}{|p{2cm}|p{1.5cm}|p{4cm}|p{1.5cm}|p{1.5cm}|p{9.38cm}|}
+    \begin{longtable}{|p{\dimexpr0.2\linewidth-2\tabcolsep\relax}
+                      |p{\dimexpr0.1\linewidth-2\tabcolsep\relax}
+                      |p{\dimexpr0.2\linewidth-2\tabcolsep\relax}
+                      |p{\dimexpr0.1\linewidth-2\tabcolsep\relax}
+                      |p{\dimexpr0.2\linewidth-2\tabcolsep\relax}
+                      |p{\dimexpr0.2\linewidth-2\tabcolsep\relax}|}
 			\hline
 			\rowcolor{blue}
 			Name & Producer & Protocol           & Optional & Advanced & Usage                  \\
 			\hline
 			-  & -     & - & -     & -        & - \\
 			\hline
-		\end{tabular}
+		\end{longtable}
 	\end{scriptsize}
 \end{landscape}
 
@@ -1119,7 +1162,7 @@ ad9361_init : Unsupported PRODUCT_ID 0xC0ad9361_init : AD936x initialization err
 \bibitem{adi_hdl_github} GitHub - analogdevicesinc/hdl: HDL libraries and projects \\
 \url{https://github.com/analogdevicesinc/hdl}
 \bibitem{ad9361} AD9361 Datasheet and Product Info \\
-\url{http://www.analog.com/en/products/rf-microwave/integrated-transceivers-transmitters-receivers/wideband-transceivers-ic/ad9361.html}
+\url{https://www.analog.com/en/products/ad9361.html}
 \bibitem{dac_comp_datasheet} AD9361 DAC Component Data Sheet \\
 \url{https://opencpi.github.io/assets/AD9361_DAC.pdf}
 \bibitem{config_comp_datasheet} AD9361 Config Component Data Sheet \\

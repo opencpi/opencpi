@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Frequently Asked Questions}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \input{snippets/LaTeX_Header.tex}
 \setlength{\parindent}{0pt} % Don't indent all paragraphs
@@ -32,7 +32,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 %----------------------------------------------------------------------------------------
 \begin{document}
 \maketitle
-\thispagestyle{fancy}
 \newpage
 
         \begin{center}
@@ -50,6 +49,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
                         \hline
                         v1.4 & Updated for OpenCPI Release 1.4 & 9/2018 \\
                         \hline
+                        v1.5 & Updated for OpenCPI Release 1.5 & 4/2019 \\
+                        \hline
                         \end{tabularx}
                 \end{table}
         \end{center}
@@ -63,6 +64,12 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \item[Is the RPM suite a standalone install?]~\\
 \label{faq:whatis}%
 Yes, the RPMs distributed by the ANGRYVIPER team incorporates and extends the Free / Open Source Project ``OpenCPI.'' Any OpenCPI installation documents that still exist are for reference and legacy users. All other OpenCPI documentation still applies and should be referenced. Do \textbf{not} attempt to install OpenCPI from source at the same time as the RPM distribution.
+\end{description}
+
+\begin{description}[style=nextline]
+\item[Where can I go for more help?]~\\
+\label{faq:halp}%
+All documentation is available at \href{https://opencpi.github.io/}{\path{github.io}} and there is a public mailing list (with archive) at \href{http://lists.opencpi.org/}{\path{opencpi.org}}.
 \end{description}
 
 \section{Install-Specific Questions}

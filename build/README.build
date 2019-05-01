@@ -6,8 +6,8 @@ We try to separate concerns of:
 1. The description of OpenCPI software and platforms that does not say how it is built.
 2. The build mechanisms used to actually build it.
 
-Furthermore we want to enable multiple instances of #2 (e.g. autotools, cmake, scons)
-so that it is relatively easy to change and evolve.
+Furthermore we want to enable the possibility of multiple instances of #2 (e.g. autotools,
+cmake, scons) so that it is relatively easy to change and evolve.
 
 The files in this directory are of type #1:
 
@@ -25,5 +25,3 @@ Also, key files used when building the framework for various platforms:
 In addition to these files are directories containing build mechanisms, (type #2)
 the first being "autotools".  In the autotools directory, files described above are used
 to build the framework using autotools.
-
-

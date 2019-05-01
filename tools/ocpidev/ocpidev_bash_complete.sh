@@ -80,7 +80,7 @@ _ocpidev()
 	--exclude-platform --rcc-platform --hdl-platform -d -l --case --before --after --run-args \
 	--mode --remotes --view"
     copts="--help -v -f -d -s -p -t -n -l -F -D -K -N -S -P -L -V -E -W -R -r -g -q -u -I -A -O -C -Y -y \
-	-T -Z -G -Q -U -M -B -H -J -X -x --version"
+	-T -Z -G -Q -U -M -B -H -J -X -x --version --worker-version"
     # for project noun, add the --register option
     if [[ ${noun1} == project ]]; then
       copts="${copts} --register"

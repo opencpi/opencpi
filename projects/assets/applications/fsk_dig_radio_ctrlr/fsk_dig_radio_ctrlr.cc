@@ -156,7 +156,7 @@ static bool overrun = false;
 static bool underrun = false;
 
 void version() {
-  std::cout << APP << " develop\n";
+  std::cout << APP << " 1.5\n";
 }
 
 void usage() {
