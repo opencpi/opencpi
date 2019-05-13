@@ -48,7 +48,7 @@ namespace DataTransfer {
 
     class Socket;
     class XferFactory;
-    class EndPoint : public DG::DGEndPoint, public XF::EndPoint {
+    class EndPoint : public DG::DGEndPoint {
       OE::Address m_addr;
       std::string m_ifname;
       ocpi_sockaddr_t m_sockaddr;
@@ -58,7 +58,7 @@ namespace DataTransfer {
     protected:
       EndPoint(XF::XferFactory &a_factory, const char *protoInfo, const char *eps,
 	       const char *other, bool a_local, size_t a_size, const OU::PValue *params)
-	: XF::EndPoint(a_factory, eps, other, a_local, a_size, params) { 
+	: DG::DGEndPoint(a_factory, eps, other, a_local, a_size, params) { 
 	if (protoInfo) {
 	  m_protoInfo = protoInfo;
 	  const char *cp = strchr(protoInfo, '/');
@@ -90,13 +90,6 @@ namespace DataTransfer {
 	    throw OU::Error(OCPI_ETHER_RDMA ": bad ethernet interface: %s", error.c_str());
 	  OU::format(m_protoInfo, "%s/%s", ifc.name.c_str(), ifc.addr.pretty());
 	}
-      }
-      ~EndPoint() {
-	// FIXME:  this is generic behavior and belongs in a datagram endpoint base class
-	DG::SmemServices &sm = *static_cast<DG::SmemServices *>(&sMemServices());
-	sm.stop(); // stop the socket I/O
-	stop();
-	join();
       }
       // boilerplate
       XF::SmemServices &createSmemServices();

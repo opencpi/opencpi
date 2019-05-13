@@ -50,8 +50,7 @@ namespace DataTransfer {
   namespace UDP {
 
     class Socket;
-    class EndPoint : public DG::DGEndPoint, public XF::EndPoint 
-    {
+    class EndPoint : public DG::DGEndPoint {
       friend class Socket;
       friend class XferFactory;
       std::string m_ipAddress;
@@ -60,7 +59,7 @@ namespace DataTransfer {
     public:
       EndPoint(XF::XferFactory &a_factory, const char *protoInfo, const char *eps,
 	       const char *other, bool a_local, size_t a_size, const OU::PValue *params)
-	: XF::EndPoint(a_factory, eps, other, a_local, a_size, params) { 
+	: DG::DGEndPoint(a_factory, eps, other, a_local, a_size, params) { 
 	if (protoInfo) {
 	  m_protoInfo = protoInfo;
 	  // FIXME: this is redundant to what is in the socket driver.
@@ -100,13 +99,6 @@ namespace DataTransfer {
 	m_sockaddr.sin_family = AF_INET;
 	m_sockaddr.sin_port = htons(m_portNum);
 	inet_aton(m_ipAddress.c_str(), &m_sockaddr.sin_addr);
-      }
-    protected:
-      ~EndPoint() {
-	// FIXME:  this is generic behavior and belongs in a datagram endpoint base class
-	DG::SmemServices &sm = *static_cast<DG::SmemServices *>(&sMemServices());
-	sm.stop();
-	stop();
       }
     private:
       void
