@@ -1,0 +1,24 @@
+{ signal: [
+  { name: 'clk', wave: 'P......'},
+  [ 'initiator',
+   { name: 'header.op',    wave: 'x=.x=.x', data: ["write", "write"] },
+   { name: 'header.lead',  wave: 'x=.x=.x', data: ["0", "2"] },
+   { name: 'header.trail', wave: 'x=.x=.x', data: ["2", "0"] },
+   { name: 'data[31:0]',   wave: 'x=.x=.x', data: ["XXXXDAT0", "DAT1XXXX"] },
+   { name: 'valid',        wave: '01.01.0'},
+   { name: 'eop',          wave: 'x1.x1.x'}
+  ],
+  {},
+  [ 'responder',
+    { name: 'ready',       wave: '0.10.10'},
+  ],
+   {}
+],
+  config:{hscale:1.5},
+head:{
+   tick:0,
+ },
+foot:{
+   text:'Two 16-bit Writes on a 32-bit Interface with Leading/Trailing Invalid Bytes',
+ }
+}

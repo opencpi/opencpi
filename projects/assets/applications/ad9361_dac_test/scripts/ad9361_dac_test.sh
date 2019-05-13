@@ -82,7 +82,8 @@ fi
 
 if [ "$DO_PRBS" == "1" ]; then
   echo "Running PRBS Built-In-Self-Test across range of sample rates for LVDS mode"
-  OCPI_LOG_LEVEL=1 OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:./assemblies/ ./scripts/AD9361_BIST_PRBS.sh $APP_XML 2>&1 | tee odata/AD9361_BIST_PRBS.log; test ${PIPESTATUS[0]} -eq 0
+#'grep -v ...' added below to satisfy AV-5444. the test would report a failure because of the warning about readable otherwise
+  OCPI_LOG_LEVEL=1 OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:./assemblies/ ./scripts/AD9361_BIST_PRBS.sh $APP_XML 2>&1 | tee odata/temp; grep -v "attribute is deprecated" odata/temp > odata/AD9361_BIST_PRBS.log; rm odata/temp; test ${PIPESTATUS[0]} -eq 0
   XX=$?
   if [ "$XX" !=  "0" ]; then
     echo "TEST FAILED"
@@ -142,7 +143,8 @@ else
 fi
 
 echo "Running loopback Built-In-Self-Test across range of sample rates for LVDS mode"
-OCPI_LOG_LEVEL=1 OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:./assemblies/ ./scripts/AD9361_BIST_loopback.sh $APP_XML 2>&1 | tee odata/AD9361_BIST_loopback.log
+#'grep -v ...' added below to satisfy AV-5444. the test would report a failure because of the warning about readable otherwise
+OCPI_LOG_LEVEL=1 OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:./assemblies/ ./scripts/AD9361_BIST_loopback.sh $APP_XML 2>&1 | tee odata/temp_loopback; grep -v "attribute is deprecated" odata/temp_loopback > odata/AD9361_BIST_loopback.log; rm odata/temp_loopback;
 if [ "$?" !=  "0" ]; then
   cat odata/AD9361_BIST_loopback.log
   echo "TEST FAILED"

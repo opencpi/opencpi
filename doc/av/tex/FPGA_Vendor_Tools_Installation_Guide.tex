@@ -22,7 +22,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \def\docTitle{FPGA Vendor Tools Installation Guide}
 \def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
-\input{snippets/LaTeX_Header.tex}
+\def\snippetpath{snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\docTitle}
@@ -64,13 +66,16 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 	This document assumes a basic understanding of the Linux command line (or ``shell'') environment. A working knowledge of OpenCPI is required for understanding what vendor tools are necessary to perform various operations. However, no OpenCPI knowledge is required to perform the toolset installation and configuration herein. The reference(s) in Table \ref{table:references} can be used as an overview of OpenCPI and may prove useful.
 \def\refcapbottom{}
-\input{snippets/References_Table}
+\input{References_Table}
 
 \begin{flushleft}
 \begin{landscape}
-\section{OpenCPI FPGA Vendor Tool Prerequisites}
+\section{Supported Vendor Tools and OpenCPI functionality}
 \label{sec:doc_overview}
-OpenCPI utilizes third party FPGA vendor toolsets to perform various operations, such as, building bitstreams or, for certain platforms, loading  bitstreams into FPGAs. Table~\ref{table:tool-support} identifies the various FPGA vendor tool installation and license requirement combinations, which are actively supported by OpenCPI. Each combination enumerates the associated capability that the given combination provides to OpenCPI. Note that Quartus Standard and Quartus Pro are \textit{different tools}. These two tools support different sets of devices and users should consult Intel's documentation for more information. Older versions of some FPGA tools have been supported by OpenCPI but are not actively regression tested, such as, Vivado 2015.4 and Quartus Standard Edition 15.1. \\
+OpenCPI utilizes third party FPGA vendor tools to perform various operations, such as, building bitstreams or, for certain platforms, loading  bitstreams into FPGAs. Table~\ref{table:tool-support}
+describes the OpenCPI functionality that is provided by each supported vendor tool with regards to building bitstreams (hardware or simulation), loading of bitstreams, or running a simulation. Since licensing of vendor tool plays a critical role in build for certain target devices and usage of a given tool, its relationship is also listed.\\
+
+Note that Quartus Standard and Quartus Pro are \textit{different tools}. These two tools support different sets of devices and users should consult Intel's documentation for more information. Older versions of some FPGA tools have been supported by OpenCPI but are not actively regression tested, such as, Vivado 2015.4 and Quartus Standard Edition 15.1. \\
 %Commented this out because there may be other Vivado functionality that requires a non-webpack license.
 %Maximum functionality for OpenCPI's currently supported platforms is provided by a WebPACK licensed Xilinx Vivado installation, a non-WebPACK licensed Xilinx ISE installation and a licensed Quartus installation.
 
@@ -83,35 +88,32 @@ OpenCPI utilizes third party FPGA vendor toolsets to perform various operations,
 		\begin{tabularx}{1.35\textwidth}{| p{2.6cm} | p{5cm} | p{1.8cm} | p{2.9cm} | p{3.6cm} | p{2.0cm} | Z |}
 			\hline
 			\rowcolor{blue}
-			\multicolumn{1}{|c|}{\textbf{Tool}} & \multicolumn{1}{|c|}{\textbf{Installation}} & \textbf{Supported \newline simulators} & \textbf{Load bitstreams onto} & \textbf{Run applications on these platforms} & \textbf{Build bitstreams for} & \textbf{Build software for} \\
+			\multicolumn{1}{|l|}{\textbf{OpenCPI + \{Tool\}}} & \multicolumn{1}{|c|}{\textbf{Version/License}} & \textbf{Supported \newline simulators} & \textbf{Load bitstreams onto} & \textbf{Run applications on these platforms} & \textbf{Build bitstreams for} & \textbf{Build software for} \\
 			\hline
-			\multicolumn{2}{|c|}{\textbf{OpenCPI installed \textit{without} FPGA vendor tools}} & & Zynq-7000$^1$ & Zynq-7000 based$^2$, x86-only$^1$ & & x86$^1$ \\
+			\multicolumn{2}{|l|}{\textbf{OpenCPI \textit{ONLY} (without vendor tools)}} & & Zynq-7000 & Zynq-7000 based$^1$, x86-only & & x86 \\
 			\hline
-			\multirow{3}{*}{\textbf{Xilinx Vivado}} & 2017.1 with WebPACK License & \code{xsim} & & & Zynq-7000$^3$ & \\ \cline{2-7}
-			& 2013.4 (SDK only)$^5$ & & & & & Zynq-7000 ARM \\ \cline{2-7}
-			& 2017.1 \textit{and} 2013.4 SDK with WebPACK License & \code{xsim} & & & Zynq-7000$^3$ &  Zynq-7000 ARM \\
+			\multirow{3}{*}{\textbf{Xilinx Vivado}} & 2017.1 with WebPACK License & \code{xsim} & & & Zynq-7000$^2$ & \\ \cline{2-7}
+			& 2013.4 (SDK only)$^4$ & & & & & Zynq-7000 ARM \\ \cline{2-7}
+			& 2017.1 \textit{and} 2013.4 SDK with WebPACK License & \code{xsim} & & & Zynq-7000$^2$ &  Zynq-7000 ARM \\
 			\hline
-			\multicolumn{2}{|c|}{\textbf{Xilinx LabTools 14.7}} & & ML605 & x86/ML605 & & \\
+			\multicolumn{2}{|l|}{\textbf{Xilinx LabTools 14.7}} & & ML605 & x86/ML605 & & \\
 			\hline
-			\multirow{2}{*}{\textbf{Xilinx ISE 14.7}} & WebPACK License & \code{isim} & ML605 & x86/ML605 & Zynq-7000$^3$ & Zynq-7000 ARM \\ \cline{2-7}
+			\multirow{2}{*}{\textbf{Xilinx ISE 14.7}} & WebPACK License & \code{isim} & ML605 & x86/ML605 & Zynq-7000$^2$ & Zynq-7000 ARM \\ \cline{2-7}
 			& Full License & \code{isim} & ML605 & x86/ML605 & Zynq-7000, ML605 & Zynq-7000 ARM \\
 			\hline
-			\multicolumn{2}{|c|}{\textbf{Intel Quartus Standard 17.1 with License}}  & & ALST4 & x86/ALST4 & ALST4 & \\
+			\multicolumn{2}{|l|}{\textbf{Intel Quartus Standard 17.1 with License}}  & & ALST4 & x86/ALST4 & ALST4 & \\
 			\hline
-			%\multicolumn{2}{|c|}{\textbf{Intel Quartus Pro Edition 17.0.2 with License}}  & & & & arria10soc$^4$ & \\
-			\multicolumn{2}{|c|}{\textbf{Intel Quartus Pro Edition 17.0.2 with License}}  & & & & arria10soc$^4$ & \\
+			\multicolumn{2}{|l|}{\textbf{Intel Quartus Pro Edition 17.0.2 with License}}  & & & & arria10soc$^3$ & \\
 			\hline
-			%\multicolumn{2}{|c|}{\textbf{ModelSim DE 10.6e with License}}  & modelsim &  & & modelsim & \\
-			\multicolumn{2}{|c|}{\textbf{Mentor Graphics ModelSim DE 10.6e with License}}  & modelsim &  & & modelsim & \\
+			\multicolumn{2}{|l|}{\textbf{Mentor Graphics ModelSim DE 10.6e with License}}  & modelsim &  & & modelsim & \\
 			\hline
 		\end{tabularx}\newline
 
-		\footnotesize{$^1$With OpenCPI installed, no additional vendor tools are required to load bitstreams onto Zynq-7000 FPGAs, run applications on Zynq-7000 based or x86-only platforms, or build software for x86.}\\
-		\footnotesize{$^2$``Zynq-7000 based'' platform includes both a Zynq-7000's FPGA and ARM PS. The usage of ``Zynq'' or ``Zynq-based'' does not imply Zynq UltraScale+ devices.}\\
-		\footnotesize{$^3$Building bitstreams with a WebPACK license is limited to certain Zynq parts. Refer to the vendor's documentation for further information.}\\
-		\footnotesize{$^4$While there are currently no OpenCPI Board Support Packages developed for Quartus Pro, HDL workers can be built targeting the \textit{arria10soc} device family.}\\
-		\footnotesize{$^5$The relationship between the Vivado Design Edition and SDK is discussed in \ref{sec:viv_intro}.}\\
-		\caption {Support with FPGA Vendor Tools}
+		\footnotesize{$^1$``Zynq-7000 based'' platform includes both a Zynq-7000's FPGA and ARM PS. The usage of ``Zynq'' or ``Zynq-based'' does not imply Zynq UltraScale+ devices.}\\
+		\footnotesize{$^2$Building bitstreams with a WebPACK license is limited to certain Zynq parts. Refer to the vendor's documentation for further information.}\\
+		\footnotesize{$^3$While there are currently no OpenCPI Board Support Packages developed for Quartus Pro, HDL workers can be built targeting the \textit{arria10soc} device family.}\\
+		\footnotesize{$^4$The relationship between the Vivado Design Edition and SDK is discussed in \ref{sec:viv_intro}.}\\
+		\caption {Added-value of Vendor Tools to OpenCPI}
 		\label{table:tool-support} % Add "[H]" to force placement of table
 	\end{table}
 \end{center}

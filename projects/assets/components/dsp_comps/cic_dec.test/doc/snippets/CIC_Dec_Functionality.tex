@@ -1,0 +1,11 @@
+\section*{Functionality}
+\begin{flushleft}
+	The CIC decimator has \verb+N+ cascaded integrator stages with an input data rate of $f_{s}$, followed by a rate change by a factor \verb+R+, followed by \verb+N+ cascaded comb stages with an output data rate of $\frac{f_{s}}{R}$. The differential delay, \verb+M+, affects the slope of the transition region. Figure \ref{fig:cic} diagrams the decimating CIC filter.
+
+	\begin{figure}[ht]
+		\centering
+		\includegraphics[scale=.6]{cic_decimator_block_diagram}
+		\caption{Cascaded Integration Comb Decimation filter Block Diagram}
+		\label{fig:cic}
+	\end{figure}
+\end{flushleft}

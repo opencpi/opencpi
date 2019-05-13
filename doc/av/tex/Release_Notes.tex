@@ -22,7 +22,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \def\docTitle{Release Notes}
 \def\docVersion{1.5.0}
 %----------------------------------------------------------------------------------------
-\input{snippets/LaTeX_Header.tex}
+\def\snippetpath{snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
 \usepackage{multicol}
 \setlength{\parindent}{0pt} % Don't indent all paragraphs
 \newcommand{\forceindent}{\leavevmode{\parindent=1em\indent}}
@@ -53,9 +55,9 @@ The Release Notes from previous releases are included here as reference for stil
 %----------------------------------------------------------------------------------------
 \begin{document}
 \maketitle
-\thispagestyle{fancy}
+\thispagestyle{empty}
 \newpage
-
+\pagenumbering{roman}
 	\begin{center}
 	\textit{\textbf{Revision History}}
 		\begin{table}[H]
@@ -90,6 +92,7 @@ The Release Notes from previous releases are included here as reference for stil
 \renewcommand\thesection{\Roman{section}}
 \renewcommand\thesubsection{\thesection-\arabic{subsection}}
 \newpage
+\pagenumbering{arabic}
 \section*{Overview}
 This document contains corrections, changes, and enhancements made to OpenCPI since the previous release. It can never encapsulate \textit{every} change or bug fix, but attempts to assist previous users in getting up and running as swiftly as possible. The \textit{general} format of this document is to answer user questions:
 \begin{itemize}
@@ -110,19 +113,11 @@ The \href{sec:appendices}{appendices} contain the Release Notes from previously 
 
 % \origsection{Release 1.5.0}
 \section{Enhancements}
-\subsection{New Digital Radio Controller Front-End Control Paradigm} % AV-3840
+\subsection{New Digital Radio Controller Front-End Control Paradigm} (Technology Preview) % AV-3840
 \label{sec:15_drc}
-This new OpenCPI Specification File (OCS) represents a ``\textit{digital radio controller}.''
-A \textit{digital radio} exposes at least one interface containing digitized
-Radio Frequency (RF) samples to an OpenCPI Application.
-Each interface includes samples which were ultimately received (RX) or will
-be transmitted (TX).
-Each interface, including the characteristics of its RF
-source or destination, is represented as a \textit{data stream}.
-A \textit{digital radio controller} controls the configurations which
-characterize the RF source or destination of each
-\textit{data stream}'s samples, \textit{e.g.} tuning
-frequency.\\
+This release includes a new OpenCPI Specification File (OCS) which represents the next-generation interface for Radio Frequency (RF) command and control.
+This generation improves upon the previous by removing RF vs. Base Band (BB) specificity, allowing for runtime querying of acceptable settings, and supporting multiple RF channels.
+Each of these marks an important step towards supporting truly hardware-agnostic RF applications. \\
 
 For more information, consult \path{Dig_Radio_Ctrlr.pdf}.
 \subsection{New Time-Based Protocol (``\code{ComplexShortWithMetadata-prot}'') (Technology Preview)} % AV-4804
@@ -130,10 +125,29 @@ For more information, consult \path{Dig_Radio_Ctrlr.pdf}.
 One of the major improvements as of 1.5 is to have timestamped data flow from end-to-end using the ``RxApp'' on an E3xx example platform. To achieve this, ``\path{ComplexShortWithMetadata-prot}'' was created. The source to this Protocol (\path{<core>/specs/}) has various comments explaining the new opcodes and arguments as well as example usage.
 \subsection{New Time-Based Assets Project (``\code{assets\_ts}'') (Technology Preview)} % AV-5217
 \label{sec:15_assets_ts}
-The workers required to achieve the previously mentioned goal of timestamped data within ``RxApp'' were derived from those within ``assets'' but are now in their own Project, ``assets\_ts''.
+The workers required to achieve the previously mentioned goal of timestamped data within ``RxApp'' were derived from those within ``assets'' but are now in their own Project, ``assets\_ts''. This Project mostly exists to work around current limitations within the Framework; whether or not it will continue to exist or if the timestamped versions will return to ``assets'' is still to be determined.
+
 \subsection{New HDL Worker Port Interfaces} % AV-4961
 \label{sec:15_smart_wrappers}
-A new HDL Worker port interface is now available that considerably reduces code complexity when a worker ``doesn't care'' about message boundaries, \textit{e.g.} when streaming sequences of data. This interface is currently requested by noting in the OWD that it is ``\texttt{version=2}'' and this interface will become the default in OpenCPI 2.0. Additional information can be found in the \textit{Component Development Guide}.
+A new HDL Worker port interface is now available that considerably reduces code complexity when a Worker ``doesn't care'' about message boundaries, \textit{e.g.} when streaming sequences of data. This interface is currently requested by noting in the OWD that it is ``\texttt{version=2}'' and this interface will become the default in OpenCPI 2.0. Additional information can be found in the \textit{HDL Development Guide}.
+
+\subsubsection*{Some Workers Migrated} % AV-5341
+\label{sec:15_v2_workers}
+Some of the HDL Workers' source have been updated to use this new ``\texttt{version=2}'' interface to exemplify its usage, while the ``version 1'' (pre-1.5) Worker source code has been migrated to the ``inactive'' Project.
+This \textit{should not affect} any applications that previously used these Workers, except the Properties explicitly affecting buffer sizes are now silently ignored.
+The following Workers have been upgraded in this way:
+
+\begin{itemize}
+\setlength\itemsep{0em} %tighten
+\begin{multicols}{3}
+\item[] \path{agc_real.hdl}
+\item[] \path{cic_dec.hdl}
+\item[] \path{cic_int.hdl}
+\item[] \path{dc_offset_filter.hdl}
+\item[] \path{mfsk_mapper.hdl}
+\end{multicols}
+\end{itemize}
+
 \subsection{\ocpidev Improvements} % AV-3298 et al
 \label{sec:15_ocpidev}
 The \ocpidev tool has been significantly improved, including:
@@ -180,11 +194,27 @@ Various OWDs\footnote{The OWDs explicitly were \path{metadata.xml}, \path{ocscp.
 \subsection{RPM Upgrade Notes} % AV-5245
 Some previous RPM-based installations may not have proper dependencies documented for some sub-packages, \textit{e.g.} version 1.4 of \path{opencpi-hw-platform-e3xx-xilinx13_4} requires ``\path{opencpi},'' not \textit{explicitly} ``\path{opencpi} version 1.4.'' This may cause version mismatches when upgrading; \textbf{ensure all packages currently installed on a system are \textit{explicitly} added to the \path{yum} command line when upgrading.}
 
+\subsection{HDL Wrapper Changes} % AV-5271
+\label{sec:15_hdl_wrappers}
+The internal ``wrapper'' that encapsulates an HDL Worker has changed considerably (see \sref{sec:15_smart_wrappers}).
+This has changed the pipeline depths of the inputs and outputs of the Workers.
+\textbf{This \textit{should not affect} any users; an Application should \textit{never} make assumptions concerning, or require specific relationships between, the timing of data between Workers\footnote{Other ways timing may be affected would include backpressure from upstream Workers, network latency between remote Containers,  etc.}.}
+However, if developers previously made implementation-specific assumptions, their Applications will now fail and will need to be fixed to properly use the Framework to transport \textit{all} required data and metadata.
+
 \section{Major Known Deficiencies}
 \label{sec:15_bugs}
+
 \subsection{``udev'' Radio Rules Sometimes Does Not Work} % AV-5275
 \label{bug:5275}
-Starting with 1.4, some RPMs pre-install symlinks for rules in \path{/etc/udev/rules.d/} for certain radio platforms, \textit{e.g.} a rule to create a symlink from \path{/dev/matchstiq_z1_0} to \path{/dev/ttyUSB0}. If the OpenCPI installation location is on a different partition than the host machine's root partition, the symlinks for these rules may be broken at boot-time because the target partition is not yet mounted when \path{udev} is reading the rules. To fix this, the command ``\code{sudo udevadm control --reload}'' should be executed upon a full boot. With CentOS~7, a \href{https://askubuntu.com/a/679600/139131}{custom \path{systemd} service can be implemented}.
+Starting with 1.4, some RPMs pre-install symlinks for rules in \path{/etc/udev/rules.d/} for certain radio platforms, \textit{e.g.} a rule to create a symlink from \path{/dev/matchstiq_z1_0} to \path{/dev/ttyUSB0}.
+\input{snippets/udev_Reread}
+
+\subsection{``python3'' Symlink Missing} % AV-5477
+\label{bug:5477}
+Some ``python3'' RPMs do not provide a default symlink from \path{/usr/bin/python3} to their proper executable\footnote{For example, CentOS~7's \path{python34-3.4.10-1.el7.x86_64} does not, while the slightly-older \path{3.4.9-2.el7.x86_64} did.}.
+This is not considered a deficiency of the framework itself, but the Python packager.
+If your system does not have \path{/usr/bin/python3}, a system administrator needs to create one for you pointing to your installation of Python3, \textit{e.g.} ``\code{cd /usr/bin; sudo ln -s python3.4 python3}'' for Python 3.4.
+The \path{opencpi-devel} RPM works around this by installing a symlink, but non-RPM users \textit{may} need to manually create the symlink.
 
 \subsection{Previously Documented Deficiencies}
 The following deficiencies are still present in 1.5:
@@ -193,7 +223,7 @@ The following deficiencies are still present in 1.5:
 \item \bugref{693}
 \item \bugref{1035}
 \item \bugref{1392}
-\item \bugref{2241} %% MIGHT BE FIXED FINAL RELEASE
+\item \bugref{2241}
 \item \bugref{2400}
 \item \bugref{2477}
 \item \bugref{3193}

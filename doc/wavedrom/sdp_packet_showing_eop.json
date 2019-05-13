@@ -1,0 +1,20 @@
+{ signal: [
+  { name: 'clk', wave: 'P......'},
+  [ 'initiator',
+   { name: 'data',    wave:  'x==x=x.', data: ["D0","D1","D2"]},
+    { name: 'valid',   wave: '01.010.'},
+    { name: 'eop',   wave: 'x0.x1x.'},
+  ],
+   {},
+  [ 'responder',
+    { name: 'ready',   wave: '01.010.'},
+  ],
+   {}
+],
+head:{
+   tick:0,
+ },
+foot:{
+   text:'SDP Packet Transfer Showing EOP',
+ },
+}

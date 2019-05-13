@@ -51,7 +51,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
 \newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
 %----------------------------------------------------------------------------------------
-% Various pacakges
+% Various packages
 %----------------------------------------------------------------------------------------
 \usepackage{hyperref} % for linking urls and lists
 \usepackage{graphicx} % for including pictures by file
@@ -89,7 +89,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -114,13 +114,13 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & October 2018 \\
+	Release Date      & 4/2019 \\
 	\hline
 	Component Library & ocpi.assets.util\_comps     \\
 	\hline
 	Workers           & \comp.rcc                  \\
 	\hline
-	Tested Platforms  & linux-c7-x86\_64, linux-x13\_3-arm \\
+	Tested Platforms  & centos7, xilinx13\_3 (limited) \\
 	\hline
 \end{tabular}
 \section*{Functionality}
@@ -128,6 +128,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	The Advanced Pattern Component provides predefined data to assist in the testing of other Components.\par\medskip
 	The data can be arranged in messages of up to 2048 bytes at a time with each block having a specific opcode. By default, 32 of these messages are available, but that configuration is exposed as a build-time parameter with a default configuration building additional Workers allowing for 64, 128, and 256 messages.
 \end{flushleft}
+\begin{center}
+\framebox{\parbox{0.8\linewidth}{\centering This Component provides \textit{minimal} error checking and is \textbf{not recommended for production use}, but is only intended for prototyping and testing of other Components.}}
+\end{center}
 
 \section*{Block Diagrams}
 \subsection*{Top level}
@@ -153,44 +156,135 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \section*{Source Dependencies}
 \subsection*{\comp.rcc}
 \begin{itemize}
-	\item ocpiassets/components/util\_comps/advanced\_pattern.rcc/advanced\_pattern.cc
+	\item $<$assets$>$/components/util\_comps/advanced\_pattern.rcc/advanced\_pattern.cc
 \end{itemize}
 
 \begin{landscape}
+	\newcounter{fnreadable}
 	\section*{Component Spec Properties}
 	\begin{scriptsize}
 		\begin{minipage}{\textwidth}
 			\renewcommand*\footnoterule{} % Remove separator line from footnote
 			\renewcommand{\thempfootnote}{\arabic{mpfootnote}} % Use Arabic numbers (or can't reuse)
-
 			\begin{tabular}{|p{3cm}|p{1.5cm}|c|c|c|c|c|p{7cm}|}
 				\hline
 				\rowcolor{blue}
-				Name                          & Type      & SequenceLength          & ArrayDimensions & Accessibility     & Valid Range  & Default & Usage                                                                                                                                                                             \\
+				Name &
+				Type &
+				SequenceLength &
+				ArrayDimensions &
+				Accessibility &
+				Valid Range &
+				Default &
+				Usage \\
 				\hline
-				\verb+maxPatternLength+       & ULong     & -                       & -               & Parameter         & Standard     & 32      & Maximum ``\textbf{Pattern}'' sequence length to allow \footnote{Each \textbf{Pattern} entry requires about 2K of RAM.}                                                            \\
+				\verb+maxPatternLength+ &
+				ULong &
+				- &
+				- &
+				Parameter &
+				Standard &
+				32 &
+				Maximum ``\textbf{Pattern}'' sequence length to allow \footnote{Each \textbf{Pattern} entry requires about 2K of RAM.} \\
 				\hline
-				\verb+Pattern+                & Struct    & \verb+maxPatternLength+ & -               & Initial, Readable & -            & -       & Message to send                                                                                                                                                                   \\
+				\verb+Pattern+ &
+				Struct &
+				\verb+maxPatternLength+ &
+				- &
+				Initial, Readable\footnote{``Readable'' is deprecated and superfluous here. It will be removed in a future release.}\setcounter{fnreadable}{\thempfootnote} &
+				- &
+				- &
+				Message to send \\
 				\hline
-				\verb+Pattern.Opcode+         & UChar     & -                       & -               & ''                 & Standard     & 0       & Opcode metadata to send with this message's data                                                                                                                                  \\
+				\verb+Pattern.Opcode+ &
+				UChar &
+				- &
+				- &
+				'' &
+				Standard &
+				0 &
+				Opcode metadata to send with this message's data \\
 				\hline
-				\verb+Pattern.Bytes+          & UChar     & 2048                    & -               & ''                 & Standard     & 0       & Data to send                                                                                                                                                                      \\
+				\verb+Pattern.Bytes+ &
+				UChar &
+				2048 &
+				- &
+				'' &
+				Standard &
+				0 &
+				Data to send \\
 				\hline
-				\verb+LoopCount+              & ULongLong & -                       & -               & Initial, Readable & Standard     & 1       & How many times to repeat the ``\textbf{Pattern}'' sequence\footnote{0 will continue as long as Worker is running.}                                                                \\
+				\verb+LoopCount+ &
+				ULongLong &
+				- &
+				- &
+				Initial, Readable\footnotemark[\thefnreadable] &
+				Standard &
+				1 &
+				How many times to repeat the ``\textbf{Pattern}'' sequence\footnote{0 will continue as long as Worker is running.} \\
 				\hline
-				\verb+ZLM+                    & UShort    & -                       & -               & Initial, Readable & 0 \ldots 256 & 0       & Opcode for a \textbf{Z}ero \textbf{L}ength \textbf{M}essage with when finished.\footnote{Default is opcode 0; set to invalid opcode 256 if this feature is \textit{not} desired.} \\
+				\verb+ZLM+ &
+				UShort &
+				- &
+				- &
+				Initial, Readable\footnotemark[\thefnreadable] &
+				0 \ldots 256 &
+				0 &
+				Opcode for a \textbf{Z}ero \textbf{L}ength \textbf{M}essage with when finished.\footnote{Default is opcode 0; set to invalid opcode 256 if this feature is \textit{not} desired.} \\
 				\hline
-				\verb+current+                & Struct    & -                       & -               & Volatile          & -            & -       & Current statistics for each opcode                                                                                                                                                \\
+				\verb+current+ &
+				Struct &
+				- &
+				- &
+				Volatile &
+				- &
+				- &
+				Current statistics for each opcode \\
 				\hline
-				\verb+current.Total+          & Struct    & -                       & -               & ''                 & -            & -       & Statistics across \textit{all} opcodes                                                                                                                                            \\
+				\verb+current.Total+ &
+				Struct &
+				- &
+				- &
+				'' &
+				- &
+				- &
+				Statistics across \textit{all} opcodes \\
 				\hline
-				\verb+current.Total.bytes+    & ULongLong & -                       & -               & ''                 & Standard     & -       & Number of bytes received                                                                                                                                                          \\
+				\verb+current.Total.bytes+ &
+				ULongLong &
+				- &
+				- &
+				'' &
+				Standard &
+				- &
+				Number of bytes received \\
 				\hline
-				\verb+current.Total.messages+ & ULongLong & -                       & -               & ''                 & Standard     & -       & Number of messages received                                                                                                                                                       \\
+				\verb+current.Total.messages+ &
+				ULongLong &
+				- &
+				- &
+				'' &
+				Standard &
+				- &
+				Number of messages received \\
 				\hline
-				\verb+current.Opcode+         & Struct    & -                       & 256             & ''                 & -            & -       & Statistics for \textit{each} opcode                                                                                                                                               \\
+				\verb+current.Opcode+ &
+				Struct &
+				- &
+				256 &
+				'' &
+				- &
+				- &
+				Statistics for \textit{each} opcode \\
 				\hline
-				\verb+current.Opcode.*+       & Various   & -                       & -               & ''                 & -            & Various & Various\footnote{Internal structure equivalent to \texttt{current.Total} and not explicitly shown.}                                                                               \\
+				\verb+current.Opcode.*+ &
+				Various &
+				- &
+				- &
+				'' &
+				- &
+				Various &
+				Various\footnote{Internal structure equivalent to \texttt{current.Total} and not explicitly shown.} \\
 				\hline
 			\end{tabular}
 		\end{minipage}
@@ -214,7 +308,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	There are no implementation-specific interfaces for this component.
 
 \end{landscape}
-
+\iffalse
 \section*{Performance and Resource Utilization}
 \subsubsection*{\comp.rcc}
 \begin{scriptsize}
@@ -231,7 +325,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		\hline
 	\end{tabular}
 \end{scriptsize}
-
+\fi
 \section*{Test and Verification}
 \subsubsection*{Usage (local/x86)}
 After building the component, the user needs to type \verb+make tests RCC_CONTAINERS=1+ in the \textit{advanced\_pattern.test} directory. Various properties and data flows will be tested to try to cover as many use cases as possible. \\

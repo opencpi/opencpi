@@ -349,7 +349,7 @@ namespace {
         if (script)
           return OU::esprintf("specifying both \"file\" and \"script\" attribute is invalid");
         if (!OS::FileSystem::exists(file, &isDir) || isDir)
-          return OU::esprintf("%s file \"%s\" doesn't exist or it a directory", OE::ezxml_tag(x),
+          return OU::esprintf("%s file \"%s\" doesn't exist or is a directory", OE::ezxml_tag(x),
                               file);
         m_file = file;
       } else if (script)

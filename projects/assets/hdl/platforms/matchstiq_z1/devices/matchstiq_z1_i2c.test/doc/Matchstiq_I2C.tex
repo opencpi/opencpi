@@ -114,7 +114,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & April 2019 \\
+	Release Date      & 4/2019 \\
 	\hline
 	Component Library & ocpi.assets.platforms.matchstiq\_z1.devices \\
 	\hline
@@ -242,12 +242,60 @@ Testing of the Matchstiq-Z1 I2C device worker consists of a C++ test bench that 
 %I2C Readback Test for 16 bit extended write master: Passed.\\
 %I2C Sim Testbench: Passed.}\par\bigskip
 %\noindent Should all tests pass a file i2c\_sim\_testbench.results is produced for use with automated testing.
+
 \subsubsection*{Hardware}
 \begin{flushleft}
-Hardware testing of the Matchstiq-Z1 I2C device worker consists of connecting the Matchstiq-Z1 RX SMA panel to a signal generator before running the testbench.
-The signal generator should be set to 2.140001 GHz at -55 dBm.\\
-Building the testbench assumes that the Matchstiq-Z1 platform has been built. Details on how to build the Matchstiq-Z1 platform can be found in the Matchstiq-Z1 platform document.\\
-The testbench checks the functionality of the I2C devices and generates an output file (odata/testbench\_rx.out) with the received input data. Should the testbench complete successfully (AVR serial number = 6026), a file i2c\_hw\_testbench.results is produced for use with automated testing. Figure 1 shows the expected result for the received data. These results should be inspected manually as the testbench does not verify these trends.\par\bigskip
+The testbench for this worker checks the functionality of the I2C devices and generates an output file with the received input data. \\ \medskip
+
+Building the test assembly requires that the \textit{matchstiq\_z1} platform has been built. Details on how to build the \textit{matchstiq\_z1} platform can be found in the Matchstiq-Z1 platform document. To build the testbench's assembly and ACI, follow the instructions that are provided by running \textbf{\textit{make show}} within this test's directory.\\ \medskip
+
+Connect a signal generator to the input "RX" channel. Configured the signal generator to produce tone at a frequency of 2.140001 GHz and amplitude -55 dBm.\\ \medskip
+
+Execute and validate the output of the test by continuing to follow the instructions provided by running \textbf{\textit{make show}} within this test's directory.\\ \medskip
+
+An example of the terminal output is provide below:
+
+\begin{lstlisting}
+% ./target-xilinx13_3/testbench                 
+Application XML used for testbench: ./hw_testbench_app_file.xml
+Start of Testbench
+Set Sampling Clock to 200 kHz (100 kSps): 
+PCA9535: Starting Test 
+PCA9535: Testing filter bandwidth: 
+PCA9535: Set unfiltered
+PCA9535: Set filter bandwidth to 300 to 700 MHz
+PCA9535: Set filter bandwidth to 625 to 1080 MHz
+PCA9535: Set filter bandwidth to 1000 to 2100 MHz
+PCA9535: Set filter bandwidth to 1700 to 2500 MHz
+PCA9535: Set filter bandwidth to 2200 to 3800 MHz
+PCA9535: Set filter bandwidth to unfiltered
+PCA9535: Testing Lime RX input:
+PCA9535: Set Lime RX input to 2
+PCA9535: Set Lime RX input to 3
+PCA9535: Testing Pre-lime LNA:
+PCA9535: Setting Pre-lime LNA off
+PCA9535: Setting Pre-lime LNA on 
+PCA9535: End of Test 
+Matchstiq-Z1 AVR: Starting Test 
+Matchstiq-Z1 AVR: Testing attenuator:
+Matchstiq-Z1 AVR: Reset attenuator to 0:
+Matchstiq-Z1 AVR: Testing LED:
+Matchstiq-Z1 AVR: Set LED off
+Matchstiq-Z1 AVR: Set LED green
+Matchstiq-Z1 AVR: Set LED red
+Matchstiq-Z1 AVR: Set LED orange
+Matchstiq-Z1 AVR: Testing Serial Number:
+Matchstiq-Z1 AVR: Serial number is: 6188
+Matchstiq-Z1 AVR: Testing WARP voltage register: 
+Matchstiq-Z1 AVR: Set WARP voltage to 2048
+Matchstiq-Z1 AVR: End of Test 
+TMP100: Starting Test 
+TMP100: Testing temperature:
+TMP100: Temperature is: 42 degrees C
+TMP100: End of Test 
+\end{lstlisting}
+
+Additionally, an output file is produced odata/testbench\_rx.out which can be plotted. Figure 1 shows the expected result for the received data. These results should be inspected manually as the testbench does not verify these trends.\par\bigskip
 	\begin{figure}[ht]
 		\centerline{\includegraphics[scale=0.5]{testbench_rx}}
 		\caption{Expected Results}

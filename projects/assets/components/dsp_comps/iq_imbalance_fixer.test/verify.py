@@ -40,6 +40,77 @@ import struct
 import sys
 import opencpi.colors as color
 import numpy as np
+import math
+from SampledData import SampledData
+from DFTCalculator import DFTCalculator
+
+def calc_nearest_freq_and_mag(desired_freq, calc, pre_msg):
+    nearest_freq = calc.get_nearest_freq_in_result(desired_freq)
+    mag = calc.get_magnitude_of_nearest_freq_in_result(desired_freq,
+        unit="dB_relative_to_unity")
+    msg = pre_msg + 'Tone at   ' + str(nearest_freq) + ' Hz has magnitude of '
+    msg += str(mag) + '\tdB relative to unity'
+    print(msg)
+    return [nearest_freq, mag]
+
+def test_expected_max_gain_diff(freq, in_calc, out_calc, max_allowed_gain_diff_dB):
+    """
+    Parameters
+    ----------------
+    freq
+        Frequency in Hz for tone to be tested
+    in_calc
+        DFTCalculator object for data input to iq_imbalance_fixer
+    out_calc
+        DFTCalculator object for data output from iq_imbalance_fixer
+    max_allowed_gain_diff_dB
+        Maximum pre-to-post tone gain difference for which a test will succeed.
+    """
+    [in_freq, in_mag]   = calc_nearest_freq_and_mag(freq, in_calc,  "Input        ")
+    [out_freq, out_mag] = calc_nearest_freq_and_mag(freq, out_calc, "Output       ")
+
+    gain = out_mag - in_mag
+    if abs(gain) > max_allowed_gain_diff_dB:
+        msg = 'FAILED, Tone in->out gain = ' + str(gain)
+        msg += " dB, which was greater than the maximum "
+        msg += "allowed difference of " + str(max_allowed_gain_diff_dB) + " dB"
+        print(color.RED + color.BOLD + msg + color.END)
+        sys.exit(1)
+
+def test_expected_image_tone_suppression(freq, in_calc, out_calc, min_allowed_suppression_dB):
+    """
+    Parameters
+    ----------------
+    freq
+        Frequency in Hz for tone to be tested
+    in_calc
+        DFTCalculator object for data input to iq_imbalance_fixer
+    out_calc
+        DFTCalculator object for data output from iq_imbalance_fixer
+    min_allowed_suppression_dB
+        Minimum required suppression for an image tone for which a test will succeed
+    """
+    [in_freq, in_mag]   = calc_nearest_freq_and_mag(freq, in_calc,  "Input  image ")
+    [out_freq, out_mag] = calc_nearest_freq_and_mag(freq, out_calc, "Output image ")
+
+    if (in_mag - out_mag) < min_allowed_suppression_dB:
+        msg = 'FAILED, Output image Tone level was suppressed by '
+        msg += str(in_mag - out_mag) + " dB (in comparison to the input "
+        msg += "tone), which is less than the minimum allowed value of "
+        msg += str(min_allowed_suppression_dB) + " dB"
+        print(color.RED + color.BOLD + msg + color.END)
+        sys.exit(1)
+
+def test_expected_min_pos_neg_freq_amp_diff(out_calc, num_samples, min_amp_diff_dB):
+    max_neg_freq = out_calc.get_max_magnitude_of_negative_freqs(unit="dB_relative_to_unity")
+    max_pos_freq = out_calc.get_max_magnitude_of_positive_freqs(unit="dB_relative_to_unity")
+    print 'Output maximum magnitude from [-Fs/2 to 0) = ', max_neg_freq, ' \tdB relative to unity'
+    print 'Output maximum Frequency from [0 to +Fs/2) = ', max_pos_freq, ' \tdB relative to unity'
+
+    #compare max tone in range DC to +Fs/2 to max value of noise floor in range -Fs/2 to DC
+    if max_pos_freq - max_neg_freq < min_amp_diff_dB:
+        print color.RED + color.BOLD + 'FAILED, Noise floor from -Fs/2 to 0 too high' + color.END
+        sys.exit(1)
 
 print "\n","*"*80
 print "*** Python: IQ Imbalance Fixer ***"
@@ -82,10 +153,10 @@ if(enable=="true"): # => NORMAL MODE
 
     #share values used during generation of the input file
     #convert to complex data type to perform fft and power measurements
-    Tone05 = 5
-    Tone13 = 13
-    Tone27 = 27
-    Fs = 100
+    freqT1_Hz = 5.
+    freqT2_Hz = 13.
+    freqT3_Hz = 27.
+    Fs = 100.
 
     complex_idata = np.array(np.zeros(num_samples), dtype=np.complex)
     complex_odata = np.array(np.zeros(num_samples/2), dtype=np.complex)
@@ -94,71 +165,27 @@ if(enable=="true"): # => NORMAL MODE
     for i in xrange(0,num_samples/2):
         complex_odata[i] = complex(dout_normal['real_idx'][i], dout_normal['imag_idx'][i])
 
-    IFFT = 1.0/num_samples * abs(np.fft.fft(complex_idata,num_samples))
-    OFFT = 1.0/(num_samples/2) * abs(np.fft.fft(complex_odata,num_samples/2))
-    eps = pow(10, -10) #Error factor to avoid divide by zero in log10
+    in_calc = DFTCalculator(SampledData(complex_idata, Fs))
+    in_calc.calc(n = num_samples)
+    out_calc = DFTCalculator(SampledData(complex_odata, Fs))
 
-    #input: three tones in range DC to +Fs/2
-    IPowerT1  = 20*np.log10(IFFT[float(Tone05)/(float(Fs)/2.0)*float(len(IFFT)/2.0)]+eps)
-    IPowerT2  = 20*np.log10(IFFT[float(Tone13)/(float(Fs)/2.0)*float(len(IFFT)/2.0)]+eps)
-    IPowerT3  = 20*np.log10(IFFT[float(Tone27)/(float(Fs)/2.0)*float(len(IFFT)/2.0)]+eps)
-    #input: three spectral image tones in range -Fs/2 to DC
-    IPowerNT1 = 20*np.log10(IFFT[float(-Tone05)/(float(Fs)/2.0)*float(len(IFFT)/2.0)]+eps)
-    IPowerNT2 = 20*np.log10(IFFT[float(-Tone13)/(float(Fs)/2.0)*float(len(IFFT)/2.0)]+eps)
-    IPowerNT3 = 20*np.log10(IFFT[float(-Tone27)/(float(Fs)/2.0)*float(len(IFFT)/2.0)]+eps)
-    print 'Input Tone 1 power level = ', IPowerT1, ' dBm'
-    print 'Input Tone 2 power level = ', IPowerT2, ' dBm'
-    print 'Input Tone 3 power level = ', IPowerT3, ' dBm'
-    print 'Input image Tone 1 power level = ', IPowerNT1, ' dBm'
-    print 'Input image Tone 2 power level = ', IPowerNT2, ' dBm'
-    print 'Input image Tone 3 power level = ', IPowerNT3, ' dBm'
+    #out_calc.calc(n = num_samples/2) # this causes nearest freq
+                                      # calculations to be mismatched between
+                                      # in_calc and out_calc
+    out_calc.calc(n = num_samples) # this allows nearest freq
+                                   # calculations to be the same between
+                                   # in_calc and out_calc
 
-    #output: determine the max power level in the range -Fs/2 to DC
-    neg_freqs=OFFT[num_samples/4:num_samples/2]
-    max_neg_freq=20*np.log10(neg_freqs[np.argmax(neg_freqs)])
-    #output: determine the max power level in the range DC to +Fs/2
-    pos_freqs=OFFT[0:num_samples/4]
-    max_pos_freq=20*np.log10(pos_freqs[np.argmax(pos_freqs)])
-    #output: three tones in range DC to +Fs/2
-    OPowerT1  = 20*np.log10(OFFT[float(Tone05)/(float(Fs)/2.0)*float(len(OFFT)/2.0)]+eps)
-    OPowerT2  = 20*np.log10(OFFT[float(Tone13)/(float(Fs)/2.0)*float(len(OFFT)/2.0)]+eps)
-    OPowerT3  = 20*np.log10(OFFT[float(Tone27)/(float(Fs)/2.0)*float(len(OFFT)/2.0)]+eps)
-    #three suppressed spectral image tones in range -Fs/2 to DC
-    OPowerNT1 = 20*np.log10(OFFT[float(-Tone05)/(float(Fs)/2.0)*float(len(OFFT)/2.0)]+eps)
-    OPowerNT2 = 20*np.log10(OFFT[float(-Tone13)/(float(Fs)/2.0)*float(len(OFFT)/2.0)]+eps)
-    OPowerNT3 = 20*np.log10(OFFT[float(-Tone27)/(float(Fs)/2.0)*float(len(OFFT)/2.0)]+eps)
-    print 'Maximum Frequency from -Fs/2 to 0 = ', max_neg_freq, ' dBm'
-    print 'Maximum Frequency from 0 to +Fs/2 = ', max_pos_freq, ' dBm'
-    print 'Output Tone 1 power level = ', OPowerT1, ' dBm'
-    print 'Output Tone 2 power level = ', OPowerT2, ' dBm'
-    print 'Output Tone 3 power level = ', OPowerT3, ' dBm'
-    print 'Output image Tone 1 power level = ', OPowerNT1, ' dBm'
-    print 'Output image Tone 2 power level = ', OPowerNT2, ' dBm'
-    print 'Output image Tone 3 power level = ', OPowerNT3, ' dBm'
 
-    #perform calculations comparing output power to input power for spectral images and tones
-    if abs(OPowerT1 - IPowerT1) > 6.9:
-        print color.RED + color.BOLD + 'FAILED, Output Tone 1 level = ', OPowerT1, ' dBm' + color.END
-        sys.exit(1)
-    if abs(OPowerT2 - IPowerT2) > 6.4:
-        print color.RED + color.BOLD + 'FAILED, Output Tone 2 level = ', OPowerT2, ' dBm' + color.END
-        sys.exit(1)
-    if abs(OPowerT3 - IPowerT3) > 6.6:
-        print color.RED + color.BOLD + 'FAILED, Output Tone 3 level = ', OPowerT3, ' dBm' + color.END
-        sys.exit(1)
-    if IPowerNT1 - OPowerNT1 < 67.9:
-        print color.RED + color.BOLD + 'FAILED, Output image Tone 1 level = ', OPowerNT1, ' dBm' + color.END
-        sys.exit(1)
-    if IPowerNT2 - OPowerNT2 < 79.5:
-        print color.RED + color.BOLD + 'FAILED, Output image Tone 2 level = ', OPowerNT2, ' dBm' + color.END
-        sys.exit(1)
-    if IPowerNT3 - OPowerNT3 < 73.3:
-        print color.RED + color.BOLD + 'FAILED, Output image Tone 3 level = ', OPowerNT3, ' dBm' + color.END
-        sys.exit(1)
-    #compare max tone in range DC to +Fs/2 to max value of noise floor in range -Fs/2 to DC
-    if max_pos_freq - max_neg_freq < 64.4:
-        print color.RED + color.BOLD + 'FAILED, Noise floor from -Fs/2 to 0 too high' + color.END
-        sys.exit(1)
+    # TODO / FIXME - replace this tests with ones that don't contain
+    # emperically chosen min/max-allowed values
+    test_expected_max_gain_diff(freqT1_Hz, in_calc, out_calc, max_allowed_gain_diff_dB = 6.9)
+    test_expected_max_gain_diff(freqT2_Hz, in_calc, out_calc, max_allowed_gain_diff_dB = 6.4)
+    test_expected_max_gain_diff(freqT3_Hz, in_calc, out_calc, max_allowed_gain_diff_dB = 6.6)
+    test_expected_image_tone_suppression(-freqT1_Hz, in_calc, out_calc, min_allowed_suppression_dB = 67.9)
+    test_expected_image_tone_suppression(-freqT2_Hz, in_calc, out_calc, min_allowed_suppression_dB = 67.6)
+    test_expected_image_tone_suppression(-freqT3_Hz, in_calc, out_calc, min_allowed_suppression_dB = 73.3)
+    test_expected_min_pos_neg_freq_amp_diff(out_calc, num_samples, min_amp_diff_dB = 64.4)
 
     print 'Data matched expected results.'
     print color.GREEN + color.BOLD + 'PASSED' + color.END

@@ -26,9 +26,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \subsection{Network Mounting Mode}
 \label{sec:network_mode}
-The NFS server needs to be enabled on the host in order to run the SDR in Network Mode. The following sections are directions on how to do this for both CentOS~6 and CentOS~7 host operating systems.
+The NFS server needs to be enabled on the host in order to run the SDR in Network Mode.
+The following sections are directions on how to do this for both CentOS~6 and CentOS~7 host operating systems.
 \subsubsection{CentOS~6}
-% \begin{minipage}{\linewidth}
 From the host, install the necessary tools using yum:
 \begin{verbatim}
 % sudo yum install nfs-utils nfs-utils-lib
@@ -36,10 +36,7 @@ From the host, install the necessary tools using yum:
 % sudo service rpcbind start
 % sudo service nfs start
 \end{verbatim}
-% \end{minipage}
-% ~\\
 
-% \begin{minipage}{\linewidth}
 From the host, add the following lines to the bottom of \texttt{/etc/exports} and change ``XX.XX.XX.XX/MM'' to a valid netmask for the DHCP range that the SDR will be set to for your network (\textit{e.g.} \texttt{192.168.0.0/16}).
 This should be as ``tight'' as possible for security reasons. \textbf{Do \textit{not} share out your top-level directory! This would allow theft of your private ``ssh'' keys, etc!} % AV-5224
 \begin{verbatim}
@@ -48,37 +45,28 @@ This should be as ``tight'' as possible for security reasons. \textbf{Do \textit
 /opt/opencpi XX.XX.XX.XX/MM(rw,sync,no_root_squash,no_subtree_check)
 <host core project location> XX.XX.XX.XX/MM(rw,sync,no_root_squash,no_subtree_check)
 <host assets project location> XX.XX.XX.XX/MM(rw,sync,no_root_squash,no_subtree_check)
+<host assets_ts project location> XX.XX.XX.XX/MM(rw,sync,no_root_squash,no_subtree_check)
 
 % sudo exportfs -av
 \end{verbatim}
-% \end{minipage}
-% ~\\
 
-% \begin{minipage}{\linewidth}
 From the host, restart the services that have modified for the changes to take effect:
 \begin{verbatim}
 % sudo service nfs start
 \end{verbatim}
-% \end{minipage}
 
 \subsubsection{CentOS~7}
-% \begin{minipage}{\linewidth}
 From the host, install the necessary tools using yum:\\
 ~\\
 \verb+% sudo yum install nfs-utils+ \footnote{\texttt{nfs-utils-lib} was rolled into \texttt{nfs-utils} starting with CentOS 7.2, if using eariler versions of CentOS 7, \texttt{nfs-utils-lib} will need to be explicitly installed}
-% \end{minipage}
 ~\\
 
-% \begin{minipage}{\linewidth}
 From the host, allow NFS past SELinux\footnote{You can use \texttt{getsebool} to see if these values are already set before attempting to set them. Some security tools may interpret the change attempt as a system attack.}:
 \begin{verbatim}
 % sudo setsebool -P nfs_export_all_rw 1
 % sudo setsebool -P use_nfs_home_dirs 1
 \end{verbatim}
-% \end{minipage}
-% ~\\
 
-% \begin{minipage}{\linewidth}
 From the host, allow NFS past the firewall:
 \begin{verbatim}
 % sudo firewall-cmd --permanent --zone=public --add-service=nfs
@@ -87,11 +75,10 @@ From the host, allow NFS past the firewall:
 % sudo firewall-cmd --permanent --zone=public --add-service=rpc-bind
 % sudo firewall-cmd --reload
 \end{verbatim}
-% \end{minipage}
-% ~\\
 
-% \begin{minipage}{\linewidth}
-Define the export by creating a new file that has the extension ``\texttt{exports}''. If it does not have that extension, it will be ignored.  Add the following lines to that file and replace ``XX.XX.XX.XX/MM'' with a valid netmask for the DHCP range that the SDR will be set to for your network (\textit{e.g.} \texttt{192.168.0.0/16}).
+Define the export by creating a new file that has the extension ``\texttt{exports}''.
+If it does not have that extension, it will be ignored.
+Add the following lines to that file and replace ``XX.XX.XX.XX/MM'' with a valid netmask for the DHCP range that the SDR will be set to for your network (\textit{e.g.} \texttt{192.168.0.0/16}).
 This should be as ``tight'' as possible for security reasons. \textbf{Do \textit{not} share out your top-level directory! This would allow theft of your private ``ssh'' keys, etc!} % AV-5224
 
 \begin{verbatim}
@@ -100,11 +87,9 @@ This should be as ``tight'' as possible for security reasons. \textbf{Do \textit
 /opt/opencpi XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt)
 <host core project location> XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt)
 <host assets project location> XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt)
+<host assets_ts project location> XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt)
 \end{verbatim}
-% \end{minipage}
-% ~\\
 
-% \begin{minipage}{\linewidth}
 If the file system that you are mounting is XFS, then each mount needs to have a unique \texttt{fsid} defined. Instead, use:
 \begin{verbatim}
 % sudo vi /etc/exports.d/user_ocpi.exports
@@ -112,11 +97,9 @@ If the file system that you are mounting is XFS, then each mount needs to have a
 /opt/opencpi XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt,fsid=33)
 <host core project location> XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt,fsid=34)
 <host assets project location> XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt,fsid=35)
+<host assets_ts project location> XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt,fsid=36)
 \end{verbatim}
-% \end{minipage}
-% ~\\
 
-% \begin{minipage}{\linewidth}
 Restart the services that have modified for the changes to take effect:
 \begin{verbatim}
 % sudo systemctl enable rpcbind
@@ -128,8 +111,6 @@ Restart the services that have modified for the changes to take effect:
 % sudo systemctl restart nfs-lock
 % sudo systemctl restart nfs-idmap
 \end{verbatim}
-% \end{minipage}
-% ~\\
 
 * Note: Some of the ``enable'' commands may fail based on your package selection, but should not cause any problems.
 \setlength{\parindent}{\savedparindentnfs}%

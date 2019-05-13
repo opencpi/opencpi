@@ -51,7 +51,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
 \newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
 %----------------------------------------------------------------------------------------
-% Various pacakges
+% Various packages
 %----------------------------------------------------------------------------------------
 \usepackage{hyperref} % for linking urls and lists
 \usepackage{graphicx} % for including pictures by file
@@ -89,7 +89,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -114,13 +114,13 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
   \hline
 	Version           & v\docVersion \\
   \hline
-	Release Date      & October 2018 \\
+	Release Date      & 4/2019 \\
   \hline
   Component Library & ocpi.assets.util\_comps     \\
   \hline
   Workers           & \comp.rcc                  \\
   \hline
-  Tested Platforms  & linux-c7-x86\_64, linux-x13\_3-arm \\
+  Tested Platforms  & centos7, xilinx13\_3 (limited) \\
   \hline
 \end{tabular}
 \section*{Functionality}
@@ -159,10 +159,11 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \section*{Source Dependencies}
 \subsection*{\comp.rcc}
 \begin{itemize}
-	\item ocpiassets/components/util\_comps/file\_write\_demux.rcc/file\_write\_demux.cc
+	\item $<$assets$>$/components/util\_comps/file\_write\_demux.rcc/file\_write\_demux.cc
 \end{itemize}
 
 \begin{landscape}
+  \newcounter{fnreadable}
   \section*{Component Spec Properties}
   \begin{minipage}{\textwidth}
     \renewcommand*\footnoterule{} % Remove separator line from footnote
@@ -171,47 +172,67 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
     \begin{tabular}{|p{3cm}|p{1.5cm}|c|c|c|c|c|p{7cm}|}
       \hline
       \rowcolor{blue}
-      Name                          & Type      & SequenceLength & ArrayDimensions & Accessibility      & Valid Range & Default       & Usage \\
+      Name & Type & SequenceLength & ArrayDimensions & Accessibility & Valid Range & Default & Usage \\
       \hline
-				\verb+outFile+                & Struct    & -              & -               & Writable, Readable & -           & -             & File name(s) to write to                                                                                                                                                                      \\
+      \verb+outFile+ & Struct & - & - & Writable, Readable\footnote{``Readable'' is deprecated and superfluous here. It will be removed in a future release.}\setcounter{fnreadable}{\thempfootnote} & - & - &
+      File name(s) to write to \\
       \hline
-				\verb+outFile.prefix+         & String    & 1024           & -               & ''                  & -           & \textit{None} & File prefix\footnote{\label{strftime}The output filename will use \texttt{strftime} substitutions to format the string if any \texttt{\%} is found within it.}                                \\
+      \verb+outFile.prefix+ & String & 1024 & - & '' & - & \textit{None} &
+      File prefix\footnote{\label{strftime}The output filename will use \texttt{strftime} substitutions to format the string if any \texttt{\%} is found within it.} \\
       \hline
-				\verb+outFile.digits+         & UChar     & -              & -               & ''                  & 1 - 3       & 1             & Width for opcode number output padding                                                                                                                                                        \\
+      \verb+outFile.digits+ & UChar & - & - & '' & 1 - 3 & 1 &
+      Width for opcode number output padding \\
       \hline
-				\verb+outFile.suffix+         & String    & 1024           & -               & ''                  & -           & .bin          & File suffix\footnotemark[\getrefnumber{strftime}]                                                                                                                                             \\
+      \verb+outFile.suffix+ & String & 1024 & - & '' & - & .bin &
+      File suffix\footnotemark[\getrefnumber{strftime}] \\
       \hline
-				\verb+outFile.messagesInFile+ & Bool      & -              & 256             & ''                  & -           & false         & Write file in ``message'' mode with embedded opcode                                                                                                                                           \\
+      \verb+outFile.messagesInFile+ & Bool & - & 256 & '' & - & false &
+      Write file in ``message'' mode with embedded opcode \\
       \hline
-      \verb+current+                & Struct    & -              & -               & Volatile           & -           & -             & Current statistics for each opcode \\
+      \verb+current+ & Struct & - & - & Volatile & - & - &
+      Current statistics for each opcode \\
       \hline
-      \verb+current.Total+          & Struct    & -              & -               & ''                  & -           & -             & Statistics across \textit{all} opcodes \\
+      \verb+current.Total+ & Struct & - & - & '' & - & - &
+      Statistics across \textit{all} opcodes \\
       \hline
-      \verb+current.Total.bytes+    & ULongLong & -              & -               & ''                  & Standard    & -             & Number of bytes received \\
+      \verb+current.Total.bytes+ & ULongLong & - & - & '' &
+      Standard & - & Number of bytes received \\
       \hline
-      \verb+current.Total.messages+ & ULongLong & -              & -               & ''                  & Standard    & -             & Number of messages received \\
+      \verb+current.Total.messages+ & ULongLong & - & - & '' &
+      Standard & - & Number of messages received \\
       \hline
-      \verb+current.Opcode+         & Struct    & -              & 256             & ''                  & -           & -             & Statistics for \textit{each} opcode \\
+      \verb+current.Opcode+ & Struct & - & 256 & '' & - & - &
+      Statistics for \textit{each} opcode \\
       \hline
-      \verb+current.Opcode.*+       & Various   & -              & ''               & -                  & -           & -             & Various\footnote{Internal structure equivalent to \texttt{current.Total} and not explicitly shown.} \\
+      \verb+current.Opcode.*+ & Various & - & '' & - & - & - &
+      Various\footnote{Internal structure equivalent to \texttt{current.Total} and not explicitly shown.} \\
       \hline
-      \verb+stopOn+                 & Struct    & -              & -               & Writable, Readable & -           & -             & Condition(s) required to have Worker report completion\footnote{Any matched condition will halt the processing.} \\
+      \verb+stopOn+ & Struct & - & - & Writable, Readable\footnotemark[\thefnreadable] & - & - &
+      Condition(s) required to have Worker report completion\footnote{\textit{Any} matched condition will halt the processing.} \\
       \hline
-      \verb+stopOn.Total+           & Struct    & -              & -               & ''                  & -           & -             & Stops if any non-zero value is exceeded when counting \textit{all} data received \\
+      \verb+stopOn.Total+ & Struct & - & - & '' & - & - &
+      Stops if any non-zero value is exceeded when counting \textit{all} data received \\
       \hline
-      \verb+stopOn.Total.bytes+     & ULongLong & -              & -               & ''                  & Standard    & 0             & Stop on number of bytes received \\
+      \verb+stopOn.Total.bytes+ & ULongLong & - & - & '' &
+      Standard & 0 & Stop on number of bytes received \\
       \hline
-      \verb+stopOn.Total.messages+  & ULongLong & -              & -               & ''                  & Standard    & 0             & Stop in number of messages received \\
+      \verb+stopOn.Total.messages+ & ULongLong & - & - & '' &
+      Standard & 0 & Stop in number of messages received \\
       \hline
-      \verb+stopOn.Opcode+          & Struct    & -              & 256             & ''                  & -           & -             & Stops if any non-zero value is exceeded when counting data received using a specific opcode \\
+      \verb+stopOn.Opcode+ & Struct & - & 256 & '' & - & - &
+      Stops if any non-zero value is exceeded when counting data received using a specific opcode \\
       \hline
-      \verb+stopOn.Opcode.*+        & Various   & -              & -               & ''                  & -           & -             & Various\footnote{\label{stopon}Internal structure equivalent to \texttt{stopOn.Total} and not explicitly shown.} \\
+      \verb+stopOn.Opcode.*+ & Various & - & - & '' & - & - &
+      Various\footnote{\label{stopon}Internal structure equivalent to \texttt{stopOn.Total} and not explicitly shown.} \\
       \hline
-      \verb+stopOn.Any+             & Struct    & -              & -               & ''                  & -           & -             & Stops if any non-zero value is exceeded when counting data received using any single opcode \\
+      \verb+stopOn.Any+ & Struct & - & - & '' & - & - &
+      Stops if any non-zero value is exceeded when counting data received using any single opcode \\
       \hline
-      \verb+stopOn.Any.*+           & Various   & -              & -               & ''                  & -           & -             & Various\footnotemark[\getrefnumber{stopon}] \\
+      \verb+stopOn.Any.*+ & Various & - & - & '' & - & - &
+      Various\footnotemark[\getrefnumber{stopon}] \\
       \hline
-      \verb+stopOn.ZLM+             & UShort    & -              & -               & ''                  & 0 - 256     & 0             & Stops if a \textbf{Z}ero \textbf{L}ength \textbf{M}essage is received using a given opcode.\footnote{Default is opcode 0; set to invalid opcode 256 if this feature is \textit{not} desired.} \\
+      \verb+stopOn.ZLM+ & UShort & - & - & '' & 0 - 256 & 0 &
+      Stops if a \textbf{Z}ero \textbf{L}ength \textbf{M}essage is received using a given opcode.\footnote{Default is opcode 0; set to invalid opcode 256 if this feature is \textit{not} desired.} \\
       \hline
     \end{tabular}
   \end{scriptsize}
@@ -225,9 +246,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
     \begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|c|M{9cm}|}
       \hline
       \rowcolor{blue}
-      Name & Producer & Protocol & Optional & Advanced            & Usage \\
+      Name & Producer & Protocol & Optional & Advanced & Usage \\
       \hline
-			in   & false    & -        & false    & numberofopcodes=256 & Data to be streamed to output file(s) \\
+			in & false & - & false & numberofopcodes=256 & Data to be streamed to output file(s) \\
       \hline
     \end{tabular}
   \end{scriptsize}
@@ -236,6 +257,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
   There are no implementation-specific interfaces for this component.
 \end{landscape}
 
+\iffalse
 \section*{Performance and Resource Utilization}
 \subsubsection*{\comp.rcc}
 \begin{scriptsize}
@@ -252,6 +274,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
     \hline
   \end{tabular}
 \end{scriptsize}
+\fi
 
 \section*{Test and Verification}
 

@@ -1,0 +1,24 @@
+{ signal: [
+  { name: 'clk', wave: 'P......'},
+  [ 'initiator',
+   { name: 'header.op',    wave: 'xx=.x..', data: ["write"] },
+   { name: 'header.count', wave: 'xx=.x..', data: ["1"] },
+   { name: 'header.addr',  wave: 'xx=.x..', data: ["xxx1"] },
+   { name: 'data[63:0]',         wave: 'x.=.x..', data: ["DAT0DAT0XXXXXXXX"] },
+   { name: 'valid',        wave: '0.1.0..'},
+   { name: 'eop',          wave: 'x.01x..'}
+  ],
+  {},
+  [ 'responder',
+    { name: 'ready',       wave: '0..10..'},
+  ],
+   {}
+],
+  config:{hscale:2},
+head:{
+   tick:0,
+ },
+foot:{
+   text:'32-bit Write on 64-bit Interface Showing Little-endian Alignment',
+ }
+}

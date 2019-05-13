@@ -91,7 +91,7 @@ OcpiAllPlatformVars:=\
   OcpiRequiredCFlags OcpiRequiredCPPFlags OcpiRequiredCXXFlags OcpiRpathOrigin \
   OcpiStaticLibraryFlags OcpiStaticLibrarySuffix OcpiStaticProgramFlags OcpiStaticSwigFlags \
   OcpiStrictCFlags OcpiStrictCXXFlags OcpiSTRIP OcpiSWIG \
-  OcpiUnknownWarningsError \
+  OcpiUnknownWarningsError OcpiPythonInclude \
 
 # The list of variables containing optional warnings needed early (for autoreconf).
 OcpiAllOptionalWarningsVars:=OcpiOptionalCWarnings OcpiOptionalCXXWarnings

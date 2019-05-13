@@ -125,6 +125,42 @@ done
   %{__ln_s} -f %{prefix0}/cdk/scripts/ocpidev_bash_complete %{buildroot}%{prefix1}/$dir/$file
   echo %%{prefix1}/$dir/$file >> %{_builddir}/devel-files
 
+  # 4. Clean up projects by removing doc source and putting in symlinks (AV-5479)
+  # TODO: BSPs?!?
+  export DEV_FILES=%{_builddir}/devel-files
+  pushd %{buildroot}/opt/opencpi/projects/
+  set +x
+  for inc in component_ports component_spec_properties configurations developer_doc properties utilization utilization_custom worker_interfaces worker_properties; do
+    find . -name ${inc}.inc -delete
+    sed -i -e "\|.*/${inc}.inc\$|d" ${DEV_FILES}
+  done
+  # TODO: Need a way to incorporate BSPs etc; part of "projects as RPM" efforts
+  for proj in core assets assets_ts; do
+    pushd ${proj}
+    echo "Removing LaTeX source from ${proj}"
+    for tex in $(find . -name '*.tex' -printf '%%P\n'); do
+      if expr match "${tex}" '.*/snippets/.*' &> /dev/null; then continue; fi
+      # echo "LaTeX: ${tex}"
+      for subdir in figures snippets; do
+        rm -rf $(dirname ${tex})/${subdir}
+        sed -i -e "\|.*/$(dirname ${tex})/${subdir}|d" ${DEV_FILES}
+      done
+      for ext in gif jpg png; do
+        for pic in $(shopt -s nullglob && echo $(dirname ${tex})/*.${ext}); do
+          rm ${pic}
+          sed -i -e "\|.*${pic}\$|d" ${DEV_FILES}
+        done
+      done
+      rm ${tex}
+      sed -i -e "s|${tex}\$|*|g" ${DEV_FILES}
+      ln -sf /opt/opencpi/doc/${proj}/$(basename ${tex} tex)pdf $(dirname ${tex})/$(basename ${tex} tex)pdf
+      echo "If this documentation symlink is broken, install opencpi-doc RPM or visit https://opencpi.github.io/" > $(dirname ${tex})/README
+    done
+    popd
+  done
+  popd
+  set -x
+
 %endif
 
 ##########################################################################################
@@ -333,6 +369,15 @@ if [ "$RPM_INSTALL_PREFIX1" != %{prefix1} -o "$RPM_INSTALL_PREFIX0" != %{prefix0
   echo The user and group IDs of all files will be set to the login user and group. >&2
 fi
 %if !%{RPM_CROSS}
+  # Check global python3 symlink (AV-5477)
+  if test ! -x /usr/bin/python3; then
+    for sub in $(seq 9 -1 0); do
+      if [ -e /usr/bin/python3.${sub} ]; then
+        ln -s /usr/bin/python3.${sub} /usr/bin/python3
+        break
+      fi
+    done
+  fi
   # We need to relocate all the global files that point to other global files.
   # The files have been installed, but we must change them now.
   link=$RPM_INSTALL_PREFIX0/cdk/scripts/ocpidev_bash_complete

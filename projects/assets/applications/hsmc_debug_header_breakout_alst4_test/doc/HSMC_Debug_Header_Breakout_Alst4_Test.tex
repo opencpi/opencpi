@@ -21,9 +21,11 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{OpenCPI\\ HSMC Debug Header Breakout Stratix IV (alst4) Test App Guide}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
-\input{../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
+\def\snippetpath{../../../../../doc/av/tex/snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{HSMC Debug Header Breakout Stratix IV (alst4) Test App Guide}
@@ -37,35 +39,37 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \begin{document}
 \maketitle
 %\thispagestyle{fancy}
-	\begin{center}
-	\textit{\textbf{Revision History}}
-		\begin{table}[H]
-		\label{table:revisions} % Add "[H]" to force placement of table
-			\begin{tabularx}{\textwidth}{|c|X|l|}
-			\hline
-			\rowcolor{blue}
-			\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
-		    \hline
-		    v1.4 & Converted to application from unit test structure. & 9/2018 \\
-			\hline
-			\end{tabularx}
-		\end{table}
-	\end{center}
+
+\begin{center}
+  \textit{\textbf{Revision History}}
+  \begin{longtable}{|p{\dimexpr0.15\textwidth-2\tabcolsep\relax}
+                    |p{\dimexpr0.65\textwidth-2\tabcolsep\relax}
+                    |p{\dimexpr0.2\textwidth-2\tabcolsep\relax}|}
+    \hline
+    \rowcolor{blue}
+    \textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+    \hline
+    v1.4 & Converted to application from unit test structure. & 9/2018 \\
+    \hline
+    v1.5 & Version bump only. & 4/2019 \\
+    \hline
+  \end{longtable}
+\end{center}
 
 \section{Description}
 Intended to test HSMC slots on the alst4 platform.
 \section{Hardware Setup}
 x86 machine with the Stratix IV PCIE card with one of the HSMC slots populated with a Debug HSMC Card\cite{debugcard}.
 \section{Prerequisites}
-empty assembly w/ both of the
+The empty assembly w/ both of the
 \begin{itemize}
   \item cnt\_hsmc\_alst4\_debug\_header\_breakout\_card\_hsmc\_alst4\_a,
   \item cnt\_hsmc\_alst4\_debug\_header\_breakout\_card\_hsmc\_alst4\_b
 \end{itemize}
-containers built for alst4 platform.
+containers must be built for the alst4 platform.
 \section{Execution}
 \subsection{OCPI\_LIBRARY\_PATH Requirements/Considerations}
-None.
+The \verb+OCPI_LIBRARY_PATH+ environment variable must be set to \verb+<assets project directory>/artifacts+.
 \subsection{Command(s)}
 Execution must occur from within the hsmc\_debug\_header\_breakout\_test directory. \\
 If HSMC Port A is populated:
@@ -80,7 +84,7 @@ if HSMC Port B is populated:
 ./<target-dir>/hsmc_debug_header_breakout_test b p # to prompt you before each LED
 \end{lstlisting}
 \section{Verification}
-Application exit status indicates \textit{completion} (status of 0 indicates completion, status of 1 indicates no completion), not whether or not the test was \textit{successful}. Test success is determined by visually inspecting LEDs while executing (verifying each LED transittions from OFF, RED, RED+GREEN, GREEN, OFF).
+Application exit status indicates \textit{completion} (status of 0 indicates completion, status of 1 indicates no completion), not whether or not the test was \textit{successful}. Test success is determined by visually inspecting LEDs while executing (verifying each LED transitions from OFF, RED, RED+GREEN, GREEN, OFF).
 
 \begin{thebibliography}{1}
 

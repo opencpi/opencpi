@@ -21,9 +21,11 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{OpenCPI\\ FSK App Getting Started Guide}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
-\input{../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
+\def\snippetpath{../../../../../doc/av/tex/snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{FSK App Getting Started Guide}
@@ -44,15 +46,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \begin{document}
 \maketitle
 %\thispagestyle{fancy}
-% AV-4723 blurb start
-\begin{center}
-\framebox{\parbox{0.8\linewidth}{\centering
-\textcolor{red}{WARNING:}
-Run-time failures have been observed for several unit tests and applications on PCIe-based platforms.
-The work around requires modifying the \textbf{buffersize} attribute of the PL to PS (egress) boundary connection, as defined in the OAS. An example for modifying the OAS for executing on PCIe-based platforms is provided in a below section.
-\PackageWarning{}{AV-4723} }}
-\end{center}
-% AV-4723 blurb end
 \newpage
 
 	\begin{center}
@@ -72,6 +65,8 @@ The work around requires modifying the \textbf{buffersize} attribute of the PL t
 			\hline
 			v1.4 & Updated OCPI\_LIBRARY\_PATH paths & 9/2018 \\
 			\hline
+			v1.5 & Updated for OpenCPI Release 1.5 & 4/2019 \\
+			\hline
 			\end{tabularx}
 		\end{table}
 	\end{center}
@@ -88,9 +83,9 @@ The work around requires modifying the \textbf{buffersize} attribute of the PL t
 
 \def\myreferences{
 \hline
-FSK App\footnote{Provides details of the ``FSK App'' reference application} & OpenCPI & \path{FSK_app.pdf}\\
+FSK App\footnote{Provides details of the ``FSK App'' reference application} & \path{FSK_app.pdf} \\
 }
-\input{../../../../../doc/av/tex/snippets/References_Table}
+\input{References_Table}
 
 \newpage
 \begin{flushleft}
@@ -168,16 +163,6 @@ To run the application, navigate to the \texttt{applications/FSK} directory and 
 $ ./target-xilinx13_3/FSK txrx
 \end{verbatim}
 Reference the \textit{FSK\_app.pdf} for executing the various modes (filerw, tx, rx, txrx, bbloopback) of the FSK application. Ensure that OCPI\_LIBRARY\_PATH is configured, as provided, for the respective mode and platform. \\ \medskip
-
-\noindent\textcolor{red}{WARNING:}
-Run-time failures have been observed for several unit tests and applications on PCIe-based platforms. The work around requires modifying the \textbf{buffersize} attribute of the PL to PS (egress) boundary connection, as defined in the OAS. \\
-While the explicit PS to PL connection is explicitly define, the \textbf{buffersize} must be changed from 16352 to 8192, as shown in the example below:
-\begin{lstlisting}[showspaces=false]
-<Connection>
-  <Port Instance="rx_fir_real" Name="out"/>
-  <Port Instance="baudTracking" Name="in" Buffersize="8192" Buffercount='4'/>
-</Connection>
-\end{lstlisting}
 
 \subsection{View the Results}
 After the application completes, the output can be found in the \texttt{applications/FSK/odata} directory. To view the results on the Development Host, navigate to the \texttt{applications/FSK} directory and execute the command:

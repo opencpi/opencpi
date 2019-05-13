@@ -113,7 +113,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           &  v\docVersion  \\
 	\hline
-	Release Date      &  September 2018  \\
+	Release Date      &  9/2018  \\
 	\hline
 	Component Library &  ocpi.core  \\
 	\hline
@@ -299,24 +299,6 @@ This component is tested via the unit test automation feature of the framework. 
 The test cases exercise changes in every property across three cases, though not every property in every case, as that would take a prohibitively long time.
 
 \begin{itemize}
-% these tests need to be included again when AV-4720 is resolved
-%\item Case 0 - Tests the component with crafted ZLMs and SWMs, backpressure on, timeout set to 100 seconds
-%\begin{enumerate}
-%	\item mode = data: only vary data
-%	\item mode = metadata: only vary metadata
-%	\item mode = full: vary data and metadata
-%	\item insert\_nop = True: insert delay between messages
-%	\item enable\_give\_lsfr = True: use lsfr to vary give
-%	\item enable\_take\_lsfr = True: use lsfr to vary take
-%\end{enumerate}
-%\item Case 1 - Tests the component with crafted ZLMs and SWMs, backpressure off, timeout set to 100 seconds
-%\begin{enumerate}
-%	\item mode = data: only vary data
-%	\item mode = metadata: only vary metadata
-%	\item mode = full: vary data and metadata
-%\end{enumerate}
-
-
 \item Case 1 - Tests the component with crafted ZLMs and SWMs, backpressure on, timeout set to 120 seconds
 \begin{enumerate}
 	\item enable\_give\_lsfr = True: use lsfr to vary give

@@ -45,10 +45,12 @@ find doc/pdfs -type d \( -name '*@tmp' -o -name logs \) -print0 | xargs -r0 rm -
 cd %{SRC_BASE}/doc/pdfs
 %{__cp} -R . %{buildroot}/%{_pkgdocdir}/
 %{__mkdir_p} %{buildroot}/opt/opencpi/
+%{__ln_s} -f %{_pkgdocdir}/ %{buildroot}/opt/opencpi/doc
 %{__ln_s} -f %{_pkgdocdir}/index.html %{buildroot}/opt/opencpi/documentation.html
 
 %files
 %defattr(-,opencpi,opencpi,-)
 %dir %{_pkgdocdir}
 %doc %{_pkgdocdir}
+%doc /opt/opencpi/doc
 %doc /opt/opencpi/documentation.html

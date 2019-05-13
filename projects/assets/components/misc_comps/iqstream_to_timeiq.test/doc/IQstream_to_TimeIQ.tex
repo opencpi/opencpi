@@ -21,9 +21,11 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
-\input{../../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
+\def\snippetpath{../../../../../../doc/av/tex/snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\small{\docTitle}}
@@ -47,18 +49,18 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Worker Type       & Application            							\\
 	\hline
-	Version           & 1.4                  							\\
+	Version           & \docVersion                  							\\
 	\hline
-	Release Date      & August 1, 2018           						\\
+	Release Date      & 4/2019           						\\
 	\hline
-	Component Library & ocpi.bsp.picoflexor.components 					\\
+	Component Library & ocpi.assets.misc\_comps 					\\
 	\hline
 	Workers           & \comp.hdl              							\\
 	\hline
-	Tested Platforms  & ISIM, XSIM, Modelsim, Picoflexor T6A-S1/S3		\\
+	Tested Platforms  & isim, xsim, modelsim, zed, matchstiq\_z1, e3xx, alst4, ml605	\\
 	\hline
 \end{tabular}
-	
+
 \section*{Functionality}
 \begin{flushleft}
 	The \Comp{} component adapts the iqstream protocol to the TimeStamped\_IQ protocol.
@@ -74,7 +76,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \subsection*{Top level}
 \begin{center}
 	\begin{tikzpicture}[% List of styles applied to all, to override specify on a case-by-case
-			every node/.style={	
+			every node/.style={
 				align=center,  		% use this so that the "\\" for line break works
 				minimum size=2cm	% creates space above and below text in rectangle
 			},
@@ -99,10 +101,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \begin{landscape}
 	\section*{Component Spec Properties}
 	There are no component spec properties for this component
-	
+
 	\section*{Worker Properties}
 	There are no worker implementation-specific properties for this component
-	
+
 	\section*{Component Ports}
 	\begin{scriptsize}
 		\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|c|M{9cm}|}

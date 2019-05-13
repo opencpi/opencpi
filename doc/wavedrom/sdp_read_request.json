@@ -1,0 +1,27 @@
+{ signal: [
+  { name: 'clk', wave: 'P......'},
+  [ 'initiator',
+   	{ name: 'header.op',    wave: 'x=x....', data: ["read"] },
+   	{ name: 'header.xid',   wave: 'x=x....', data: ["1"] },
+   	{ name: 'valid',        wave: '010....'},
+   	{ name: 'eop',          wave: 'x1x....'},
+	{ name: 'ready',        wave: '0..1.0.'}
+  ],
+  {},
+  [ 'responder',
+   	{ name: 'header.op',    wave: 'x..=.x.', data: ["resp"] },
+   	{ name: 'header.xid',   wave: 'x..=.x.', data: ["1"] },
+	{ name: 'ready',        wave: '010....'},
+   	{ name: 'valid',        wave: '0..1.0.'},
+   	{ name: 'eop',          wave: 'x...1x.'},
+   	{ name: 'data',         wave: 'x..==x.', data: ["1st","2nd"] }
+  ],
+   {}
+],
+head:{
+   tick:0,
+ },
+foot:{
+   text:'Read Request and Corresponding Response',
+ }
+}

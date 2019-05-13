@@ -50,3 +50,5 @@ OcpiSWIG=$(wildcard /opt/local/bin/swig)
 OcpiPlatformOs=macos
 OcpiPlatformOsVersion=10_14
 OcpiPlatformArch=x86_64
+# This is where the officially installed python headers go.
+OcpiPythonInclude=/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7

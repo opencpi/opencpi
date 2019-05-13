@@ -1162,6 +1162,7 @@ function do_worker {
   fi
   [ -n "$emulates" ] && emuattr=" emulate='$emulates'"
   [ -n "$slave" ] && slaveattr=" slave='$slave'"
+  [ -n "$version" ] && versionattr=" version='$version'"
   if [ "$OCPI_CREATE_BUILD_FILES" = 1 ]; then
     [ -n "${xmlincludes[*]}" ] && xmlincattr=" XmlIncludeDirs='${xmlincludes[@]}'"
     [ -n "${complibs[*]}" ] && complibattr=" ComponentLibraries='${complibs[@]}'"
@@ -1265,7 +1266,7 @@ done
   for w in "${!wnames[@]}"; do
     # Make one OWD file per worker
     cat <<EOF > $libdir/$1/${wnames[$w]}.xml
-<$elem${nameattrs[$w]}${langattr}${specattrs[$w]}${emuattr}${slaveattr}${xmlincattr}${complibattr}>
+<$elem${nameattrs[$w]}${langattr}${specattrs[$w]}${emuattr}${slaveattr}${xmlincattr}${complibattr}${versionattr}>
 ${specelems[$w]}
 ${supportselem[@]}
 </$elem>
@@ -1955,6 +1956,8 @@ Options for the create|delete verbs:
   -V <slave>         Specify the slave worker when creating a proxy worker
   -E <emulates>      Specify the device (worker) when creating an emulator worker
   -P <platform>      Create this worker in the devices library underneath the specified platform
+  --worker-version   Specify the worker API version
+     <version>
   -W <worker>        *A worker to include (adds to "Workers" variable in worker Makefile)
                       Use <worker>:<spec> if spec name is different from worker name
   -R <rcc-static>    *Add an RCC static prerequisite library dependency to an RCC worker
@@ -2423,6 +2426,7 @@ while [[ "${argv[0]}" != "" ]] ; do
       (--build-hdl-rcc-platform|--hdl-rcc-platform) warn "${argv[0]} is deprecated: use --rcc-hdl-platform to specify RCC platform using HDL name"; takeval hwswplat; hwswplats="${hwswplats[@]} $hwswplat";;
       (--create-build-files) OCPI_CREATE_BUILD_FILES=1;;
       (--version) ocpirun --version; exit 0;;
+      (--worker-version) takeval version;;
       (*)
         error_msg="unknown option: ${argv[0]}"
         if [ -n "$verb" ]; then

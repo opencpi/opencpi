@@ -1,10 +1,10 @@
-% Generated on Mon Feb 25 10:09:54 2019
+% Generated on Tue Apr 30 11:23:25 2019
 
 % It is best to wrap this table in \begin{landscape} and \end{landscape} in its including doc
 \begin{tiny}
     \begin{longtable}[l]{* {3}{|c}|}
     \captionsetup{justification=raggedright,singlelinecheck=false}
-    \caption{Table of Worker Configurations for worker: complex\_mixer}\\
+    \caption{Table of Worker Configurations for worker: complex\_mixer\_ts}\\
         \hline
         \rowcolor{blue}
             Configuration & INPUT\_DATA\_WIDTH\_p & NCO\_DATA\_WIDTH\_p \\

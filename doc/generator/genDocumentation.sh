@@ -87,6 +87,7 @@ create_index() {
     cd ${OUTPUT_PATH}
     av_pdf_loc="."
     asset_pdf_loc="./assets"
+    asset_ts_pdf_loc="./assets_ts"
     core_pdf_loc="./core"
 
     # Bring in start of index.html
@@ -94,6 +95,7 @@ create_index() {
 
     add_new_list "Main Documentation" "${av_pdf_loc}"
     add_new_list "Assets Project Documentation" "${asset_pdf_loc}"
+    add_new_list "Assets_TS Project Documentation" "${asset_ts_pdf_loc}"
     add_new_list "Core Project Documentation" "${core_pdf_loc}"
 
     for d in ${BSPS[*]}; do
@@ -148,19 +150,20 @@ tex_kernel() {
   tex=$4
   [ "${prefix}" == . ] && unset prefix
   echo $tex | grep -iq '^snippets/' && return # Skip snippets
-  echo $tex | grep -iq '_header' && return # Skip headers
-  echo $tex | grep -iq '_footer' && return # Skip footers
-  echo $tex | grep -iq '_template' && return # Skip templates
+  echo $tex | grep -iq '_header\.tex' && return # Skip headers
+  echo $tex | grep -iq '_footer\.tex' && return # Skip footers
+  echo $tex | grep -iq '_template\.tex' && return # Skip templates
   echo "${BOLD}LaTeX: $d/$tex ${prefix+(output prefix=${prefix})}${RESET}"
   # Jump into subdir if present (note: $tex is no longer valid - use ofile.tex)
   expr match $tex '.*/' >/dev/null && cd "$(dirname $tex)"
   ofile=$(basename -s .tex $tex)
   warn_existing_pdf "${OUTPUT_PATH}/${prefix}" ${ofile} $d && return
-  rubber -d $ofile.tex
+  rubber -d $ofile.tex || FAIL=1
   # If the pdf was created then copy it out
-  if [ ! -f $ofile.pdf ]; then
+  if [ ! -f $ofile.pdf -o -n "${FAIL}" ]; then
     echo "${RED}Error creating $ofile.pdf${RESET}"
     echo "Error creating $ofile.pdf ($d)" >> ${OUTPUT_PATH}/errors.log
+    rubber-info --errors $ofile.tex >> ${OUTPUT_PATH}/errors.log
     return
   fi
   mv ${ofile}.log ${log_dir}/${ofile}.log 2>&1
@@ -210,6 +213,7 @@ generate_pdfs() {
         dirs_to_search+=("${REPO_PATH}/doc/tex")
         dirs_to_search+=("${REPO_PATH}/doc/odt")
         dirs_to_search+=($(find ${REPO_PATH}/projects/assets -type d \( -name doc -o -name docs \)))
+        dirs_to_search+=($(find ${REPO_PATH}/projects/assets_ts -type d \( -name doc -o -name docs \)))
         dirs_to_search+=($(find ${REPO_PATH}/projects/core -type d -name doc))
         # Searching for bsps done differently due to possibility of shared bsps
         for bsp in ${BSPS[@]}; do
@@ -228,6 +232,8 @@ generate_pdfs() {
         done
     fi
     for d in ${dirs_to_search[*]}; do
+        # This should be an error post-AV-5448
+        [ ! -d $d ] && echo "${RED}Directory $d does not exist! Skipping!${RESET}" && continue
         echo "${BOLD}Directory: $d${RESET}"
         cd $d
         prefix=.
@@ -235,7 +241,9 @@ generate_pdfs() {
         # If we are building for a specific directory there will be no prefix
         [ -z "$1" ] &&
         # otherwise, assets / core / bsp_XXX, or left empty
-        if expr match $d '.*assets' > /dev/null; then
+        if expr match $d '.*assets_ts' > /dev/null; then
+            prefix=assets_ts
+        elif expr match $d '.*assets' > /dev/null; then
             prefix=assets
         elif expr match $d '.*core' > /dev/null; then
             prefix=core
@@ -482,21 +490,6 @@ rm ${OUTPUT_PATH}/${index_file}
 BSPS=()
 [ -z "${dirsearch}" ] && find_bsps
 generate_pdfs "${dirsearch}"
-
-# Special case - we don't (currently) have a decent source for the IDE PDF (AV-4685)
-if [ -z "${dirsearch}" ]; then
-  if [ -f "${REPO_PATH}/doc/av/ANGRYVIPER_IDE_UG.pdf" ]; then
-    echo "${BOLD}Re-using GUI PDF from ${REPO_PATH}/doc/av/ANGRYVIPER_IDE_UG.pdf${RESET}"
-    cp "${REPO_PATH}/doc/av/ANGRYVIPER_IDE_UG.pdf" "${OUTPUT_PATH}"
-  else
-    echo "${RED}Could not find local ${REPO_PATH}/doc/av/ANGRYVIPER_IDE_UG.pdf; re-using GUI PDF from opencpi.github.io${RESET}"
-    # Not sure if this should be an error or not.
-    echo "Could not find local ${REPO_PATH}/doc/av/ANGRYVIPER_IDE_UG.pdf; re-using GUI PDF from opencpi.github.io" >> ${OUTPUT_PATH}/errors.log
-    pushd ${OUTPUT_PATH} > /dev/null
-    wget http://opencpi.github.io/ANGRYVIPER_IDE_UG.pdf
-    popd > /dev/null
-  fi
-fi
 
 [ -z "${dirsearch}" ] && create_index > ${OUTPUT_PATH}/${index_file}
 compress_pdfs

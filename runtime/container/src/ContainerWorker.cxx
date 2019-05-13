@@ -888,13 +888,14 @@ namespace OCPI {
     const char *Worker::
     getStringCached(const OCPI::API::PropertyInfo &info, const OCPI::Util::Member &m,
 		    size_t offset, char *buf, size_t a_len, unsigned idx) const {
-      if (a_len < m.m_elementBytes)
+      if (a_len < m.m_stringLength + 1)
 	throw OU::Error("String value for %s property too long for buffer (%zu vs. %zu)",
-			m.cname(), a_len, m.m_elementBytes);
+			m.cname(), a_len, m.m_stringLength + 1);
       bool dirty;
       Cache *cache = getCache(info, offset, m, &dirty);
       uint8_t *data = (uint8_t *)buf;
-      getData(info, cache, dirty, offset + idx * m.m_elementBytes, data, m.m_elementBytes);
+      // FIXME: like elsewhere, getData could have a string flag to only copy until null.
+      getData(info, cache, dirty, offset + idx * m.m_elementBytes, data, m.m_stringLength + 1);
       return buf;
     }
     void Worker::

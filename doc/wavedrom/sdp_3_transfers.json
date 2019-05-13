@@ -1,0 +1,21 @@
+{ signal: 
+ [
+   { name: 'clk', wave: 'P...|...|..'},
+   [ 'initiator',
+    { name: 'data',  wave: 'x=.x|.=x|=x', data: ["D0","D1","D2"]},
+    { name: 'valid', wave: '01.0|.10|10'},
+   ],
+    {},
+    [ 'responder',
+    	{ name: 'ready',   wave: '0.10|1.0|10'},
+  	],
+     {}
+ ],
+ head:{
+   tick:0,
+ },
+ foot:{
+   text:'3 SDP transfers with Different Ready and Valid Assertions',
+ }
+
+}

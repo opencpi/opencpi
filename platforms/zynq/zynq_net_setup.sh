@@ -23,26 +23,28 @@
 # Set time using ntpd
 # If ntpd fails because it could not find ntp.conf fall back on time server
 # passed in as the first parameter
-set_time(){
-  echo Setting the time from time server
-  if test -f /etc/opencpi-release; then
-    read OCPI_TOOL_PLATFORM x < /etc/opencpi-release
-  else
-    echo No /etc/opencpi-release - assuming ZedBoard hardware
-    OCPI_TOOL_PLATFORM=zed
-  fi
+set_time() {
+  if test "$1" != -; then
+    echo Attempting to set time from the time server
+    if test -f /etc/opencpi-release; then
+      read OCPI_TOOL_PLATFORM x < /etc/opencpi-release
+    else
+      echo No /etc/opencpi-release - assuming ZedBoard hardware
+      OCPI_TOOL_PLATFORM=zed
+    fi
 
-  # Calling ntpd without any options will run it as a dameon
-  if /mnt/card/opencpi/$OCPI_TOOL_PLATFORM/bin/ntpd -nq; then
-    echo Succeeded in setting the time from /mnt/card/opencpi/ntp.conf
-  else
+    # Calling ntpd without any options will run it as a dameon
+    OPTS=""
+    BUSYBOX_PATH="/mnt/card/opencpi/$OCPI_TOOL_PLATFORM/bin"
+    TIMEOUT=20
+    MSG="Succeeded in setting the time from /mnt/card/opencpi/ntp.conf"
     if [ ! -e /mnt/card/opencpi/ntp.conf ]; then
-      if /mnt/card/opencpi/$OCPI_TOOL_PLATFORM/bin/ntpd -nq -p $1; then
-        echo Succeeded in setting the time from: $1
-      else
-        echo ====YOU HAVE NO NETWORK CONNECTION and NO HARDWARE CLOCK====
-        echo Set the time using the '"date YYYY.MM.DD-HH:MM[:SS]"' command.
-      fi
+      OPTS="-p $1"
+      MSG="Succeeded in setting the time from $1"
+    fi
+    # AV-5422 Timeout ntpd command after $TIMEOUT in seconds
+    if $BUSYBOX_PATH/busybox timeout -t $TIMEOUT $BUSYBOX_PATH/ntpd -nq $OPTS; then
+      echo $MSG
     else
       echo ====YOU HAVE NO NETWORK CONNECTION and NO HARDWARE CLOCK====
       echo Set the time using the '"date YYYY.MM.DD-HH:MM[:SS]"' command.

@@ -31,7 +31,6 @@ import numpy as np
 def gen_golden_data(idata, gpioInitial, numOutputSamples, testCase, caseName):
     filename = caseName + ".golden.dat"
     with open(filename, 'wb') as f:
-        odata = np.array([], dtype=np.uint32)
         previous = gpioInitial
         for x in range(0, numOutputSamples):
             f.write(struct.pack("<I", (idata[x] & np.invert(previous))))

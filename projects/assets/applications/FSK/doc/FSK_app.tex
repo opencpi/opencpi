@@ -21,9 +21,11 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{OpenCPI\\ FSK App Guide}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
-\input{../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
+\def\snippetpath{../../../../../doc/av/tex/snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{FSK App Guide}
@@ -713,12 +715,12 @@ For these platforms, follow the instructions contained in the FSK application's 
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
 	\item fsk\_filerw\_zed\_base.bitz
-	\item target-xilinx13\_3/file\_read\_s.so
-	\item target-xilinx13\_3/Baudtracking\_simple\_s.so
+	\item target-xilinx13\_3/file\_read.so
+	\item target-xilinx13\_3/Baudtracking\_simple.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-xilinx13\_3/real\_digitizer\_s.so
-	\item target-xilinx13\_3/file\_write\_s.so
+	\item target-xilinx13\_3/real\_digitizer.so
+	\item target-xilinx13\_3/file\_write.so
 	\end{minipage}
 	\end{itemize}
 
@@ -727,14 +729,13 @@ For these platforms, follow the instructions contained in the FSK application's 
   \item dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_timestamper\_zed\_cfg\_1rx\_0\\
 tx\_fmcomms\_2\_3\_lpc\_lvds\_cnt\_1rx\_0tx\_thruasm\_fmcomms\_2\_3\_lpc\_LVDS\_zed.bitz \\
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-xilinx13\_3/Baudtracking\_simple\_s.so
-	\item target-xilinx13\_3/real\_digitizer\_s.so
-	\item target-xilinx13\_3/file\_write\_s.so
+	\item target-xilinx13\_3/Baudtracking\_simple.so
+	\item target-xilinx13\_3/real\_digitizer.so
+	\item target-xilinx13\_3/file\_write.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-xilinx13\_3/zipper\_rx\_s.so
-	\item target-xilinx13\_3/lime\_rx\_proxy\_s.so
-	\item target-xilinx13\_3/si5351\_proxy\_s.so
+	\item target-xilinx13\_3/ad9361\_config\_proxy.so
+	\item target-xilinx13\_3/fmcomms\_2\_3\_rx.so
 	\end{minipage}
 	\end{itemize}
 
@@ -744,31 +745,29 @@ tx\_fmcomms\_2\_3\_lpc\_lvds\_cnt\_1rx\_0tx\_thruasm\_fmcomms\_2\_3\_lpc\_LVDS\_
 1tx\_fmcomms\_2\_3\_lpc\_lvds\_cnt\_0rx\_1tx\_thruasm\_fmcomms\_2\_3\_lpc\_LVDS\_zed.bitz
 \\ \\
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-xilinx13\_3/file\_read\_s.so
-	\item target-xilinx13\_3/zipper\_tx\_s.so
+	\item target-xilinx13\_3/file\_read.so
+	\item target-xilinx13\_3/zipper\_tx.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-xilinx13\_3/lime\_tx\_proxy\_s.so
-	\item target-xilinx13\_3/si5351\_proxy\_s.so
+	\item target-xilinx13\_3/ad9361\_config\_proxy.so
+	\item target-xilinx13\_3/fmcomms\_2\_3\_tx.so
 	\end{minipage}
 	\end{itemize}
 
-	\noindent\textbf{txrx/bbloopback}
+	\noindent\textbf{txrx} % bbloopback is not supported on FMCOMMS2/3
 	\begin{itemize}
   \item fsk\_modem\_zed\_cfg\_1rx\_1tx\_fmcomms\_2\_3\_lpc\_lvds\_cnt\_1rx\_1tx\_\\
 thruasm\_fmcomms\_2\_3\_lpc\_LVDS\_zed.bitz \\
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-xilinx13\_3/file\_read\_s.so
-	\item target-xilinx13\_3/Baudtracking\_simple\_s.so
-	\item target-xilinx13\_3/real\_digitizer\_s.so
-	\item target-xilinx13\_3/file\_write\_s.so
+	\item target-xilinx13\_3/file\_read.so
+	\item target-xilinx13\_3/Baudtracking\_simple.so
+	\item target-xilinx13\_3/real\_digitizer.so
+	\item target-xilinx13\_3/file\_write.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-xilinx13\_3/zipper\_rx\_s.so
-	\item target-xilinx13\_3/zipper\_tx\_s.so
-	\item target-xilinx13\_3/lime\_rx\_proxy\_s.so
-	\item target-xilinx13\_3/lime\_tx\_proxy\_s.so
-	\item target-xilinx13\_3/si5351\_proxy\_s.so
+	\item target-xilinx13\_3/ad9361\_config\_proxy.so
+	\item target-xilinx13\_3/fmcomms\_2\_3\_rx.so
+	\item target-xilinx13\_3/fmcomms\_2\_3\_tx.so
 	\end{minipage}
 	\end{itemize}
 
@@ -781,28 +780,28 @@ thruasm\_fmcomms\_2\_3\_lpc\_LVDS\_zed.bitz \\
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
 	\item fsk\_filerw\_matchstiq\_z1\_base.bitz
-	\item target-xilinx13\_3/file\_read\_s.so
-	\item target-xilinx13\_3/Baudtracking\_simple\_s.so
+	\item target-xilinx13\_3/file\_read.so
+	\item target-xilinx13\_3/Baudtracking\_simple.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-xilinx13\_3/real\_digitizer\_s.so
-	\item target-xilinx13\_3/file\_write\_s.so
+	\item target-xilinx13\_3/real\_digitizer.so
+	\item target-xilinx13\_3/file\_write.so
 	\end{minipage}
 	\end{itemize}
 
 	\noindent\textbf{rx}
 	\begin{itemize}
 	\item dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_rp\_cordic\_fir\_real\_matchstiq\_z1\_matchstiq\_z1\_rx\_cnt\_1rx\_0tx\_ \\ thruasm\_matchstiq\_z1.bitz \\ \\
-	\begin{minipage}[t]{.5\textwidth}\item target-xilinx13\_3/Baudtracking\_simple\_s.so
-	\item target-xilinx13\_3/real\_digitizer\_s.so
-	\item target-xilinx13\_3/file\_write\_s.so
-	\item target-xilinx13\_3/matchstiq\_z1\_rx\_s.so
-	\item target-xilinx13\_3/lime\_rx\_proxy\_s.so
+	\begin{minipage}[t]{.5\textwidth}\item target-xilinx13\_3/Baudtracking\_simple.so
+	\item target-xilinx13\_3/real\_digitizer.so
+	\item target-xilinx13\_3/file\_write.so
+	\item target-xilinx13\_3/matchstiq\_z1\_rx.so
+	\item target-xilinx13\_3/lime\_rx\_proxy.so
 	\end{minipage}
-	\begin{minipage}[t]{.5\textwidth}	\item target-xilinx13\_3/si5338\_proxy\_s.so
-	\item target-xilinx13\_3/matchstiq\_z1\_avr\_proxy\_s.so
-	\item target-xilinx13\_3/tmp100\_proxy\_s.so
-	\item target-xilinx13\_3/matchstiq\_z1\_pca9535\_proxy\_s.so
+	\begin{minipage}[t]{.5\textwidth}	\item target-xilinx13\_3/si5338\_proxy.so
+	\item target-xilinx13\_3/matchstiq\_z1\_avr\_proxy.so
+	\item target-xilinx13\_3/tmp100\_proxy.so
+	\item target-xilinx13\_3/matchstiq\_z1\_pca9535\_proxy.so
 	\end{minipage}
 	\end{itemize}
 
@@ -811,15 +810,15 @@ thruasm\_fmcomms\_2\_3\_lpc\_LVDS\_zed.bitz \\
 	\item
 mfsk2\_zp16\_fir\_real\_phase\_to\_amp\_cordic\_cic\_int\_matchstiq\_z1\_matchstiq\_z1\_tx\_cnt\_0rx\_1tx\_thruasm\_matchstiq\_z1.bitz	\\ \\
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-xilinx13\_3/file\_read\_s.so
-	\item target-xilinx13\_3/matchstiq\_z1\_tx\_s.so
-	\item target-xilinx13\_3/lime\_tx\_proxy\_s.so
-	\item target-xilinx13\_3/si5338\_proxy\_s.so
+	\item target-xilinx13\_3/file\_read.so
+	\item target-xilinx13\_3/matchstiq\_z1\_tx.so
+	\item target-xilinx13\_3/lime\_tx\_proxy.so
+	\item target-xilinx13\_3/si5338\_proxy.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-xilinx13\_3/matchstiq\_z1\_avr\_proxy\_s.so
-	\item target-xilinx13\_3/tmp100\_proxy\_s.so
-	\item target-xilinx13\_3/matchstiq\_z1\_pca9535\_proxy\_s.so
+	\item target-xilinx13\_3/matchstiq\_z1\_avr\_proxy.so
+	\item target-xilinx13\_3/tmp100\_proxy.so
+	\item target-xilinx13\_3/matchstiq\_z1\_pca9535\_proxy.so
 	\end{minipage}
 	\end{itemize}
 
@@ -827,20 +826,20 @@ mfsk2\_zp16\_fir\_real\_phase\_to\_amp\_cordic\_cic\_int\_matchstiq\_z1\_matchst
 	\begin{itemize}
 	\item fsk\_modem\_matchstiq\_z1\_matchstiq\_z1\_rx\_tx\_cnt\_1rx\_1tx\_thruasm\_matchstiq\_z1.bitz \\ \\
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-xilinx13\_3/file\_read\_s.so
-	\item target-xilinx13\_3/Baudtracking\_simple\_s.so
-	\item target-xilinx13\_3/real\_digitizer\_s.so
-	\item target-xilinx13\_3/file\_write\_s.so
-	\item target-xilinx13\_3/matchstiq\_z1\_rx\_s.so
-	\item target-xilinx13\_3/matchstiq\_z1\_tx\_s.so
+	\item target-xilinx13\_3/file\_read.so
+	\item target-xilinx13\_3/Baudtracking\_simple.so
+	\item target-xilinx13\_3/real\_digitizer.so
+	\item target-xilinx13\_3/file\_write.so
+	\item target-xilinx13\_3/matchstiq\_z1\_rx.so
+	\item target-xilinx13\_3/matchstiq\_z1\_tx.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-xilinx13\_3/lime\_rx\_proxy\_s.so
-	\item target-xilinx13\_3/lime\_tx\_proxy\_s.so
-	\item target-xilinx13\_3/si5338\_proxy\_s.so
-	\item target-xilinx13\_3/matchstiq\_z1\_avr\_proxy\_s.so
-	\item target-xilinx13\_3/tmp100\_proxy\_s.so
-	\item target-xilinx13\_3/matchstiq\_z1\_pca9535\_proxy\_s.so
+	\item target-xilinx13\_3/lime\_rx\_proxy.so
+	\item target-xilinx13\_3/lime\_tx\_proxy.so
+	\item target-xilinx13\_3/si5338\_proxy.so
+	\item target-xilinx13\_3/matchstiq\_z1\_avr\_proxy.so
+	\item target-xilinx13\_3/tmp100\_proxy.so
+	\item target-xilinx13\_3/matchstiq\_z1\_pca9535\_proxy.so
 	\end{minipage}
 	\end{itemize}
 \pagebreak
@@ -852,26 +851,25 @@ mfsk2\_zp16\_fir\_real\_phase\_to\_amp\_cordic\_cic\_int\_matchstiq\_z1\_matchst
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
 	\item fsk\_filerw\_ml605\_base.bitz
-	\item target-centos7/file\_read\_s.so
-	\item target-centos7/Baudtracking\_simple\_s.so
+	\item target-centos7/file\_read.so
+	\item target-centos7/Baudtracking\_simple.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/real\_digitizer\_s.so
-	\item target-centos7/file\_write\_s.so
+	\item target-centos7/real\_digitizer.so
+	\item target-centos7/file\_write.so
 	\end{minipage}
 	\end{itemize}
 
 	\noindent\textbf{rx}
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/file\_read\_s.so
-	\item target-centos7/Baudtracking\_simple\_s.so
-	\item target-centos7/real\_digitizer\_s.so
+	\item target-centos7/file\_read.so
+	\item target-centos7/Baudtracking\_simple.so
+	\item target-centos7/real\_digitizer.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/zipper\_rx\_s.so
-	\item target-centos7/lime\_rx\_proxy\_s.so
-	\item target-centos7/si5351\_proxy\_s.so
+	\item target-centos7/ad9361\_config\_proxy.so
+	\item target-centos7/fmcomms\_2\_3\_rx.so
 	\end{minipage}
 	\end{itemize}
 	\noindent For FMCOMMS2/3 plugged into FMC LPC:
@@ -888,39 +886,26 @@ mfsk2\_zp16\_fir\_real\_phase\_to\_amp\_cordic\_cic\_int\_matchstiq\_z1\_matchst
 	\noindent\textbf{tx}
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/file\_read\_s.so
-	\item target-centos7/zipper\_tx\_s.so
+	\item target-centos7/file\_read.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/lime\_tx\_proxy\_s.so
-	\item target-centos7/si5351\_proxy\_s.so
+	\item target-centos7/ad9361\_config\_proxy.so
+	\item target-centos7/fmcomms\_2\_3\_tx.so
 	\end{minipage}
-	\end{itemize}
-	For Zipper plugged into FMC LPC:
-	\begin{itemize}
-		\item mfsk2\_zp16\_fir\_real\_phase\_to\_amp\_cordic\_cic\_int\_ml605\_cfg\_0rx\\
-\_1tx\_fmcomms\_2\_3\_lpc\_lvds\_cnt\_0rx\_1tx\_thruasm\_fmcomms\_2\_3\_lpc\_LVDS\_ml605.bitz
 	\end{itemize}
 
-	\noindent\textbf{txrx/bbloopback}
+	\noindent\textbf{txrx} % bbloopback is not supported on FMCOMMS2/3
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/file\_read\_s.so
-	\item target-centos7/Baudtracking\_simple\_s.so
-	\item target-centos7/real\_digitizer\_s.so
-	\item target-centos7/zipper\_rx\_s.so
+	\item target-centos7/file\_read.so
+	\item target-centos7/Baudtracking\_simple.so
+	\item target-centos7/real\_digitizer.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/zipper\_tx\_s.so
-	\item target-centos7/lime\_rx\_proxy\_s.so
-	\item target-centos7/lime\_tx\_proxy\_s.so
-	\item target-centos7/si5351\_proxy\_s.so
+	\item target-centos7/ad9361\_config\_proxy.so
+	\item target-centos7/fmcomms\_2\_3\_rx.so
+	\item target-centos7/fmcomms\_2\_3\_tx.so
 	\end{minipage}
-	\end{itemize}
-	For Zipper plugged into FMC LPC:
-	\begin{itemize}
-		\item fsk\_modem\_ml605\_cfg\_1rx\_1tx\_fmcomms\_2\_3\_lpc\_lvds\_cnt\_1rx\_1tx\\
-\_thruasm\_fmcomms\_2\_3\_lpc\_LVDS\_ml605.bitz
 	\end{itemize}
 
 
@@ -1085,12 +1070,12 @@ This app is supported on the following hardware configurations:
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
 	\item fsk\_filerw\_zed\_base.bitz
-	\item target-xilinx13\_3/file\_read\_s.so
-	\item target-xilinx13\_3/Baudtracking\_simple\_s.so
+	\item target-xilinx13\_3/file\_read.so
+	\item target-xilinx13\_3/Baudtracking\_simple.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-xilinx13\_3/real\_digitizer\_s.so
-	\item target-xilinx13\_3/file\_write\_s.so
+	\item target-xilinx13\_3/real\_digitizer.so
+	\item target-xilinx13\_3/file\_write.so
 	\end{minipage}
 	\end{itemize}
 
@@ -1098,14 +1083,14 @@ This app is supported on the following hardware configurations:
 	\begin{itemize}
 	\item dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_rp\_cordic\_fir\_real\_zed\_base\_cnt\_1rx\_0tx\_thruasm\_zipper\_lpc\_zed.bitz \\ \\
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-xilinx13\_3/Baudtracking\_simple\_s.so
-	\item target-xilinx13\_3/real\_digitizer\_s.so
-	\item target-xilinx13\_3/file\_write\_s.so
+	\item target-xilinx13\_3/Baudtracking\_simple.so
+	\item target-xilinx13\_3/real\_digitizer.so
+	\item target-xilinx13\_3/file\_write.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-xilinx13\_3/zipper\_rx\_s.so
-	\item target-xilinx13\_3/lime\_rx\_proxy\_s.so
-	\item target-xilinx13\_3/si5351\_proxy\_s.so
+	\item target-xilinx13\_3/zipper\_rx.so
+	\item target-xilinx13\_3/lime\_rx\_proxy.so
+	\item target-xilinx13\_3/si5351\_proxy.so
 	\end{minipage}
 	\end{itemize}
 
@@ -1114,12 +1099,12 @@ This app is supported on the following hardware configurations:
 	\item mfsk2\_zp16\_fir\_real\_phase\_to\_amp\_cordic\_cic\_int\_zed\_base\_cnt\_0rx\_1tx\_thruasm\_zipper\_lpc\_zed.bitz
 \\ \\
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-xilinx13\_3/file\_read\_s.so
-	\item target-xilinx13\_3/zipper\_tx\_s.so
+	\item target-xilinx13\_3/file\_read.so
+	\item target-xilinx13\_3/zipper\_tx.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-xilinx13\_3/lime\_tx\_proxy\_s.so
-	\item target-xilinx13\_3/si5351\_proxy\_s.so
+	\item target-xilinx13\_3/lime\_tx\_proxy.so
+	\item target-xilinx13\_3/si5351\_proxy.so
 	\end{minipage}
 	\end{itemize}
 
@@ -1127,17 +1112,17 @@ This app is supported on the following hardware configurations:
 	\begin{itemize}
 	\item fsk\_modem\_zed\_base\_cnt\_1rx\_1tx\_thruasm\_zipper\_lpc\_zed.bitz \\ \\
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-xilinx13\_3/file\_read\_s.so
-	\item target-xilinx13\_3/Baudtracking\_simple\_s.so
-	\item target-xilinx13\_3/real\_digitizer\_s.so
-	\item target-xilinx13\_3/file\_write\_s.so
+	\item target-xilinx13\_3/file\_read.so
+	\item target-xilinx13\_3/Baudtracking\_simple.so
+	\item target-xilinx13\_3/real\_digitizer.so
+	\item target-xilinx13\_3/file\_write.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-xilinx13\_3/zipper\_rx\_s.so
-	\item target-xilinx13\_3/zipper\_tx\_s.so
-	\item target-xilinx13\_3/lime\_rx\_proxy\_s.so
-	\item target-xilinx13\_3/lime\_tx\_proxy\_s.so
-	\item target-xilinx13\_3/si5351\_proxy\_s.so
+	\item target-xilinx13\_3/zipper\_rx.so
+	\item target-xilinx13\_3/zipper\_tx.so
+	\item target-xilinx13\_3/lime\_rx\_proxy.so
+	\item target-xilinx13\_3/lime\_tx\_proxy.so
+	\item target-xilinx13\_3/si5351\_proxy.so
 	\end{minipage}
 	\end{itemize}
 
@@ -1147,26 +1132,26 @@ This app is supported on the following hardware configurations:
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
 	\item fsk\_filerw\_alst4\_base.bitz
-	\item target-centos7/file\_read\_s.so
-	\item target-centos7/Baudtracking\_simple\_s.so
+	\item target-centos7/file\_read.so
+	\item target-centos7/Baudtracking\_simple.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/real\_digitizer\_s.so
-	\item target-centos7/file\_write\_s.so
+	\item target-centos7/real\_digitizer.so
+	\item target-centos7/file\_write.so
 	\end{minipage}
 	\end{itemize}
 
 	\noindent\textbf{rx}
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/file\_read\_s.so
-	\item target-centos7/Baudtracking\_simple\_s.so
-	\item target-centos7/real\_digitizer\_s.so
+	\item target-centos7/file\_read.so
+	\item target-centos7/Baudtracking\_simple.so
+	\item target-centos7/real\_digitizer.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/zipper\_rx\_s.so
-	\item target-centos7/lime\_rx\_proxy\_s.so
-	\item target-centos7/si5351\_proxy\_s.so
+	\item target-centos7/zipper\_rx.so
+	\item target-centos7/lime\_rx\_proxy.so
+	\item target-centos7/si5351\_proxy.so
 	\end{minipage}
 	\end{itemize}
 	For Zipper plugged into HSMC Port A:
@@ -1183,12 +1168,12 @@ This app is supported on the following hardware configurations:
 	\noindent\textbf{tx}
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/file\_read\_s.so
-	\item target-centos7/zipper\_tx\_s.so
+	\item target-centos7/file\_read.so
+	\item target-centos7/zipper\_tx.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/lime\_tx\_proxy\_s.so
-	\item target-centos7/si5351\_proxy\_s.so
+	\item target-centos7/lime\_tx\_proxy.so
+	\item target-centos7/si5351\_proxy.so
 	\end{minipage}
 	\end{itemize}
 	For Zipper plugged into HSMC Port A:
@@ -1205,16 +1190,16 @@ This app is supported on the following hardware configurations:
 	\noindent\textbf{txrx/bbloopback}
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/file\_read\_s.so
-	\item target-centos7/Baudtracking\_simple\_s.so
-	\item target-centos7/real\_digitizer\_s.so
-	\item target-centos7/zipper\_rx\_s.so
+	\item target-centos7/file\_read.so
+	\item target-centos7/Baudtracking\_simple.so
+	\item target-centos7/real\_digitizer.so
+	\item target-centos7/zipper\_rx.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/zipper\_tx\_s.so
-	\item target-centos7/lime\_rx\_proxy\_s.so
-	\item target-centos7/lime\_tx\_proxy\_s.so
-	\item target-centos7/si5351\_proxy\_s.so
+	\item target-centos7/zipper\_tx.so
+	\item target-centos7/lime\_rx\_proxy.so
+	\item target-centos7/lime\_tx\_proxy.so
+	\item target-centos7/si5351\_proxy.so
 	\end{minipage}
 	\end{itemize}
 	For Zipper plugged into HSMC Port A:
@@ -1234,26 +1219,26 @@ This app is supported on the following hardware configurations:
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
 	\item fsk\_filerw\_ml605\_base.bitz
-	\item target-centos7/file\_read\_s.so
-	\item target-centos7/Baudtracking\_simple\_s.so
+	\item target-centos7/file\_read.so
+	\item target-centos7/Baudtracking\_simple.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/real\_digitizer\_s.so
-	\item target-centos7/file\_write\_s.so
+	\item target-centos7/real\_digitizer.so
+	\item target-centos7/file\_write.so
 	\end{minipage}
 	\end{itemize}
 
 	\noindent\textbf{rx}
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/file\_read\_s.so
-	\item target-centos7/Baudtracking\_simple\_s.so
-	\item target-centos7/real\_digitizer\_s.so
+	\item target-centos7/file\_read.so
+	\item target-centos7/Baudtracking\_simple.so
+	\item target-centos7/real\_digitizer.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/zipper\_rx\_s.so
-	\item target-centos7/lime\_rx\_proxy\_s.so
-	\item target-centos7/si5351\_proxy\_s.so
+	\item target-centos7/zipper\_rx.so
+	\item target-centos7/lime\_rx\_proxy.so
+	\item target-centos7/si5351\_proxy.so
 	\end{minipage}
 	\end{itemize}
 	For Zipper plugged into FMC LPC:
@@ -1270,12 +1255,12 @@ This app is supported on the following hardware configurations:
 	\noindent\textbf{tx}
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/file\_read\_s.so
-	\item target-centos7/zipper\_tx\_s.so
+	\item target-centos7/file\_read.so
+	\item target-centos7/zipper\_tx.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/lime\_tx\_proxy\_s.so
-	\item target-centos7/si5351\_proxy\_s.so
+	\item target-centos7/lime\_tx\_proxy.so
+	\item target-centos7/si5351\_proxy.so
 	\end{minipage}
 	\end{itemize}
 	For Zipper plugged into FMC LPC:
@@ -1292,16 +1277,16 @@ This app is supported on the following hardware configurations:
 	\noindent\textbf{txrx/bbloopback}
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/file\_read\_s.so
-	\item target-centos7/Baudtracking\_simple\_s.so
-	\item target-centos7/real\_digitizer\_s.so
-	\item target-centos7/zipper\_rx\_s.so
+	\item target-centos7/file\_read.so
+	\item target-centos7/Baudtracking\_simple.so
+	\item target-centos7/real\_digitizer.so
+	\item target-centos7/zipper\_rx.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-centos7/zipper\_tx\_s.so
-	\item target-centos7/lime\_rx\_proxy\_s.so
-	\item target-centos7/lime\_tx\_proxy\_s.so
-	\item target-centos7/si5351\_proxy\_s.so
+	\item target-centos7/zipper\_tx.so
+	\item target-centos7/lime\_rx\_proxy.so
+	\item target-centos7/lime\_tx\_proxy.so
+	\item target-centos7/si5351\_proxy.so
 	\end{minipage}
 	\end{itemize}
 	For Zipper plugged into FMC LPC:

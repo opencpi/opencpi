@@ -1,0 +1,201 @@
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+% AV-5479: Assume this is in projects/assets_ts of source checkout
+\def\importpath{../../../../assets/components/dsp_comps/cic_dec.test/doc}
+\makeatletter
+\def\input@path{{\importpath/snippets/}}
+\makeatother
+\input{CIC_Dec_Header}
+%----------------------------------------------------------------------------------------
+% Update the docTitle and docVersion per document
+%----------------------------------------------------------------------------------------
+\def\docTitle{Component Data Sheet}
+\def\docVersion{1.5}
+%----------------------------------------------------------------------------------------
+\date{Version \docVersion} % Force date to be blank and override date with version
+\title{\docTitle}
+\lhead{\small{\docTitle}}
+
+\def\comp{cic\_dec\_ts}
+\edef\ecomp{cic_dec_ts}
+\def\Comp{CIC Decimator (TimeStamped)}
+\graphicspath{ {\importpath/figures/} }
+
+\begin{document}
+
+\section*{Summary - \Comp}
+\begin{tabular}{|c|M{13.5cm}|}
+	\hline
+	\rowcolor{blue}
+	                  &                                                    \\
+	\hline
+	Name              & \comp                                              \\
+	\hline
+	Worker Type       & Application                                        \\
+	\hline
+	Version           & v\docVersion \\
+	\hline
+	Release Date      & 4/2019 \\
+	\hline
+	Component Library & ocpi.assets\_ts.components \\
+	\hline
+	Workers           & \comp.hdl                                          \\
+	\hline
+	Tested Platforms  & xsim, isim, modelsim, alst4, ml605, ZedBoard(PL), Matchstiq-Z1(PL) \\
+	\hline
+\end{tabular}
+
+\input{CIC_Dec_Functionality}
+\section*{Worker Implementation Details}
+\input{CIC_HDL_Implementation}
+\input{CIC_Theory}
+
+\section*{Block Diagrams}
+\subsection*{Top level}
+\begin{center}
+	\begin{tikzpicture}[% List of styles applied to all, to override specify on a case-by-case
+			every node/.style={
+				align=center,  		% use this so that the "\\" for line break works
+				minimum size=2cm	% creates space above and below text in rectangle
+			},
+			every edge/.style={draw,thick}
+		]
+		\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
+		\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in'' \\ Signed complex samples \\with time};
+		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' \\ Signed complex samples \\with time \\ decimated by \verb+R+};
+		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+N,M,R,ACC_WIDTH+ \\ \verb+DATA_WIDTH+ \\\verb+LATENCY_p,GROUP_DELAY_p+};
+		\path[->]
+		(R3)edge []	node [] {} (R2)
+		(R2)edge []	node [] {} (R4)
+		(R2)edge []	node [] {} (R5)
+		(R5)edge []	node [] {} (R2)
+		;
+	\end{tikzpicture}
+	\captionof{figure}{Top Level Block Diagram}
+\end{center}
+\newpage
+
+\section*{Source Dependencies}
+\subsection*{\comp.hdl}
+\begin{itemize}
+	\item assets\_ts/components/cic\_dec\_ts.hdl/cic\_dec\_ts.vhd
+	\item assets\_ts/components/cic\_dec\_ts.hdl/cic\_dec\_gen2.vhd
+\end{itemize}
+
+\begin{landscape}
+	\section*{Component Spec Properties}
+	\begin{scriptsize}
+		\begin{tabular}{|p{3cm}|p{1.5cm}|c|c|c|c|c|p{7cm}|}
+			\hline
+			\rowcolor{blue}
+			Name                      & Type   & SequenceLength & ArrayDimensions & Accessibility      & Valid Range & Default & Usage                                            \\
+			\hline \verb+N+           & UChar  & -              & -               & Parameter          & -           & 3       & Number of Stages                                 \\
+			\hline \verb+M+           & UChar  & -              & -               & Parameter          & -           & 1       & Differential Delay                               \\
+			\hline \verb+R+           & UShort & -              & -               & Parameter          & -           & 4       & Decimation Factor                                \\
+			\hline \verb+ACC_WIDTH+   & UChar  & -              & -               & Parameter          & -           & -       & Accumulation Width *(\ref{eq:response_function}) \\
+			\hline \verb+DATA_WIDTH+  & UChar  & -              & -               & Readable           & -           & 16      & Data width                                       \\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+	\section*{Worker Properties}
+
+	\subsection*{\comp.hdl}
+	\begin{scriptsize}
+		\begin{tabular}{|c|p{2cm}|p{1cm}|c|c|c|p{2cm}|p{1cm}|p{5cm}|}
+			\hline
+			\rowcolor{blue}
+			Type         & Name              		& Type 		& SequenceLength & ArrayDimensions & Accessibility & Valid Range & Default & Usage                                            \\
+			\hline
+			Property     & \verb+LATENCY_p+      	& Ushort	& -             & -                & Parameter     & -           & 1       & Number of clock cycles between a valid input and a valid output\\ 			\hline
+			Property     & \verb+GROUP_DELAY_p+  	& Ushort	& -             & -                & Parameter     & -           & (N+1)*R & Number of valid inputs before a valid output is given\\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+
+	\section*{Component Ports}
+	\begin{scriptsize}
+		\begin{tabular}{|p{2cm}|p{1.5cm}|p{4cm}|p{1.5cm}|p{4.5cm}|p{5.75cm}|}
+			\hline
+			\rowcolor{blue}
+			Name & Producer & Protocol           				& Optional & Advanced	& Usage                  \\
+			\hline
+			in   & False    & Complex\_Short\_With\_Metadata 	& False     & -    		& Complex signed samples with time \\
+			\hline
+			out  & True     & Complex\_Short\_With\_Metadata 	& False     & -			& Complex signed samples with time \\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+
+	\section*{Worker Interfaces}
+	\subsection*{\comp.hdl}
+	\begin{scriptsize}
+		\begin{tabular}{|M{2cm}|M{1.5cm}|c|c|M{12cm}|}
+			\hline
+			\rowcolor{blue}
+			Type            & Name & DataWidth & Advanced                			& Usage                  \\
+			\hline
+			StreamInterface & in   & 32        & 						   			& Complex signed samples with time \\
+			\hline
+			StreamInterface & out  & 32        & insertEOM=true, workerEOF='true' & Complex signed samples with time \\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+\end{landscape}
+
+\section*{Control Timing and Signals}
+\begin{flushleft}
+	The CIC Dec worker uses the clock from the Control Plane and standard Control Plane signals.
+\end{flushleft}
+
+
+\begin{landscape}
+\section*{Worker Configuration Parameters}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/configurations.inc}
+\section*{Performance and Resource Utilization}
+\subsection*{\comp.hdl}
+\input{../../\ecomp.hdl/utilization.inc}
+\end{landscape}
+\newpage
+\section*{Test and Verification}
+Two test cases are implemented to validate the CIC Decimator component:
+
+\begin{enumerate}
+	\item Unity gain response to DC: The CIC Decimator gain is calculated using the following equation:
+	      \begin{equation} \label{eq:cic_gain}
+	      	CIC\ Gain = \frac{(R*M)^N}{2^{CEIL(N*log_2(R*M))}}
+	      \end{equation}
+	\item Tone waveform: A waveform containing tones at 50 Hz, 100 Hz and Fs/R sampled at 1024000 is processed by the worker. The tones at 50 Hz and 100 Hz are within the bandwidth of the filter, while the Fs/R tone is at the first null. The power levels of the input tones and output tones are measured and compared.
+\end{enumerate}\medskip
+
+In both of the test cases, the samples data is interleaved with all of the operations of the Complex\_Short\_With\_Metadata protocol in the following sequence:
+\begin{enumerate}
+	\item Interval
+	\item Sync (this opcode is expected after an Interval operation)
+	\item Time
+	\item Samples
+	\item Flush	
+	\item Samples
+	\item Sync
+	\item Samples
+\end{enumerate}
+
+\input{CIC_References}
+
+\end{document}

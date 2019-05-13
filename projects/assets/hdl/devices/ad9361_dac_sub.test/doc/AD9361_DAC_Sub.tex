@@ -1,3 +1,4 @@
+%TODO: Use LaTeX_Header
 \documentclass{article}
 \iffalse
 This file is protected by Copyright. Please refer to the COPYRIGHT file
@@ -49,8 +50,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \renewcommand{\contentsname}{Table of Contents}
 \renewcommand{\listfigurename}{List of Figures}
 \renewcommand{\listtablename}{List of Tables}
-\newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
-\newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
 %----------------------------------------------------------------------------------------
 % Various pacakges
 %----------------------------------------------------------------------------------------
@@ -100,6 +99,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\small{\docTitle}}
+
+\def\snippetpath{../../../../../../doc/av/tex/snippets}
+\input{\snippetpath/includes}
 
 \def\comp{ad9361\_dac\_sub}
 \edef\ecomp{ad9361_dac_sub}
@@ -503,11 +505,11 @@ AD9361\_Reference\_Manual\_UG-570.pdf
 \bibitem{adi_ug671} AD9361 Register Map Reference Manual UG-671\\
 AD9361\_Register\_Map\_Reference\_Manual\_UG-671.pdf
  \bibitem{data_sub_comp_datasheet} AD9361 Data Sub Component Data Sheet \\
- \url{https://opencpi.github.io/assets/AD9361_Data_Sub.pdf}
+ \githubioURL{assets/AD9361_Data_Sub.pdf}
  \bibitem{dac_comp_datasheet} AD9361 DAC Component Data Sheet \\
- \url{https://opencpi.github.io/assets/AD9361_DAC.pdf}
+ \githubioURL{assets/AD9361_DAC.pdf}
  \bibitem{config_proxy_comp_datasheet} AD9361 Config Proxy Component Data Sheet \\
- \url{https://opencpi.github.io/assets/AD9361_Config_Proxy.pdf}
+ \githubioURL{assets/AD9361_Config_Proxy.pdf}
 
 \end{thebibliography}
 \pagebreak

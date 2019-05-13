@@ -89,7 +89,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -99,6 +99,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \edef\ecomp{cic_int}
 \def\Comp{CIC Interpolator}
 \graphicspath{ {figures/} }
+
+\def\importpath{../../cic_dec.test/doc/}
 
 \begin{document}
 
@@ -114,7 +116,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & February 2018 \\
+	Release Date      & 4/2019 \\
 	\hline
 	Component Library & ocpi.assets.dsp\_comps                              \\
 	\hline
@@ -137,30 +139,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \end{flushleft}
 
 \section*{Worker Implementation Details}
-\subsection*{\comp.hdl}
-\subsubsection*{Number of Stages}
-\begin{flushleft}
-	The generic \verb+N+ sets the number of integrators and comb stages in the filter.	Increasing the number of stages increases the attenuation in the sidelobes, as well as the bandwidth of the passband. The recommended range for this parameter is 3 to 6. Consult the reference material for an in depth discussion of the frequency response of the filter as a function of the generics in this module.
-\end{flushleft}
-\subsubsection*{Bit Growth}
-\begin{flushleft}
-	For this design, the output data width for the comb stages is configurable via	\verb+ACC_WIDTH+. To adjust for bit growth in the data path and to ensure no quantization error at the output, this equation should be used to determine the value of \verb+ACC_WIDTH+.
-
-	\begin{equation} \label{eq:acc_width}
-		ACC\_WIDTH = N*CEIL(log_2(R*M))+DIN\_WIDTH
-	\end{equation}
-\end{flushleft}
-
-\section*{Theory}
-\begin{flushleft}
-	A CIC filter is comprised of \verb+N+ integrator sections cascaded together with \verb+N+ comb sections. Combining the transfer functions for the two sections, we arrive at the system response function seen in Equation 1.
-
-	\begin{equation} \label{eq:response_function}
-		H(z) = [H_{int}(z)]^N[H_{comb}(z)]^N = \frac{1}{(1-z^{-1})^N}(1-z^{-R+M})^N = 	\frac{(1 - z^{-R+M})^N}{(1-z^{-1})^N}
-	\end{equation}
-
-	The magnitude response of the CIC filter is low pass with nulls at multiples of $f=\frac{1}{RM}$. The region surrounding the nulls is where aliasing occurs, so 	this aliasing effect must be considering when choosing \verb+N+, \verb+M+, and \verb+R+.
-\end{flushleft}
+\input{\importpath snippets/CIC_HDL_Implementation}
+\input{\importpath snippets/CIC_Theory}
 
 \section*{Block Diagrams}
 \subsection*{Top level}
@@ -185,15 +165,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\end{tikzpicture}
 	\captionof{figure}{Top Level Block Diagram}
 \end{center}
-\newpage
-\subsection*{State Machine}
-\begin{flushleft}
-	Only one finite-state machine (FSM) is implemented by this worker. The FSM supports Zero-Length Messages.
-\end{flushleft}
-{\centering\captionsetup{type=figure}\includegraphics[scale=0.45]{cic_interpolator_zlm_fsm}
-	\captionof{figure}{Zero-Length Message FSM}
-	\label{fig:zlm_fsm}}
-
 \newpage
 
 \section*{Source Dependencies}
@@ -387,8 +358,6 @@ The output time-domain plot below shows the I-leg zoomed into approximately two 
 		\end{minipage}
 	\end{figure}
 
-\section*{References}
-(1)	Ronald E. Crochiere and Lawrence R. Rabiner. Multirate Digital Signal Processing. Prentice-Hall Signal Processing Series. Prentice Hall, Englewood Cli\_s, 1983. \\
-(2)	Eugene B. Hogenauer, An Economical Class of Digital Filters for Decimation and Interpolation, IEEE Transactions on Acoustics, Speech, and Signal Processing, Vol. ASSP-29, No. 2, April 1981.
+\input{\importpath snippets/CIC_References}
 
 \end{document}

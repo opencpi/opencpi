@@ -1,3 +1,4 @@
+%TODO: Use LaTeX_Header
 \documentclass{article}
 \iffalse
 This file is protected by Copyright. Please refer to the COPYRIGHT file
@@ -48,8 +49,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \renewcommand{\contentsname}{Table of Contents}
 \renewcommand{\listfigurename}{List of Figures}
 \renewcommand{\listtablename}{List of Tables}
-\newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
-\newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
 %----------------------------------------------------------------------------------------
 % Various pacakges
 %----------------------------------------------------------------------------------------
@@ -101,6 +100,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \def\docVersion{\color{red}vdevelop}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
+%TODO: Why doesn't this use LaTeX_Header?
+\def\snippetpath{../../../../../../doc/av/tex/snippets}
+\input{\snippetpath/includes}
 \title{\docTitle}
 \lhead{\small{\docTitle}}
 
@@ -110,25 +112,32 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \begin{document}
 
-\section*{Summary - \Comp}
-\begin{longtable}{|p{4cm}|p{12.84cm}|}
+\section*{Summary - FMCOMMS2/3 Digital Radio Controller Worker}
+\begin{longtable}{|p{\dimexpr0.5\textwidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.5\textwidth-2\tabcolsep\relax}|}
 	\hline
 	\rowcolor{blue}
 	                  &                                        \\
 	\hline
 	Package Prefix    & ocpi.core \\
 	\hline
-	Component Name    & dig\_radio\_ctrlr \\
+	Component         & dig\_radio\_ctrlr \\
 	\hline
-	Worker Name       & \comp                                  \\
+	Name              & \comp                                  \\
 	\hline
-	OpenCPI Release Version & v\docVersion (release data \color{red}pre-release) \\
+	Authoring Model   & rcc                                    \\
+	\hline
+	Version          & 1 \\
+	\hline
+	OpenCPI Release & v\docVersion ~ (released 4/2019) \\
 	\hline
 \end{longtable}
 
 \begin{center}
   \textit{\textbf{Revision History}}
-  \begin{longtable}{|p{2cm}|p{12cm}|p{2.4cm}|}
+  \begin{longtable}{|p{\dimexpr0.15\textwidth-2\tabcolsep\relax}
+                    |p{\dimexpr0.65\textwidth-2\tabcolsep\relax}
+                    |p{\dimexpr0.2\textwidth-2\tabcolsep\relax}|}
     \hline
     \rowcolor{blue}
     \textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
@@ -391,10 +400,10 @@ evince ./latex/refman.pdf
         \item \verb+FMCOMMS_NUM_p+\textsuperscript{\ref{nonspecprop}} property
           \begin{itemize}
             \item Valid values are 2 or 3. Used to allow worker to be parameterized
-              for use with either FMCOMMS2 or FMCOMMS3. 
+              for use with either FMCOMMS2 or FMCOMMS3.
               Application XML intended for use specific to FMCOMMS2/3 are expected
               to use the component selection XML attribute to restrict this
-              value in order to 
+              value in order to
               enforce
               application requirements on intended FMCOMMS number.
 
@@ -1068,10 +1077,10 @@ evince ./latex/refman.pdf
   \url{http://www.analog.com/en/products/rf-microwave/integrated-transceivers-transmitters-receivers/wideband-transceivers-ic/ad9361.html}
 
   \bibitem{ad9361_config_proxy_datasheet} AD9361 Config Proxy Component Data Sheet\\
-  \url{https://opencpi.github.io/assets/AD9361_Config_Proxy.pdf}
+  \githubioURL{assets/AD9361_Config_Proxy.pdf}
 
   \bibitem{dig_radio_ctrlr_comp_datasheet} Digital Radio Controller Component Data Sheet \\
-  \url{https://opencpi.github.io/Dig_Radio_Ctrlr.pdf}
+  \githubioURL{Dig_Radio_Ctrlr.pdf}
 
   \bibitem{fmcomms2_website} AD-FMCOMMS2-EBZ Evaluation Board | Analog Devices\\
   \url{https://www.analog.com/en/design-center/evaluation-hardware-and-software/evaluation-boards-kits/EVAL-AD-FMCOMMS2.html}
@@ -1080,7 +1089,7 @@ evince ./latex/refman.pdf
   \url{https://www.analog.com/en/design-center/evaluation-hardware-and-software/evaluation-boards-kits/EVAL-AD-FMCOMMS3-EBZ.html}
 
   \bibitem{ocpi_app_guide} OpenCPI Application Development \\
-  \url{https://opencpi.github.io/OpenCPI_Application_Development.pdf}
+  \githubioURL{OpenCPI_Application_Development.pdf}
 
   \bibitem{no_os_06bfc76060d5b9767ae9aad7bf40e3648474ebb7} GitHub - analogdevicesinc/no-OS at 06bfc76060d5b9767ae9aad7bf40e3648474ebb7 \\
   \url{https://github.com/analogdevicesinc/no-OS/tree/06bfc76060d5b9767ae9aad7bf40e3648474ebb7}

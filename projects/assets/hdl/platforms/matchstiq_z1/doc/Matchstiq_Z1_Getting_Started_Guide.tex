@@ -22,9 +22,15 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 %----------------------------------------------------------------------------------------
 \def\docTitle{OpenCPI\\ \bigskip Matchstiq-Z1 Getting Started Guide}
 \def\docVersion{1.5}
+\def\rccplatform{xilinx13\_3}
+\def\radioName{Matchstiq-Z1}
+\def\mountPoint{/mnt/}
+\def\copyLoc{ATLAS}
 %----------------------------------------------------------------------------------------
-\input{../../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
-\input{../../../../../../doc/av/tex/snippets/ocpidev_ide.tex}
+\def\snippetpath{../../../../../../doc/av/tex/snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
+\input{ocpidev_ide}
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{Matchstiq-Z1 Getting Started Guide}
@@ -82,7 +88,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	This document assumes a basic understanding of the Linux command line (or ``shell'') environment.  The reference(s) in Table 1 can be used as an overview of OpenCPI and may prove useful.
 \def\refskipocpiov{}
 \def\refcapbottom{}
-\input{../../../../../../doc/av/tex/snippets/References_Table}
+\input{References_Table}
 
 \newpage
 \section{Overview}
@@ -202,27 +208,32 @@ On the front panel of the Matchstiq-Z1, there are three labeled SMB (50 Ohm) con
 \newpage
 \section{SD Card Setup}
 \label{sec:SD_Card_Setup}
-The Matchstiq-Z1 SDR is equipped with two SD card slots: one internal and one accessible via the front panel. It is expected that the SDRs are shipped from Epiq Solutions with an SD card installed in the internal slot that is loaded with their embedded environment. Alternatively, when an SD card is installed in the front panel SD slot, the SDR will automatically choose to operate from this SD card rather than the internal SD card. Therefore, a user can easily switch the SDR between operating in the Epiq Solutions or OpenCPI environment.
+The Matchstiq-Z1 SDR is equipped with two SD card slots: one internal and one accessible via the front panel. It is expected that the SDRs are shipped from Epiq Solutions with an SD card installed in the internal slot that is loaded with their embedded environment. A feature of this SDR is that when an SD card is installed in the front panel SD slot, the SDR will automatically choose to operate from this SD card rather than the internal SD card. Therefore, a user can easily switch the SDR between operating in the Epiq Solutions or OpenCPI environment.
 
-The Matchstiq-Z1's factory SD card has a non-default formatting, which must be maintained for proper operation. This guide assumes that the internal (factory) SD card is being use for OpenCPI and will be reinstalled in the front panel SD card slot. If the user desires the use of a new SD card, the user must ensure that it is initially imaged from the factory provided SD card, as there is a unique partition with specific content from the OEM. To gain access to the internal SD card slot, remove the screws from the front and back plates of the SDR and slide the board assembly out of the enclosure. Flip the SD card slot open and lift the card out.
-
-\textbf{The \textit{u-boot.bin} from the factory SD card MUST saved, as it is used by the OpenCPI.}
+The Matchstiq-Z1's factory SD card has a non-default formatting and content, which \textit{must} be maintained for proper operation. This guide assumes that the internal (factory) SD card is being use for OpenCPI and will be reinstalled in the front panel SD card slot. If the user desires the use of a new SD card, the user must ensure that it is initially imaged from the factory provided SD card, as there is a unique partition containing required content from the OEM.
 
 \subsection{Make a backup image of factory SD card (assumes Linux host)}
-This section provides the steps for creating an SD card backup image. It is recommended, because the factory provided SD card does have special formatting and content that may be desired to preserve.
+This section provides the steps for creating an SD card backup image.  Access the internal SD card slot by removing the screws from the front and back plates, then slide the board assembly out of the enclosure. Flip the SD card slot open and lift the card out. Insert the SD card into a USB reader and install into a host machine.
+\begin{enumerate}
+	\item Determine the device file name for the SD card by
+	executing dmesg command below. It will likely be something
+	like \texttt{/dev/sdb} or \texttt{/dev/mmcblk0}.\\ \\
+	\texttt{\$ dmesg | tail -n 15}
+	\item Run the following \textit{dd} command to make a backup
+	image, where DEVICENAME was determined above. This step
+	should take $\sim15$ minutes depending on the card size.\\ \\
+	\texttt{\$ dd if=DEVICENAME of=backup.image}
+\end{enumerate}
 
-\begin{itemize}
-\item Determine the device file name for the SD card by executing dmesg command below. It will likely be something like \texttt{/dev/sdb} or \texttt{/dev/mmcblk0}.\\ \\
-\texttt{\$ dmesg | tail -n 15} \\
-\item Run the following dd command to make a backup image, where DEVICENAME was determined above. This step should take $\sim15$ minutes depending on the card size.\\ \\
-\texttt{\$ dd if=DEVICENAME of=backup.image}
-\end{itemize}
-\noindent To restore the card back to the original contents, run the command ``\texttt{dd of=DEVICENAME if=backup.image}''
-
-\subsection{Format the SD card}
-\begin{itemize}
-\item N/A. The Matchstiq-Z1 requires the SD card with a specific partition and content which must be maintained.
-\end{itemize}
+\subsection{Format the SD card for OpenCPI}
+The Matchstiq-Z1 SDR requires an SD card with a
+specific partition and content. The recommend method for formatting a new SD card is to begin by imaging the new card using the backup image of the factory SD card, removing factory default files and directory and copying OpenCPI content to SD card.
+\begin{enumerate}
+	\item Format an SD card for OpenCPI, (restore to its original factory default captured in the previous section), run the command \\ \\
+	\texttt{\$ dd of=DEVICENAME if=backup.image}
+	\item In addition to the factory default partition and its contents, only one file, named \textit{u-boot.bin}, is necessary to be maintained from the factory SD card.
+For convenience, the OpenCPI RPM installation provides a copy of this required u-boot.bin file and is discussed in the following section. For this step, simply remove all factory files and directories to allow OpenCPI content (and copy of u-boot.bin) to be placed onto the SD card, as detailed in the following section.
+\end{enumerate}
 
 \subsection{Copy embedded OS files to SD card, ``ATLAS'' partition}
 \label{sec:Copy embedded OS to SD card}
@@ -230,16 +241,22 @@ This section provides the steps for creating an SD card backup image. It is reco
 
 WARNING: The user must ensure that the contents of the SD, match the version of the OpenCPI release that the artifacts were built against.\\ \medskip
 
-When using the factory SD card, all files except the \textit{u-boot.bin} can be ignored or deleted. Any files/directories copied to the ``ATLAS'' partition will appear at \texttt{/mnt/card} on the Matchstiq-Z1.\\ \medskip
+NOTE: When using the factory SD card, all files except the \textit{u-boot.bin} can be ignored or deleted. \\ \medskip
+
+Any files/directories copied to the ``ATLAS'' partition will appear at \texttt{/mnt/card} on the Matchstiq-Z1.\\ \medskip
 
 Copy the following files/directories into the ``ATLAS'' partition:
 \begin{verbatim}
 $ cp /opt/opencpi/cdk/matchstiq_z1/sdcard-xilinx13_3/iveia-atlas-i-z7e.dtb /run/media/<user>/ATLAS/
 
+$ cp /opt/opencpi/cdk/matchstiq_z1/sdcard-xilinx13_3/u-boot.bin /run/media/<user>/ATLAS/
+
 $ cp /opt/opencpi/cdk/matchstiq_z1/sdcard-xilinx13_3/uImage /run/media/<user>/ATLAS/
 
 $ cp /opt/opencpi/cdk/matchstiq_z1/sdcard-xilinx13_3/uramdisk.image.gz /run/media/<user>/ATLAS/
-\end{verbatim}\medskip
+\end{verbatim}
+
+\textbf{The need to copy the \textit{/opt/opencpi/cdk/matchstiq\_z1/opencpi} onto the SD card is dependent on the desired operating mode (Standalone vs Network) and is discussed in the following sections.}
 \end{flushleft}
 
 \subsection{Copy files to SD card for desired Mode(s)}
@@ -273,6 +290,9 @@ After performing the steps from \ref{sec:Copy embedded OS to SD card}, create a 
 \begin{verbatim}
 $ mkdir /run/media/<user>/ATLAS/opencpi
 
+$ cp /opt/opencpi/cdk/matchstiq_z1/sdcard-xilinx13_3/opencpi/system.xml \
+/run/media/<user>/ATLAS/opencpi/
+
 $ cp /opt/opencpi/cdk/matchstiq_z1/sdcard-xilinx13_3/opencpi/default_mynetsetup.sh \
 /run/media/<user>/ATLAS/opencpi/
 
@@ -288,56 +308,10 @@ All the files in this partition can be ignored. If space for files is required f
 
 
 \pagebreak
-\section{Script Setup}
-There are two type of setups or modes for running applications on any embedded radio: Network and Standalone. In Network mode, a development system hosts the OpenCPI tree as an NFS server to the Matchstiq-Z1 which is an NFS client. This configuration provides quick and dynamic access to all of OpenCPI, and presumably any applications, components and bitstreams. In Standalone mode, all the artifacts are located on the SDR's local storage (\textit{e.g.} SD card) and no network connection is required. This may be more suited for \textit{deployment} scenarios in which network connection is not possible or practical. Network mode is generally preferred during the development process.
 
-\begin{flushleft}
-
-\subsection{Setting up the Network and Standalone Mode scripts}
-
-For each mode, a startup script is used to configure the environment of the embedded system. The OpenCPI framework provides a default script for each mode. The default scripts are to be copied and modified per the user's requirements.\par\medskip
-
-\subsubsection{Network Mode}
-1) Make a copy of the default script for editing.
-\begin{verbatim}
-$ cp /run/media/<user>/ATLAS/opencpi/default_mynetsetup.sh \
-/run/media/<user>/ATLAS/opencpi/mynetsetup.sh
-\end{verbatim}\medskip
-
-2) Edit the copy
-\begin{enumerate}
-\item In \texttt{mynetsetup.sh}, uncomment the following lines which are necessary for mounting \textit{core} and \textit{assets} project:
-
-\begin{verbatim}
-mkdir -p /mnt/ocpi_core
-mount -t nfs -o udp,nolock,soft,intr $1:/home/user/ocpi_projects/core /mnt/ocpi_core
-mkdir -p /mnt/ocpi_assets
-mount -t nfs -o udp,nolock,soft,intr $1:/home/user/ocpi_projects/assets /mnt/ocpi_assets
-\end{verbatim}
- \item Edit \texttt{/home/user/ocpi\_projects/core} and \texttt{/home/user/ocpi\_projects/assets} to reflect the paths to the \textit{core} and \textit{assets} project on the host, e.g.:
-\begin{verbatim}
-mkdir -p /mnt/ocpi_core
-mount -t nfs -o udp,nolock,soft,intr $1:/home/johndoe/ocpi_projects/core /mnt/ocpi_core
-mkdir -p /mnt/ocpi_assets
-mount -t nfs -o udp,nolock,soft,intr $1:/home/johndoe/ocpi_projects/assets /mnt/ocpi_assets
-\end{verbatim}
-\end{enumerate}
-
-\subsubsection{Standalone Mode}
-In this mode, all OpenCPI artifacts that are required to run any application on the Matchstiq-Z1 must be copied onto the SD card.  Building the provided projects to obtain such artifacts is discussed in Section \ref{sec:Building OpenCPI projects}. Once the artifacts have been created, they must be copied to the SD card in Section \ref{sec:SD_Card_Setup}. In general, any required \texttt{.so} (RCC workers), \texttt{.bit.gz} (hdl assemblies), and application XMLs or executables must be copied to the ATLAS partition of the SD card. \medskip
-
-1) Make a copy of the default script for editing\medskip
-\begin{verbatim}
-$ cp /run/media/<user>/ATLAS/opencpi/default_mysetup.sh \
-/run/media/<user>/ATLAS/opencpi/mysetup.sh
-\end{verbatim}\medskip
-
-2) Edit the copy\\ \medskip
-Unlike Network mode, there is no required modifications to this script. \medskip
-
-3) Copy any additional artifacts to SD card's \path{opencpi/xilinx13_3/artifacts/} directory \medskip
-
-\input{../../../../../../doc/av/tex/snippets/Setup_System_Time.tex}
+\input{Script_Setup}
+\input{Setup_System_Time}
+\input{rsync_Setup_Snippet}
 \end{flushleft}
 
 \pagebreak
@@ -423,7 +397,7 @@ Environment size: 1283/131068 bytes
 \pagebreak
 \section{Development Host Setup - Network Mode ONLY}
 % Bring in NFS setup snippet (has subsections)
-\input{../../../../../../doc/av/tex/snippets/NFS_Setup_Snippet.tex}
+\input{NFS_Setup_Snippet}
 %
 
 \pagebreak
@@ -464,7 +438,7 @@ where XX.XX.XX.XX is the IP address of the NFS host (i.e. that development host,
 	\label{fig:netsetup}
 \end{figure} \medskip
 
-\input{../../../../../../doc/av/tex/snippets/Ntp_Alarm_Clock.tex}
+\input{NTP_Alarm_Clock}
 
 \end{enumerate}
 
@@ -509,7 +483,7 @@ $ source /mnt/card/opencpi/mysetup.sh
 	\label{fig:standalonesetup}
 \end{figure} \medskip
 
-\input{../../../../../../doc/av/tex/snippets/Ntp_Alarm_Clock.tex}
+\input{NTP_Alarm_Clock}
 
 \end{enumerate}
 
@@ -523,7 +497,7 @@ The setup of the platform can be verified by running an application that uses bo
 \subsection{Network Mode}
 The default setup script sets the \texttt{OCPI\_LIBRARY\_PATH} variable to include the RCC workers that are required to execute the application, but it must be updated to include to the assembly bitstream that was built.  After running the \texttt{mynetsetup.sh} script, navigate to  \texttt{/mnt/ocpi\_assets/applications}, then update the \texttt{OCPI\_LIBRARY\_PATH} variable:
 \begin{verbatim}
-$ cd /mnt/card/opencpi/applications
+$ cd /mnt/net/cdk/applications
 $ export OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:/mnt/ocpi_assets/artifacts
 \end{verbatim}
 Run the application using the following command:
@@ -531,11 +505,65 @@ Run the application using the following command:
 $ ocpirun -v -t 1 -d -m bias=hdl bias.xml
 \end{verbatim}
 The output should be similar to Figure~\ref{fig:netBias}:
-\begin{figure}[H]
-	\centerline{\includegraphics[scale=0.5]{Matchstiq_Z1_net_bias}}
-	\caption{Successful Network Mode Execution}
-	\label{fig:netBias}
-\end{figure}
+\begin{verbatim}
+% ocpirun -v -t 1 -d -m bias=hdl bias.xml
+Available containers are:  0: PL:0 [model: hdl os:  platform:
+matchstiq_z1], 1: rcc0 [model: rcc os: linux platform: xilinx13_3]
+Actual deployment is:
+  Instance  0 file_read (spec ocpi.core.file_read) on rcc container 1: rcc0, using file_read in
+  /mnt/ocpi_core/artifacts/ocpi.core.file_read.rcc.0.xilinx13_3.so
+  dated Tue Apr  9 11:34:43 2019
+  Instance  1 bias (spec ocpi.core.bias) on hdl container 0: PL:0, using bias_vhdl/a/bias_vhdl in
+  /mnt/ocpi_assets/applications/rx_app/../../artifacts/
+  ocpi.assets.testbias_matchstiq_z1_base.hdl.0.matchstiq_z1.gz
+  dated Mon Apr  8 14:31:34 2019
+  Instance  2 file_write (spec ocpi.core.file_write) on rcc container 1: rcc0, using file_write in
+  /mnt/ocpi_core/artifacts/ocpi.core.file_write.rcc.0.xilinx13_3.so
+  dated Tue Apr  9 11:34:48 2019
+Application XML parsed and deployments (containers and artifacts) chosen
+Application established: containers, workers, connections all created
+Communication with the application established
+Dump of all initial property values:
+Property  0: file_read.fileName = "test.input" (cached)
+Property  1: file_read.messagesInFile = "false" (cached)
+Property  2: file_read.opcode = "0" (cached)
+Property  3: file_read.messageSize = "16"
+Property  4: file_read.granularity = "4" (cached)
+Property  5: file_read.repeat = "false"
+Property  6: file_read.bytesRead = "0"
+Property  7: file_read.messagesWritten = "0"
+Property  8: file_read.suppressEOF = "false"
+Property  9: file_read.badMessage = "false"
+Property 10: file_read.ocpi_debug = "false" (parameter)
+Property 11: file_read.ocpi_endian = "little" (parameter)
+Property 16: bias.biasValue = "16909060" (cached)
+Property 17: bias.ocpi_debug = "false" (parameter)
+Property 18: bias.ocpi_endian = "little" (parameter)
+Property 20: bias.test64 = "0"
+Property 29: file_write.fileName = "test.output" (cached)
+Property 30: file_write.messagesInFile = "false" (cached)
+Property 31: file_write.bytesWritten = "0"
+Property 32: file_write.messagesWritten = "0"
+Property 33: file_write.stopOnEOF = "true" (cached)
+Property 34: file_write.ocpi_debug = "false" (parameter)
+Property 35: file_write.ocpi_endian = "little" (parameter)
+Application started/running
+Waiting up to 1 seconds for application to finish
+Application is now considered finished after waiting 1 seconds
+Dump of all final property values:
+Property  3: file_read.messageSize = "16"
+Property  6: file_read.bytesRead = "1776"
+Property  7: file_read.messagesWritten = "111"
+Property  9: file_read.badMessage = "false"
+Property 31: file_write.bytesWritten = "1760"
+Property 32: file_write.messagesWritten = "110"
+\end{verbatim}
+
+%\begin{figure}[H]
+%	\centerline{\includegraphics[scale=0.5]{Matchstiq_Z1_net_bias}}
+%	\caption{Successful Network Mode Execution}
+%	\label{fig:netBias}
+%\end{figure}
 
 \pagebreak
 Run the following command to view the input. It should look like Figure~\ref{fig:inBias1}: \\
@@ -615,7 +643,7 @@ It is recommended that you use the default toolset (Xilinx Vivado) to build Matc
 \end{enumerate}
 % Bring in the kernel message snippet
 \section{Driver Notes}
-\input{../../../../../../doc/av/tex/snippets/Driver_Snippet.tex}
+\input{Driver_Snippet}
 %
 \end{appendices}
 \end{document}

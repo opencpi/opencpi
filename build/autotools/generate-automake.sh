@@ -68,7 +68,7 @@ python_PYTHON=
 # both can be trivially used using PYTHONPATH
 pythondir=$(libdir)
 # It doesn't appear that autoconf macros actually gives us the proper runtime prefix
-PYTHON_INCLUDES=$(shell echo `@PYTHON@ -c "import sys;print(sys.prefix)"`/include/python@PYTHON_VERSION@*)
+PYTHON_INCLUDES=$(or @OcpiPythonInclude@,$(shell echo `@PYTHON@ -c "import sys;print(sys.prefix)"`/include/python@PYTHON_VERSION@*))
 # Avoid automake limitations by defining a variable used later
 ocpi_extra_libs=$(patsubst %,-l%,@OcpiExtraLibs@)
 

@@ -168,7 +168,7 @@ class OcpPort : public Port {
 #if 1
   void emitExprAssignments(const InstancePort &ip, Language lang, std::string &out);
   void connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, const OcpAdapt *oa, std::string &thisComment,
-			Language lang, const InstancePort &ip, std::string &signal);
+			Language lang, const InstancePort &ip, bool final, std::string &signal);
 #else
   void emitExprAssignments(std::string &out, std::string &signalIn, OcpAdapt *adapt, Attachments &atts,
 			   Language lang);

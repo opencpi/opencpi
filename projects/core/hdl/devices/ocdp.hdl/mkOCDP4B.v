@@ -5571,7 +5571,7 @@ module mkOCDP4B(pciDevice,
 
   // register wmi_wmi_sFlagReg
   assign wmi_wmi_sFlagReg$D_IN =
-	     { y_avValue__h81695[7:0], y_avValue__h81675[23:0] } ;
+	     { y_avValue__h81695[7:0], y_avValue__h81695[8], y_avValue__h81675[22:0] } ;
   assign wmi_wmi_sFlagReg$EN = WILL_FIRE_RL_wmi_respMetadata ;
 
   // register wmi_wmi_statusR
@@ -6597,7 +6597,7 @@ module mkOCDP4B(pciDevice,
   assign lowAddr__h28495 =
 	     { tlp_tlpBRAM_readReq$D_OUT[33:29], lowAddr10__h28494 } ;
   assign mesgMeta_opcode__h80116 =
-	     { 24'h800000, wmi_wmi_mFlagF$D_OUT[31:24] } ;
+	     { 23'h000000, wmi_wmi_mFlagF$D_OUT[23], wmi_wmi_mFlagF$D_OUT[31:24] } ; // add EOF to opcode
   assign nowLS__h44928 =
 	     { tlp_tlpBRAM_mRespF$D_OUT[39:32],
 	       tlp_tlpBRAM_mRespF$D_OUT[47:40],
@@ -6830,7 +6830,7 @@ module mkOCDP4B(pciDevice,
 	     bram_serverAdapterB_3_cnt_39_SLT_3___d1776 &&
 	     wmi_wmi_mFlagF$EMPTY_N ;
   assign wti_nowReq_BITS_63_TO_0__q2 = wti_nowReq[63:0] ;
-  assign x3__h80076 = { 8'd0, wmi_wmi_mFlagF$D_OUT[23:0] } ;
+  assign x3__h80076 = { 9'd0, wmi_wmi_mFlagF$D_OUT[22:0] } ; // add smaller length for EOF
   assign x__h28614 = x__h28616 - y__h28617 ;
   assign x__h28616 = { tlp_tlpBRAM_readReq$D_OUT[28:19], 2'b0 } ;
   assign x__h40971 =

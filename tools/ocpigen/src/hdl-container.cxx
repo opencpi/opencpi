@@ -950,7 +950,7 @@ mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
 	  OU::formatAdd(devSig, "(%u)", n);
 	std::string dname, ename;
 	if (di.slot && !inContainer)
-	  OU::format(dname, "%s%s_%s", di.slot->m_prefix.c_str(), di.device.cname(), devSig.c_str());
+	  OU::format(dname, "%s_%s_%s", di.slot->m_name.c_str(), di.device.cname(), devSig.c_str());
 	else if (inContainer)
 	  dname = devSig.c_str();
 	else

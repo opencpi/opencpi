@@ -81,7 +81,6 @@
     <Property Name="fileName" Value="idata/Os.jpeg"/>
     <Property Name="messagesInFile" Value="false"/>
     <Property Name="opcode" Value="1"/>
-    <Property Name="messageSize" Value="8192"/>
     <Property Name="granularity" Value="1"/>
   </Instance>
   <!-- RX Chain -->
@@ -95,7 +94,7 @@
     <Property Name="fileName" Value="odata/out_app_fsk_txrx.bin"/>
     <Property Name="messagesInFile" Value="false"/>
   </Instance>
-  
+
   <!-- RCC Proxies -->
 
   <!-- must be instantiated in this app because ocpi.core rx requires control
@@ -105,7 +104,7 @@
   <!-- TX Chain -->
   <!-- RX Chain -->
   <!-- Command and Control -->
-  
+
   <!-- RCC Frontend Proxies -->
   <!-- TX Chain -->
   <Instance Component="ocpi.core.tx">
@@ -115,7 +114,7 @@
   <Instance Component="ocpi.core.rx">
     <Property Name="TYPE_p" Value="fmcomms3"/>
   </Instance>
-  
+
   <!-- Connections -->
   <!-- TX Chain -->
   <Connection>
@@ -142,7 +141,7 @@
     <Port Instance="cic_int" Name="out"/>
     <Port Instance="qdac" Name="in"/>
   </Connection>
-  
+
   <!-- RX Chain -->
   <Connection>
     <Port Instance="qadc" Name="out"/>

@@ -19,6 +19,6 @@
 $(if $(realpath $(OCPI_CDK_DIR)),,$(error The OCPI_CDK_DIR environment variable is not set correctly.))
 Libraries+=misc_prims util_prims dsp_prims comms_prims
 
-ExcludePlatforms=isim modelsim xsim
+#ExcludePlatforms=isim modelsim xsim
 
 include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk

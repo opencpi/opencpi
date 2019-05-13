@@ -140,9 +140,9 @@ This is done with the loadFlash XXXX script, where XXXX is the name of the platf
 Use "alst4" for the s4gx230-based board, and "alst4x" for the s4gx530-based board.
 
 So, assuming a s4gx530 board, assuming you had already built an opencpi bitstream
-(like "tb_bias" or "testbias"), you would do:
+(like "tb_bias_v2" or "testbias"), you would do:
 
-% loadFlash alstx <OpenCPI Bitstream File> <JTAG_CABLE_SERIAL_NUMBER> 
+% loadFlash alstx <OpenCPI Bitstream File> <JTAG_CABLE_SERIAL_NUMBER>
 
 The <JTAG_CABLE_SERIAL_NUMBER> can be "any" when there is only one cable.
 OpenCPI bitstream files normally end in ".bitz".

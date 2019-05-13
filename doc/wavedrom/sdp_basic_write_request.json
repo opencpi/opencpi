@@ -1,0 +1,22 @@
+{ signal: [
+  { name: 'clk', wave: 'P......'},
+  [ 'initiator',
+   { name: 'header.op',    wave: 'xx=.x..', data: ["write"] },
+   { name: 'header.addr',    wave: 'xx=.x..', data: ["xxx1"] },
+   { name: 'data',         wave: 'x.==x..', data: ["1st","2nd"] },
+   { name: 'valid',        wave: '0.1.0..'},
+   { name: 'eop',          wave: 'x.01x..'}
+  ],
+  {},
+  [ 'responder',
+    { name: 'ready',       wave: '0.1.0..'},
+  ],
+   {}
+],
+head:{
+   tick:0,
+ },
+foot:{
+   text:'Basic Write Request with Address and Data'
+ }
+}

@@ -1,36 +1,42 @@
 This directory (in any project) is for OpenCPI runtime platforms, whether development-capable
 platforms or embedded runtime-only platforms.  The name of each subdirectory is a unique name
-for the platform.  The contents of each directory is a set of platform specific
-files and scripts, and is thus the home for platform specific "stuff".
+for the platform.  The contents of each directory is a set of platform-specific files and
+scripts making it the home for platform-specific "stuff".
 
 There are a few standard files that are expected to be in each platform subdirectory:
 
-README:                    describes the platform
-<platform>-packages.sh:    an optional script to download and install packages from the
-                           standard repository for the OS, only for development platforms
-<platform>-check.sh:       A script to verify you are running on this platform for dev platforms
-                           Only for development platforms
-<platform>.mk:             Settings for self hosted building on development platforms.
+README:                  Describes the platform
+<platform>-packages.sh: Script to download and install packages from the standard repositories
+                        for the OS
+                        (optional, development platforms only)
+<platform>-check.sh:    A script to verify you are running on this platform
+                        (development platforms only)
+<platform>.mk:          Settings for building code targeting this platform
+                        See include/platform-defaults.mk for a list of valid variables
+                        that can be defined as well as their defaults.
+<platform>.exports:     Allows a software platform to "add and subtract" from the standard
+                        framework exports. The + and = lines have the same meaning as in
+                        Project.exports. See the Platform Development Guide for more details.
+                        (optional)
 
-If any platform-specific prerequisites are mentioned in the <platform>.mk file, then for each
-one there should exist a script:
+If any platform-specific prerequisites are mentioned in the <platform>.mk file
+("OcpiPlatformPrerequisites"), then for each one there should exist a script named
 install-<prerequisite>.sh
 
-Thus adding a platform requires at least these steps:
+Therefore, adding a platform requires at least these steps:
 
-1. Add a directory here with the files mentioned above, and a README file describing it
+1. Add a directory here with the files mentioned above, and a README file describing it.
 2. Ensuring that there is compilation (or cross-compilation) support for the target.
    Perhaps creating a tool chain prerequisite installation script here.
 3. If needed for a development platform, add a "<platform>-packages.sh" script to the directory.
 4. For a development platform add the "<platform>-check.sh" script.
 5. Add the "<platform>.mk" files to the directory.
-6. Once getPlatform.sh works on the the development platform
-   the following scripts should execute (at the top level):
+6. Once getPlatform.sh works on the the development platform,
+   the following scripts should work (at the top level):
      ./scripts/install-packages.sh <platform>
      ./scripts/install-prerequisites.sh <platform>
      ./scripts/build-opencpi.sh <platform>
      ./scripts/test-opencpi.sh <platform>
    All these scripts take an optional <platform> argument.
    The test-opencpi.sh will not run on cross-platforms.
-   The scripts/install-opencpi.sh runs all 4 scripts, and also takes a platform argument.
-
+   The scripts/install-opencpi.sh runs all 4 scripts and also takes a platform argument.

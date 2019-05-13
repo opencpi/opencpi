@@ -1,0 +1,4 @@
+The JSON files in this directory were used to create timing diagrams for various documents.
+
+The JSON files were generated using wavedrom (https://wavedrom.com/) and exported as SVG files before insertion into the documents. 
+See doc/odt/diagrams.txt for more details on how to insert an SVG image into a LibreOffice ODT document.

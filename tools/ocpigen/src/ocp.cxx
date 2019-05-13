@@ -665,7 +665,7 @@ emitPortSignalsDir(FILE *f, bool output, Language lang, const char *indent,
 	 (osd != &ocpSignals[OCP_Clk] && (output ? os->master == m_master : os->master != m_master)))) {
       std::string signal, thisComment;
       // connectOcpSignal(*osd, *os, lang == VHDL ? NULL : oa, thisComment, lang, ip, signal);
-      connectOcpSignal(*osd, *os, oa, thisComment, lang, ip, signal);
+      connectOcpSignal(*osd, *os, oa, thisComment, lang, ip, !output, signal);
       /* if (signal.length()) */ {
 	// We have a new one, so can close the previous one
 	doPrev(f, last, comment, hdlComment(lang));
@@ -680,7 +680,7 @@ emitPortSignalsDir(FILE *f, bool output, Language lang, const char *indent,
 		  os->signal, signal.c_str());
 	  fprintf(f, ")");
 	}
-	comment = oa->comment ? oa->comment : thisComment.c_str();
+	comment = oa->comment && (output || !ip.m_hasExprs) ? oa->comment : thisComment.c_str();
 	any = true;
       }
     }
@@ -704,7 +704,7 @@ emitExprAssignments(const InstancePort &ip, Language lang, std::string &out) {
     if (os->value && os->master != m_master &&
 	!(osd == &ocpSignals[OCP_Clk] && ip.m_clockSignal.size())) {
       std::string signal, thisComment;
-      connectOcpSignal(*osd, *os, oa, thisComment, lang, ip, signal);
+      connectOcpSignal(*osd, *os, oa, thisComment, lang, ip, false, signal);
       const char *comment = oa->comment ? oa->comment : thisComment.c_str();
       OU::formatAdd(out, "  %s.%s <= %s;%s%s\n", ip.m_signalIn.c_str(), osd->name,
 		    signal.c_str(), comment[0] ? "-- " : "", comment);
@@ -778,7 +778,7 @@ ocpSignalPrefix(bool master, bool a_clock, Language lang, const Attachment &othe
 
 void OcpPort::
 connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, const OcpAdapt *oa, std::string &thisComment,
-		 Language lang, const InstancePort &ip, std::string &signal) {
+		 Language lang, const InstancePort &ip, bool final, std::string &signal) {
   if (ip.m_attachments.empty()) {
     // A truly unconnected port.  All we want is a tieoff if it is an input
     // We can always use zero since that will assert reset (in OCP reset signaling)
@@ -812,11 +812,16 @@ connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, const OcpAdapt *oa, std::str
     signal = otherIp->m_clockSignal;
     return;
   }
+  bool fromTempSignal = ip.m_hasExprs && final;
   std::string temp;
-  ocpSignalPrefix(os.master, &osd == &ocpSignals[OCP_Clk], lang, *at, temp);
+  if (fromTempSignal) { // if there is already a temp signal bundle for this port, use it
+    assert(!ip.m_signalIn.empty());
+    temp = ip.m_signalIn;
+  } else
+    ocpSignalPrefix(os.master, &osd == &ocpSignals[OCP_Clk], lang, *at, temp);
   if (lang == VHDL)
     temp += '.';
-  if (oa && oa->expr) {
+  if (oa && oa->expr && !fromTempSignal) {
     std::string other;
     if (oa->other != N_OCP_SIGNALS)
       temp += ocpSignals[oa->other].name;
@@ -833,7 +838,8 @@ connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, const OcpAdapt *oa, std::str
     signal = temp + osd.name;
     OcpPort &other = *static_cast<OcpPort*>(otherIp->m_port);
     //assert(other.ocp.signals[osd.number].value);
-    if (other.ocp.signals[osd.number].value && osd.vector && os.width != other.ocp.signals[osd.number].width) {
+    if (!fromTempSignal &&
+	other.ocp.signals[osd.number].value && osd.vector && os.width != other.ocp.signals[osd.number].width) {
       ocpiDebug("Narrowing of assignment to port %s of worker %s from %zu to %zu",
 		pname(), m_worker->m_implName, other.ocp.signals[osd.number].width, os.width);
       OU::formatAdd(signal, lang == Verilog ? "[%zu-1:0]" : "(%zu-1 downto 0)",
@@ -885,5 +891,5 @@ void OcpPort::
 getClockSignal(const InstancePort &ip, Language lang, std::string &s) {
   OcpAdapt adapt;
   std::string thisComment;
-  connectOcpSignal(ocpSignals[OCP_Clk], ocp.Clk, NULL, thisComment, lang, ip, s);
+  connectOcpSignal(ocpSignals[OCP_Clk], ocp.Clk, NULL, thisComment, lang, ip, true, s);
 }

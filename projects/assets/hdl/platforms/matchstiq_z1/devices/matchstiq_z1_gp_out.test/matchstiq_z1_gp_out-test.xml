@@ -19,7 +19,7 @@
   <!-- Has the following set of data and masks values: data = 1:7 and mask = 0,
   data = 1:7 and mask = 1:7, data = 0 and mask = 7, and data = 7 and mask = 1:6 -->
   <case>
-    <input port='in' script='generate.py'  messagesize='8192'/>
+    <input port='in' script='generate.py'/>
     <output port='out' script='verify.py ../../case00.00.golden.dat' disableBackpressure='true'/>
     <property name='testCase' value='1'/>
     <property Name='numOutputSamples' value='21'/>
@@ -53,7 +53,7 @@
   <!-- Has the following set of data and masks values: data = 1:7 and mask = 0,
   data = 1:7 and mask = 1:7, data = 0 and mask = 7, and data = 7 and mask = 1:6 -->
   <case>
-    <input port='in' script='generate.py'  messagesize='8192'/>
+    <input port='in' script='generate.py'/>
     <output port='out' script='verify.py ../../case01.00.golden.dat' disableBackpressure='true'/>
     <property name='testCase' value='2'/>
     <property Name='numOutputSamples' value='21'/>
@@ -63,7 +63,7 @@
 <!-- Testing controlling GPIO pins via devsignal -->
 <!-- Has the following data and masks values: data = 0:1 and mask = 1 -->
 <case>
-  <input port='in' script='generate.py'  messagesize='8192'/>
+  <input port='in' script='generate.py'/>
   <output port='out' script='verify.py ../../case02.00.golden.dat' disableBackpressure='true'/>
   <property name='testCase' value='3'/>
   <property Name='numOutputSamples' value='2'/>

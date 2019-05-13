@@ -88,8 +88,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 %----------------------------------------------------------------------------------------
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
-\def\docTitle{Component Data Sheet}
-\def\docVersion{1.4}
+\def\docTitle{Worker Data Sheet}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -101,33 +101,36 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \begin{document}
 
-\section*{Summary - \Comp}
-\begin{tabular}{|c|M{13.5cm}|}
+\section*{Summary - FMCOMMS2/3 TX Worker}
+\begin{longtable}{|p{\dimexpr0.5\textwidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.5\textwidth-2\tabcolsep\relax}|}
 	\hline
 	\rowcolor{blue}
 	                  &                                        \\
 	\hline
-	Name              & \comp                                  \\
+	Package Prefix    & ocpi.core \\
 	\hline
-	Worker Type       & Endpoint Proxy                         \\
+	Component         & tx \\
 	\hline
-	Version           & v\docVersion \\
+	Name              & fmcomms\_2\_3\_tx                      \\
 	\hline
-	Release Date      & October 2018 \\
+	Authoring Model   & rcc                                    \\
 	\hline
-	Component Library & ocpi.assets.cards \\
+	Version          & 1 \\
 	\hline
-	Workers           & fmcomms\_2\_3\_tx.rcc               \\
+	OpenCPI Release & v\docVersion ~ (released 4/2019) \\
 	\hline
-	Tested Platforms  & Zedboard (xilinx13\_3), ML605 (x86\_64 CentOS7)                             \\
+	Tested Platforms  & Zedboard (xilinx13\_3), ML605 (x86\_64 CentOS 7) \\
 	\hline
-	Slave Worker(s)   &
+	Slaves       & - \\
+	\hline
+	ACI ``Slaves" &
     \begin{itemize}
-      \item ad9361\_config\_proxy.rcc (ACI API)
-      \item ad9361\_data\_sub.hdl (ACI API)
+      \item ad9361\_config\_proxy.rcc
+      \item ad9361\_data\_sub.hdl
     \end{itemize} \\
 	\hline
-\end{tabular}
+\end{longtable}
 
 \section*{Functionality}
 

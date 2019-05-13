@@ -18,3 +18,6 @@
 
 OnlyPlatforms=xsim isim modelsim
 include $(OCPI_CDK_DIR)/include/test.mk
+
+clean::
+	@rm -rf *.golden.dat __pycache__

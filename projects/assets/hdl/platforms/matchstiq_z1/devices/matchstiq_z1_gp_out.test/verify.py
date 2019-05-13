@@ -29,21 +29,22 @@ if len(sys.argv) != 4:
 # u4 is uint32 and setting it to little endian with "<"
 dt = np.dtype('<u4')
 
-#Open input file and grab samples as uint32
+# Open input file and grab samples as uint32
 with open(sys.argv[1], 'rb') as f:
     goldendata = np.fromfile(f, dtype=dt)
 
 
-#Open output file and grab samples as uint32
+# Open output file and grab samples as uint32
 with open(sys.argv[2], 'rb') as f:
     odata = np.fromfile(f, dtype=dt)
 
-
-#Ensure that output data is the expected amount of data
+# Ensure that output data is the expected amount of data
 if len(odata) != len(goldendata):
     print "    FAILED: Output file length is unexpected"
     print "    Length = ", len(odata), "while expected length is = ", len(goldendata)
     sys.exit(1)
+else:
+    print "    PASS: Golden and output file lengths match'"
 
 if np.array_equal(goldendata, odata):
     print "    PASS: Golden and output file match"

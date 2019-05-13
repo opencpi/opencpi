@@ -1,4 +1,4 @@
-% Generated on Fri Sep 28 16:14:12 2018
+% Generated on Tue Apr 30 11:24:21 2019
 
 % It is best to wrap this table in \begin{landscape} and \end{landscape} in its including doc
 \begin{tiny}
@@ -7,11 +7,11 @@
     \caption{Table of Worker Configurations for worker: lime\_tx}\\
         \hline
         \rowcolor{blue}
-            Configuration & ocpi\_endian & ocpi\_debug & txen\_pin\_control\_p \\
+            Configuration & txen\_pin\_control\_p & ocpi\_endian & ocpi\_debug \\
             \hline
-            0             & little       & false       & false \\
+            0             & false                 & little       & false \\
             \hline
-            1             & little       & false       & true \\
+            1             & true                  & little       & false \\
             \hline
         \end{longtable}
 \end{tiny}

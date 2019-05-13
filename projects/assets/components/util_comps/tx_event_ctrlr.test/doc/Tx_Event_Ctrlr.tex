@@ -58,6 +58,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \usepackage{rotating} % for sideways table
 \usepackage{pifont}   % for sideways table
 \usepackage{pdflscape} % for landscape view
+\usepackage{longtable}
 %----------------------------------------------------------------------------------------
 % Table packages
 %----------------------------------------------------------------------------------------
@@ -87,9 +88,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
-\date{Version \docVersion} % Force date to be blank and override date with version
+\date{OpenCPI Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\small{\docTitle}}
 
@@ -101,7 +102,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \begin{document}
 
 \section*{Summary - \Comp}
-\begin{tabular}{|c|M{13.5cm}|}
+\begin{longtable}{|p{\dimexpr0.5\textwidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.5\textwidth-2\tabcolsep\relax}|}
 	\hline
 	\rowcolor{blue}
 	                  &                                                    \\
@@ -110,20 +112,33 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Worker Type       & Application                                        \\
 	\hline
-	Version           & v\docVersion \\
-	\hline
-	Release Date      & Jul 2018 \\
+	Latest OpenCPI Version & v\docVersion ~ (released 4/2019) \\
 	\hline
 	Component Library & ocpi.assets.util\_comps                             \\
 	\hline
-	Workers           & \comp.rcc                                           \\
+	Workers           & \comp.rcc (version 2)                               \\
 	\hline
 	Tested Platforms  & CentOS7 \\
 	\hline
-\end{tabular}
+\end{longtable}
+
+\begin{center}
+  \textit{\textbf{Revision History}}
+\end{center}
+\begin{longtable}{|p{\dimexpr0.15\textwidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.65\textwidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.2\textwidth-2\tabcolsep\relax}|}
+  \hline
+  \rowcolor{blue}
+  \textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+  \hline
+  v1.4 & Initial release. & 9/2018 \\
+  \hline
+  v1.5 & Updated \comp.rcc to version 2 (OWD change only). & 4/2019 \\
+  \hline
+\end{longtable}
 
 \section*{Worker Implementation Details}
-\begin{flushleft}
 When writing a value to the txen property that is different from its
        current value, there will be some finite delay before that write action's
        correspond ZLM is sent to the output port. Because the value read from
@@ -154,9 +169,7 @@ When writing a value to the txen property that is different from its
 	\end{tabular}
   \end{center}
 
-\end{flushleft}
 \section*{Block Diagrams}
-\begin{flushleft}
 \begin{verbatim}
 <!--                                                                         -->
 <!--         txen property                                                   -->
@@ -170,7 +183,6 @@ When writing a value to the txen property that is different from its
 <!--      +_______________+                                                  -->
 <!--                                                                         -->
 \end{verbatim}
-\end{flushleft}
 
 \begin{landscape}
 	\section*{Component Spec Properties}

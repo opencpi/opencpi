@@ -1,0 +1,11 @@
+\section*{Theory}
+\begin{flushleft}
+	A CIC filter is comprised of \verb+N+ integrator sections cascaded together with \verb+N+ comb sections. Combining the transfer functions for all sections results in the system response function seen in Equation \ref{eq:response_function}. Note that the filter has zeros at integer multiples of $\frac{f_{s}}{RM}$ Hz.
+
+	\begin{equation} \label{eq:response_function}
+		H(z) = \Big[H_{int}(z)\Big]^N\Big[H_{comb}(z)\Big]^N = \Big[\frac{1}{(1-z^{-1})^N}\Big]\Big[(1-z^{-RM})^N\Big] = 	\frac{(1 - z^{-RM})^N}{(1-z^{-1})^N}
+	\end{equation}
+
+	%The filter has zeros at integer multiples of $\frac{f_{s}}{RM}$ Hz. The region surrounding the nulls is where aliasing occurs, so 	this aliasing effect must be considering when choosing \verb+N+, \verb+M+, and \verb+R+.
+
+\end{flushleft}

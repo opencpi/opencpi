@@ -1,3 +1,4 @@
+%TODO: Use LaTeX_Header
 \documentclass{article}
 \iffalse
 This file is protected by Copyright. Please refer to the COPYRIGHT file
@@ -48,8 +49,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \renewcommand{\contentsname}{Table of Contents}
 \renewcommand{\listfigurename}{List of Figures}
 \renewcommand{\listtablename}{List of Tables}
-\newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
-\newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
 %----------------------------------------------------------------------------------------
 % Various pacakges
 %----------------------------------------------------------------------------------------
@@ -99,6 +98,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \title{\docTitle}
 \lhead{\small{\docTitle}}
 
+\def\snippetpath{snippets}
+\input{\snippetpath/includes}
+
 \def\comp{dig\_radio\_ctrlr}
 \def\Comp{Digital Radio Controller}
 \graphicspath{ {figures/} }
@@ -106,7 +108,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \begin{document}
 
 \section*{Summary - \Comp}
-\begin{longtable}{|p{3cm}|p{13.84cm}|}
+\begin{longtable}{|p{\dimexpr0.5\textwidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.5\textwidth-2\tabcolsep\relax}|}
 	\hline
 	\rowcolor{blue}
 	                  &                                        \\
@@ -121,7 +124,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \begin{center}
   \textit{\textbf{Revision History}}
-  \begin{longtable}{|p{2cm}|p{12cm}|p{2.4cm}|}
+  \begin{longtable}{|p{\dimexpr0.15\textwidth-2\tabcolsep\relax}
+                    |p{\dimexpr0.65\textwidth-2\tabcolsep\relax}
+                    |p{\dimexpr0.2\textwidth-2\tabcolsep\relax}|}
     \hline
     \rowcolor{blue}
     \textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
@@ -1095,10 +1100,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \begin{thebibliography}{1}
 
-  \bibitem{dig_radio_ctrlr_fmcomms_2_3_comp_datasheet} Dig\_Radio\_Ctrlr\_FMCOMMS\_2\_3.pdf \\
-  \url{https://opencpi.github.io/assets/Dig_Radio_Ctrlr_FMCOMMS_2_3.pdf}
-  \bibitem{ocpi_app_guide} OpenCPI Application Development \\
-  \url{https://opencpi.github.io/OpenCPI_Application_Development.pdf}
+  \bibitem{dig_radio_ctrlr_fmcomms_2_3_comp_datasheet}
+  \githubio[FMCOMMS2/3 Digital Radio Controller Worker]{assets/Dig\_Radio\_Ctrlr\_FMCOMMS\_2\_3.pdf} \\
+  \bibitem{ocpi_app_guide}
+  \githubio[OpenCPI Application Development]{OpenCPI\_Application\_Development.pdf}
   %\bibitem{rx_tx_comp_datasheet} Generic RF Interface \\
   %\url{https://opencpi.github.io/Generic_RF_Interface.pdf}
 

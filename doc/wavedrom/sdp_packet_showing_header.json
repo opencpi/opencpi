@@ -1,0 +1,20 @@
+{ signal: [
+  { name: 'clk', wave: 'P......'},
+  [ 'initiator',
+   { name: 'data',    wave:  'x==x=x.', data: ["1st","2nd","last"] },
+   { name: 'valid',   wave: '01.010.'},
+   { name: 'header',  wave:  'x=...x.', data: ["constant"] },
+  ],
+   {},
+  [ 'responder',
+    { name: 'ready',   wave: '01.010.'},
+  ],
+   {}
+],
+head:{
+   tick:0,
+ },
+foot:{
+   text:'SDP Packet Transfer Showing Header',
+ },
+}

@@ -317,7 +317,7 @@ parse(ezxml_t xml, Board &b, SlotType *stype) {
       switch (boardSig->m_direction) {
       case Signal::IN: // input to board
 	if (devSig->m_direction != Signal::IN)
-	  return OU::esprintf("Board signal \"%s\" is input to card/paltform, "
+	  return OU::esprintf("Board signal \"%s\" is input to card/platform, "
 			      "but \"%s\" is not input to device", boardSig->cname(),
 			      devSig->cname());
 	break;

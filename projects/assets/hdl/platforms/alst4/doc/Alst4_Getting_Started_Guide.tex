@@ -1,3 +1,4 @@
+%TODO: Use LaTeX_Header
 \documentclass{article}
 \iffalse
 This file is protected by Copyright. Please refer to the COPYRIGHT file
@@ -28,6 +29,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{textcomp}
+\usepackage{footnote}
 \pagestyle{fancy}
 \lhead{Board Support Package Documentation}
 \rhead{ANGRYVIPER Team}
@@ -36,6 +38,11 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \newcommand{\terminaloutput}[1]{\texttt{#1}}
 \definecolor{blue}{rgb}{.5,1,1}
 \definecolor{drkgreen}{rgb}{0,.6,0}
+
+\def\snippetpath{../../../../../../doc/av/tex/snippets}
+\input{\snippetpath/includes}
+\usepackage{ifthen}
+
 \begin{document}
 
 \section*{Zipper Deprecation Notice:}
@@ -64,12 +71,14 @@ Hardware prerequisites are as follows.
                 \multicolumn{1}{|c|}{Test dual loopback setup} & HSMC Debug Loopback Card & HSMC Debug Loopback Card \\ \hline
                 \multicolumn{1}{|c|}{Test breakout A setup} & HSMC Debug Breakout Header Card & (empty)\\ \hline
                 \multicolumn{1}{|c|}{Test breakout B setup} & (empty) & HSMC Debug Breakout Header Card \\ \hline
-                \multicolumn{1}{|c|}{Zipper A setup} & Modified\cite{zipper_mods} Zipper/MyriadRF & (empty)\\
+                \multicolumn{1}{|c|}{Zipper A setup\ref{deprecation_zipper}} & Modified\cite{zipper_mods} Zipper/MyriadRF & (empty)\\
                 \multicolumn{1}{|c|}{ } & transceiver card & \\ \hline
-                \multicolumn{1}{|c|}{Zipper B setup} & (empty) & Modified\cite{zipper_mods} Zipper/MyriadRF \\
+                \multicolumn{1}{|c|}{Zipper B setup\ref{deprecation_zipper}} & (empty) & Modified\cite{zipper_mods} Zipper/MyriadRF \\
                 \multicolumn{1}{|c|}{ } & & transceiver card \\ \hline
         \end{tabular}
         \end{table}
+        \footnotetext[1]{\label{deprecation_zipper}Deprecated Support as
+        of OpenCPI 1.5}
 \end{center}
 
 \section{Software Prerequisites}
@@ -81,10 +90,10 @@ Hardware prerequisites are as follows.
 \item OpenCPI assets project compiled for alst4.
 \end{itemize}
 
-\input{../../../../../../doc/av/tex/snippets/memmap.tex }
+\input{memmap}
 
 \section{Driver Notes}
-\input{../../../../../../doc/av/tex/snippets/Driver_Snippet.tex }
+\input{Driver_Snippet}
 
 \section{Loading the OpenCPI driver}
 When OpenCPI is installed via RPMs, the OpenCPI driver should have been installed. However, when developing with source OpenCPI, the user is required to manage the loading of the OpenCPI driver. \\
@@ -108,7 +117,7 @@ OCPI( 2:816.0544): In HDL Container driver, got PCI search error: Can't open /de
 Available containers:
  #  Model Platform       OS     OS-Version  Arch     Name
  0  rcc   centos7        linux  c7          x86_64   rcc0
- 
+
 ocpidriver load
 Found generic reserved DMA memory on the linux boot command line and assuming it is for OpenCPI: [memmap=128M$0x1000000]
 Driver loaded successfully.
@@ -230,29 +239,28 @@ sudo <quartus_directory>/bin/jtagconfig
 
 \subsubsection*{Single Port of Data from CPU to FPGA} % AV-3783
 \label{bug:3783}
-The current implementations of the PCI-e Specification on the this platform only correctly implements data flow from the CPU to the FPGA under certain configurations which must be met when defining new Assemblies:
-\begin{itemize}
-\item At most a single data port with CPU-to-FPGA data flow. Port connection must also be one of:
+The current implementations of the PCI-e specification on this platform correctly implements data flow from the CPU to the FPGA, only under certain configurations (assembly/container) and is limited to only a single port of data from CPU to FPGA. Fundamentally, OpenCPI only supports a single port connection from the CPU to the FPGA. \\ \\
+To ensure the proper configurations are met, assembly and container XML files must be designed based on the following rules:
 \begin{enumerate}
-\item defined in a single-worker Assembly XML using the worker ``\texttt{Externals='true'}'' attribute/value and the DefaultContainer used (DefaultContainer not defined in Assembly Makefile), or
-\item the first External Assembly Connection defined in the Assembly XML and the DefaultContainer used, or
-\item the first Interconnect Container Connection defined in a Container XML (Default Container must be disabled via ``\texttt{DefaultContainer=}'' in the Assembly Makefile).
+\item When a single worker exists in an assembly and it ports are connected to the assembly (Externals='true'), then
+the container must be built for the "base" container. (i.e. the assembly's Makefile must contain "DefaultContainer=").
+\item When an assembly's external connections are explicitly defined (i.e. not using Externals='true'), then the first external assembly connection that is defined in the assembly XML must be that of the CPU to FPGA, and the "base" container used (i.e. the assembly's Makefile must contain "DefaultContainer="), or
+\item When defining external connections in a container XML, then the first interconnect container connection defined must be that of the CPU to FPGA and the "base" container used (i.e. the assembly's Makefile must contain "DefaultContainer=").
 \end{enumerate}
-\end{itemize}
 Note that this applies to the TX/DAC data path connections for bitstreams with transceiver transmit data flow from a CPU (e.g. RCC worker to FPGA TX/DAC data path). See \path{projects/assets/hdl/assemblies/empty/cnt_1rx_1tx_bypassasm_fmcomms_2_3_lpc_LVDS_ml605.xml} as an example.
 
 \pagebreak
   \begin{thebibliography}{1}
 
 
-  \bibitem{alst4_hardware_setup} ALST4 Hardware Setup\\
-	 \url{https://opencpi.github.io/assets/alst4_hardware_setup.pdf}
-  \bibitem{fpga_vendor_tool_guide} FPGA Vendor Tools Guide\\
-	 \url{https://opencpi.github.io/FPGA_Vendor_Tools_Installation_Guide.pdf}
-	   \bibitem{rpm_installation_guide} OpenCPI RPM Installation Guide\\
-	 \url{https://opencpi.github.io/RPM_Installation_Guide.pdf}
-	   \bibitem{zipper_mods} Required Modifications for Myriad-RF 1 and Zipper Daughtercards\\
-	 \url{https://opencpi.github.io/assets/Required_Modifications_for_Myriad-RF_1_Zipper_Daughtercards.pdf}
+  \bibitem{alst4_hardware_setup}
+	 \githubio[ALST4 Hardware Setup]{assets/Alst4\_Hardware\_Setup.pdf}
+  \bibitem{fpga_vendor_tool_guide}
+	 \githubio[FPGA Vendor Tools Guide]{FPGA\_Vendor\_Tools\_Installation\_Guide.pdf}
+	   \bibitem{rpm_installation_guide}
+	 \githubio[OpenCPI RPM Installation Guide]{RPM\_Installation\_Guide.pdf}
+	   \bibitem{zipper_mods}
+	 \githubio[Required Modifications for Myriad-RF 1 and Zipper Daughtercards]{assets/Required\_Modifications\_for\_Myriad-RF\_1\_Zipper\_Daughtercards.pdf}
 
   \end{thebibliography}
 

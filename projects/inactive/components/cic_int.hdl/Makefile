@@ -71,4 +71,5 @@ HdlExactPart=\
 	$(and $(filter virtex6,$(HdlTarget)),xc6vlx240t-1-ff1156), \
 	$(and $(filter stratix4,$(HdlTarget)),ep4sgx230k-c2-f40))
 
+Libraries=dsp_prims
 include $(OCPI_CDK_DIR)/include/worker.mk

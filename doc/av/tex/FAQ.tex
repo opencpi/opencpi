@@ -20,9 +20,11 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Frequently Asked Questions}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
-\input{snippets/LaTeX_Header.tex}
+\def\snippetpath{snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
 \setlength{\parindent}{0pt} % Don't indent all paragraphs
 \newcommand{\forceindent}{\leavevmode{\parindent=1em\indent}}
 \date{Version \docVersion} % Force date to be blank and override date with version
@@ -32,7 +34,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 %----------------------------------------------------------------------------------------
 \begin{document}
 \maketitle
-\thispagestyle{fancy}
 \newpage
 
         \begin{center}
@@ -50,6 +51,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
                         \hline
                         v1.4 & Updated for OpenCPI Release 1.4 & 9/2018 \\
                         \hline
+                        v1.5 & Updated for OpenCPI Release 1.5 & 4/2019 \\
+                        \hline
                         \end{tabularx}
                 \end{table}
         \end{center}
@@ -65,19 +68,36 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 Yes, the RPMs distributed by the ANGRYVIPER team incorporates and extends the Free / Open Source Project ``OpenCPI.'' Any OpenCPI installation documents that still exist are for reference and legacy users. All other OpenCPI documentation still applies and should be referenced. Do \textbf{not} attempt to install OpenCPI from source at the same time as the RPM distribution.
 \end{description}
 
+\begin{description}[style=nextline]
+\item[Where can I go for more help?]~\\
+\label{faq:halp}%
+All documentation is available at \href{https://opencpi.github.io/}{\path{github.io}} and there is a public mailing list (with archive) at \href{http://lists.opencpi.org/}{\path{opencpi.org}}.
+\end{description}
+
 \section{Install-Specific Questions}
 \begin{description}[style=nextline]
 % AV-1724
 \item[Does it matter what version of CentOS is used?]~\\
-Both CentOS~6 and CentOS~7 are supported as long as the proper version of the RPM is used. Local hardware support (\textit{e.g.} PCIe-based platforms) is officially supported on both OS releases starting with Version 1.1.
+Both CentOS~6\footnote{CentOS~6 RPMs are built using 6.10.} and CentOS~7 are supported as long as the proper version of the RPM is used. Local hardware support (\textit{e.g.} PCIe-based platforms) is officially supported on both OS releases starting with Version 1.1.
+CentOS~6, while not officially deprecated, does not get as much testing by the core team, so may have unnoticed issues.
+
+CentOS~7 is now considered a ``rolling release'' so they say, for example, that at a point in
+time\footnote{\url{https://wiki.centos.org/About/Product} and \url{https://wiki.centos.org/FAQ/General}'s ``How does CentOS versioning work?''} it is ``CentOS~7 (1810)'' but \textit{not} specifically ``7.6''.
+The OpenCPI RPMs are built using ``7 (1804)'' which is informally 7.5, so if you are running a version older than 7.5, you need to upgrade the target OS or use the source distribution.
 \end{description}
 
-\section{General Usage Questions}
+\section{General Usage Problems / Questions}
 \begin{description}[style=nextline]
 % AV-1724
 % AV-4029
 \item[Make error: ``*** isim not an available HDL platform.  Stop.'']~\\
 Either the Core Project was never built, or it is not properly registered. This is explained in the \textit{Getting Started Guide}.
+
+% Support email 2019-05-02
+\item[\code{/opt/opencpi/cdk/centos7/bin/ocpigen: /opt/Xilinx/.../libstdc++.so.6: version `GLIBCXX\_3.4.15' not found (required by /opt/opencpi/cdk/centos7/bin/ocpigen)}]~\\
+\label{xilinx-paths}%
+If the OpenCPI tools, \textit{e.g.} \path{ocpigen}, are reporting problems with a \path{libstdc++} \textit{within a Xilinx tool path}, that means your environment has imported the Xilinx tool's configuration script, \textit{e.g.} \path{settings64.sh} (\sref{bug:1736}).
+If you didn't manually import it, ensure you don't have a line that does elsewhere, \textit{e.g.} in \path{~/.bashrc}.
 
 % 2016-10-19
 \item[I am trying to run a demo application with ``ocpirun'' and artifacts are not being found.]~\\
@@ -119,10 +139,11 @@ A Worker to consult as an example is ``\path{iqstream_max_calculator.hdl}.''
 \begin{description}[style=nextline]
 % AV-1724, 2016-10-15
 \item[Are there any other setups I need to perform on the Xilinx Vivado or ISE side?]~\\
-No, we abstract away a lot of the requirements if you simply install it in \path{/opt/Xilinx} and point the setup variables to it (see \path{/opt/opencpi/cdk/env.d/xilinx.sh.example} and the \textit{RPM Installation Guide}).
+No, we abstract away a lot of the requirements if you simply install it in \path{/opt/Xilinx} and point the OpenCPI-specific setup variables to it (see \path{/opt/opencpi/cdk/env.d/xilinx.sh.example} and the \textit{RPM Installation Guide}).
 
 % AV-1736
-Additionally, importing the Xilinx setup scripts, \textit{e.g.} ``\path{source /opt/Xilinx/14.7/ISE_DS/settings64.sh}'' or ``\path{source /opt/Xilinx/Vivado/2017.1/settings64.sh}'', can cause other problems and \textbf{should not be performed}.
+\label{bug:1736}
+Additionally, importing the Xilinx setup scripts, \textit{e.g.} ``\path{source /opt/Xilinx/14.7/ISE_DS/settings64.sh}'' or ``\path{source /opt/Xilinx/Vivado/2017.1/settings64.sh}'', can cause other problems (\sref{xilinx-paths}) and \textbf{should not be performed}.
 
 % 2016-10-07
 \item[The ZedBoard comes with a license, but it is for the Vivado tools.]~\\

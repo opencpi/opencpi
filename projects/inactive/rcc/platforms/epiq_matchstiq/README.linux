@@ -4,7 +4,7 @@ contains develop notes.
 For epic's matchstiq_z1, OpenCPI uses the Linux kernel supplied by the
 vendor (epic). The required headers would be found in the vendor directory
 in the directory named "zynq_kernel".  However they are not provided since
-this is an inactive platform, but instructions for creating your own are 
+this is an inactive platform, but instructions for creating your own are
 given in vendor/README
 
 OpenCPI has a loadable Linux kernel device driver that must be built against

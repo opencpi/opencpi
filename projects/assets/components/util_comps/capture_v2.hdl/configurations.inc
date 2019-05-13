@@ -1,4 +1,4 @@
-% Generated on Fri Sep 28 16:14:09 2018
+% Generated on Tue Apr 30 11:24:21 2019
 
 % It is best to wrap this table in \begin{landscape} and \end{landscape} in its including doc
 \begin{tiny}
@@ -7,9 +7,9 @@
     \caption{Table of Worker Configurations for worker: capture\_v2}\\
         \hline
         \rowcolor{blue}
-            Configuration & numDataWords & numRecords \\
+            Configuration & numRecords & numDataWords \\
             \hline
-            0             & 1024         & 256 \\
+            0             & 256        & 1024 \\
             \hline
         \end{longtable}
 \end{tiny}

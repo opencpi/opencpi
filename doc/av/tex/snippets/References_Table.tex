@@ -41,26 +41,25 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
   \caption {References}
   \label{table:references}
 \fi
-  \begin{tabularx}{\textwidth}{|C|c|C|}
+  \begin{tabularx}{\textwidth}{|C|C|}
     \hline
     \rowcolor{blue}
-    \textbf{Title} & \textbf{Published By} & \textbf{Link} \\
-\ifx\refskipgs\undefined
+    \textbf{Title} & \textbf{Link} \\
+\ifx\refskipocpiov\undefined
     \hline
-    Getting Started & ANGRYVIPER Team & \path{Getting_Started.pdf} \\
-\fi
-\ifx\refskipig\undefined
-    \hline
-    Installation Guide & ANGRYVIPER Team & \path{RPM_Installation_Guide.pdf} \\
+    OpenCPI Overview & \githubio{Overview.pdf} \\
 \fi
 \ifx\refskipac\undefined
     \hline
-    Acronyms and Definitions & ANGRYVIPER Team & \path{Acronyms_and_Definitions.pdf} \\
+    Acronyms and Definitions & \githubio{Acronyms\_and\_Definitions.pdf} \\
 \fi
-\ifx\refskipocpiov\undefined
+\ifx\refskipgs\undefined
     \hline
-    Overview & ANGRYVIPER Team &
-\url{http://opencpi.github.io/Overview.pdf} \\
+    Getting Started & \githubio{Getting\_Started.pdf} \\
+\fi
+\ifx\refskipig\undefined
+    \hline
+    Installation Guide & \githubio{RPM\_Installation\_Guide.pdf} \\
 \fi
 \ifx\myreferences\undefined
 \else

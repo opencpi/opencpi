@@ -1,4 +1,4 @@
-% Generated on Fri Sep 28 16:14:10 2018
+% Generated on Tue Apr 30 11:24:21 2019
 
 % It is best to wrap this table in \begin{landscape} and \end{landscape} in its including doc
 \begin{tiny}
@@ -7,9 +7,9 @@
     \caption{Table of Worker Configurations for worker: ad9361\_adc}\\
         \hline
         \rowcolor{blue}
-            Configuration & fifo\_depth & ocpi\_endian & ocpi\_debug \\
+            Configuration & ocpi\_debug & ocpi\_endian & fifo\_depth \\
             \hline
-            0             & 64          & little       & false \\
+            0             & false       & little       & 64 \\
             \hline
         \end{longtable}
 \end{tiny}

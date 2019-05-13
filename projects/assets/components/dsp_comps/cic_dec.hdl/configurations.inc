@@ -1,4 +1,4 @@
-% Generated on Fri Sep 28 16:14:05 2018
+% Generated on Tue Apr 30 11:24:21 2019
 
 % It is best to wrap this table in \begin{landscape} and \end{landscape} in its including doc
 \begin{tiny}
@@ -7,33 +7,33 @@
     \caption{Table of Worker Configurations for worker: cic\_dec}\\
         \hline
         \rowcolor{blue}
-            Configuration & ocpi\_endian & ACC\_WIDTH & DOUT\_WIDTH & M & N & DIN\_WIDTH & ocpi\_debug & R \\
+            Configuration & DOUT\_WIDTH & ocpi\_debug & M & R    & DIN\_WIDTH & ocpi\_endian & N & ACC\_WIDTH \\
             \hline
-            0             & little       & 22         & 16          & 1 & 3 & 16         & false       & 4 \\
+            0             & 16          & false       & 1 & 4    & 16         & little       & 3 & 22 \\
             \hline
-            1             & little       & 25         & 16          & 2 & 3 & 16         & false       & 4 \\
+            1             & 16          & false       & 2 & 4    & 16         & little       & 3 & 25 \\
             \hline
-            2             & little       & 23         & 16          & 1 & 3 & 16         & false       & 5 \\
+            2             & 16          & false       & 1 & 5    & 16         & little       & 3 & 23 \\
             \hline
-            3             & little       & 26         & 16          & 2 & 3 & 16         & false       & 5 \\
+            3             & 16          & false       & 2 & 5    & 16         & little       & 3 & 26 \\
             \hline
-            4             & little       & 25         & 16          & 1 & 3 & 16         & false       & 8 \\
+            4             & 16          & false       & 1 & 8    & 16         & little       & 3 & 25 \\
             \hline
-            5             & little       & 28         & 16          & 1 & 3 & 16         & false       & 16 \\
+            5             & 16          & false       & 1 & 16   & 16         & little       & 3 & 28 \\
             \hline
-            6             & little       & 49         & 16          & 1 & 3 & 16         & false       & 2048 \\
+            6             & 16          & false       & 1 & 2048 & 16         & little       & 3 & 49 \\
             \hline
-            7             & little       & 52         & 16          & 2 & 3 & 16         & false       & 2048 \\
+            7             & 16          & false       & 2 & 2048 & 16         & little       & 3 & 52 \\
             \hline
-            8             & little       & 60         & 16          & 1 & 4 & 16         & false       & 2048 \\
+            8             & 16          & false       & 1 & 2048 & 16         & little       & 4 & 60 \\
             \hline
-            9             & little       & 55         & 16          & 1 & 3 & 16         & false       & 8191 \\
+            9             & 16          & false       & 1 & 8191 & 16         & little       & 3 & 55 \\
             \hline
-            10            & little       & 58         & 16          & 2 & 3 & 16         & false       & 8191 \\
+            10            & 16          & false       & 2 & 8191 & 16         & little       & 3 & 58 \\
             \hline
-            11            & little       & 55         & 16          & 1 & 3 & 16         & false       & 8192 \\
+            11            & 16          & false       & 1 & 8192 & 16         & little       & 3 & 55 \\
             \hline
-            12            & little       & 58         & 16          & 2 & 3 & 16         & false       & 8192 \\
+            12            & 16          & false       & 2 & 8192 & 16         & little       & 3 & 58 \\
             \hline
         \end{longtable}
 \end{tiny}

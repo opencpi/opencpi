@@ -324,16 +324,18 @@ begin
   peak_a_in           <= std_logic_vector(resize(signed(i_odata),16));
   peak_b_in           <= std_logic_vector(resize(signed(q_odata),16));
 
-  pd : util_prims.util_prims.peakDetect
-    port map (
-      CLK_IN   => ctl_in.clk,
-      RST_IN   => peak_rst_in,
-      EN_IN    => odata_vld,
-      A_IN     => peak_a_in,
-      B_IN     => peak_b_in,
-      PEAK_OUT => peak_out);
+  pm_gen : if its(PEAK_MONITOR_p) generate
+    pd : util_prims.util_prims.peakDetect
+      port map (
+        CLK_IN   => ctl_in.clk,
+        RST_IN   => peak_rst_in,
+        EN_IN    => odata_vld,
+        A_IN     => peak_a_in,
+        B_IN     => peak_b_in,
+        PEAK_OUT => peak_out);
 
-  props_out.peak <= signed(peak_out);
+    props_out.peak <= signed(peak_out);
+  end generate pm_gen;
 
   groupDelayCounterProc : process (ctl_in.clk)
   begin

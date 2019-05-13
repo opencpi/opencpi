@@ -1,10 +1,10 @@
-% Generated on Fri Oct  5 08:46:01 2018
+% Generated on Tue Apr 30 11:24:21 2019
 
 % It is best to wrap this table in \begin{landscape} and \end{landscape} in its including doc
 \begin{tiny}
     \begin{longtable}[l]{* {9}{|c}|}
     \captionsetup{justification=raggedright,singlelinecheck=false}
-    \caption{Resource Utilization Table for worker: matchstiq\_z1\_avr}\\
+    \caption{Resource Utilization Table for worker "matchstiq\_z1\_avr"}\\
         \hline
         \rowcolor{blue}
             Configuration & OCPI Target & Tool   & Version & Device          & Registers (Typ) & LUTs (Typ) & Fmax (MHz) (Typ) & Memory/Special Functions \\

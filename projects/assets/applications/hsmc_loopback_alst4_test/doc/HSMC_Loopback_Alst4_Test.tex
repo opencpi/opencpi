@@ -21,9 +21,11 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{OpenCPI\\ HSMC Loopback Stratix IV (alst4) Test App Guide}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
-\input{../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
+\def\snippetpath{../../../../../doc/av/tex/snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{HSMC Loopback Stratix IV (alst4) Test App Guide}
@@ -33,6 +35,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \graphicspath{ {figures/} }
 \usepackage{textcomp}
 \usepackage{listings}
+
+\lstset{language=bash, backgroundcolor=\color{lightgray}, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
 
 \begin{document}
 \maketitle
@@ -48,6 +52,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		    \hline
 		    v1.4 & Converted to application from unit test structure. & 9/2018 \\
 			\hline
+			v1.5 & Added more commands and expanded text & 4/2019 \\
+			\hline
 			\end{tabularx}
 		\end{table}
 	\end{center}
@@ -57,18 +63,23 @@ Intended to test HSMC slots on the alst4 platform.
 \section{Hardware Setup}
 x86 machine with the Stratix IV PCIE card with both HSMC slots populated with a Loopback HSMC Card\cite{debugcard}.
 \section{Prerequisites}
-empty assembly w/ the cnt\_hsmc\_loopback\_card\_hsmc\_alst4\_a\_hsmc\_alst4\_b container built for alst4 platform.
-\section{Execution}
-\subsection{OCPI\_LIBRARY\_PATH Requirements/Considerations}
-None.
-\subsection{Command(s)}
-Execution must occur from within the hsmc\_loopback\_test directory. \\
-\lstset{language=bash, backgroundcolor=\color{lightgray}, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
+The prerequisites are the empty assembly with the container cnt\_hsmc\_loopback\_card\_hsmc\_alst4\_a\_hsmc\_alst4\_b built for alst4 platform. \\ \\
+To build the container navigate to the empty assembly /hdl/assemblies/empty and run the command:
 \begin{lstlisting}
-./<target-dir>/hsmc_loopback_test
+make HdlPlatforms=alst4 Containers=cnt_hsmc_loopback_card_hsmc_alst4_a_hsmc_alst4_b
+\end{lstlisting}
+\section{Execution}
+
+\subsection{OCPI\_LIBRARY\_PATH Requirements/Considerations}
+The \verb+OCPI_LIBRARY_PATH+ environment variable must be set to \verb+<assets project directory>/artifacts+.
+\subsection{Command(s)}
+Execution must occur from within the applications/hsmc\_loopback\_test directory using the following command:
+\begin{lstlisting}
+ ./<target-dir>/hsmc_loopback_test
 \end{lstlisting}
 \section{Verification}
-Application exit status indicates success (status of 0 indicates success, status of 1 indicates failure, status of 100 indicates test unexpectedly could not complete). Either PASSED or FAILED is also printed to stdout/stderr, respectively.
+Application exit status indicates success (status of 0 indicates success, status of 1 indicates failure, status of 100 indicates test unexpectedly could not complete). Either PASSED or FAILED is also printed to stdout/stderr, respectively. To get the exit code use (echo \$?) immediately after the last command.
+
 
 \begin{thebibliography}{1}
 

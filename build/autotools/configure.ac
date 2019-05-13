@@ -134,7 +134,7 @@ m4_foreach_w([ocpi_var],[
   libtool_library_flags libtool_program_flags
   common_cppflags common_cflags common_cxxflags strict_cppflags strict_cflags strict_cxxflags
   ocpi_dynamic ocpi_library_suffix ocpi_library_flags ocpi_program_flags ocpi_swig_flags OcpiSWIG
-  PYTHON_VERSION
+  PYTHON_VERSION OcpiPythonInclude
 ], [AC_SUBST(ocpi_var)])
 
 # These are needed in ocpi-config.h and ocpi-platform-config.h
