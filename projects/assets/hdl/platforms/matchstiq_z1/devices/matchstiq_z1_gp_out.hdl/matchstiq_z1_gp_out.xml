@@ -9,7 +9,7 @@
     The mask allows setting GPIO pins on or off in a single operation. The MSW must be the mask and LSW must be the data and the 3 LSB of the mask and data correspond
     to the 3 GPIO pins of the Matchstiq-Z1. For example if mask_data = 0x00010003, the mask = 0x0001 and data = 0x0003. This would set gpio1 to 1."/>
 
-  <Property Name="simulation_p" Type="bool" Parameter="true" Readable="true" Default="false" Description="If true generate circuits for simulation logic."/>
+  <Property Name="simulation_p" Type="bool" Parameter="true" Default="false" Description="If true generate circuits for simulation logic."/>
 
   <!-- Ports -->
   <!-- The 3 LSB of MSW and LSW of in_in.data controls GPIO pins -->

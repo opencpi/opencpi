@@ -1,3 +1,4 @@
+%TODO: Use LaTeX_Header
 \documentclass{article}
 \iffalse
 This file is protected by Copyright. Please refer to the COPYRIGHT file
@@ -37,6 +38,11 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \newcommand{\terminaloutput}[1]{\texttt{#1}}
 \definecolor{blue}{rgb}{.5,1,1}
 \definecolor{drkgreen}{rgb}{0,.6,0}
+
+\def\snippetpath{../../../../../../doc/av/tex/snippets}
+\input{\snippetpath/includes}
+\usepackage{ifthen}
+
 \begin{document}
 
 \section*{Zipper Deprecation Notice:}
@@ -84,10 +90,10 @@ Hardware prerequisites are as follows.
 \item OpenCPI assets project compiled for alst4.
 \end{itemize}
 
-\input{../../../../../../doc/av/tex/snippets/memmap.tex }
+\input{memmap}
 
 \section{Driver Notes}
-\input{../../../../../../doc/av/tex/snippets/Driver_Snippet.tex }
+\input{Driver_Snippet}
 
 \section{Loading the OpenCPI driver}
 When OpenCPI is installed via RPMs, the OpenCPI driver should have been installed. However, when developing with source OpenCPI, the user is required to manage the loading of the OpenCPI driver. \\
@@ -111,7 +117,7 @@ OCPI( 2:816.0544): In HDL Container driver, got PCI search error: Can't open /de
 Available containers:
  #  Model Platform       OS     OS-Version  Arch     Name
  0  rcc   centos7        linux  c7          x86_64   rcc0
- 
+
 ocpidriver load
 Found generic reserved DMA memory on the linux boot command line and assuming it is for OpenCPI: [memmap=128M$0x1000000]
 Driver loaded successfully.
@@ -247,14 +253,14 @@ Note that this applies to the TX/DAC data path connections for bitstreams with t
   \begin{thebibliography}{1}
 
 
-  \bibitem{alst4_hardware_setup} ALST4 Hardware Setup\\
-	 \url{https://opencpi.github.io/assets/Alst4_Hardware_Setup.pdf}
-  \bibitem{fpga_vendor_tool_guide} FPGA Vendor Tools Guide\\
-	 \url{https://opencpi.github.io/FPGA_Vendor_Tools_Installation_Guide.pdf}
-	   \bibitem{rpm_installation_guide} OpenCPI RPM Installation Guide\\
-	 \url{https://opencpi.github.io/RPM_Installation_Guide.pdf}
-	   \bibitem{zipper_mods} Required Modifications for Myriad-RF 1 and Zipper Daughtercards\\
-	 \url{https://opencpi.github.io/assets/Required_Modifications_for_Myriad-RF_1_Zipper_Daughtercards.pdf}
+  \bibitem{alst4_hardware_setup}
+	 \githubio[ALST4 Hardware Setup]{assets/Alst4\_Hardware\_Setup.pdf}
+  \bibitem{fpga_vendor_tool_guide}
+	 \githubio[FPGA Vendor Tools Guide]{FPGA\_Vendor\_Tools\_Installation\_Guide.pdf}
+	   \bibitem{rpm_installation_guide}
+	 \githubio[OpenCPI RPM Installation Guide]{RPM\_Installation\_Guide.pdf}
+	   \bibitem{zipper_mods}
+	 \githubio[Required Modifications for Myriad-RF 1 and Zipper Daughtercards]{assets/Required\_Modifications\_for\_Myriad-RF\_1\_Zipper\_Daughtercards.pdf}
 
   \end{thebibliography}
 

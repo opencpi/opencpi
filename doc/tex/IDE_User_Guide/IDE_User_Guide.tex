@@ -1,8 +1,9 @@
+%TODO: Use LaTeX_Header
 \iffalse
 This file is protected by Copyright. Please refer to the COPYRIGHT file
 distributed with this source distribution.
 
-This file is part of OpenCPI <http://www.OpenCPI.org>
+This file is part of OpenCPI <http://www.opencpi.org>
 
 OpenCPI is free software: you can redistribute it and/or modify it under the
 terms of the GNU Lesser General Public License as published by the Free Software
@@ -12,6 +13,7 @@ version.
 OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
 You should have received a copy of the GNU Lesser General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 \fi
@@ -19,6 +21,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 % Packages
 % ---
+\usepackage{ifthen}
 \usepackage{enumitem}
 \usepackage{float}
 % not on approved list \usepackage{wrapfig}
@@ -74,7 +77,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \newcolumntype{C}{>{\centering\arraybackslash}X}
 \newcolumntype{R}{>{\raggedleft\arraybackslash}X}
 
-\newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}}
 % \parindent=20pt
 % \hangindent=0.7cm
 
@@ -87,6 +89,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 %\usepackage[backend=bibtex,style=verbose-trad2]{biblatex} % Use biblatex package
 %\bibliography{quick} % The name of the .bib file (name without .bib)
+
+%TODO: Why doesn't this use LaTeX_Header?
+\def\snippetpath{../../av/tex/snippets}
+\input{\snippetpath/includes}
 
 % Main document
 % ---
@@ -138,9 +144,9 @@ OpenCPI Component Development Guide &
 OpenCPI Application Development Guide &
 \githubio{OpenCPI\_Application\_Development.pdf} \\
 }
-\input{../../av/tex/snippets/References_Table.tex}
+\input{References_Table}
 \section{Introduction}
-The ANGRYVIPER (AV) {IDE} consists of the Eclipse IDE for C/C++ developers and a custom plugin for OpenCPI development. OpenCPI users local to the project may install OpenCPI and the IDE from the yum repository (the IDE is a separate AV IDE RPM). Open source users must obtain the IDE plugin from GitHub and drop it into an existing Eclipse installation. Both methods are described in the \href{http://opencpi.github.io/RPM_Installation_Guide.pdf}{RPM Installation Guide} Section 6, addresses the RPM Installation and Appendix B addresses the plugin install. Note, if the RPM method is used, the IDE is installed in \textbf{opt/opencpi/gui} and the command \textbf{ocpigui} is provided to start the IDE.
+The ANGRYVIPER (AV) {IDE} consists of the Eclipse IDE for C/C++ developers and a custom plugin for OpenCPI development. OpenCPI users local to the project may install OpenCPI and the IDE from the yum repository (the IDE is a separate AV IDE RPM). Open source users must obtain the IDE plugin from GitHub and drop it into an existing Eclipse installation. Both methods are described in the \githubio[RPM Installation Guide]{RPM\_Installation\_Guide.pdf} Section 6, addresses the RPM Installation and Appendix B addresses the plugin install. Note, if the RPM method is used, the IDE is installed in \textbf{opt/opencpi/gui} and the command \textbf{ocpigui} is provided to start the IDE.
 \subsection{New Features in the 1.5 Release}
 In the 1.5 release, the ANGRYVIPER team focused on getting the OpenCPI XML editors current with OpenCPI Framework standards. Every available component editor (excluding the Application and Assembly Editors) is updated. In addition, new editors are provided for the Properties File, Signals File, and Slot Signals File. These editors are not integrated with the OpenCPI Projects view but they will open if the respective XML file is selected via the Eclipse Project Explorer.
 
@@ -283,7 +289,7 @@ If the execution configuration is rerun, the corresponding status bar and consol
      \label{fig:Operations panel}
 \end{figure}
 \subsubsection{Unit Test panel}
-The Unit Tests Panel (shown in the below figure) supports most of the features for the unit testing of workers which is described in the OpenCPI Component Development Guide.
+The Unit Tests Panel (shown in the below figure) supports most of the features for the unit testing of workers which is described in the OpenCPI \githubio[Component Development Guide]{OpenCPI\_Component\_Development.pdf}.
 Reference the Component Development Guide for a complete description of the unit test of workers and details of the five phases of unit testing. The five phases of unit testing are:
 \begin{enumerate}
 \item Generate
@@ -486,7 +492,7 @@ To remove an element:
 \end{itemize}
 The source file may also be edited and those changes will appear in the design view.\\
 
-See the \href{https://opencpi.github.io/OpenCPI_Component_Development.pdf}{Component Development Guide} for more information about the XML files these editors support. \\
+See the \githubio[Component Development Guide]{OpenCPI\_Component\_Development.pdf} for more information about the XML files these editors support. \\
 
 \textbf{\emph{Note: In Release 1.5 these editors were updated to current OpenCPI standards}}.\\
 
@@ -543,7 +549,7 @@ The OpenCPI Projects View does not track changes to the Workspace or the files s
 \textbf{\emph{Note: Do not delete a project using Project Explorer or Shell Command. Use the ocpidev command to delete a project. This will ensure project registration information remains up to date.}}
 \section{OpenCPI Development Workflow Using the IDE}
 \subsection{Introduction}
-The IDE supports a number of OpenCPI workflow concepts; beginning with setting up the OpenCPI core and assets projects and getting them built to support new project development. This section demonstrates a number of the fundamentals discussed in Sections 4 and 5 of the  \href{https://opencpi.github.io/Getting_Started.pdf}{Getting Started Guide}. This includes creating the DemoProject and then a number of assets that go in the project as described in the document. Additionally, the IDE provides an effective way to look at existing assets OpenCPI XML specifications.
+The IDE supports a number of OpenCPI workflow concepts; beginning with setting up the OpenCPI core and assets projects and getting them built to support new project development. This section demonstrates a number of the fundamentals discussed in Sections 4 and 5 of the \githubio[Getting Started Guide]{Getting\_Started.pdf}. This includes creating the DemoProject and then a number of assets that go in the project as described in the document. Additionally, the IDE provides an effective way to look at existing assets OpenCPI XML specifications.
 \subsection{OpenCPI the Core and Assets Projects}
 A number of existing projects are provided in OpenCPI Release for use in development. If they are to be used, they need to be set up in the development environment, registered, and imported into the IDE and built for the desired platforms to further support new development. Procedures to set these projects up:
 \begin{enumerate}
@@ -847,7 +853,7 @@ The following series of figures show the advanced connection in the 3 editor vie
 	\includegraphics[width=.85\textwidth]{AdvancedConnectionViews.png}
  \end{figure}
 
-See the \href{https://opencpi.github.io/OpenCPI_Application_Development.pdf}{Application Development Guide} for detailed information about the Application and Assembly XML files.
+See the \githubio[Application Development Guide]{OpenCPI\_Application\_Development.pdf} for detailed information about the Application and Assembly XML files.
 Note that the Application and Assembly Editors provide a basic capability to create the respective XML files.
 \subsection{Assembly Editor}
 The HDL Assembly Editor operates similarly to the Application Editor. The difference is that assemblies are built with application workers while applications are built with components. The drag-and-drop feature works with OpenCPI Worker Description (OWD) XML files just as the application Editor operates with OCS XML files. \textbf{\emph{Note: The Eclipse Project Explorer must be used for the current drag and drop feature; it is currently not supported in the OpenCPI Projects View.}}\\
@@ -875,7 +881,7 @@ Creating a Unit Test using the Asset Wizard is demonstrated in this section.
  \end{figure}
 When the action completes, the Unit Test Editor opens in the Editor panel as shown below. \\
 
-Unit testing requires an in-depth knowledge on how to implement them so this will not be addressed here. Refer to the \href{https://opencpi.github.io/OpenCPI_Component_Development.pdf}{OpenCPI Component Development Guide} to learn about them.
+Unit testing requires an in-depth knowledge on how to implement them so this will not be addressed here. Refer to the \githubio[Component Development Guide]{OpenCPI\_Component\_Development.pdf} to learn about them.
 The Editor supports most aspects of developing unit test XML.\\
 
 \begin{figure}[h!]

@@ -17,8 +17,12 @@ You should have received a copy of the GNU Lesser General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 \fi
 
-\def\importpath{../../../imports/ocpi.assets/components/dsp_comps/complex_mixer.test/doc/}
-\input{\importpath snippets/Complex_Mixer_Header.tex}
+% AV-5479: Assume this is in projects/assets_ts of source checkout
+\def\importpath{../../../../assets/components/dsp_comps/complex_mixer.test/doc/}
+\makeatletter
+\def\input@path{{\importpath/snippets/}}
+\makeatother
+\input{Complex_Mixer_Header}
 %----------------------------------------------------------------------------------------
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
@@ -28,11 +32,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\small{\docTitle}}
-
 \def\comp{complex\_mixer\_ts}
 \edef\ecomp{complex_mixer_ts}
 \def\Comp{Complex Mixer (TimeStamped)}
-\graphicspath{ {figures/} }
+\graphicspath{ {\importpath/figures/} }
 
 \begin{document}
 
@@ -57,10 +60,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	Tested Platforms  & xsim, isim, modelsim, Matchstiq-Z1(PL) \\
 	\hline
 \end{tabular}
-\input{\importpath snippets/Complex_Mixer_Functionality.tex}
+\input{Complex_Mixer_Functionality}
 \section*{Worker Implementation Details}
-\input{\importpath snippets/Complex_Mixer_HDL_Implementation.tex}
-\input{\importpath snippets/Complex_Mixer_Theory.tex}
+\input{Complex_Mixer_HDL_Implementation}
+\input{Complex_Mixer_Theory}
 
 \section*{Block Diagrams}
 \subsection*{Top level}
@@ -92,7 +95,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \subsection*{\comp.hdl}
 \begin{itemize}
 	\item projects/assets\_ts/components/complex\_mixer.hdl/complex\_mixer.vhd
-        \input{\importpath snippets/Complex_Mixer_Primitive_Dependencies.tex}
+        \input{Complex_Mixer_Primitive_Dependencies}
 \end{itemize}
 
 \begin{landscape}
@@ -204,7 +207,7 @@ Test cases are derived from the number of properties, and their respective value
 	\item Sync (this opcode is expected after an Interval operation)
 	\item Time
 	\item Samples (tone with configurable length and magnitude)
-	\item Flush	
+	\item Flush
 	\item Samples (tone with configurable length and magnitude)
 	\item Sync
 	\item Samples (tone with configurable length and magnitude)

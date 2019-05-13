@@ -56,15 +56,20 @@ else
   msg="runtime (opencpi) and development (opencpi-devel) packages"
   spec=cdk.spec
   # derive RPM Requires: from package script for the platform, for runtime and devel
+  # since we have no way to explicitly designate _when_ needed, we will claim we always do
+  # (before we're installed (pre), while we're installed, after we're being installed(post))
   p=$OCPI_TARGET_PLATFORM_DIR/${platform}-packages.sh
   touch $target/runtime-requires $target/devel-requires
   [ -f $p ] && {
     # first line is runtime
     $p list | head -1 | xargs -n 1 | sed 's/^/Requires:/' > $target/runtime-requires
+    $p list | head -1 | xargs -n 1 | sed 's/^/Requires(pre,post):/' > $target/runtime-requires
     # second line is devel
     $p list | head -2 | tail -1 | xargs -n 1 | sed 's/^/Requires:/' > $target/devel-requires
+    $p list | head -2 | tail -1 | xargs -n 1 | sed 's/^/Requires(pre,post):/' > $target/devel-requires
     # last line is devel too (after epel)
     $p list | tail -1 | xargs -n 1 | sed 's/^[a-zA-Z/]/Requires:&/' >> $target/devel-requires
+    $p list | tail -1 | xargs -n 1 | sed 's/^[a-zA-Z/]/Requires(pre,post):&/' >> $target/devel-requires
   }
 fi
 echo "Creating RPM file(s) in $target for $msg for the $platform platform."

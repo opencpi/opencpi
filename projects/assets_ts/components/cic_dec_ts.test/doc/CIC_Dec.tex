@@ -16,8 +16,13 @@ PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 \fi
-\def\importpath{../../../imports/ocpi.assets/components/dsp_comps/cic_dec.test/doc/}
-\input{\importpath snippets/CIC_Dec_Header.tex}
+
+% AV-5479: Assume this is in projects/assets_ts of source checkout
+\def\importpath{../../../../assets/components/dsp_comps/cic_dec.test/doc}
+\makeatletter
+\def\input@path{{\importpath/snippets/}}
+\makeatother
+\input{CIC_Dec_Header}
 %----------------------------------------------------------------------------------------
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
@@ -31,7 +36,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \def\comp{cic\_dec\_ts}
 \edef\ecomp{cic_dec_ts}
 \def\Comp{CIC Decimator (TimeStamped)}
-\graphicspath{ {figures/} }
+\graphicspath{ {\importpath/figures/} }
 
 \begin{document}
 
@@ -57,10 +62,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 \end{tabular}
 
-\input{\importpath snippets/CIC_Dec_Functionality.tex}
+\input{CIC_Dec_Functionality}
 \section*{Worker Implementation Details}
-\input{\importpath snippets/CIC_HDL_Implementation.tex}
-\input{\importpath snippets/CIC_Theory.tex}
+\input{CIC_HDL_Implementation}
+\input{CIC_Theory}
 
 \section*{Block Diagrams}
 \subsection*{Top level}
@@ -186,12 +191,12 @@ In both of the test cases, the samples data is interleaved with all of the opera
 	\item Sync (this opcode is expected after an Interval operation)
 	\item Time
 	\item Samples
-	\item Flush	
+	\item Flush
 	\item Samples
 	\item Sync
 	\item Samples
 \end{enumerate}
 
-\input{\importpath snippets/CIC_References.tex}
+\input{CIC_References}
 
 \end{document}

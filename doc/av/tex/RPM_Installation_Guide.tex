@@ -23,7 +23,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \def\docVersion{1.5}
 \def\yumrepo{\href{http://opencpi.github.io/repo/index.html}{\path{github.io}}}
 %----------------------------------------------------------------------------------------
-\input{snippets/LaTeX_Header.tex}
+\def\snippetpath{snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\small{\docTitle}}
@@ -108,7 +110,7 @@ Managing Software with \texttt{yum} (Fedora Project) &
 RHEL6 Deployment Guide: Useful \texttt{yum} commands (\textit{e.g.} \texttt{yum localinstall}; Red Hat) &
 \url{https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/ch-yum} \\
 }
-\input{snippets/References_Table}
+\input{References_Table}
 \newpage
 \section{Document Overview}
 \label{sec:doc_overview}

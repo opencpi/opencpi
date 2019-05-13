@@ -1,3 +1,4 @@
+%TODO: Use LaTeX_Header
 \documentclass{article}
 \iffalse
 This file is protected by Copyright. Please refer to the COPYRIGHT file
@@ -48,8 +49,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \renewcommand{\contentsname}{Table of Contents}
 \renewcommand{\listfigurename}{List of Figures}
 \renewcommand{\listtablename}{List of Tables}
-\newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
-\newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
 %----------------------------------------------------------------------------------------
 % Various pacakges
 %----------------------------------------------------------------------------------------
@@ -98,6 +97,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\small{\docTitle}}
+
+\def\snippetpath{snippets}
+\input{\snippetpath/includes}
 
 \def\comp{dig\_radio\_ctrlr}
 \def\Comp{Digital Radio Controller}
@@ -1098,10 +1100,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \begin{thebibliography}{1}
 
-  \bibitem{dig_radio_ctrlr_fmcomms_2_3_comp_datasheet} Dig\_Radio\_Ctrlr\_FMCOMMS\_2\_3.pdf \\
-  \url{https://opencpi.github.io/assets/Dig_Radio_Ctrlr_FMCOMMS_2_3.pdf}
-  \bibitem{ocpi_app_guide} OpenCPI Application Development \\
-  \url{https://opencpi.github.io/OpenCPI_Application_Development.pdf}
+  \bibitem{dig_radio_ctrlr_fmcomms_2_3_comp_datasheet}
+  \githubio[FMCOMMS2/3 Digital Radio Controller Worker]{assets/Dig\_Radio\_Ctrlr\_FMCOMMS\_2\_3.pdf} \\
+  \bibitem{ocpi_app_guide}
+  \githubio[OpenCPI Application Development]{OpenCPI\_Application\_Development.pdf}
   %\bibitem{rx_tx_comp_datasheet} Generic RF Interface \\
   %\url{https://opencpi.github.io/Generic_RF_Interface.pdf}
 

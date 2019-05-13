@@ -22,7 +22,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \def\docTitle{Debugging Tools Guide}
 \def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
-\input{snippets/LaTeX_Header.tex}
+\def\snippetpath{snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\docTitle}
@@ -51,7 +53,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		    \hline
 		    v1.4 & Updated for OpenCPI Release 1.4 & 9/2018 \\
 		    \hline
-		    v1.5 & Updated for OpenCPI Release 1.5 and expanded Signaltap section & 4/2019 \\
+		    v1.5 & Updated for OpenCPI Release 1.5 and expanded SignalTap section & 4/2019 \\
 		    \hline
 			\end{tabularx}
 		\end{table}
@@ -72,7 +74,7 @@ Xilinx's ChipScope Pro\footnote{Full title: ``ChipScope Pro Software and Cores (
 % So the URL for 14_7 has version 14.3 of the doc, but 14_5 has 14.5...
 \url{http://www.xilinx.com/support/documentation/sw_manuals/xilinx14_5/chipscope_pro_sw_cores_ug029.pdf} \\
 }
-\input{snippets/References_Table}
+\input{References_Table}
 \newpage
 \section{Debugging RCC Workers}
 RCC workers are built as dynamically loadable shared object files, with the .so suffix.  When an application uses a worker, it will be loaded on demand, even when the executable is statically linked itself.  To debug a worker, it is necessary to first start the debugger on the executable, which is either the ocpirun utility program or an ACI application.  In either case the first step is to run the executable under the debugger, establishing a generic breakpoint to enter the debugger at a point after workers are loaded, but before they are actually run.  Then breakpoints can be placed in the worker code itself. gdb is now provided as a prerequisite for all embedded platforms.  This means that the procedure that is provided below will work on any RCC platform.
@@ -327,7 +329,7 @@ The generated bitstream contains the debug and ILA cores which will be recognize
 
 \newpage
 
-\subsection{Altera}
+\subsection{Altera SignalTap II}
 	\subsubsection{Limitations}
 	In versions of Quartus after 14.1, the OpenCPI build flow of exporting QXPs and including SignalTap at the Worker level causes a build failure. Per Altera's website, you can force Quartus to use the legacy SignalTap flow. More details can be found here: \begin{verbatim}https://www.altera.com/support/support-resources/knowledge-base/solutions/rd07012015_904.html\end{verbatim}
 	In order to use this build flow, the file /opt/opencpi/cdk/include/hdl/quartus.mk must be modified. An example diff of the change needed can be seen below:
@@ -336,19 +338,19 @@ The generated bitstream contains the debug and ILA cores which will be recognize
 ---
 >  ) > $(Core).qsf; echo fit_stratixii_disallow_slm=On > quartus.ini; echo sci_use_legacy_sld_flow=On >> quartus.ini;
 	\end{verbatim}\normalsize
-	\subsubsection{Create SignalTap ILA using cores from Quartus's IP catalog}
+	\subsubsection{Create SignalTap II instance}
 	This signal tap implementation can be reused with different workers but not in the same bitstream.
 	\begin{enumerate}		
-		\item Run quartus 
+		\item Run Quartus 
 			\begin{list} {-}{\leftmargin=3em \itemindent=0em}
-			\item The default location for the quartus executable can be found at  \code{/opt/Altera/17.1/quartus/bin/quartus}
+			\item The default location for the Quartus executable can be found at  \code{/opt/Altera/17.1/quartus/bin/quartus}
 			\end{list}
-		\item Open signaltap in quartus
+		\item Open SignalTap in Quartus
 			\begin{list} {-}{\leftmargin=3em \itemindent=0em}
 			\item Go to tools - IP Catalog
 			\item The ipcatalog will now be visible on the right
 			\item Select the device family ex. Stratix IV
-			\item In the search bar type in signaltap and select it from the filtered list.
+			\item In the search bar type in SignalTap and select it from the filtered list.
 			\item Signal tap will say New IP Variation. 
 			\end{list}
 		\item Create IP Variation
@@ -384,17 +386,17 @@ The generated bitstream contains the debug and ILA cores which will be recognize
 			\end{enumerate}
 		\item Click Generate HDL
 		\begin{list} {-}{\leftmargin=3em \itemindent=0em}
-			\item A Generation Popup will show. Select VHDL instead of verilog.  (Note: You can use verilog as well but for our purposes workers are more commonly implemented in VHDL)
+			\item A Generation Popup will show. Select VHDL instead of Verilog.  (Note: You can use Verilog as well but for our purposes workers are more commonly implemented in VHDL)
 			\item The remaining defaults are sufficient
 			\item Click Generate.
 		\end{list}
 	\end{enumerate}
 	
-	\subsubsection{Integrate SignalTap into HDL Worker}
-	These instructions have been verified for the sld\_signaltap core. Many files are generated but only two of them are useful for our purposes.  The (*\_inst.vhd) file contains the component declaration and the (*.vhdl) file is used to build the signaltap core into the HDL worker and subsequently, the HDL assembly.
+	\subsubsection{Integrate SignalTap II instance into HDL Worker}
+	These instructions have been verified for the sld\_signaltap core. Many files are generated but only two of them are required for our purposes.  The (*\_inst.vhd) file contains the component declaration and the (*.vhdl) file is used to build the SignalTap core into the HDL worker and subsequently, the HDL assembly.
 		\begin{enumerate}
 			\item Integrate the \textit{Debug and Verification} cores into the worker's VHDL:  
-			 Navigate to the workers signal\_tap subfolder and copy the \_inst.vhd component deceleration and component instantiation to the architecture section and begin section respectively.
+			 Navigate to the workers signal\_tap subfolder and copy the \_inst.vhd component declaration and component instantiation to the architecture section and begin section respectively.
 				\subitem a) Place the component declaration in the declarative area of the architecture section
 				\begin{lstlisting}[language=VHDL]
 	component capture_v2_signaltap is
@@ -433,23 +435,31 @@ port map (
 				\end{lstlisting}
 			
 			 
-			\item Edit the Worker's \code{Makefile} to include the path and file name of the instantiated core *.vhdl files. Use the framework's Makefile variable ``SourceFiles='' to include the path and	name of the VHDL file of the core. Absolute or relative paths are acceptable. An example is provided:
-			\small\begin{verbatim}
+			\item Edit the Worker's \code{Makefile} to include the path and file name of the instantiated core *.vhdl files. Use the framework's Makefile variable ``SourceFiles='' to include the path and	name of the VHDL file of the core. Absolute or relative paths are acceptable. SourceFiles must be before the "include" statement. An example is provided:
+			\begin{list}{\leftmargin=3em \itemindent=0em}
+			\item\small\begin{verbatim}
 				SourceFiles=.signaltap/synthesis/capture_v2_signaltap.vhd
 include $(OCPI_CDK_DIR)/include/worker.mk			
 			\end{verbatim}
-		 	\item Build HDL worker for target.
+			\end{list}
+		 	\item Build the HDL worker for the target.
+		 		\begin{list}{\leftmargin=3em \itemindent=0em}
+		 		\item\code{ocpidev build -d <path/worker.hdl> --hdl-target <target>}
+		 		\end{list}
 		 	\item Generate SignalTap format file using Quartus GUI
 		 		\begin{list} {-}{\leftmargin=3em \itemindent=0em}
-		 		\item Start Quartus and open the Quartus Project File (.qpf) which is located in the built Worker's target-stratix4 directory. Click File - Create/Update - Create Signal Tap II file from Design Instance(s) and save the file.  This will open signal tap logic analyzer.  If you have already created a stp file you can open this in quartus by File - open and selecting the *.stp file from the workers directory.
+		 		\item Start Quartus and open the Quartus Project File (.qpf) which is located in the built Worker's target-stratix4 directory. Click File - Create/Update - Create Signal Tap II file from Design Instance(s) and save the file.  This will open signal tap logic analyzer.  If you have already created a stp file you can open this in Quartus by File - open and selecting the *.stp file from the workers directory.
 		 	\end{list}
-			\item Build HDL assembly for platform.
+			\item Build the HDL assembly for the target platform.
+				\begin{list}{\leftmargin=3em \itemindent=0em}
+		 		\item\code{ocpidev build -d <path/assembly> --hdl-platform <platform>}
+		 		\end{list}
 		\end{enumerate}
 \end{flushleft}
 
 
-\subsubsection{Analyze SignalTap with SignalTap II Logic Analyzer}
-The generated bitstream contains the \textit{Debug and Verification} cores which will be recognized by the Altera Quartus SignalTap II Logic Analyzer tool. The executable for this tool (quartus\_stpw) is located with all of the Quartus tools. Once the bitstream has been loaded onto the target FPGA, use the tool can connect and detect the presence of the \textit{Debug and Verification} core(s).
+\subsubsection{Monitor signals with SignalTap II Logic Analyzer}
+The generated bitstream contains the \textit{Debug and Verification} cores which will be recognized by the Altera Quartus SignalTap II Logic Analyzer tool. The executable for this tool (quartus\_stpw) is located in the Quartus installation directory. Once the bitstream has been loaded onto the target FPGA, use the tool can connect and detect the presence of the \textit{Debug and Verification} core(s).
 \begin{enumerate}
 			\item Setup the JTAG Connection:
 				\begin{list} {-}{\leftmargin=3em \itemindent=0em}
@@ -463,10 +473,10 @@ The generated bitstream contains the \textit{Debug and Verification} cores which
 				\end{list}
 		 	\item Enable Collection
 		 		\begin{list} {-}{\leftmargin=3em \itemindent=0em}
-				\item In the instance manager select the signaltap instance. The run Analysis and Autorun Analysis buttons should be enabled.
+				\item In the instance manager select the SignalTap instance. The run Analysis and Autorun Analysis buttons should be enabled.
 		 		\item Press the Autorun Analysis button to record continuously.
 		 		\end{list}
-		 	\item Run you application or test and the signals will appear in the data tab.
+		 	\item Run your application or test and the signals will appear in the data tab.
 		\end{enumerate}
 
 

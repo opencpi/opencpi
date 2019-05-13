@@ -94,15 +94,15 @@ export OCPI_LIBRARY_PATH=/mnt/ocpi_core/artifacts:$$(pwd)/../../artifacts
 REQUIRED - Configure per FSK mode of operation. 'Unique' export string for each Test.
 Copy/paste command to terminal of remote system:
 Test 1:
-export OCPI_LIBRARY_PATH=$$(pwd)/../../artifacts/fsk_filerw:$$OCPI_LIBRARY_PATH
+export OCPI_LIBRARY_PATH=$$(pwd)/../../hdl/assemblies/fsk_filerw:$$OCPI_LIBRARY_PATH
 Test 2:
-export OCPI_LIBRARY_PATH=$$(pwd)/../../artifacts/dc_offset_iq_imbalance_mixer_cic_dec_rp_cordic_fir_real:$$OCPI_LIBRARY_PATH
+export OCPI_LIBRARY_PATH=$$(pwd)/../../hdl/assemblies/dc_offset_iq_imbalance_mixer_cic_dec_rp_cordic_fir_real:$$OCPI_LIBRARY_PATH
 Test 3:
-export OCPI_LIBRARY_PATH=$$(pwd)/../../artifacts/mfsk2_zp16_fir_real_phase_to_amp_cordic_cic_int:$$OCPI_LIBRARY_PATH
+export OCPI_LIBRARY_PATH=$$(pwd)/../../hdl/assemblies/mfsk2_zp16_fir_real_phase_to_amp_cordic_cic_int:$$OCPI_LIBRARY_PATH
 Test 4:
-export OCPI_LIBRARY_PATH=$$(pwd)/../../artifacts/fsk_modem:$$OCPI_LIBRARY_PATH
+export OCPI_LIBRARY_PATH=$$(pwd)/../../hdl/assemblies/fsk_modem:$$OCPI_LIBRARY_PATH
 Test 5:
-export OCPI_LIBRARY_PATH=$$(pwd)/../../artifacts/fsk_modem:$$OCPI_LIBRARY_PATH
+export OCPI_LIBRARY_PATH=$$(pwd)/../../hdl/assemblies/fsk_modem:$$OCPI_LIBRARY_PATH
 
 NOTE: We could be more narrow with these search paths, but it is unnecessary
 for Zynq-Based platforms because each assembly only has a single container

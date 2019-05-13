@@ -22,7 +22,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \def\docTitle{Vivado Usage Notes}
 \def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
-\input{snippets/LaTeX_Header.tex}
+\def\snippetpath{snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\small{\docTitle}}
@@ -67,7 +69,7 @@ The reference(s) in Table \ref{table:references} can be used as an overview of O
 HDL Development Guide &
 \githubio{OpenCPI\_HDL\_Development.pdf} \\
 }
-\input{snippets/References_Table}
+\input{References_Table}
 
 \begin{flushleft}
 This document explains usage of Xilinx Vivado in the context of OpenCPI. For further information regarding Xilinx Vivado, consult Xilinx's documentation (\textit{e.g.} \href{https://www.xilinx.com/support/documentation/sw_manuals/xilinx2017_1/ug835-vivado-tcl-commands.pdf}{UG835}).

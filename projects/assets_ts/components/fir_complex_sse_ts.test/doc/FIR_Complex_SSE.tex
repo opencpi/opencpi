@@ -17,8 +17,12 @@ You should have received a copy of the GNU Lesser General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 \fi
 
-\def\importpath{../../../imports/ocpi.assets/components/dsp_comps/fir_complex_sse.test/doc/}
-\input{\importpath snippets/FIR_Complex_SSE_Header.tex}
+% AV-5479: Assume this is in projects/assets_ts of source checkout
+\def\importpath{../../../../assets/components/dsp_comps/fir_complex_sse.test/doc/}
+\makeatletter
+\def\input@path{{\importpath/snippets/}}
+\makeatother
+\input{FIR_Complex_SSE_Header}
 %----------------------------------------------------------------------------------------
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
@@ -32,7 +36,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \def\comp{fir\_complex\_sse\_ts}
 \edef\ecomp{fir_complex_sse_ts}
 \def\Comp{FIR Complex SSE (TimeStamped)}
-\graphicspath{ {figures/} }
+\graphicspath{ {\importpath/figures/} }
 
 \begin{document}
 
@@ -70,7 +74,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	The \verb+NUM_TAPS_p+ parameter defines the number of coefficient values. Care should be taken to ensure that the \verb+COEFF_WIDTH_p+ parameter is $\le$ the type (size) of the taps property. The taps property is type short, so \verb+COEFF_WIDTH_p+ must be between 1 and 16. Identical filter tap coefficients are applied to both real and imaginary input samples.\medskip
 
 	This implementation uses \verb+NUM_TAPS_p/2+ multipliers for each of the real and imaginary data paths and processes input data at the clock rate - i.e. this worker can handle a new input value every clock cycle.\medskip
-	
+
 	The FIR Complex SSE worker utilizes the OCPI \textit{Complex\_Short\_With\_Metadata} protocol for both input and output ports. The \textit{Complex\_Short\_With\_Metadata} protocol conveys sample data using an interface of 16-bit complex signed samples. The \verb+DATA_WIDTH_p+ parameter may be used to restrict the the number of bits processed on the input and the number of bits (sign-extended) produced on the input.
 \end{flushleft}
 {\centering\captionsetup{type=figure}\includegraphics[scale=0.65]{fir_systolic_sym_even}\par\captionof{figure}{FIR Complex SSE Block Diagram - 8-tap example per I/Q rail}\label{fig:circuit}}
@@ -78,9 +82,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \section*{Theory}
 \begin{flushleft}
 	For a FIR filter with symmetric impulse response we are guaranteed to have linear phase response and thus constant group delay vs. frequency. In general, the group delay will be equal to (\verb+NUM_TAPS_p+-1)/2.	The filter topology itself will add some propagation delay to the response. For this design the total delay from an impulse input to the beginning of the impulse response will be \verb+NUM_TAPS_p/2+ + 4 samples.\medskip
-	
+
 	The worker only outputs samples after the delay has occurred. During \verb+flush+ or \verb+done+ operations, the worker continues to produce valid data until the pipeline is empty. During the \verb+sync+ operation, the pipeline is emptied, but no valid data is produced. During \verb+flush+, \verb+done+, and \verb+sync+ operations, the operation is passed along after the pipeline is empty.\medskip
-	
+
 	The worker passes along and does not modify \verb+time+ and \verb+interval+ operations.
 \end{flushleft}
 
@@ -111,7 +115,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \subsection*{\comp.hdl}
 \begin{itemize}
 	\item projects/assets\_ts/components/fir\_complex\_sse.hdl/fir\_complex\_sse.vhd
-          \input{\importpath snippets/FIR_Complex_SSE_Primitive_Dependencies.tex}
+          \input{FIR_Complex_SSE_Primitive_Dependencies}
 \end{itemize}
 
 \begin{landscape}
@@ -181,7 +185,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\end{scriptsize}
 \end{landscape}
 
-\input{\importpath snippets/FIR_Complex_SSE_Control_Config_Utilization.tex}
+\input{FIR_Complex_SSE_Control_Config_Utilization}
 \section*{Test and Verification}
 
 \begin{flushleft}
@@ -192,7 +196,7 @@ A single test case is implemented to validate the FIR Complex SSE component. The
 	\item Time
 	\item Samples (impulse with length numtaps*2)
 	\item Samples (impulse with length numtaps*2)
-	\item Flush	
+	\item Flush
 	\item Samples (impulse with length numtaps*2)
 	\item Sync
 	\item Samples (impulse with length numtaps*2)
@@ -204,6 +208,6 @@ The FIR Complex SSE worker inputs complex signed samples, filters the input as d
 
 The worker will pass through the interval and time opcodes. The samples opcode followed by flush or done will output an impulse response, showing the symmetric tap values. The samples opcode followed by sync will produce the first numtaps*2-group\_delay tap values. In addition to the samples data, the worker also passes along the zlms.\medskip
 
-For verification, the output file is parsed into messages. All non-samples messages should match the input exactly. The samples messages are compared to the tap values and checked to ensure they are within +/- 1. 
+For verification, the output file is parsed into messages. All non-samples messages should match the input exactly. The samples messages are compared to the tap values and checked to ensure they are within +/- 1.
 \end{flushleft}
 \end{document}

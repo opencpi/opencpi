@@ -22,8 +22,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \def\docTitle{Getting Started Guide}
 \def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
-\input{snippets/LaTeX_Header.tex}
-\input{snippets/ocpidev_ide.tex}
+\def\snippetpath{snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
+\input{ocpidev_ide}
 \pagenumbering{roman}
 \setlength{\parindent}{0pt} % Don't indent all paragraphs
 \newcommand{\forceindent}{\leavevmode{\parindent=1em\indent}}
@@ -93,7 +95,7 @@ RCC Development Guide &
 HDL Development Guide &
 \githubio{OpenCPI\_HDL\_Development.pdf} \\
 }
-\input{snippets/References_Table}
+\input{References_Table}
 
 \newpage
 \section{Overview of OpenCPI}
@@ -116,7 +118,7 @@ For more information, consult the \textit{Overview} found in Table~\ref{table:re
 Historically, all OpenCPI development, for both the core team and the end user, has been within a single directory structure. As the team size and user base expand, this quickly becomes untenable, especially when taking version control systems into account. The previous working area has been broken into several locations. \\
 
 The CDK and the source for the Core and Assets Projects are provided by the ANGRYVIPER Team (\textit{cf}. \sref{subsec:what_is_angryviper}) in the form of various RPMs that can be installed by a System Administrator.
-% A version of the Core Project is provided containing prebuilt software necessary for all OpenCPI execution (and optionally development). 
+% A version of the Core Project is provided containing prebuilt software necessary for all OpenCPI execution (and optionally development).
 In order to exercise any of the supported platforms, a user must have a writable copy of the Core project in order to build HDL using his/her own specific FPGA tool version(s).
 
 \begin{center}
@@ -419,7 +421,7 @@ Choose the name ``DemoProject'' for this project. To create the ``DemoProject'' 
 \OcpidevCreate{Project}
 
 The project that was just created should have also been registered.
-% This assumes the default registry is being used \textit{and} the user is a member of the \code{opencpi} group (as explained in the \textit{RPM Installation Guide}. 
+% This assumes the default registry is being used \textit{and} the user is a member of the \code{opencpi} group (as explained in the \textit{RPM Installation Guide}.
 The project registration can be done separately using the following \verb+ocpidev+ command from within the project:\\
 
 \forceindent\forceindent\verb+% ocpidev register project+\\

@@ -162,7 +162,7 @@ This header contains the length and opcode of the message, with the data content
 the message following the header. The length can be zero, meaning that a message
 will be sent with the indicated opcode, and the length of the message will be zero.\\
 \medskip \medskip
-\input{snippets/messaging_snippet.tex}
+\input{snippets/messaging_snippet}
 \subsection*{No Protocol}
 The port on the component has no protocol specified.  This means that the data file must be formatted to match the protocol of the input port of the connected worker.  For message mode this means only using opcodes and payloads in the file that correspond to the protocol of the connected component.  In data streaming mode the file structure needs to correspond to the opcode that is set by the \textit{opcode} property.
 \subsection*{Message Size/Buffers}
@@ -171,7 +171,7 @@ The protocol of the connected component needs to be taken into account when sele
 When the File\_Read component reaches the end of its input file, it will do one of three
 things:
 \begin{itemize}
-  \item send a end of file notification  
+  \item send a end of file notification
   \item enter the ``done'' state with no further action, when the \textit{suppressEOF} property
 is true
   \item restart reading at the beginning of the file, when the \textit{repeat} property is true

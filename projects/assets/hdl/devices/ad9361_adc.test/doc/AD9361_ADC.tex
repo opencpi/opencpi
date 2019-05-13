@@ -1,3 +1,4 @@
+%TODO: Use LaTeX_Header
 \documentclass{article}
 \iffalse
 This file is protected by Copyright. Please refer to the COPYRIGHT file
@@ -49,8 +50,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \renewcommand{\contentsname}{Table of Contents}
 \renewcommand{\listfigurename}{List of Figures}
 \renewcommand{\listtablename}{List of Tables}
-\newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
-\newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
 %----------------------------------------------------------------------------------------
 % Various packages
 %----------------------------------------------------------------------------------------
@@ -97,6 +96,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\small{\docTitle}}
+
+\def\snippetpath{../../../../../../doc/av/tex/snippets}
+\input{\snippetpath/includes}
 
 \def\comp{ad9361\_adc}
 \edef\ecomp{ad9361_adc}
@@ -282,7 +284,7 @@ https://www.analog.com/en/products/ad9361.html}
 \bibitem{adi_ug570} AD9361 Reference Manual UG-570\\
 AD9361\_Reference\_Manual\_UG-570.pdf
 \bibitem{adc_sub_comp_datasheet} AD361 ADC Sub Component Data Sheet \\
-\url{https://opencpi.github.io/assets/AD9361_ADC_Sub.pdf}
+\githubioURL{assets/AD9361_ADC_Sub.pdf}
 
 \end{thebibliography}
 \pagebreak

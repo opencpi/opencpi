@@ -333,6 +333,15 @@ if [ "$RPM_INSTALL_PREFIX1" != %{prefix1} -o "$RPM_INSTALL_PREFIX0" != %{prefix0
   echo The user and group IDs of all files will be set to the login user and group. >&2
 fi
 %if !%{RPM_CROSS}
+  # Check global python3 symlink (AV-5477)
+  if test ! -x /usr/bin/python3; then
+    for sub in $(seq 9 -1 0); do
+      if [ -e /usr/bin/python3.${sub} ]; then
+        ln -s /usr/bin/python3.${sub} /usr/bin/python3
+        break
+      fi
+    done
+  fi
   # We need to relocate all the global files that point to other global files.
   # The files have been installed, but we must change them now.
   link=$RPM_INSTALL_PREFIX0/cdk/scripts/ocpidev_bash_complete

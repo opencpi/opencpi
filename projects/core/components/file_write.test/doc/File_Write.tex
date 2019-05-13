@@ -160,12 +160,12 @@ written to the file. This header contains the length and opcode of the message, 
 data contents of the message following the header. The length can be zero, meaning
 that a header will be written but no data will follow the header in the file.\\
 \medskip \medskip
-\input{snippets/messaging_snippet.tex}
+\input{snippets/messaging_snippet}
 \subsection*{No Protocol}
 The port on the component has no protocol specified in order to support interfacing with any protocol.  This means that the created data file is formatted to match the protocol of the output port of the connected worker.
 \subsection*{End of File Handling}
 When the File\_Write component receives a end of file notification, it will interpret it as
-the end of data and declare itself ``done'', and not write any further messages to the file. 
+the end of data and declare itself ``done'', and not write any further messages to the file.
 \end{flushleft}
 
 \section*{Worker Implementation Details}
@@ -211,7 +211,7 @@ bytesWritten & uLongLong  & - & - & Volatile & -  &- & The number of bytes writt
 messagesWritten & uLongLong  & - & - & Volatile & -  &- & The number of messages written to file.  Useful for debugging data flow issues.
 \\
 \hline
-stopOnEOF & bool  & - & - & Initial & -  &true & Property has no functionality, exists for backwards compatibility purposes.  
+stopOnEOF & bool  & - & - & Initial & -  &true & Property has no functionality, exists for backwards compatibility purposes.
 \\
 \hline
 \end{tabular}

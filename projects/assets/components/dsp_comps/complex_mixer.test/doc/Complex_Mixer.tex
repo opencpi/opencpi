@@ -1,5 +1,24 @@
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
 \def\importpath{}
-\input{\importpath snippets/Complex_Mixer_Header.tex}
+\input{\importpath snippets/Complex_Mixer_Header}
 %----------------------------------------------------------------------------------------
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
@@ -38,11 +57,11 @@
 	Tested Platforms  & xsim, isim, modelsim, alst4, ml605, ZedBoard(PL), Matchstiq-Z1(PL), \\
 	\hline
 \end{tabular}
-\input{\importpath snippets/Complex_Mixer_Functionality.tex}
+\input{\importpath snippets/Complex_Mixer_Functionality}
 \section*{Worker Implementation Details}
-\input{\importpath snippets/Complex_Mixer_HDL_Implementation.tex}
-\input{\importpath snippets/Complex_Mixer_RCC_Implementation.tex}
-\input{\importpath snippets/Complex_Mixer_Theory.tex}
+\input{\importpath snippets/Complex_Mixer_HDL_Implementation}
+\input{\importpath snippets/Complex_Mixer_RCC_Implementation}
+\input{\importpath snippets/Complex_Mixer_Theory}
 
 \section*{Block Diagrams}
 \subsection*{Top level}
@@ -91,7 +110,7 @@
 \subsection*{\comp.hdl}
 \begin{itemize}
 	\item projects/assets/components/dsp\_comps/complex\_mixer.hdl/complex\_mixer.vhd
-        \input{\importpath snippets/Complex_Mixer_Primitive_Dependencies.tex}
+        \input{\importpath snippets/Complex_Mixer_Primitive_Dependencies}
 \end{itemize}
 
 \begin{landscape}

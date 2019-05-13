@@ -141,7 +141,7 @@ begin
     -- Set gp_em_prop_enable to control dev_gp_em_out.enable
     -- Since different mask_data values are set in -test.xml, want gp_em_prop_enable to go high
     -- only when the property is written and when is_operating and with a valid props_in.input_mask(0)
-    -- otherwise it should be go low.
+    -- otherwise it should go low.
     gp_em_prop_enable <= '1' when (its(ctl_in.is_operating and props_in.mask_data_written and props_in.input_mask(0))) else '0';
     dev_gp_em_out.enable <= gp_em_port_enable or gp_em_prop_enable;
   end generate;

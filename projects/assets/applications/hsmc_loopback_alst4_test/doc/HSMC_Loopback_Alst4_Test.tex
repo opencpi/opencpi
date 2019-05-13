@@ -23,7 +23,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \def\docTitle{OpenCPI\\ HSMC Loopback Stratix IV (alst4) Test App Guide}
 \def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
-\input{../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
+\def\snippetpath{../../../../../doc/av/tex/snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{HSMC Loopback Stratix IV (alst4) Test App Guide}
@@ -71,7 +73,7 @@ make HdlPlatforms=alst4 Containers=cnt_hsmc_loopback_card_hsmc_alst4_a_hsmc_alst
 \subsection{OCPI\_LIBRARY\_PATH Requirements/Considerations}
 The \verb+OCPI_LIBRARY_PATH+ environment variable must be set to \verb+<assets project directory>/artifacts+.
 \subsection{Command(s)}
-Execution must occur from within the applications/hsmc\_loopback\_test directory using the following command: 
+Execution must occur from within the applications/hsmc\_loopback\_test directory using the following command:
 \begin{lstlisting}
  ./<target-dir>/hsmc_loopback_test
 \end{lstlisting}

@@ -22,7 +22,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \def\docTitle{Release Notes}
 \def\docVersion{1.5.0}
 %----------------------------------------------------------------------------------------
-\input{snippets/LaTeX_Header.tex}
+\def\snippetpath{snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
 \usepackage{multicol}
 \setlength{\parindent}{0pt} % Don't indent all paragraphs
 \newcommand{\forceindent}{\leavevmode{\parindent=1em\indent}}
@@ -204,6 +206,13 @@ However, if developers previously made implementation-specific assumptions, thei
 \subsection{``udev'' Radio Rules Sometimes Does Not Work} % AV-5275
 \label{bug:5275}
 Starting with 1.4, some RPMs pre-install symlinks for rules in \path{/etc/udev/rules.d/} for certain radio platforms, \textit{e.g.} a rule to create a symlink from \path{/dev/matchstiq_z1_0} to \path{/dev/ttyUSB0}. If the OpenCPI installation location is on a different partition than the host machine's root partition, the symlinks for these rules may be broken at boot-time because the target partition is not yet mounted when \path{udev} is reading the rules. To fix this, the command ``\code{sudo udevadm control --reload}'' should be executed upon a full boot. With CentOS~7, a \href{https://askubuntu.com/a/679600/139131}{custom \path{systemd} service can be implemented}.
+
+\subsection{``python3'' Symlink Missing} % AV-5477
+\label{bug:5477}
+Some ``python3'' RPMs do not provide a default symlink from \path{/usr/bin/python3} to their proper executable\footnote{For example, CentOS~7's \path{python34-3.4.10-1.el7.x86_64} does not, while the slightly-older \path{3.4.9-2.el7.x86_64} did.}.
+This is not considered a deficiency of the framework itself, but the Python packager.
+If your system does not have \path{/usr/bin/python3}, a system administrator needs to create one for you pointing to your installation of Python3, \textit{e.g.} ``\code{cd /usr/bin; sudo ln -s python3.4 python3}'' for Python 3.4.
+The \path{opencpi-devel} RPM works around this by installing a symlink, but non-RPM users \textit{may} need to manually create the symlink.
 
 \subsection{Previously Documented Deficiencies}
 The following deficiencies are still present in 1.5:

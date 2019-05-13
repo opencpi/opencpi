@@ -23,7 +23,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \def\docTitle{OpenCPI\\ FSK Digital Radio Controller App Guide}
 \def\docVersion{1.5} % MAKE SURE THIS MATCHES WHAT THE APP PRINTS w/ --version
 %----------------------------------------------------------------------------------------
-\input{../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
+\def\snippetpath{../../../../../doc/av/tex/snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{FSK Digital Radio Controller App Guide}
@@ -314,7 +316,7 @@ ERROR: exception caught: Worker dig_radio_ctrlr produced error during execution:
 Calibration TIMEOUT (0x16, 0x10)
     \end{lstlisting}
     This error message can occur when using one of
-    the FMCOMMS2/3 cards and 
+    the FMCOMMS2/3 cards and
     indicates a baseband RX analog filter tune calibration failure for
     the AD9361 RF transceiver IC. For more info on this calibration failure
     see \cite{adi_ug570}.
@@ -334,7 +336,7 @@ Calibration TIMEOUT (0x16, 0x10)
 ad9361_init : Unsupported PRODUCT_ID 0xC0ad9361_init : AD936x initialization error
     \end{lstlisting}
     This error message can occur when using one of
-    the FMCOMMS2/3 cards and 
+    the FMCOMMS2/3 cards and
     indicates
     a hardware communication error between the FPGA and the AD9361 RF
     transceiver

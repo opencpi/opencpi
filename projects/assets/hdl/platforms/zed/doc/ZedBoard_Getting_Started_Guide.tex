@@ -27,8 +27,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \def\mountPoint{/mnt/}
 \def\copyLoc{<partition>}
 %----------------------------------------------------------------------------------------
-\input{../../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
-\input{../../../../../../doc/av/tex/snippets/ocpidev_ide.tex}
+\def\snippetpath{../../../../../../doc/av/tex/snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
+\input{ocpidev_ide}
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{Zedboard Getting Started Guide}
@@ -86,7 +88,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	This document assumes a basic understanding of the Linux command line (or ``shell'') environment.  The reference(s) in Table 1 can be used as an overview of OpenCPI and may prove useful.
 \def\refskipocpiov{}
 \def\refcapbottom{}
-\input{../../../../../../doc/av/tex/snippets/References_Table}
+\input{References_Table}
 
 \newpage
 \section{Overview}
@@ -297,9 +299,9 @@ $ cp /opt/opencpi/cdk/zed/sdcard-xilinx13_3/opencpi/zynq_net_setup.sh \
 The final SD Card artifacts are distributed in \path{/opt/opencpi/cdk/zed/} via RPM as noted previously. The end user is not required nor expected to generate the files.
 
 \pagebreak
-\input{../../../../../../doc/av/tex/snippets/Script_Setup.tex}
-\input{../../../../../../doc/av/tex/snippets/Setup_System_Time.tex}
-\input{../../../../../../doc/av/tex/snippets/rsync_Setup_Snippet.tex}
+\input{Script_Setup}
+\input{Setup_System_Time}
+\input{rsync_Setup_Snippet}
 \end{flushleft}
 
 \subsection{Multiple ZedBoards on the same network}
@@ -357,7 +359,7 @@ $ screen /dev/zed0 115200
 \pagebreak
 \section{Development Host Setup - Network Mode ONLY}
 % Bring in NFS setup snippet (has subsections)
-\input{../../../../../../doc/av/tex/snippets/NFS_Setup_Snippet.tex}
+\input{NFS_Setup_Snippet}
 %
 
 \pagebreak
@@ -414,7 +416,7 @@ where XX.XX.XX.XX is the IP address of the NFS host (i.e. that development host,
 	\label{fig:netsetup}
 \end{figure} \medskip
 
-\input{../../../../../../doc/av/tex/snippets/NTP_Alarm_Clock.tex}
+\input{NTP_Alarm_Clock}
 
 \end{enumerate}
 
@@ -460,7 +462,7 @@ $ source /mnt/card/opencpi/mysetup.sh
 	\label{fig:standalonesetup}
 \end{figure} \medskip
 
-\input{../../../../../../doc/av/tex/snippets/NTP_Alarm_Clock.tex}
+\input{NTP_Alarm_Clock}
 
 \end{enumerate}
 
@@ -568,7 +570,7 @@ $ ocpidev build --hdl-platform zed_ise
 \end{flushleft}
 % Bring in kernel message snippet
 \section{Driver Notes}
-\input{../../../../../../doc/av/tex/snippets/Driver_Snippet.tex}
+\input{Driver_Snippet}
 %
 \section{Deprecated Zipper}
 \begin{flushleft}

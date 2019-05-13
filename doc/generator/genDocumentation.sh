@@ -158,11 +158,12 @@ tex_kernel() {
   expr match $tex '.*/' >/dev/null && cd "$(dirname $tex)"
   ofile=$(basename -s .tex $tex)
   warn_existing_pdf "${OUTPUT_PATH}/${prefix}" ${ofile} $d && return
-  rubber -d $ofile.tex
+  rubber -d $ofile.tex || FAIL=1
   # If the pdf was created then copy it out
-  if [ ! -f $ofile.pdf ]; then
+  if [ ! -f $ofile.pdf -o -n "${FAIL}" ]; then
     echo "${RED}Error creating $ofile.pdf${RESET}"
     echo "Error creating $ofile.pdf ($d)" >> ${OUTPUT_PATH}/errors.log
+    rubber-info --errors $ofile.tex >> ${OUTPUT_PATH}/errors.log
     return
   fi
   mv ${ofile}.log ${log_dir}/${ofile}.log 2>&1

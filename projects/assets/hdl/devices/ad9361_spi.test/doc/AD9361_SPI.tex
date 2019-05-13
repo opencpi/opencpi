@@ -1,3 +1,4 @@
+%TODO: Use LaTeX_Header
 \documentclass{article}
 \iffalse
 This file is protected by Copyright. Please refer to the COPYRIGHT file
@@ -49,8 +50,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \renewcommand{\contentsname}{Table of Contents}
 \renewcommand{\listfigurename}{List of Figures}
 \renewcommand{\listtablename}{List of Tables}
-\newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
-\newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
 %----------------------------------------------------------------------------------------
 % Various pacakges
 %----------------------------------------------------------------------------------------
@@ -104,6 +103,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \def\devsignal{devsignal}
 % find and replace: Dev Signal, Dev signal, dev Signal, DevSignal -> \DevSignal{}
 \def\DevSignal{DevSignal}
+
+\def\snippetpath{../../../../../../doc/av/tex/snippets}
+\input{\snippetpath/includes}
 
 \def\comp{ad9361\_spi}
 \edef\ecomp{ad9361_spi}
@@ -277,7 +279,7 @@ The test outlined in \cite{dac_comp_datasheet} includes validation of a subset o
 \bibitem{adi_ug570} AD9361 Reference Manual UG-570\\
 AD9361\_Reference\_Manual\_UG-570.pdf
  \bibitem{dac_comp_datasheet} AD9361 DAC Component Data Sheet \\
- \url{https://opencpi.github.io/assets/AD9361_DAC.pdf}
+ \githubioURL{assets/AD9361_DAC.pdf}
 
 \end{thebibliography}
 \pagebreak

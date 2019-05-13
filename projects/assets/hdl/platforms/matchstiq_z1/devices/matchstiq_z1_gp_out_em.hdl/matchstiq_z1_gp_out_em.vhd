@@ -41,7 +41,8 @@ signal s_msg_ctr               : ulong_t := (others => '0');
 signal s_done                  : std_logic := '0'; -- Done sending messages
 signal s_enable                : std_logic := '0';
 signal s_gpio                  : std_logic_vector(c_num_output-1 downto 0) := (others => '0'); -- Bus of GPIO signals. Input to edge detector
-signal s_out_data              : std_logic_vector(c_num_output-1 downto 0) := (others => '0'); -- Output of edge detector
+signal s_rising_pulse          : std_logic_vector(c_num_output-1 downto 0) := (others => '0'); -- Output of edge detector rising pulse
+signal s_falling_pulse         : std_logic_vector(c_num_output-1 downto 0) := (others => '0'); -- Output of edge detector falling pulse
 signal s_dev_mask              : std_logic := '0'; -- Controls dev_gp_out.mask
 signal s_dev_data              : std_logic := '0'; -- Control dev_gp_out.data
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -53,6 +54,8 @@ signal s_zlm                   : std_logic := '0'; -- Used for combinatorial log
 signal s_last_sample           : std_logic := '0'; -- Since the edge detector has 1 clock cycle delay, this signal is used to drive s_enable when dev_gp_em_in.enable
                                                    -- goes low on last sample, so that the last sample can be sent
 signal s_ready                 : std_logic := '0'; -- Used for logic when ready to send messages
+signal s_enable_r              : std_logic := '0'; -- Registered version of s_enable
+signal s_data_ready            : std_logic := '0'; -- Used for combinatorial logic to drive data_ready_for_out_port
 signal s_dev_ready             : std_logic := '0'; -- Used for combinatorial logic to drive data_ready_for_out_port when driving dev_gp_out signals
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- Mandatory output port logic
@@ -69,16 +72,13 @@ begin
   s_gpio <= gpio3 & gpio2 & gpio1;
 
   edge_detector : misc_prims.misc_prims.edge_detector
-    generic map (
-      width => c_num_output)
     port map (
       clk    => ctl_in.clk,
       reset  => ctl_in.reset,
-      enable => s_enable,
-      input  => s_gpio,
-      rising_pulse => s_out_data,
-      falling_pulse => open);
-
+      enable => '1',
+      din  => s_gpio,
+      rising_pulse => s_rising_pulse,
+      falling_pulse => s_falling_pulse);
 
   -- Mandatory output port logic, (note that
   -- data_ready_for_out_port MUST be clock-aligned with out_out.data)
@@ -95,11 +95,17 @@ begin
 
   s_dev_ready <= ctl_in.is_operating and out_in.ready and props_in.input_mask(2);
 
-  data_ready_for_out_port <= s_ready and s_enable;
+  data_ready_for_out_port <= s_ready and s_data_ready;
 
   -- Used to control when to start sending messages and to drive data_ready_for_out_port
   s_enable <= ctl_in.is_operating and out_in.ready and (dev_gp_em_in.enable or s_last_sample or s_dev_ready);
 
+  -- If using property mask_data then used registered version of s_enable.
+  -- Using registered version because s_enable pulses for one clock cycle and
+  -- the registered version is coincident with when the edge_detector's new output
+  -- is available. Otherwise use the non registered version of s_enable
+  s_data_ready <= s_enable_r when (props_in.input_mask(0) = '1') else
+                  s_enable;
 
   out_som <=  s_som or s_zlm;
 
@@ -109,14 +115,14 @@ begin
                              data_ready_for_out_port and not s_zlm;
 
   out_out.byte_enable <= (others => '1');
-  out_out.data <= x"0000000" & '0' & s_out_data;
+  out_out.data <= x"0000000" & '0' & s_rising_pulse;
 
   dev_gp_out.mask <= s_dev_mask;
   dev_gp_out.data <= s_dev_data;
 
   -- Set devsignal data and mask
   -- For this test it just toggles s_dev_data on and off
-  process(ctl_in.clk)
+  toggle_dev : process(ctl_in.clk)
   begin
     if rising_edge(ctl_in.clk) then
       if (ctl_in.reset = '1') then
@@ -127,7 +133,20 @@ begin
         s_dev_mask <= '1';
       end if;
     end if;
-  end process;
+  end process toggle_dev;
+
+  -- Register s_enable
+  set_reg : process(ctl_in.clk)
+  begin
+  if rising_edge(ctl_in.clk) then
+    if (ctl_in.reset = '1') then
+      s_enable_r <= '0';
+    else
+      s_enable_r <= s_enable;
+    end if;
+  end if;
+end process set_reg;
+
 
   -- Process for sending messages
   msg_counter : process (ctl_in.clk)
@@ -154,11 +173,11 @@ begin
               s_eom <= '1';
               s_last_sample <= '1';
             end if;
-            -- Finished send message. Get ready to send ZLM
+            -- Finished sending message. Get ready to send ZLM
             if (s_msg_ctr = props_in.numOutputSamples-1) then
               s_zlm <= '1';
               s_done <= '1';
-            -- Ready to start message and start message counter
+            -- Start message counter
             elsif (s_ready = '1') then
               s_som <= '0';
               s_msg_ctr <= s_msg_ctr + 1;

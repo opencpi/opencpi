@@ -1,3 +1,4 @@
+%TODO: Use LaTeX_Header
 \documentclass{article}
 \iffalse
 This file is protected by Copyright. Please refer to the COPYRIGHT file
@@ -37,6 +38,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \newcommand{\terminaloutput}[1]{\texttt{#1}}
 \definecolor{blue}{rgb}{.5,1,1}
 \definecolor{drkgreen}{rgb}{0,.6,0}
+\def\snippetpath{../../../../../../doc/av/tex/snippets}
+\input{\snippetpath/includes}
+\usepackage{ifthen}
+
 \begin{document}
 \section*{ML605 Getting Started Guide}
 \setcounter{section}{0}
@@ -56,7 +61,7 @@ Hardware prerequisites are as follows.
         \begin{tabular}{|c|c|c|}
                 \cline{2-3} \hline
                  & FMC LPC slot & FMC HPC slot \\ \hline
-                \multicolumn{1}{|c|}{Zipper LPC setup\ref{deprecation_zipper}} & Modified\cite{zipper_mods} Zipper/MyriadRF & (empty)\\ 
+                \multicolumn{1}{|c|}{Zipper LPC setup\ref{deprecation_zipper}} & Modified\cite{zipper_mods} Zipper/MyriadRF & (empty)\\
                 \multicolumn{1}{|c|}{ } & transceiver card & \\ \hline
                 \multicolumn{1}{|c|}{Zipper HPC setup\ref{deprecation_zipper}} & (empty) & Modified\cite{zipper_mods} Zipper/MyriadRF \\
                 \multicolumn{1}{|c|}{ } & & transceiver card \\ \hline
@@ -89,10 +94,10 @@ Hardware prerequisites are as follows.
 \item OpenCPI assets project compiled for ml605.
 \end{itemize}
 
-\input{../../../../../../doc/av/tex/snippets/memmap.tex }
+\input{memmap}
 
 \section{Driver Notes}
-\input{../../../../../../doc/av/tex/snippets/Driver_Snippet.tex }
+\input{Driver_Snippet}
 
 \section{Loading the OpenCPI driver}
 When OpenCPI is installed via RPMs, the OpenCPI driver should have been installed. However, when developing with source OpenCPI, the user is required to manage the loading of the OpenCPI driver. \\
@@ -116,7 +121,7 @@ OCPI( 2:816.0544): In HDL Container driver, got PCI search error: Can't open /de
 Available containers:
  #  Model Platform       OS     OS-Version  Arch     Name
  0  rcc   centos7        linux  c7          x86_64   rcc0
- 
+
 ocpidriver load
 Found generic reserved DMA memory on the linux boot command line and assuming it is for OpenCPI: [memmap=128M$0x1000000]
 Driver loaded successfully.
@@ -199,16 +204,14 @@ Note that this applies to the TX/DAC data path connections for bitstreams with t
 \pagebreak
   \begin{thebibliography}{1}
 
-
-  \bibitem{ml605_hardware_setup} ML605 Hardware Setup\\
-	 \url{https://opencpi.github.io/assets/ML605_Hardware_Setup.pdf}
-  \bibitem{fpga_vendor_tool_guide} FPGA Vendor Tools Guide\\
-	 \url{https://opencpi.github.io/FPGA_Vendor_Tools_Installation_Guide.pdf}
-	   \bibitem{rpm_installation_guide} RPM Installation Guide\\
-	 \url{https://opencpi.github.io/RPM_Installation_Guide.pdf}
-	   \bibitem{zipper_mods} Required Modifications for Myriad-RF 1 and Zipper Daughtercards\\
-	 \url{https://opencpi.github.io/assets/Required_Modifications_for_Myriad-RF_1_Zipper_Daughtercards.pdf}
-
+  \bibitem{ml605_hardware_setup}
+	 \githubio[ML605 Hardware Setup]{assets/ML605\_Hardware\_Setup.pdf}
+   \bibitem{fpga_vendor_tool_guide}
+ 	 \githubio[FPGA Vendor Tools Guide]{FPGA\_Vendor\_Tools\_Installation\_Guide.pdf}
+ 	   \bibitem{rpm_installation_guide}
+ 	 \githubio[OpenCPI RPM Installation Guide]{RPM\_Installation\_Guide.pdf}
+ 	   \bibitem{zipper_mods}
+ 	 \githubio[Required Modifications for Myriad-RF 1 and Zipper Daughtercards]{assets/Required\_Modifications\_for\_Myriad-RF\_1\_Zipper\_Daughtercards.pdf}
   \end{thebibliography}
 
 \end{document}

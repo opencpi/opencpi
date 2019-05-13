@@ -1,3 +1,4 @@
+%TODO: Use LaTeX_Header
 \documentclass{article}
 \iffalse
 This file is protected by Copyright. Please refer to the COPYRIGHT file
@@ -49,8 +50,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \renewcommand{\contentsname}{Table of Contents}
 \renewcommand{\listfigurename}{List of Figures}
 \renewcommand{\listtablename}{List of Tables}
-\newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
-\newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
+
 %----------------------------------------------------------------------------------------
 % Various pacakges
 %----------------------------------------------------------------------------------------
@@ -105,6 +105,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \def\devsignal{devsignal}
 % find and replace: Dev Signal, Dev signal, dev Signal, DevSignal -> \DevSignal{}
 \def\DevSignal{DevSignal}
+
+\def\snippetpath{../../../../../../doc/av/tex/snippets}
+\input{\snippetpath/includes}
 
 \def\comp{ad9361\_config\_proxy}
 \edef\ecomp{ad9361_config_proxy}
@@ -1164,11 +1167,11 @@ ad9361_init : Unsupported PRODUCT_ID 0xC0ad9361_init : AD936x initialization err
 \bibitem{ad9361} AD9361 Datasheet and Product Info \\
 \url{https://www.analog.com/en/products/ad9361.html}
 \bibitem{dac_comp_datasheet} AD9361 DAC Component Data Sheet \\
-\url{https://opencpi.github.io/assets/AD9361_DAC.pdf}
+\githubioURL{assets/AD9361_DAC.pdf}
 \bibitem{config_comp_datasheet} AD9361 Config Component Data Sheet \\
-\url{https://opencpi.github.io/assets/AD9361_Config.pdf}
+\githubioURL{assets/AD9361_Config.pdf}
 \bibitem{spi_comp_datasheet} AD9361 SPI Component Data Sheet \\
-\url{https://opencpi.github.io/assets/AD9361_SPI.pdf}
+\githubioURL{assets/AD9361_SPI.pdf}
 
 \end{thebibliography}
 

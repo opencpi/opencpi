@@ -21,7 +21,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 %----------------------------------------------------------------------------------------
 % Snippets
 %----------------------------------------------------------------------------------------
-\input{../../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
+\def\snippetpath{../../../../../../doc/av/tex/snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
 %----------------------------------------------------------------------------------------
 % Paper size, orientation and margins
 %----------------------------------------------------------------------------------------
@@ -88,7 +90,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.0}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -122,7 +124,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		Tested Platforms & xsim, isim, matchstiq\_z1 \\
 		\hline
 	\end{tabular}
-	
+
 \begin{center}
 	\textit{\textbf{Revision History}}
 		\begin{table}[H]
@@ -138,8 +140,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		    \hline
 			\end{tabularx}
 		\end{table}
-	\end{center}	
-	
+	\end{center}
+
 \section*{Functionality}
 \begin{flushleft}
 

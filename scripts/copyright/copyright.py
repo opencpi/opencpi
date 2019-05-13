@@ -219,6 +219,10 @@ bad_paths = (
     '/xilinx-zynq-binary-release-',
 )
 bad_path_globs = (
+    '*/component_ports.inc', '*/component_properties.inc',  # LaTeX include files for generated documentation
+    '*/component_spec_properties.inc',                      # "
+    '*/developer_doc.inc', '*/properties.inc',              # "
+    '*/worker_interfaces.inc', '*/worker_properties.inc',   # "
     '*/configurations*.inc', '*/utilization*.inc',  # LaTeX include files for utilization
     '*/idata/*',  # Unit test data source
     '*/ip_user_files/sim_scripts/*',  # Vivado simulation scripts
