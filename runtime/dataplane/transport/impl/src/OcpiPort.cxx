@@ -460,6 +460,7 @@ void Port::update()
 }
 
 
+#if 0
 /**********************************
  * Advance the ports circular buffer
  *********************************/
@@ -503,7 +504,7 @@ void Port::advance( OCPI::OS::uint64_t value )
   }
         
 }
-
+#endif
 
 /**********************************
  * Can these two ports support Zero Copy transfers
@@ -1216,7 +1217,7 @@ createOutputOffsets()
     // for all the buffers and the split them up
     rc = res_mgr->alloc( m_data->m_portSetMd->bufferLength * bCount, 
                          BUF_ALIGNMENT, &boffset);
-    ocpiDebug("**** Alloc Port %p for createOutputOffsets local buffers %u", this, boffset);
+    ocpiDebug("**** Alloc Port %p for createOutputOffsets local buffers 0x%x", this, boffset);
     if ( rc != 0 ) {
       throw OCPI::Util::EmbeddedException( 
                                          NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->name().c_str() );
@@ -1235,7 +1236,7 @@ createOutputOffsets()
     // Allocate the local state
     rc = res_mgr->alloc( sizeof(BufferState) * MAX_PCONTRIBS * bCount * 2, 
                          BUF_ALIGNMENT, &soffset);
-    ocpiDebug("**** Alloc Port %p for createOutputOffsets local state", this);
+    ocpiDebug("**** Alloc Port %p for createOutputOffsets local state: 0x%x", this, soffset);
     if ( rc != 0 ) {
       res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
       throw OCPI::Util::EmbeddedException( 
@@ -1249,7 +1250,7 @@ createOutputOffsets()
     // Allocate the meta-data structure
     rc = res_mgr->alloc( sizeof(BufferMetaData) * MAX_PCONTRIBS * bCount, 
                          BUF_ALIGNMENT, &moffset);
-    ocpiDebug("**** Alloc Port %p for createOutputOffsets local metadata", this);
+    ocpiDebug("**** Alloc Port %p for createOutputOffsets local metadata 0x%x", this, moffset);
     if ( rc != 0 ) {
       res_mgr->free( soffset,  sizeof(BufferState) * MAX_PCONTRIBS * bCount * 2 );
       res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
@@ -1266,7 +1267,7 @@ createOutputOffsets()
                         
       rc = res_mgr->alloc( sizeof(OutputPortSetControl), 
                            BUF_ALIGNMENT, &coffset);
-      ocpiDebug("**** Alloc Port %p for createOutputOffsets local outputportsetcontrol", this);
+      ocpiDebug("**** Alloc Port %p for createOutputOffsets local outputportsetcontrol 0x%x", this, coffset);
       if ( rc != 0 ) {
         res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
         res_mgr->free( soffset,  sizeof(BufferState) * MAX_PCONTRIBS * bCount * 2);
@@ -1315,7 +1316,8 @@ createInputOffsets()
       ocpiAssert( res_mgr );
       rc = res_mgr->alloc( m_data->m_portSetMd->bufferLength * bCount, 
                            BUF_ALIGNMENT, &boffset);
-      ocpiDebug("**** Alloc Port %p for createInputffsets local buffers", this);
+      ocpiDebug("**** Alloc Port %p for createInputOffsets local buffers 0x%" OCPI_UTIL_RESADDR_PRIx,
+		this, boffset);
       if ( rc != 0 ) {
         throw OCPI::Util::EmbeddedException( 
                                            NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->name().c_str() );
@@ -1331,7 +1333,8 @@ createInputOffsets()
       // Allocate the meta-data structure
       rc = res_mgr->alloc( sizeof(BufferMetaData) * MAX_PCONTRIBS * bCount, 
                            BUF_ALIGNMENT, &moffset);
-      ocpiDebug("**** Alloc Port %p for createInputffsets local metadata", this);
+      ocpiDebug("**** Alloc Port %p for createInputffsets local metadata 0x%" OCPI_UTIL_RESADDR_PRIx,
+		this, moffset);
       if ( rc != 0 ) {
         res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
         throw OCPI::Util::EmbeddedException(  NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->name().c_str() );
@@ -1345,7 +1348,8 @@ createInputOffsets()
       rc = res_mgr->alloc( 
                           sizeof(BufferState) * MAX_PCONTRIBS * bCount * 2, 
                           BUF_ALIGNMENT, &soffset);
-      ocpiDebug("**** Alloc Port %p for createInputffsets local state", this);
+      ocpiDebug("**** Alloc Port %p for createInputffsets local state 0x%" OCPI_UTIL_RESADDR_PRIx,
+		this, soffset);
       if ( rc != 0 ) {
         res_mgr->free( moffset,  sizeof(BufferMetaData) * MAX_PCONTRIBS * bCount );
         res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
@@ -1363,7 +1367,7 @@ createInputOffsets()
       //      res_mgr = XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_shadow_location )->sMemResourceMgr;
       ocpiAssert( res_mgr );
       rc = res_mgr->alloc( sizeof(BufferState) * bCount , BUF_ALIGNMENT, &soffset);
-      ocpiDebug("**** Alloc Port %p for createInputffsets shadow state", this);
+      ocpiDebug("**** Alloc Port %p for createInputffsets shadow state 0x%x", this, soffset);
       if ( rc != 0 ) {
         throw OCPI::Util::EmbeddedException(
                                            NO_MORE_BUFFER_AVAILABLE, m_data->m_shadow_location->name().c_str());

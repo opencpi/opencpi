@@ -332,6 +332,7 @@ volatile BufferState* InputBuffer::getState()
  *********************************/
 void InputBuffer::markBufferFull()
 {
+  assert(getPort()->isShadow() || !(getPort()->getMetaData()->m_descriptor.options & (1 << FlagIsMeta)));
   m_produced = true;
   OCPI_EMIT_CAT_("Mark Buffer Full",OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW);
 
@@ -503,6 +504,7 @@ volatile BufferMetaData* InputBuffer::getMetaData()
 }
 
 
+#if 0
 /**********************************
  * Get number of outputs that have written to this buffer
  *********************************/
@@ -521,7 +523,7 @@ OCPI::OS::uint32_t InputBuffer::getNumOutputsThatHaveProduced()
   }
   return count;
 }
-
+#endif
 
 
 /**********************************
@@ -534,10 +536,19 @@ volatile BufferMetaData* InputBuffer::getMetaDataByIndex( OCPI::OS::uint32_t idx
   return &m_sbMd[0][id];
 }
 
-
-
-
-      
+void InputBuffer::
+setInUse(bool in_use) {
+  if (in_use && getPort()->getMetaData()->m_descriptor.options & (1 << FlagIsMeta)) {
+    BufferMetaData &md = *(BufferMetaData*)getMetaData(); // cast to lose volatile
+    bool dummy, end;
+    size_t length;
+    unpackXferMetaData(getState()->bufferIsFull, length, md.ocpiMetaDataWord.opCode,
+		       end, dummy);
+    md.ocpiMetaDataWord.end = end ? 1 : 0;
+    md.ocpiMetaDataWord.length = OCPI_UTRUNCATE(uint32_t, length);
+  }
+  Buffer::setInUse(in_use);
+}
 /**********************************
  * Destructor
  *********************************/

@@ -123,3 +123,16 @@ function ypkgs {
 sudo yum -y install $(ypkgs PKGS_R) $(ypkgs PKGS_D) $(ypkgs PKGS_S)
 # Now those that depend on epel, e.g.
 sudo yum -y install $(ypkgs PKGS_E)
+# Make sure the python3 link is present
+if ! command -v python3 >/dev/null; then
+    if ! py34=$(command -v python3.4); then
+	echo Cannot find python3.4 after installing it. 2>&1
+	exit 1
+    fi
+    if ! sudo ln -s $py34 /usr/bin/python3; then
+        echo Cannot create missing /usr/bin/python3 link to $py34
+	exit 1
+    fi
+    echo "Created ths missing /usr/bin/python3 -> python3.4 link" 2>&1
+fi
+    

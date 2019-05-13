@@ -109,11 +109,12 @@ function header2be(h : header_t; word : unsigned) return std_logic_vector;
 -- Metadata (internal) definitions are consistent with DtHandshakeControl.h
 --------------------------------------------------------------------------------
 constant meta_length_width_c : natural := 21; -- MUST BE IN SYNC WITH SW DtHandshakeControl.h
-constant meta_eof_c          : natural := meta_length_width_c;
-constant meta_one_c          : natural := meta_eof_c + 1;
-constant meta_truncate_c     : natural := meta_one_c + 1;
-constant meta_opcode_c       : natural := meta_truncate_c + 1;
 constant meta_opcode_width_c : natural := 8;
+constant meta_one_c          : natural := 0;
+constant meta_length_c       : natural := meta_one_c + 1;
+constant meta_eof_c          : natural := meta_length_c + meta_length_width_c;
+constant meta_truncate_c     : natural := meta_eof_c + 1;
+constant meta_opcode_c       : natural := meta_truncate_c + 1;
 subtype metalength_t is unsigned(meta_length_width_c-1 downto 0);
 subtype metalength_dws_t is unsigned(meta_length_width_c-1-dword_shift downto 0);
 type metadata_t is record

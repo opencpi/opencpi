@@ -115,7 +115,7 @@ namespace OCPI {
 	  const char *l_dma = getenv("OCPI_DMA_MEMORY");
 	  if (!l_dma)
 	    throw OU::Error("OCPI_DMA_MEMORY environment variable not set");
-	  unsigned sizeM, pagesize = getpagesize();
+	  unsigned sizeM, pagesize = (unsigned)getpagesize();
 	  uint64_t top;
 	  if (sscanf(l_dma, "%uM$0x%" SCNx64, &sizeM, &m_dmaBase) != 2)
 	    throw OU::Error("Bad format for OCPI_DMA_MEMORY environment variable: '%s'",
@@ -247,6 +247,9 @@ namespace OCPI {
 	if (ep.local()) {
 	  m_driver.getDmaRegion(ep);
 	  m_vaddr = m_driver.mapDmaRegion(ep, 0, ep.size());
+	  OU::format(ep.m_protoInfo, "%" PRIx64 ".%" PRIx32 ".%" PRIx32,
+		     ep.m_busAddr, ep.m_holeOffset, ep.m_holeEnd);
+	  ep.setName();
 	  ocpiDebug("Finalized local DMA ep %p: %s", &ep, ep.name().c_str());
 	}
       }

@@ -43,6 +43,7 @@
 
 namespace XF = DataTransfer;
 namespace OU = OCPI::Util;
+namespace OS = OCPI::OS;
 namespace DG = DataTransfer::Datagram;
 namespace DataTransfer {
 
@@ -62,10 +63,17 @@ namespace DataTransfer {
 	: XF::EndPoint(a_factory, eps, other, a_local, a_size, params) { 
 	if (protoInfo) {
 	  m_protoInfo = protoInfo;
-	  char ipaddr[80];
-	  if (sscanf(protoInfo, "%[^;];%" SCNu16 ";", ipaddr, &m_portNum) != 2)
-	    throw DataTransfer::DataTransferEx( UNSUPPORTED_ENDPOINT, protoInfo);	  
-	  m_ipAddress = ipaddr;  
+	  // FIXME: this is redundant to what is in the socket driver.
+	  // Note that IPv6 addresses may have colons, even though colons are commonly used to
+	  // separate addresses from ports.  Since there must be a port, it will be after the last
+	  // colon.  There is also a convention that IPV6 addresses embedded in URLs are in fact
+	  // enclosed in square brackets, like [ipv6-addr-with-colons]:port
+	  // So this scheme will work whether the square bracket convention is used or not
+	  const char *colon = strrchr(protoInfo, ':');  // before the port
+	  if (!colon || sscanf(colon+1, "%hu;", &m_portNum) != 1)
+	    throw OU::Error("Invalid UDP datagram endpoint format in \"%s\"", protoInfo);
+	  // FIXME: we could do more parsing/checking on the ipaddress
+	  m_ipAddress.assign(protoInfo, OCPI_SIZE_T_DIFF(colon, protoInfo));
 	} else {
 	  std::string ep;
 	  char ip_addr[128];
@@ -86,7 +94,7 @@ namespace DataTransfer {
 	      s_port = (uint16_t)atoi(penv);
 	    m_portNum = s_port++;
 	  }
-	  OU::format(m_protoInfo, "%s;%" PRIu16, m_ipAddress.c_str(), m_portNum);
+	  OU::format(m_protoInfo, "%s:%" PRIu16, m_ipAddress.c_str(), m_portNum);
 	}
 	memset(&m_sockaddr, 0, sizeof(m_sockaddr));
 	m_sockaddr.sin_family = AF_INET;
@@ -100,12 +108,17 @@ namespace DataTransfer {
 	sm.stop();
 	stop();
       }
+    private:
+      void
+      setProtoInfo() {
+	OU::format(m_protoInfo, "%s:%u", m_ipAddress.c_str(), m_portNum);
+      }
       inline struct sockaddr_in &sockaddr() { return m_sockaddr; }
       void updatePortNum(uint16_t portNum) {
 	if (portNum != m_portNum) {
 	  m_portNum = portNum;
 	  m_sockaddr.sin_port = htons(m_portNum);
-	  m_protoInfo = m_ipAddress.c_str();
+	  setProtoInfo();
 	  setName();
 	}
       }
@@ -164,15 +177,13 @@ namespace DataTransfer {
 	size_t size = sizeof(struct sockaddr);
 	size_t n = m_server.recvfrom((char*)buffer, DATAGRAM_PAYLOAD_SIZE, 0, (char*)&sad, &size, 200);
 	offset = 0;
-#ifdef DEBUG_TxRx_Datagram
 	// All DEBUG
-	if (n != 0) {
+	if (OS::logWillLog(10) && n != 0) {
 	  int port = ntohs ( ((struct sockaddr_in *)&sad)->sin_port );
 	  char * a  = inet_ntoa ( ((struct sockaddr_in *)&sad)->sin_addr );
 	  ocpiDebug(" Recved %lld bytes of data on port %lld from addr %s port %d\n",
 		    (long long)n , (long long)m_server.getPortNo(), a, port);
 	}
-#endif
 	return n;
       }
     private:

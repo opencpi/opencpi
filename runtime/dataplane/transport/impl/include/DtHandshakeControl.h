@@ -231,7 +231,12 @@ namespace OCPI {
 
   const unsigned
     lengthBits = 21, // 2Mbytes - 1 MUST BE IN SYNC WITH HDL: sdp_pkg.vhd
-    opCodeBits = 8;
+    opCodeBits = 8,
+    oneBit = 0,
+    lengthBit = oneBit + 1,
+    eofBit = lengthBit + lengthBits,
+    truncBit = eofBit + 1,
+    opCodeBit = truncBit + 1;
 
   // This packing is simply to make it easier to read the values in hex dumps
   // MUST BE IN SYNC WITH HDL sdp_pkg.vhd
@@ -239,19 +244,18 @@ namespace OCPI {
   inline uint32_t packXferMetaData(size_t length, uint8_t opcode, bool eof) {
     assert(length <= maxXferLength);
     return (uint32_t)
-      ((length & ~(UINT32_MAX << lengthBits)) | // length is LSB
-       ((eof ? 1u : 0) << lengthBits) |          // EOF independent of length, above length
-       (1 << (lengthBits+1)) |                  // always-1 is above eof
-                                                // truncation indicator is above always-1
-       ((uint32_t)opcode << (32 - opCodeBits)));          // high byte is opcode
+      ((1 << oneBit) |
+       ((length & ~(UINT32_MAX << lengthBits)) << lengthBit) |
+       ((eof ? 1u : 0) << eofBit) |          // EOF independent of length, above length
+       (((uint32_t)opcode & ~(UINT32_MAX << opCodeBits)) << opCodeBit));
   }
   inline void unpackXferMetaData(uint32_t md, size_t &length, uint8_t &opcode, bool &eof,
 				 bool &truncate) {
-    length = md & ~(UINT32_MAX << lengthBits);
-    eof = md & (1 << lengthBits) ? true : false;
-    assert(md & (1 << (lengthBits+1)));
-    truncate = md & (1 << (lengthBits+2)) ? true : false;
-    opcode = (uint8_t)((md >> (32 - opCodeBits)) & ((1 << opCodeBits) - 1));
+    assert(md & (1 << oneBit));
+    length = (md >> lengthBit) & ~(UINT32_MAX << lengthBits);
+    eof = md & (1 << eofBit) ? true : false;
+    truncate = md & (1 << truncBit) ? true : false;
+    opcode = (uint8_t)((md >> opCodeBit) & ~(UINT32_MAX << opCodeBits));
   }
   struct RplMetaData {
     uint32_t length;

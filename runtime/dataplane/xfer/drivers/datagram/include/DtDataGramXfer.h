@@ -37,7 +37,7 @@
 // These declaration are shared among various datagram drivers
 namespace DataTransfer {
   namespace Datagram {
-  
+
 struct MsgHeader {
   enum MsgType {
     DATA=0,
@@ -53,7 +53,7 @@ struct MsgHeader {
   uint32_t   dataAddr;
   uint16_t   dataLen;
   uint8_t    type;
-  uint8_t    nextMsg;      
+  uint8_t    nextMsg;
 };
 
 struct Transaction;
@@ -64,7 +64,7 @@ struct FrameHeader {
   uint16_t ACKStart;
   uint8_t  ACKCount;
   uint8_t  flags;
-};    
+};
 #define FRAME_FLAG_HAS_MESSAGES 1
 
 // Not an official base class, just a convenience mix-in
@@ -111,7 +111,7 @@ class Socket : public OCPI::Util::Thread {
   DGEndPoint   &m_lep;
   bool          m_run;
   bool          m_joined;
-public:  
+public:
   Socket(DGEndPoint &lep) : m_lep(lep), m_run(true), m_joined(false) {}
   virtual ~Socket();
   virtual void send(Frame &frame) = 0;
@@ -140,7 +140,7 @@ public:
 };
 
 // active thread does background retransmissions
-    class SmemServices : public DataTransfer::SmemServices, public virtual OCPI::Util::SelfMutex {
+class SmemServices : public DataTransfer::SmemServices, public virtual OCPI::Util::SelfMutex {
   Socket *m_socket;
   char   *m_mem;
 public:
@@ -177,7 +177,7 @@ public:
 class XferRequest;
 // Although the XferRequest represents a single contiguous RDMA request, it may be split up into
 // many datagram messages.
-struct Transaction { 
+struct Transaction {
   struct Message {
     MsgHeader hdr;
     void     *src_adr;
@@ -188,13 +188,13 @@ struct Transaction {
   unsigned            m_nMessagesTx;
   unsigned            m_nMessagesRx;
   uint32_t            m_tid;
+  Flag                *m_localFlagAddr;
   std::vector<Message>   m_messages;
   inline bool init() {return m_init;}
-  unsigned msgCount() {return m_nMessagesTx;}
-  Transaction() 
-    : m_init(false), m_nMessagesTx(0), m_nMessagesRx(0) {}
+  Transaction()
+  : m_init(false), m_nMessagesTx(0), m_nMessagesRx(0), m_tid(0), m_localFlagAddr(NULL) {}
   ~Transaction(){
-    ///FIXME: *********** free up the frames involved with this transaction      
+    ///FIXME: *********** free up the frames involved with this transaction
   }
   // nMessages is the estimated number of messages EXCLUSIVE of the flag transfer
   void init(size_t nMessages);
@@ -204,18 +204,10 @@ struct Transaction {
     return (m_nMessagesRx == m_nMessagesTx);
   };
 
-  inline void *srcPtr(unsigned  msg) {
-    ocpiAssert(msg < m_messages.size());
-    return m_messages[msg].src_adr;
-  }
-  inline MsgHeader *hdrPtr(unsigned msg) {
-    ocpiAssert(msg < m_messages.size());
-    return &m_messages[msg].hdr;
-  }
-  inline void ACK(int message ) {
+  inline void ACK(unsigned message) {
     m_messages[message].ack = true;
     m_nMessagesRx++;
-  }    
+  }
 };
 
 class XferRequest : public DataTransfer::XferRequest, private Transaction {
@@ -235,9 +227,9 @@ public:
   DataTransfer::XferRequest::CompletionStatus getStatus();
   DataTransfer::XferRequest &group(DataTransfer::XferRequest* lhs);
   void modify(DtOsDataTypes::Offset new_offsets[], DtOsDataTypes::Offset old_offsets[]);
-  XferRequest* copy(DtOsDataTypes::Offset srcoff, 
-		    DtOsDataTypes::Offset dstoff, 
-		    size_t nbytes, 
+  XferRequest* copy(DtOsDataTypes::Offset srcoff,
+		    DtOsDataTypes::Offset dstoff,
+		    size_t nbytes,
 		    XferRequest::Flags flags);
 };
 

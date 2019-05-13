@@ -63,7 +63,7 @@ namespace DataTransfer {
 	  m_protoInfo = protoInfo;
 	  const char *cp = strchr(protoInfo, '/');
 	  if (cp) {
-	    m_ifname.assign(protoInfo, cp - protoInfo);
+	    m_ifname.assign(protoInfo, OCPI_SIZE_T_DIFF(cp, protoInfo));
 	    protoInfo = cp + 1;
 	  }
 	  m_addr.setString(protoInfo);
@@ -75,7 +75,7 @@ namespace DataTransfer {
 	  std::string a_ifname;
 	  if (other) {
 	    const char *sp = strchr(other, '/');
-	    a_ifname.assign(other, sp - other);
+	    a_ifname.assign(other, OCPI_SIZE_T_DIFF(sp, other));
 	  } else {
 	    const char *l_name;
 	    if (!OU::findString(params, "interface", l_name))
@@ -108,8 +108,7 @@ namespace DataTransfer {
 	const char *sp = strchr(remote, '/');
 	if (!sp)
 	  return true;
-	//	  throw OU::Error("Badly formed ether-rdma endpoint: %s", remote);
-	interface.assign(remote, sp - remote);
+	interface.assign(remote, OCPI_SIZE_T_DIFF(sp, remote));
 	return m_ifname == interface;
       }
     };
