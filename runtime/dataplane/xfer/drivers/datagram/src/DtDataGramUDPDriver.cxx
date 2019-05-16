@@ -35,6 +35,7 @@
 #include "OcpiOsSocket.h"
 #include "OcpiOsServerSocket.h"
 #include "OcpiOsAssert.h"
+#include "OcpiOsEther.h"
 #include "OcpiUtilMisc.h"
 #include "XferException.h"
 #include "DtDataGramXfer.h"
@@ -45,6 +46,7 @@ namespace XF = DataTransfer;
 namespace OU = OCPI::Util;
 namespace OS = OCPI::OS;
 namespace DG = DataTransfer::Datagram;
+namespace OE = OCPI::OS::Ether;
 namespace DataTransfer {
 
   namespace UDP {
@@ -74,15 +76,19 @@ namespace DataTransfer {
 	  // FIXME: we could do more parsing/checking on the ipaddress
 	  m_ipAddress.assign(protoInfo, OCPI_SIZE_T_DIFF(colon, protoInfo));
 	} else {
-	  std::string ep;
-	  char ip_addr[128];
-	  const char* env = getenv("OCPI_UDP_TRANSFER_IP_ADDR");
-	  if (!env || (env[0] == 0)) {
-	    ocpiDebug("Set OCPI_TRANSFER_IP_ADDR environment variable to set socket IP address");
-	    gethostname(ip_addr, 128); // FIXME: get a numeric address to avoid DNS problems
-	  } else
-	    strcpy(ip_addr, env);
-	  m_ipAddress = ip_addr;
+	  const char *env = getenv("OCPI_TRANSFER_IP_ADDRESS");
+	  if (env && env[0])
+	    m_ipAddress = env;
+	  else {
+	    ocpiDebug("Set OCPI_TRANSFER_IP_ADDRESS environment variable to set socket IP address");
+	    static std::string myAddr;
+	    if (myAddr.empty()) {
+	      std::string error;
+	      if (OE::IfScanner::findIpAddr(getenv("OCPI_SOCKET_INTERFACE"), myAddr, error))
+		throw OU::Error("Cannot obtain a local IP address:  %s", error.c_str());
+	    }
+	    m_ipAddress = myAddr;
+	  }
 	  const char* penv = getenv("OCPI_UDP_TRANSFER_PORT");
 	  if( !penv || (penv[0] == 0)) {
 	    ocpiDebug("Set the OCPI_TRANSFER_PORT environment variable to set socket IP port");
@@ -98,7 +104,8 @@ namespace DataTransfer {
 	memset(&m_sockaddr, 0, sizeof(m_sockaddr));
 	m_sockaddr.sin_family = AF_INET;
 	m_sockaddr.sin_port = htons(m_portNum);
-	inet_aton(m_ipAddress.c_str(), &m_sockaddr.sin_addr);
+	if (!inet_aton(m_ipAddress.c_str(), &m_sockaddr.sin_addr))
+	  throw OU::Error("Unable to parse/resolve internet address for UDP: %s", m_ipAddress.c_str());
       }
     private:
       void
@@ -154,10 +161,9 @@ namespace DataTransfer {
 	OCPI::Util::Thread::start();
       }
 
-      void send(DG::Frame &frame) {
+      void send(DG::Frame &frame, DG::DGEndPoint &destEp) {
 	// FIXME: multithreaded..
-	EndPoint *dep = static_cast<EndPoint *>(frame.endpoint);
-	m_msghdr.msg_name = &dep->sockaddr();
+	m_msghdr.msg_name = &static_cast<EndPoint *>(&destEp)->sockaddr();
 	// We are depending on structure compatibility
 	m_msghdr.msg_iov = (struct iovec *)frame.iov;
 	m_msghdr.msg_iovlen = frame.iovlen;

@@ -221,15 +221,17 @@ namespace OCPI {
       bool eof;
       for (ClientsIter ci = m_clients.begin(); ci != m_clients.end();) {
         if (FD_ISSET((*ci)->fd(), fds) && (*ci)->receive(eof, error)) {
-          if (m_verbose) {
-            if (eof)
-              fprintf(stderr, "Client \"%s\" has disconnected.\n", (*ci)->client());
-            else
+	  if (eof) {
+	    if (m_verbose)
+             fprintf(stderr, "Client \"%s\" has disconnected.\n", (*ci)->client());
+	    ocpiInfo("Client \"%s\" has disconnected.", (*ci)->client());
+	  } else {
+	    if (m_verbose)
               fprintf(stderr, "Shutting down client \"%s\" due to error: %s\n",
                       (*ci)->client(), error.c_str());
+	    ocpiInfo("Shutting down client \"%s\" due to error: %s",
+		     (*ci)->client(), error.c_str());
           }
-          ocpiInfo("Shutting down client \"%s\" due to error: %s",
-                   (*ci)->client(), error.c_str());
           error.clear();
           Client *c = *ci;
           ClientsIter tmp = ci;

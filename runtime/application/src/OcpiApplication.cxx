@@ -153,7 +153,17 @@ namespace OCPI {
       init(params);
     }
     ApplicationI::~ApplicationI() {
-      clear();
+      try {
+	clear();
+      } catch (std::string &e) {
+	ocpiBad("Exception during application shutdown: %s", e.c_str());
+      } catch (const char *e) {
+	ocpiBad("Exception during application shutdown: %s", e);
+      } catch (std::exception &e) {
+	ocpiBad("Exception during application shutdown: %s", e.what());
+      } catch (...) {
+	ocpiBad("Exception during application shutdown: unexpected exception");
+      }
     }
     void ApplicationI::clear() {
       m_assembly--;

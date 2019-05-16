@@ -96,6 +96,7 @@ private:
   SmemServices        *m_sMemServices;  // mapping services
   ResourceServices    *m_resourceMgr;   // allocation services
   ContainerComms      *m_comms;         // in-band/mailbox communications
+  void                *m_context;       // ownership context, no need for more than void* for now
 protected:
   std::string          m_protoInfo;  // protocol-specific string set by derived classes
   uint64_t             m_address;    // Address of endpoint in its address space (usually 0)
@@ -124,6 +125,7 @@ protected:
   uint64_t address() const { return m_address; }
   uint16_t mailBox() const { return m_mailBox; }
   uint16_t maxCount() const { return m_maxCount; }
+  void *context() const { return m_context; }
   bool local() const { return m_local; }
   XferFactory &factory() const { return m_factory; }
   const std::string &name() const { return m_name; }

@@ -55,6 +55,7 @@ getTemplate(EndPoint &source, EndPoint &target) {
   temp->addRef(); // add a ref for our caller
   return *temp;
 }
+#if 0
 void XferFactory::
 removeTemplate(XferServices &xfs) {
   TemplatePair pair(&xfs.m_from, &xfs.m_to);
@@ -63,7 +64,7 @@ removeTemplate(XferServices &xfs) {
   assert(ti != m_templates.end());
   m_templates.erase(ti);
 }
-
+#endif
 
 MailBox 
 XferFactory::
@@ -165,48 +166,7 @@ supportsEndPoint(const char *a_name) {
   size_t len = strlen(protocol);
   return !strncmp(a_name, protocol, len) && (!a_name[len] || a_name[len] == ':');
 }
-#if 0
-bool 
-XferFactory::
-supportsEndPoints(
-		  std::string& end_point1,
-		  std::string& end_point2 )
-{
 
-  ocpiDebug("In  XferFactory::supportsEndPoints, (%s) (%s)",
-         end_point1.c_str(), end_point2.c_str() );
-
-  size_t len = strlen( getProtocol() );
-  if ( end_point1.length() && end_point2.length() ) {
-
-    if ( (strncmp( end_point1.c_str(), getProtocol(), strlen(getProtocol())) == 0 ) &&
-         strncmp( end_point2.c_str(), getProtocol(), strlen(getProtocol())) == 0 ) {
-      if ( (end_point1[len] != ':') ||  (end_point2[len] != ':') ) {
-        return false;
-      }
-      return true;
-    }
-  }
-  else if ( end_point1.length() ) {
-    if ( (strncmp( end_point1.c_str(), getProtocol(), strlen(getProtocol())) == 0) ) {
-      if ( (len<end_point1.length()) && (end_point1[len] != ':')  ) {
-        return false;
-      }
-      return true;
-    }
-  }
-  else if ( end_point2.length() ) {
-    if ( (strncmp( end_point2.c_str(), getProtocol(), strlen(getProtocol())) == 0 ) ) {
-      if ( (len<end_point2.length()) && (end_point2[len] != ':')  ) {
-        return false;
-      }
-      return true;
-    }
-  }
-
-  return false;
-}
-#endif
 XferFactory::
 XferFactory(const char *a_name)
   : OD::DriverType<XferManager,XferFactory>(a_name, *this) {
@@ -224,6 +184,30 @@ XferFactory::
   // These are already children, so they get removec automatically
   //  for (DataTransfer::TemplateMapIter tmi = m_templates.begin(); tmi != m_templates.end(); tmi++)
   //    delete tmi->second;
+}
+// clean out our caches for connections that involve remote endpoints created in this context
+// also, release remote endpoints from our endpoint cache
+void XferFactory::
+cleanForContext(void *context) {
+  for (auto ti = m_templates.begin(); ti != m_templates.end();) {
+    EndPoint
+      &from = *ti->first.first,
+      &to = *ti->first.second;
+    auto i = ti++;
+    if ((!from.local() && from.context() == context) ||
+	(!to.local() && to.context() == context)) {
+      i->second->release();
+      m_templates.erase(i);
+    }
+  }
+  for (auto ei = m_endPoints.begin(); ei != m_endPoints.end(); ) {
+    auto it = ei++;
+    EndPoint &ep = *it->second;
+    if (ep.context() == context && !ep.local()) {
+      ep.release();
+      m_endPoints.erase(it);
+    }
+  }
 }
 
 // This default implementation is just to parse generic properties,
@@ -245,7 +229,7 @@ addEndPoint(const char *endPoint, const char *other, bool local, size_t size) {
     if (colon && colon[1]) {
       colon++;
       const char *semi = strrchr(colon, ';');
-      info.assign(colon, semi ? semi - colon : strlen(colon));
+      info.assign(colon, semi ? OCPI_SIZE_T_DIFF(semi, colon) : strlen(colon));
       if (!semi)
 	endPoint = NULL;
     } else

@@ -20,7 +20,7 @@
 
 // This file is included by transfer driver implementations and provides templates
 // for the classes in each driver
-        
+
 #ifndef XferDriver_h
 #define XferDriver_h
 

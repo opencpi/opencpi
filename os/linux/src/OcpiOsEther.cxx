@@ -681,6 +681,22 @@ namespace OCPI {
 #endif
       };
 
+      bool IfScanner::findIpAddr(const char *interface, std::string &ipAddr, std::string &error) {
+	IfScanner ifs(error);
+	Interface eif;
+	if (error.empty())
+	  while (ifs.getNext(eif, error))
+	    if (eif.connected && eif.up && !eif.loopback && eif.addr.isEther() &&
+		eif.ipAddr.addrInAddr()) {
+	      if (interface && strcasecmp(eif.name.c_str(), interface))
+		  continue;
+	      ipAddr = eif.ipAddr.prettyInAddr();
+	      ocpiInfo("Choosing our IP address, %s, using interface %s with MAC %s",
+		       ipAddr.c_str(), eif.name.c_str(), eif.addr.pretty());
+	      break;
+	    }
+	return !error.empty();
+      }
       IfScanner::IfScanner(std::string &err)
 	: m_init(false), m_index(0) {
 	ocpiAssert((compileTimeSizeCheck<sizeof (m_opaque), sizeof (Opaque)> ()));

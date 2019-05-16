@@ -73,31 +73,15 @@ public:
       // FIXME: we could do more parsing/checking on the ipaddress
       m_ipAddress.assign(protoInfo, OCPI_SIZE_T_DIFF(colon, protoInfo));
     } else {
-      const char *env = getenv("OCPI_TRANSFER_IP_ADDRESS"); // allow env for interface?
+      const char *env = getenv("OCPI_TRANSFER_IP_ADDRESS");
       if (env && env[0])
 	m_ipAddress = env;
       else {
 	ocpiDebug("Set OCPI_TRANSFER_IP_ADDRESS environment variable to set socket IP address");
-	// Use the IP address of the first connected, up, interface with ether MAC address
-	// Cannot use host name since remote systems might not have DNS
 	static std::string myAddr;
 	if (myAddr.empty()) {
 	  std::string error;
-	  OE::IfScanner ifs(error);
-	  OE::Interface eif;
-	  if (error.empty())
-	    while (ifs.getNext(eif, error)) {
-	      if (eif.connected && eif.up && !eif.loopback && eif.addr.isEther() &&
-		  eif.ipAddr.addrInAddr()) {
-		if ((env = getenv("OCPI_SOCKET_INTERFACE")) && strcasecmp(eif.name.c_str(), env))
-		  continue;
-		myAddr = eif.ipAddr.prettyInAddr();
-		ocpiInfo("Choosing our IP address, %s, using interface %s with MAC %s",
-			 myAddr.c_str(), eif.name.c_str(), eif.addr.pretty());
-		break;
-	      }
-	    }
-	  if (!error.empty())
+	  if (OE::IfScanner::findIpAddr(getenv("OCPI_SOCKET_INTERFACE"), myAddr, error))
 	    throw OU::Error("Cannot obtain a local IP address:  %s", error.c_str());
 	}
 	m_ipAddress = myAddr;

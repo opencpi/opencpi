@@ -75,36 +75,6 @@ getListOfSupportedProtocols() {
   return l;
 }
 
-#if 0
-std::string XferManager::null;
-
-// Find the Data transfer class
-XferFactory* XferManager::
-find(const char* ep1, const char* ep2) {
-  std::string sep1, sep2;
-  if ( ep1 && ep2 ) {
-    sep1 = ep1;
-    sep2 = ep2;
-  }
-  else if ( ep1 && !ep2 ) {
-    sep1 = ep1;
-  }
-  else {
-    sep2 = ep2;
-  }
-  return XferManager::find( sep1 , sep2);
-}
-
-XferFactory* XferManager::
-find(std::string& ep1, std::string& ep2) {
-  parent().configure();
-  OU::AutoMutex guard ( m_mutex, true );
-  for (XferFactory* d = firstDriver(); d; d = d->nextDriver())
-    if (d->supportsEndPoints(ep1, ep2))
-      return d;
-  return NULL;
-}
-#endif
 XferFactory* XferManager::
 getDriver(const char *name) {
   parent().configure();
@@ -119,15 +89,20 @@ const char *xfer = "transfer";
 static OCPI::Driver::Registration<XferManager> xfm;
 XferManager::
 XferManager()
-  : m_mutex(true), m_configured(false)
-{
+  : m_mutex(true), m_configured(false) {
+  ocpiCheck(pthread_key_create(&m_endPointThreadKey, NULL) == 0);
 }
 
 XferManager::
-~XferManager()
-{
+~XferManager() {
+  ocpiCheck(pthread_key_delete(m_endPointThreadKey) == 0);
 }
 
+void XferManager::
+cleanForContext(void *context) {
+  for (XferFactory* d = firstDriver(); d; d = d->nextDriver())
+    d->cleanForContext(context);
+}
 // Create an endpoint for some other (hardware) container.
 // If only a protocol, then its actually local...
 EndPoint& XferManager::

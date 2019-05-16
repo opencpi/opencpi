@@ -176,7 +176,12 @@ namespace DataTransfer {
     EndPoint &from() { return m_from; }
     EndPoint &to() { return m_to; }
     void addRef() { m_users++; }
-    void release() { assert(m_users); if (!--m_users) delete this; }
+    void release() {
+      ocpiLog(9, "Releasing xferservices/template/connection with refcount %u", m_users);
+      assert(m_users);
+      if (!--m_users)
+	delete this;
+    }
 
     /*
      * If this service requires a cookie for the remote connection, this method will return it.

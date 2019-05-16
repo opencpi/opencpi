@@ -72,20 +72,20 @@ namespace DataTransfer {
 					       OCPI_ETHER_RDMA
 					       ": invalid ethernet address in endpoint string");
 	} else {
-	  std::string a_ifname;
-	  if (other) {
+	  if (0) { // if (other) {
 	    const char *sp = strchr(other, '/');
-	    a_ifname.assign(other, OCPI_SIZE_T_DIFF(sp, other));
+	    m_ifname.assign(other, OCPI_SIZE_T_DIFF(sp, other));
 	  } else {
 	    const char *l_name;
 	    if (!OU::findString(params, "interface", l_name))
 	      l_name = getenv("OCPI_ETHER_INTERFACE");
 	    if (!l_name)
 	      throw OU::Error(OCPI_ETHER_RDMA ": no interface specified");
+	    m_ifname = l_name;
 	  }
 	  // FIXME: use first/only interface if there is one?
 	  std::string error;
-	  OE::Interface ifc(a_ifname.c_str(), error);
+	  OE::Interface ifc(m_ifname.c_str(), error);
 	  if (error.size())
 	    throw OU::Error(OCPI_ETHER_RDMA ": bad ethernet interface: %s", error.c_str());
 	  OU::format(m_protoInfo, "%s/%s", ifc.name.c_str(), ifc.addr.pretty());
@@ -98,8 +98,8 @@ namespace DataTransfer {
     public:
       bool isCompatibleLocal(const char *remote) const {
 	std::string interface;
-	const char *sp = strchr(remote, '/');
-	if (!sp)
+	const char *sp;
+	if (!remote || !(sp = strchr(remote, '/')))
 	  return true;
 	interface.assign(remote, OCPI_SIZE_T_DIFF(sp, remote));
 	return m_ifname == interface;
@@ -127,12 +127,12 @@ namespace DataTransfer {
 	}
 	OCPI::Util::Thread::start();
       }
-      void send(DG::Frame &frame) {
+      void send(DG::Frame &frame, DG::DGEndPoint &destEp) {
 	// FIXME: multithreaded..
-	EndPoint *dep = static_cast<EndPoint *>(frame.endpoint);
 	std::string error;
 	for (unsigned n = 0; error.empty() && n < 10; n++) {
-	  if (m_socket->send(frame.iov, frame.iovlen, dep->addr(), 0, NULL, error))
+	  if (m_socket->send(frame.iov, frame.iovlen, static_cast<EndPoint *>(&destEp)->addr(), 0,
+			     NULL, error))
 	    return;
 	  ocpiDebug("Sending packet error: %s", error.size() ? error.c_str() : "timeout");
 	}

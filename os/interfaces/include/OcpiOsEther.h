@@ -169,6 +169,8 @@ namespace OCPI {
 	bool     m_init;
 	size_t   m_index;
       public:
+	static bool
+	findIpAddr(const char *interface, std::string &ipAddr, std::string &error);
 	// Initialize the scanner
 	// err is set if there is an error
 	IfScanner(std::string &err);

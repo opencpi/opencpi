@@ -115,15 +115,7 @@ namespace OCPI {
        *********************************/
       virtual ~Transport();      
 
-
-      /**********************************
-       * Is an endpoint local
-       *********************************/
-#if 0
-      DataTransfer::SMBResources* addLocalEndpointFromProtocol( const char* protocol );      
-      DataTransfer::SMBResources* addLocalEndpoint( const char* ep, bool compatibleWith = false );
-      DataTransfer::SMBResources* findLocalCompatibleEndpoint( const char* ep );
-#endif
+      void cleanForContext(void *context);
       DataTransfer::EndPoint &addRemoteEndPoint( const char* ep );
       bool                        isLocalEndpoint(const DataTransfer::EndPoint &ep) const;
       DataTransfer::EndPoint* getEndpoint(const char* ep, bool local);

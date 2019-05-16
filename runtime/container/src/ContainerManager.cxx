@@ -31,6 +31,7 @@
 #include "ContainerPort.h"          // just for linkage hooks
 #include "OcpiContainerRunConditionApi.h"
 #include "XferAccess.h"
+#include "XferManager.h"
 
 #include "ContainerManager.h"
 #include "ContainerLauncher.h"
@@ -137,6 +138,13 @@ namespace OCPI {
     bool Manager::
     dynamic() {
       return OCPI_DYNAMIC;
+    }
+    void Manager::
+    cleanForContextX(void *context) {
+      for (Driver *d = firstChild(); d; d = d->nextChild())
+	for (Container *c = d->firstContainer(); c; c = c->nextContainer())
+	  c->getTransport().cleanForContext(context);
+      DataTransfer::XferManager::getFactoryManager().cleanForContext(context);
     }
     Driver::Driver(const char *a_name) 
       : OD::DriverType<Manager,Driver>(a_name, *this) {

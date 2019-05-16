@@ -82,12 +82,16 @@ namespace OCPI {
       OCPI::API::Container *find(const char *model, const char *which,
 				 const OCPI::API::PValue *props);
       Container *findX(const char *which);
-      inline static Container*find(const char *name) {
+      inline static Container *find(const char *name) {
 	return getSingleton().findX(name);
       }
-      bool findContainersX(Callback &cb, OCPI::Util::Worker &i, const char *name); 
+      bool findContainersX(Callback &cb, OCPI::Util::Worker &i, const char *name);
       inline static bool findContainers(Callback &cb, OCPI::Util::Worker &i, const char *name) {
 	return getSingleton().findContainersX(cb, i, name);
+      }
+      void cleanForContextX(void *context);
+      inline static void cleanForContext(void *context) {
+	getSingleton().cleanForContextX(context);
       }
       void shutdown();
       // convenience
