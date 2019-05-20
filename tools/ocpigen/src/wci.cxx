@@ -37,7 +37,7 @@ WciPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
     return;
   }
   myClock = true;
-  addMyClock();
+  addMyClock(m_master);
   if (!m_master) {
     m_worker->m_wci = this;
     m_worker->m_wciClock = clock;
@@ -79,7 +79,7 @@ emitPortDescription(FILE *f, Language lang) const {
     bool first = true;
     for (unsigned op = 0; op < OU::Worker::OpsLimit; op++, first = false)
       if (op != OU::Worker::OpStart &&
-	  m_worker->m_ctl.controlOps & (1 << op))
+	  m_worker->m_ctl.controlOps & (1u << op))
 	fprintf(f, "%s%s", first ? "" : ",", OU::Worker::s_controlOpNames[op]);
   }
   fprintf(f, "\n");
@@ -195,7 +195,9 @@ void WciPort::
 emitImplSignals(FILE *f) {
   Control &ctl = m_worker->m_ctl;
   // Record for property-related inputs to the worker - writable values and strobes, readable strobes
+#if 0
   if (ctl.nonRawWritables || ctl.nonRawReadables || ctl.rawProperties)
+#endif
     fprintf(f, "  signal props_to_worker   : worker_props_in_t;\n");
   if (ctl.nonRawReadbacks || ctl.rawReadables)
     fprintf(f, "  signal props_from_worker : worker_props_out_t;\n");
@@ -264,7 +266,10 @@ emitWorkerEntitySignals(FILE *f, std::string &last, unsigned maxPropName) {
 	  (int)maxPropName, typeNameIn.c_str(), typeNameIn.c_str(),
 	  (int)maxPropName, typeNameOut.c_str(), typeNameOut.c_str());
   last = ";\n";
-  if (w.m_ctl.writables || w.m_ctl.readbacks || w.m_ctl.rawProperties) {
+#if 0
+  if (w.m_ctl.writables || w.m_ctl.readbacks || w.m_ctl.rawProperties)
+#endif
+    {
     fprintf(f, 
 	    "%s"
 	    "    -- Input values and strobes for this worker's writable properties\n"
@@ -293,10 +298,13 @@ emitRecordInterfaceConstants(FILE *f) {
 }
 #endif
 void
-emitConstant(FILE *f, const std::string &prefix, const char *name, size_t val, Language lang) {
-  if (lang == VHDL)
-    fprintf(f, "  constant %s_%s : natural := %zu;\n", prefix.c_str(), name, val);
-  else
+emitConstant(FILE *f, const std::string &prefix, const char *name, size_t val, Language lang, bool ieee) {
+  if (lang == VHDL) {
+    if (ieee)
+      fprintf(f, "  constant %s_%s : unsigned(31 downto 0) := X\"%08zx\";\n", prefix.c_str(), name, val);
+    else
+      fprintf(f, "  constant %s_%s : natural := %zu;\n", prefix.c_str(), name, val);
+  } else
     fprintf(f, "  localparam %s_%s = %zu;\n", prefix.c_str(), name, val);
 }
 #if 0
@@ -308,11 +316,12 @@ emitInterfaceConstants(FILE *f, Language lang) {
   emitConstant(f, pref, "addr_width", ocp.MAddr.width, lang);
 }
 #endif
-// This cannot be a port method since it is needed when there are parameters
+// This cannot be a WCI port method since it is needed when there are parameters
 // with NO CONTROL INTERFACE
 void Worker::
 emitPropertyAttributeConstants(FILE *f, Language lang) {
   bool first = true;
+  size_t last_end = 0;
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
     OU::Property &pr = **pi;
     if (first &&
@@ -322,6 +331,11 @@ emitPropertyAttributeConstants(FILE *f, Language lang) {
       fprintf(f, "  %s Attributes of properties determined by parameter expressions\n",
 	      hdlComment(lang));
       first = false;
+    }
+    if (!pr.m_isRaw && (!pr.m_isParameter || pr.m_isReadable)) {
+      emitConstant(f, pr.m_name, "offset", pr.m_offset, lang, true);
+      emitConstant(f, pr.m_name, "nbytes_1", pr.m_nBytes - 1 - (pr.m_isSequence ? pr.m_align : 0), lang);
+      last_end = pr.m_offset + pr.m_nBytes;
     }
     if (pr.m_baseType == OA::OCPI_String)
       emitConstant(f, pr.m_name, "string_length", pr.m_stringLength, lang);
@@ -340,6 +354,7 @@ emitPropertyAttributeConstants(FILE *f, Language lang) {
 		  pr.m_arrayDimensions[n]);
     }
   }
+  emitConstant(f, "ocpi", "sizeof_non_raw_properties", OU::roundUp(last_end, 4), lang);
 }
 
 void WciPort::
@@ -373,7 +388,8 @@ emitRecordSignal(FILE *f, std::string &last, const char *aprefix, bool inRecord,
     OcpPort::emitRecordSignal(f, last, aprefix, inRecord, inPackage, inWorker, NULL,
 			      inWorker ? "(done=>btrue, others=>bfalse)" : NULL);
     if (inWorker) {
-      if (w.m_ctl.writables || w.m_ctl.readbacks || w.m_ctl.rawProperties) {
+      //      if (w.m_ctl.writables || w.m_ctl.readbacks || w.m_ctl.rawProperties) 
+      {
 	emitLastSignal(f, last, VHDL, false);
 	OU::format(last,
 		   "\n"
@@ -426,15 +442,12 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
 }
 
 void WciPort::
-emitPortSignals(FILE *f, Attachments &atts, Language lang, const char *indent,
-		bool &any, std::string &comment, std::string &last, const char *myComment,
-		OcpAdapt *adapt, std::string *signalIn, std::string &exprs) {
+emitPortSignals(FILE *f, const InstancePort &ip, Language lang, const char *indent,
+		bool &any, std::string &comment, std::string &last, const char *myComment, std::string &exprs) {
   if (m_master || m_worker->m_assembly)
-    Port::emitPortSignals(f, atts, lang, indent, any, comment, last, myComment, adapt, signalIn,
-			  exprs);
+    Port::emitPortSignals(f, ip, lang, indent, any, comment, last, myComment, exprs);
   else
-    OcpPort::emitPortSignals(f, atts, lang, indent, any, comment, last, myComment, adapt,
-			     signalIn, exprs);
+    OcpPort::emitPortSignals(f, ip, lang, indent, any, comment, last, myComment, exprs);
 }
 
 void WciPort::

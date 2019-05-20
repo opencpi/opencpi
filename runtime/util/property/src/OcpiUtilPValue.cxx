@@ -85,6 +85,8 @@ namespace OCPI {
       PVBool("polled"),
       PVULong("bufferCount"),
       PVULong("bufferSize"),
+      PVString("portBufferCount"), // internal usage since bufferCount/Size are overloaded for two types
+      PVString("portBufferSize"),
       PVUChar("index"),
       PVString("interconnect"),
       PVString("adapter"),
@@ -155,12 +157,15 @@ namespace OCPI {
 	    throw Error("Parameter \"%s\" value for \"%s\" is not a string", var, name);
 	  if (p->vString[0] != '=') {
 	    size_t len = strlen(var);
-	    if (!strncasecmp(var, p->vString, len) && p->vString[len] == '=') {
+	    const char *match = p->vString;
+	    if (match[0] == '?')
+	      match++, len--;
+	    if (!strncasecmp(var, match, len) && match[len] == '=') {
 	      if (specific)
 		throw Error("Parameter \"%s\" for instance \"%s\" is specified more than once",
 			    name,  var);
 	      specific = true;
-	      val = p->vString + len + 1;
+	      val = match + len + 1;
 	    }
 	  } else if (!specific)
 	    val = p->vString + 1;

@@ -41,10 +41,31 @@ namespace OCPI {
     // divert some application PValue parameters into the discovery process
     static OL::Assembly &
     createLibraryAssembly(ezxml_t appXml, const char *name, const PValue *params) {
+      // Extract any extra application params from the environment
+      const char *env = getenv("OCPI_APPLICATION_PARAMS");
+      OU::PValueList envParams;
+      if (env) {
+	OU::PValueList tempParams;
+	for (OU::TokenIter li(env); li.token(); li.next()) {
+	  const char *eq = strchr(li.token(), '=');
+	  if (!eq)
+	    ocpiBad("OCPI_APPLICATION_PARAMS value \"%s\" is invalid", env);
+	  std::string name(li.token(), OCPI_SIZE_T_DIFF(eq, li.token()));
+	  tempParams.add(name.c_str(), eq + 1);
+	}
+	envParams.add(params, tempParams);
+	params = envParams;
+      }
       // Among other things, this provides the simparams for simulation containers
       static const char *forDiscovery[] = {
 	OCPI_DISCOVERY_PARAMETERS, OCPI_DISCOVERY_ONLY_PARAMETERS, NULL
       };
+      // Patch/rename overloaded pvalue names for compatibility - note nasty caste, which should be ok
+      for (OU::PValue *p = (OU::PValue *)params; p && p->name; p++)
+	if (!strcasecmp(p->name, "buffersize"))
+	  p->name = "portbuffersize";
+	else if (!strcasecmp(p->name, "buffercount"))
+	  p->name = "portbuffercount";
       OU::PValueList discoveryParams;
       for (const char **dp = forDiscovery; *dp; ++dp) {
 	const PValue *p = OU::find(params, *dp);
@@ -149,6 +170,8 @@ namespace OCPI {
 	for (unsigned n = 0; n < m_nContainers; n++)
 	  delete m_containerApps[n];
 	delete [] m_containerApps;
+	for (auto li = m_launchers.begin(); li != m_launchers.end(); li++)
+	  (*li)->appShutdown(); // for now a launcher is only serially reusable, so no app id etc.
       }
     }
     unsigned ApplicationI::
@@ -470,6 +493,12 @@ namespace OCPI {
 	  if (mp->m_instance == n &&
 	      OU::findAssignNext(params, "property", mp->m_name.c_str(), sDummy, nDummy))
 	    nPropValues++;
+	// Account for the runtime properties set here, e.g. output port buffer size
+	const OL::Implementation &impl = *i->m_bestDeployment.m_impls[0];
+	unsigned nPorts;
+	for (OU::Port *p = impl.m_metadataImpl.ports(nPorts); nPorts; --nPorts, p++)
+	  if (p->m_isProducer)
+	    nPropValues++;
 	if (nPropValues) {
 	  // This allocation will include dump-only properties, which won't be put into the
 	  // array by prepareInstanceProperties
@@ -479,7 +508,22 @@ namespace OCPI {
 	  unsigned *pn = &i->m_crew.m_propOrdinals[0];
 	  // Note that for scaled instances we assume the impls are compatible as far as
 	  // properties go.  FIXME:  WE MUST CHECK COMPILED VALUES WHEN COMPARING IMPLES
-	  prepareInstanceProperties(n, *i->m_bestDeployment.m_impls[0], pn, pv);
+	  prepareInstanceProperties(n, impl, pn, pv);
+	  // Add buffer size property value to each output
+	  for (auto it = m_launchConnections.begin(); it != m_launchConnections.end(); ++it) {
+	    OC::Launcher::Connection &c = *it;
+	    if (c.m_out.m_member && c.m_out.m_member->m_crew == m_launchMembers[i->m_firstMember].m_crew) {
+	      OU::Assembly::Property aProp;
+	      aProp.m_name = "ocpi_buffer_size_" + c.m_out.m_metaPort->m_name;
+	      if (!impl.m_metadataImpl.getProperty(aProp.m_name.c_str())) {
+		ocpiInfo("Missing %s property for %s", aProp.m_name.c_str(), impl.m_metadataImpl.cname());
+		continue;
+	      }
+	      aProp.m_hasValue = true;
+	      OU::format(aProp.m_value, "%zu", c.m_bufferSize);
+	      checkPropertyValue(n, impl.m_metadataImpl, aProp, pn, pv);
+	    }
+	  }
 	  nPropValues = (size_t)(pn - &i->m_crew.m_propOrdinals[0]);
 	  i->m_crew.m_propValues.resize(nPropValues);
 	  i->m_crew.m_propOrdinals.resize(nPropValues);
@@ -550,7 +594,12 @@ namespace OCPI {
 	const OU::Port *p;
 	if ((err = m_assembly.getPortAssignment(pName, assign, instn, portn, p, value)))
 	  return err;
-	m_assembly.assyPort(instn, portn)->m_parameters.add(pName, value);
+	// This is taking the string value of a port param and using the same param
+	// name for a port param.  When the data types are different (at least), we need to
+	// change the name.  We have a little heuristic rather than a real table.
+	// FIXME: some more serious scheme for "port and instance params into underlying ones"
+	const char *newName = !strncasecmp(pName, "port", 4) ? pName + 4 : pName;
+	m_assembly.assyPort(instn, portn)->m_parameters.add(newName, value);
 #else
 	unsigned instn;
 	// assign now points to:  <instance>=<port>=<value>
@@ -918,6 +967,7 @@ namespace OCPI {
 	m_currConn = OC::Manager::s_nContainers - 1;
 	m_bestScore = 0;
 	m_hex = false;
+	m_hidden = false;
 	m_uncached = false;
 	m_launched = false;
 	m_verbose = false;
@@ -930,6 +980,7 @@ namespace OCPI {
 	  m_dumpFile = dumpFile;
 	OU::findBool(params, "dumpPlatforms", m_dumpPlatforms);
 	OU::findBool(params, "hex", m_hex);
+	OU::findBool(params, "hidden", m_hidden);
 	OU::findBool(params, "uncached", m_uncached);
 	// Initializations for externals may add instances to the assembly
 	initExternals(params);
@@ -955,8 +1006,8 @@ namespace OCPI {
 	initLaunchMembers();
 	// All the implementation selection is done, so now do the final check of ports
 	// and properties since they can be implementation specific
-	if ((err = finalizePortParam(params, "bufferCount")) ||
-	    (err = finalizePortParam(params, "bufferSize")) ||
+	if ((err = finalizePortParam(params, "portBufferCount")) ||
+	    (err = finalizePortParam(params, "portBufferSize")) ||
 	    (err = finalizePortParam(params, "transport")) ||
 	    (err = finalizePortParam(params, "transferRole")))
 	  throw OU::Error("Port parameter error: %s", err);
@@ -1330,25 +1381,22 @@ namespace OCPI {
       }
       finalizeLaunchMembers();
       finalizeLaunchConnections();
-      typedef std::set<OC::Launcher *> Launchers;
-      typedef Launchers::iterator LaunchersIter;
-      Launchers launchers;
       OC::Launcher &local = OC::LocalLauncher::getSingleton();
       // First pass, record all the launchers, and do initial launch for the local containers.
       // This allows initial connection processing locally to avoid unnecessary round-trips
       // with remote launchers that have connections to local workers.
       for (unsigned n = 0; n < m_nContainers; n++)
-	if (launchers.insert(&m_containers[n]->launcher()).second &&
+	if (m_launchers.insert(&m_containers[n]->launcher()).second &&
 	    &m_containers[n]->launcher() == &local)
 	  m_containers[n]->launcher().launch(m_launchMembers, m_launchConnections);
       // Second pass, do initial launch on remote launchers
-      for (LaunchersIter li = launchers.begin(); li != launchers.end(); li++)
+      for (auto li = m_launchers.begin(); li != m_launchers.end(); li++)
 	if (*li != &local)
 	  (*li)->launch(m_launchMembers, m_launchConnections);
       bool more;
       do {
 	more = false;
-	for (LaunchersIter li = launchers.begin(); li != launchers.end(); li++)
+	for (auto li = m_launchers.begin(); li != m_launchers.end(); li++)
 	  if ((*li)->work(m_launchMembers, m_launchConnections))
 	    more = true;
       } while (more);
@@ -1370,19 +1418,21 @@ namespace OCPI {
 		"Communication with the application established\n");
     }
     void ApplicationI::
-    dumpProperties(bool printParameters, bool printCached, const char *context) const
-    {
+    dumpProperties(bool printParameters, bool printCached, const char *context) const {
       std::string l_name, value;
-      bool isParameter, isCached;
+      bool isParameter, isCached, isHidden;
       if (m_verbose)
 	fprintf(stderr, "Dump of all %s%sproperty values:\n",
 		context ? context : "", context ? " " : "");
       for (unsigned n = 0;
-	   getProperty(n, l_name, value, m_hex, &isParameter, &isCached, m_uncached); n++)
+	   getProperty(n, l_name, value, m_hex, &isParameter, &isCached, m_uncached, &isHidden);
+	   n++)
 	if ((printParameters || !isParameter) &&
+	    (m_hidden || !isHidden) &&
 	    (printCached || !isCached))
-	  fprintf(stderr, "Property %2u: %s = \"%s\"%s\n", n, l_name.c_str(), value.c_str(),
-		  isParameter ? " (parameter)" : (isCached ? " (cached)" : ""));
+	  fprintf(stderr, "Property %2u: %s = \"%s\"%s%s\n", n, l_name.c_str(), value.c_str(),
+		  isParameter ? " (parameter)" : (isCached ? " (cached)" : ""),
+		  isHidden ? " (hidden)" : "");
     }
     void ApplicationI::
     startMasterSlave(bool isMaster, bool isSlave, bool isSource) {
@@ -1435,6 +1485,15 @@ namespace OCPI {
 	    usleep(it->first - now);
 	    now = it->first;
 	  }
+	  if (OS::logWillLog(OCPI_LOG_DEBUG)) {
+	    std::string uValue;
+	    it->second.m_value.unparse(uValue);
+	    ocpiDebug("Setting property \"%s\" of instance \"%s\" (worker \"%s\") after %f seconds to \"%s\"",
+		      it->second.m_property->cname(),
+		      m_assembly.instance(it->second.m_instance).name().c_str(),
+		      m_launchMembers[m_instances[it->second.m_instance].m_firstMember].m_worker->cname(),
+		      now/1.e6, uValue.c_str());
+	  }
 	  // FIXME: fan out of value to crew, and stash instance ptr, not index...
 	  m_launchMembers[m_instances[it->second.m_instance].m_firstMember].m_worker->
 	    setPropertyValue(*it->second.m_property, it->second.m_value);
@@ -1452,6 +1511,9 @@ namespace OCPI {
 	    bool done = true;
 	    m = &m_launchMembers[m_doneInstance->m_firstMember];
 	    for (unsigned n = (unsigned)m->m_crew->m_size; n; n--, m++)
+	      if (!m->m_container->enabled())
+		throw OU::Error("Container \"%s\" for worker \"%s\" was shutdown",
+				m->m_container->name().c_str(), m->m_worker->cname());
 	      if (!m->m_worker->isDone()) {
 		done = false;
 		break;
@@ -1499,7 +1561,7 @@ namespace OCPI {
       if (m_dumpFile.size()) {
 	std::string l_name, value, dump;
 	for (unsigned n = 0;
-	     getProperty(n, l_name, value, m_hex, NULL, NULL, m_uncached); n++) {
+	     getProperty(n, l_name, value, m_hex, NULL, NULL, m_uncached, NULL); n++) {
 	  for (unsigned i = 0; i < l_name.size(); i++)
 	    if (l_name[i] == '.')
 	      l_name[i] = ' ';
@@ -1621,7 +1683,8 @@ namespace OCPI {
     }
 
     bool ApplicationI::getProperty(unsigned ordinal, std::string &a_name, std::string &value,
-				   bool hex, bool *parp, bool *cachedp, bool uncached) const {
+				   bool hex, bool *parp, bool *cachedp, bool uncached,
+				   bool *hiddenp) const {
       if (ordinal >= m_nProperties)
 	return false;
       Property &p = m_properties[ordinal];
@@ -1629,7 +1692,7 @@ namespace OCPI {
       OC::Worker &w = *m_launchMembers[m_instances[p.m_instance].m_firstMember].m_worker;
       bool unreadable;
       std::string dummy;
-      w.getProperty(p.m_property, dummy, value, &unreadable, hex, cachedp, uncached);
+      w.getProperty(p.m_property, dummy, value, &unreadable, hex, cachedp, uncached, hiddenp);
       if (unreadable)
 	value = "<unreadable>";
       if (parp)
@@ -1841,8 +1904,10 @@ namespace OCPI {
     }
 #endif
     bool Application::getProperty(unsigned ordinal, std::string &a_name, std::string &value,
-				  bool hex, bool *parp, bool *cachedp, bool uncached) {
-      return m_application.getProperty(ordinal, a_name, value, hex, parp, cachedp, uncached);
+				  bool hex, bool *parp, bool *cachedp, bool uncached,
+				  bool *hiddenp) {
+      return m_application.getProperty(ordinal, a_name, value, hex, parp, cachedp, uncached,
+				       hiddenp);
     }
 
     void Application::

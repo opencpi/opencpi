@@ -1,4 +1,4 @@
-<HdlWorker Language="vhdl">
+<HdlWorker Language="vhdl" version='2'>
   <xi:include href="file_read_spec.xml"/>
   
   <!-- Current working directory string -->

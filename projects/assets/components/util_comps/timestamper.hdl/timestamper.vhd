@@ -28,12 +28,12 @@ architecture rtl of timestamper_worker is
   signal zlm_flag          : std_logic;
 begin
   doit <= ctl_in.is_operating and in_in.ready and out_in.ready;
-  zlm_flag <= in_in.som and in_in.eom and not in_in.valid;
+  zlm_flag <= in_in.ready and in_in.som and in_in.eom and not in_in.valid;
   
   RegisterTimeStamp : process(ctl_in.clk)
   begin
     if rising_edge(ctl_in.clk) then
-      if its(in_in.valid) and message_wcnt_r=0 then --Valid message on input
+      if its(in_in.ready) and in_in.valid and message_wcnt_r=0 then --Valid message on input
         time_now_r <= std_logic_vector(time_in.seconds) & std_logic_vector(time_in.fraction);
       end if;
     end if;

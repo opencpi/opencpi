@@ -120,7 +120,7 @@ emitRecordTypes(FILE */*f*/) {
 }
 
 void SdpPort::
-emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
+emitConnectionSignal(FILE *f, bool output, Language /*lang*/, bool /*clock*/, std::string &signal) {
   std::string in, out;
   OU::format(in, typeNameIn.c_str(), "");
   OU::format(out, typeNameOut.c_str(), "");

@@ -68,11 +68,11 @@ initialize(RCCWorker *self) {
     SET(testvolseqbool,bool,4,{false,true,false,true});
     SET(testvolsequlonglong,uint64_t,4,{0, 4, ~0ull, 1ull << 36});
     SETSTR(testvolseqstring,5,5,{"hell0","hell1","hell2",""});
-    SET(testvolseqenum,enum Testvolseqenum,6,{PTEST_TESTVOLSEQENUM_R, PTEST_TESTVOLSEQENUM_G, PTEST_TESTVOLSEQENUM_B});
+    SET(testvolseqenum,enum PtestTestvolseqenum,6,{PTEST_TESTVOLSEQENUM_R, PTEST_TESTVOLSEQENUM_G, PTEST_TESTVOLSEQENUM_B});
     SET(testrdseqbool,bool,4,{false,true,false,true});
     SET(testrdsequlonglong,uint64_t,4,{0, 4, ~0ull, 1ull << 36});
     SETSTR(testrdseqstring,5,5,{"hell0","hell1","hell2",""});
-    SET(testrdseqenum,enum Testrdseqenum,6,{PTEST_TESTRDSEQENUM_R, PTEST_TESTRDSEQENUM_G, PTEST_TESTRDSEQENUM_B});
+    SET(testrdseqenum,enum PtestTestrdseqenum,6,{PTEST_TESTRDSEQENUM_R, PTEST_TESTRDSEQENUM_G, PTEST_TESTRDSEQENUM_B});
     SETA(testvolarybool,bool,4,{false,true,false,true});
     SETA(testrdarybool,bool,4,{false,true,false,true});
  return RCC_OK;

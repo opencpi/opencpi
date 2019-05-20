@@ -176,7 +176,8 @@ namespace OCPI {
       if ((err = checkInstanceParams("selection", params, false, true)) ||
           (err = checkInstanceParams("transport", params)) ||
           (err = checkInstanceParams("transferRole", params)) ||
-          (err = checkInstanceParams("bufferCount", params)) ||
+          (err = checkInstanceParams("portBufferCount", params)) ||
+          (err = checkInstanceParams("portBufferSize", params)) ||
           (err = checkInstanceParams("worker", params, false, true)) ||
           (err = checkInstanceParams("property", params, true)))
         return err;
@@ -221,6 +222,9 @@ namespace OCPI {
           emptySeen = true; // this means a later empty assigned value is ok
           continue;
         }
+	bool optional = false;
+	if (assign[0] == '?' && len > 1)
+	  assign++, len--, optional = true;
         for (unsigned nn = 0; assign && nn < m_instances.size(); nn++)
           if (m_instances[nn]->m_name.length() == len &&
               !strncasecmp(assign, m_instances[nn]->m_name.c_str(), len)) {
@@ -235,7 +239,7 @@ namespace OCPI {
             if (mp->m_name.length() == len && !strncasecmp(assign, mp->m_name.c_str(), len))
               assign = NULL;
         }
-        if (assign)
+        if (assign && !optional)
           return esprintf("No instance for %s assignment '%s'", pName, assign);
       }
       return NULL;
@@ -560,7 +564,7 @@ namespace OCPI {
         // Recurse for <set> elements
         if (isProperty)
           for (ezxml_t sx = ezxml_cchild(px, "set"); sx; sx = ezxml_cnext(sx))
-            if ((err = OE::checkAttrs(px, "value", "valuefile", "delay", NULL)) ||
+            if ((err = OE::checkAttrs(sx, "value", "valuefile", "delay", NULL)) ||
                 (err = addProperty(name, sx)))
               break;
       } while (0);

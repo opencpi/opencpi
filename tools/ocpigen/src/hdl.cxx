@@ -62,17 +62,41 @@ parseHdl(const char *a_package) {
 const char *Worker::
 finalizeHDL() {
   // This depends on the final property processing based on parameters etc.
-
-  // For HDL, we need the string length for string properties, so we compute it here
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
     OU::Property &p = **pi;
+    // For HDL, we need the string length for string properties, so we compute it here
     if (p.m_isParameter && p.m_baseType == OA::OCPI_String && p.m_stringLength == 0) {
       assert(p.m_default);
       assert(p.m_default->m_vt == &p);
       p.m_stringLength = p.m_default->maxStringLength();
     }
+    if (!p.m_isParameter || p.m_isReadable) {
+      if (p.m_isRaw) {
+	if (p.m_isWritable)
+	  m_ctl.rawWritables = true;
+	if (p.m_isReadable)
+	  m_ctl.rawReadables = true;
+      } else {
+	// These control attributes are only set for non-raw properties.
+	if (p.m_isReadable)
+	  m_ctl.nonRawReadables = true;
+	if (p.m_isWritable)
+	  m_ctl.nonRawWritables = true;
+	if (p.m_isVolatile)
+	  m_ctl.nonRawVolatiles = true;
+	if (p.m_isVolatile || (p.m_isReadable && !p.m_isWritable && !p.m_isParameter))
+	  m_ctl.nonRawReadbacks = true;
+	m_ctl.nNonRawRunProperties++;
+	if (p.m_isSub32)
+	  m_ctl.nonRawSub32Bits = true;
+      }
+    }
   }
-  // Whether a worker or an assembly, we derive the external OCP signals, etc.
+  if (m_ctl.sub32Bits)
+      m_needsEndian = true;
+  // Finalize endian default
+  if (m_endian == NoEndian)
+    m_endian = m_needsEndian ? Little : Neutral;
   const char *err;
   if ((err = deriveOCP()))
     return OU::esprintf("in %s for %s: %s", m_xml->name, m_implName, err);
@@ -86,17 +110,17 @@ finalizeHDL() {
   return NULL;
 }
 
-Clock *Worker::
+Clock &Worker::
 addWciClockReset() {
   // If there is no control port, then we synthesize the clock as wci_clk
   for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++)
     if (!strcasecmp("wci_Clk", (*ci)->cname()))
-      return *ci;
-  Clock *clock = addClock();
-  clock->m_name = "wci_Clk";
-  clock->m_signal = "wci_Clk";
-  clock->m_reset = "wci_Reset_n";
-  m_wciClock = clock;
+      return **ci;
+  Clock &clock = addClock();
+  clock.m_name = "wci_Clk";
+  clock.m_signal = "wci_Clk";
+  clock.m_reset = "wci_Reset_n";
+  m_wciClock = &clock;
   return clock;
 }
 
@@ -129,18 +153,19 @@ parseHdlImpl(const char *a_package) {
       return OU::esprintf("'emulate' attribute: '%s' has no authoring model suffix", emulate);
     if (!(m_emulate = HdlDevice::get(emulate, m_file.c_str(), this, err)))
       return OU::esprintf("for emulated device worker %s: %s", emulate, err);
-    const char *firstRaw = ezxml_cattr(m_emulate->m_xml, "FirstRawProperty");
-    bool raw = false;
     for (PropertiesIter pi = m_emulate->m_ctl.properties.begin();
 	 pi != m_emulate->m_ctl.properties.end(); ++pi) {
       OU::Property &p = **pi;
-      if (firstRaw && !strcasecmp(firstRaw, p.m_name.c_str()))
-	raw = true;
-      if (!p.m_isParameter && (!p.m_isWritable || raw))
-	continue;
-      if (!strcasecmp(p.m_name.c_str(), "ocpi_debug"))
-	m_debugProp = &p;
-      m_ctl.properties.push_back(&p);
+      if (p.m_isParameter || (p.m_isWritable && !p.m_isRaw)) {
+	// Roughly like addProperty.  FIXME: make a cloning version of addProperty and use it here
+	ocpiDebug("Cloning property %s from emulatee ", p.cname());
+	OU::Property *np = new OU::Property(p);
+	np->m_ordinal = m_ctl.ordinal++;
+	if (&p == m_emulate->m_debugProp)
+	  m_debugProp = np;
+	m_ctl.properties.push_back(np);
+	m_ctl.summarizeAccess(*np);
+      }
     }
     // roughly a copy-constructor that replaces the worker reference
     m_paramConfigs.resize(m_emulate->m_paramConfigs.size());
@@ -151,14 +176,13 @@ parseHdlImpl(const char *a_package) {
   }
   // This must be here so that when the properties are parsed,
   // the first raw one is properly aligned.
-  const char *firstRaw = ezxml_cattr(m_xml, "FirstRawProperty");
   if ((err = parseSpec(a_package)) ||
-      (err = parseImplControl(xctl, firstRaw)) ||
+      (err = parseImplControl(xctl)) ||
       (err = OE::getNumber(m_xml, "datawidth", &dw, &dwFound)) ||
       (err = OE::getBoolean(m_xml, "outer", &m_outer)))
     return err;
   if (dwFound)
-    m_defaultDataWidth = (int)dw; // override the -1 default if set
+    m_defaultDataWidth = dw; // override the default if set
   if (m_noControl) {
     // Devices always get wci reset/control
     if (m_isDevice)
@@ -166,67 +190,22 @@ parseHdlImpl(const char *a_package) {
   } else {
     if (!createPort<WciPort>(*this, xctl, NULL, -1, err))
       return err;
-    if ((err = OE::getBoolean(m_xml, "RawProperties", &m_ctl.rawProperties)))
-      return err;
-    if (firstRaw) {
-      for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
-	if (!strcasecmp((*pi)->m_name.c_str(), firstRaw))
-	  m_ctl.firstRaw = *pi;
-      if (!m_ctl.firstRaw)
-	return OU::esprintf("FirstRawProperty: '%s' not found as a property", firstRaw);
-      m_ctl.rawProperties = true;
-    } else if (m_ctl.rawProperties)
-      for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
-	if (!(*pi)->m_isParameter) {
-	  m_ctl.firstRaw = *pi;
-	  break;
-	}
-    bool raw = false;
-    for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
-      OU::Property &p = **pi;
-      if (!p.m_isParameter || p.m_isReadable) {
-	// Determine when the raw properties start
-	if (m_ctl.rawProperties && !p.m_isParameter &&
-	    (!m_ctl.firstRaw || !strcasecmp(m_ctl.firstRaw->m_name.c_str(), p.m_name.c_str())))
-	  raw = true;
-	if (raw) {
-	  if (p.m_isWritable)
-	    m_ctl.rawWritables = true;
-	  if (p.m_isReadable)
-	    m_ctl.rawReadables = true;
-	} else {
-	  // These control attributes are only set for non-raw properties.
-	  if (p.m_isReadable)
-	    m_ctl.nonRawReadables = true;
-	  if (p.m_isWritable)
-	    m_ctl.nonRawWritables = true;
-	  if (p.m_isVolatile)
-	    m_ctl.nonRawVolatiles = true;
-	  if (p.m_isVolatile || (p.m_isReadable && !p.m_isWritable && !p.m_isParameter))
-	    m_ctl.nonRawReadbacks = true;
-	  m_ctl.nNonRawRunProperties++;
-	  if (p.m_isSub32)
-	    m_ctl.nonRawSub32Bits = true;
-	}
-      }
-    }
     if (!m_wci->m_count)
       m_wci->m_count = 1;
-    // clock processing depends on the name so it must be defaulted here
-    if (m_ctl.sub32Bits)
-      m_needsEndian = true;
   }
   // Now we do clocks before interfaces since they may refer to clocks
   for (ezxml_t xc = ezxml_cchild(m_xml, "Clock"); xc; xc = ezxml_cnext(xc)) {
     if ((err = OE::checkAttrs(xc, "Name", "Signal", "Home", (void*)0)))
       return err;
-    Clock *c = addClock();
+    Clock &c = addClock();
     const char *cp = ezxml_cattr(xc, "Name");
     if (!cp)
       return "Missing Name attribute in Clock subelement of HdlWorker";
-    c->m_name = cp;
+    c.m_name = cp;
     cp = ezxml_cattr(xc, "Signal");
-    c->m_signal = cp ? cp : "";
+    c.m_signal = cp ? cp : "";
+    if ((err = OE::getBoolean(xc, "output", &c.m_output)))
+      return err;
   }
   // Now that we have clocks roughly set up, we process the wci clock
   //  if (wci && (err = checkClock(xctl, wci)))
@@ -311,9 +290,6 @@ parseHdlImpl(const char *a_package) {
     if (p->m_count == 0)
       p->m_count = 1;
   }
-  // Finalize endian default
-  if (m_endian == NoEndian)
-    m_endian = m_needsEndian ? Little : Neutral;
   return 0;
 }
 

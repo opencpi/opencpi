@@ -96,7 +96,8 @@ add to tree.
   CMD_OPTION  (pfdir,     F,    String, NULL, "The directory where the current platform lives") \
   CMD_OPTION  (gentest,   T,    Bool,   NULL, "Generate unit testing files, assemblies, apps")  \
   CMD_OPTION  (gencases,  C,    Bool,   NULL, "Figure out which test cases to run on which platforms") \
-  CMD_OPTION  (dynamic,   Z,    Bool,   NULL, "Whether the artifact should be dynamic") \  
+  CMD_OPTION  (dynamic,   Z,    Bool,   NULL, "Whether the artifact should be dynamic") \
+  CMD_OPTION  (nworkers,  N,    Bool,   NULL, "Multiple workers are actually implemented here (rcc)") \
 
 #define OCPI_OPTION
 #define OCPI_OPTIONS_NO_MAIN
@@ -109,7 +110,7 @@ main(int argc, const char **argv) {
     return 1;
   if (options.log_level())
     OCPI::OS::logSetLevel(options.log_level());
-  const char *outDir = NULL, *entName = NULL, *wksFile = NULL, *package = NULL;
+  const char *outDir = NULL, *wksFile = NULL, *package = NULL;
   bool
     doDefs = false, doEnts = false, doImpl = false, doSkel = false, doAssy = false, doWrap = false,
     doArt = false, doTopContainer = false, doTest = false, doCases = false, verbose = false,
@@ -191,6 +192,9 @@ main(int argc, const char **argv) {
 	break;
       case 'C':
 	doCases = true;
+	break;
+      case 'N':
+	g_multipleWorkers = true;
 	break;
       case 'g':
 	doGenerics = atoi(&ap[0][2]);
@@ -299,7 +303,7 @@ main(int argc, const char **argv) {
 	  return 0;
 	}
 	Worker *w = Worker::create(*ap, parent, package, outDir, NULL, NULL,
-				   doGenerics >= 0 ? doGenerics : 0, err);
+				   doGenerics >= 0 ? (size_t)doGenerics : 0, err);
 	if (err)
 	  err = OU::esprintf("For file %s: %s", *ap, err);
 	else if (attribute && (err = w->emitAttribute(attribute)))

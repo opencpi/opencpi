@@ -47,7 +47,7 @@ architecture rtl of zero_padding_worker is
     end if;
   end function max;
 
-  constant MAX_MESSAGE_VALUES_c : integer := 4096;
+  constant MAX_MESSAGE_VALUES_c : natural := to_integer(ocpi_max_bytes_out/IDATA_WIDTH_p/8);
 
   signal enable         : std_logic;
   signal idata          : std_logic_vector(to_integer(unsigned(IDATA_WIDTH_p))-1 downto 0);
@@ -63,6 +63,7 @@ architecture rtl of zero_padding_worker is
   signal current_state : state_t;
   -- This temp signal is needed to work around a bug in xsim versions post-2015.4
   signal out_data_temp  : std_logic_vector(to_integer(unsigned(ODATA_WIDTH_p))-1 downto 0);
+  signal messageSize    : ulong_t;
 begin
 
   -----------------------------------------------------------------------------
@@ -213,6 +214,11 @@ begin
         force_som     <= '0';
         force_eom     <= '0';
       else
+        if props_in.messageSize = to_ulong(0) then
+          messageSize <= resize(props_in.ocpi_buffer_size_out,messageSize'length);
+        else
+          messageSize <= props_in.messageSize;
+        end if;
         -- defaults
         current_state <= current_state;
         take          <= '1';
@@ -221,15 +227,15 @@ begin
 
         case current_state is
           when INIT_s =>
-            if (in_in.som = '1' and in_in.eom = '1' and in_in.valid = '0') then
+            if (in_in.ready = '1' and in_in.som = '1' and in_in.eom = '1' and in_in.valid = '0') then
               current_state <= SEND_s;
             elsif (in_in.som = '1' and in_in.valid = '0') then
               current_state <= WAIT_s;
             end if;
           when WAIT_s =>
-            if (in_in.valid = '1') then
+            if (in_in.ready = '1' and in_in.valid = '1') then
               current_state <= INIT_s;
-            elsif (in_in.eom = '1') then
+            elsif (in_in.ready = '1' and in_in.eom = '1') then
               current_state <= SEND_s;
             end if;
           when SEND_s =>
@@ -254,16 +260,16 @@ begin
   -----------------------------------------------------------------------------
 
   out_8byte_cntr : if (to_integer(unsigned(ODATA_WIDTH_p)) = 64) generate
-    max_sample_cnt <= resize(props_in.messageSize srl 3, max_sample_cnt'length);
+    max_sample_cnt <= resize(messageSize srl 3, max_sample_cnt'length);
   end generate;
   out_4byte_cntr : if (to_integer(unsigned(ODATA_WIDTH_p)) = 32) generate
-    max_sample_cnt <= resize(props_in.messageSize srl 2, max_sample_cnt'length);
+    max_sample_cnt <= resize(messageSize srl 2, max_sample_cnt'length);
   end generate;
   out_2byte_cntr : if (to_integer(unsigned(ODATA_WIDTH_p)) = 16) generate
-    max_sample_cnt <= resize(props_in.messageSize srl 1, max_sample_cnt'length);
+    max_sample_cnt <= resize(messageSize srl 1, max_sample_cnt'length);
   end generate;
   out_1byte_cntr : if (to_integer(unsigned(ODATA_WIDTH_p)) = 8) generate
-    max_sample_cnt <= resize(props_in.messageSize, max_sample_cnt'length);
+    max_sample_cnt <= resize(messageSize, max_sample_cnt'length);
   end generate;
 
   messageSize_count : process (ctl_in.clk)

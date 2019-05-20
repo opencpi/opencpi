@@ -1154,7 +1154,7 @@ parsePlatform(ezxml_t xml, std::string &config, std::string &constraints,
       if (cf)
 	return "specifying both \"config\" attribute and config after slash in \"platform\" "
 	  "attribute is invalid";
-      p.assign(pf, slash - pf);
+      p.assign(pf, OCPI_SIZE_T_DIFF(slash, pf));
       cf = slash + 1;
     } else
       p = pf;

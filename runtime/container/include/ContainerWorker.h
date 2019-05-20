@@ -41,16 +41,16 @@ namespace OCPI {
     // Unfortunately, it is virtually inheritable (see HDL container's use of it).
     class Controllable {
     public:
-      inline OCPI::Util::Worker::ControlState getState() { return m_state; }
+      inline OCPI::Util::Worker::ControlState getState() const { return m_state; }
       inline uint32_t getControlMask() { return m_controlMask; }
       inline void setControlMask(uint32_t mask) { m_controlMask = mask; }
-      inline void setControlState(OCPI::Util::Worker::ControlState state) {
+      inline void setControlState(OCPI::Util::Worker::ControlState state) const {
 	m_state = state;
       }	
       // Default is that no polling is done
-      virtual void checkControlState() {}
+      virtual void checkControlState() const {}
 
-      OCPI::Util::Worker::ControlState getControlState() {
+      OCPI::Util::Worker::ControlState getControlState() const {
 	checkControlState();
 	return m_state;
       }	
@@ -59,7 +59,7 @@ namespace OCPI {
       void setControlOperations(const char *controlOperations);
       virtual ~Controllable(){}
     private:
-      OCPI::Util::Worker::ControlState m_state;
+      mutable OCPI::Util::Worker::ControlState m_state;
       uint32_t m_controlMask;
     };
 
@@ -77,7 +77,7 @@ namespace OCPI {
       //      virtual const std::string &name() const = 0;
       virtual void prepareProperty(OCPI::Util::Property &p,
 				   volatile uint8_t *&m_writeVaddr,
-				   const volatile uint8_t *&m_readVaddr) = 0;
+				   const volatile uint8_t *&m_readVaddr) const = 0;
       virtual void setPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset,
 				    const uint8_t *data, size_t nBytes,
 				    unsigned idx = 0) const = 0;
@@ -127,7 +127,7 @@ namespace OCPI {
       size_t m_member, m_crewSize;
       PortMask m_connectedPorts, m_optionalPorts; // spcm?
       std::vector<uint8_t *> m_cache; // cache for writable, non-volatile property values
-      bool beforeStart();
+      bool beforeStart() const;
     protected:
       void connectPort(OCPI::Util::PortOrdinal ordinal);
       PortMask &connectedPorts() { return m_connectedPorts; }
@@ -151,10 +151,10 @@ namespace OCPI {
 	     size_t member, size_t crewSize, const OCPI::Util::PValue *params = NULL);
       OCPI::API::PropertyInfo &setupProperty(const char *name,
 					     volatile uint8_t *&m_writeVaddr,
-					     const volatile uint8_t *&m_readVaddr);
+					     const volatile uint8_t *&m_readVaddr) const;
       OCPI::API::PropertyInfo &setupProperty(unsigned n,
 					     volatile uint8_t *&m_writeVaddr,
-					     const volatile uint8_t *&m_readVaddr);
+					     const volatile uint8_t *&m_readVaddr) const;
       virtual Port &createPort(const OCPI::Util::Port &metaport,
 			       const OCPI::Util::PValue *props) = 0;
       virtual Worker *nextWorker() = 0;
@@ -174,11 +174,11 @@ namespace OCPI {
       void setProperty(unsigned ordinal, const char *value);
       void setProperties(const char *props[][2]);
       void setProperties(const OCPI::API::PValue *props);
-      virtual void getPropertyValue(const OCPI::Util::Property &p, std::string &value, bool hex,
-				    bool add = false, bool uncached = false);
+      virtual void getPropertyValue(const OCPI::API::PropertyInfo &p, std::string &value, bool hex,
+				    bool add = false, bool uncached = false) const;
       bool getProperty(unsigned ordinal, std::string &name, std::string &value,
 		       bool *unreadablep = NULL, bool hex = false, bool *cachedp = NULL,
-		       bool uncached = false);
+		       bool uncached = false, bool *hiddenp = NULL);
       bool hasImplTag(const char *tag);
       bool hasInstTag(const char *tag);
       typedef unsigned Ordinal;

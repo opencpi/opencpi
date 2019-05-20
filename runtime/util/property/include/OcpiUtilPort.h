@@ -131,15 +131,11 @@ namespace OCPI {
       bool        m_isInternal;
       size_t      m_minBufferCount;  // implementation-defined value
       size_t      m_defaultBufferCount; // specify default when none is specified.
-      size_t      m_bufferSize;      // metadata protocol override, if non-zero
+      size_t      m_bufferSize;      // metadata protocol override, if not SIZE_MAX
     private:
       ezxml_t     m_xml;
     public:
-      ssize_t     m_bufferSizePort;  // The ordinal of port we copy our buffer size from or -1
-      size_t      m_nOpcodes;
-      bool        m_clone;
-      bool        m_parsed;          // for assertions
-      bool        m_seenSummary;     // ugly - for inheritors, but must be here for construction
+      size_t     m_bufferSizePort;  // The ordinal of port we copy our buffer size from or SIZE_MAX
       // Scalability
       bool                    m_isScalable;
       std::string             m_scaleExpr;

@@ -94,7 +94,7 @@ begin
   client_out.take       <= EN_server_request_put;
   wti_s_req             <= wti_in.MCmd & wti_in.MData;
   wci_s_MAddr           <= X"000000" & ctl_in.MAddr;
-  wti_out.clk           <= ctl_in.clk;
+--  wti_out.clk           <= ctl_in.clk;
   -- we are reset if either specific WCI reset or the global (uNoC) reset asserted (low)
   my_reset_n            <= ctl_in.MReset_n and client_in.reset_n;
   client_out.data       <= to_unoc(server_response_get);

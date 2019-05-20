@@ -50,12 +50,17 @@ namespace OCPI {
       m_library(l), m_downloading(false), m_downloaded(false), m_rx(NULL),
       m_lx(NULL), m_local(NULL), m_discoveryInfo(discoveryInfo), m_needsBridging(needsBridging) {
     }
-    Server::
-    ~Server() {
+    // Used both in the destructor and in appShutDown
+    void Server::
+    clear() {
       ezxml_free(m_rx);
       ezxml_free(m_lx);
       for (unsigned n = 0; n < m_containerApps.size(); n++)
 	delete m_containerApps[n];
+    }
+    Server::
+    ~Server() {
+      clear();
     }
 
     bool Server::
@@ -77,6 +82,8 @@ namespace OCPI {
 	return control(error);
       else if (!strcasecmp(tag, "discover"))
 	return discover(error);
+      else if (!strcasecmp(tag, "appshutdown"))
+	return appShutDown(error);
       return OU::eformat(error, "bad request tag: \"%s\"", tag);
     }
     const char *Server::
@@ -269,7 +276,7 @@ namespace OCPI {
 	const char *name = ezxml_cattr(cx, "name");
 	assert(name);
 	assert(!m_containers[n]);
-	ocpiDebug("Server using container %s for client", name);
+	ocpiInfo("Server using container %s for client", name);
 	m_containers[n] = OC::Manager::find(name);
 	assert(m_containers[n]);
 	assert(!m_containerApps[n]);
@@ -507,6 +514,24 @@ namespace OCPI {
 	return true;
       }
       return OX::sendXml(fd(), m_response, "responding from server", error);
+    }
+    // Clear out all the state and resources so that this server can be (serially) reused for another app.
+    bool Server::
+    appShutDown(std::string &error) {
+      // Release resources like/in-common-with the destructor
+      clear();
+      // Clear state not relevant to destruction
+      m_downloading = m_downloaded = false;
+      m_rx = m_lx = NULL;
+      m_launchBuf.clear();
+      m_artifacts.clear();
+      m_containers.clear();
+      m_containerApps.clear();
+      m_crews.clear();
+      m_members.clear();
+      m_connections.clear();
+      OU::format(m_response, "<appshutdown>\n");
+      return OX::sendXml(fd(), m_response, "responding with discovery from server", error);
     }
     bool Server::
     discover(std::string &error) {

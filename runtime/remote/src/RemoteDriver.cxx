@@ -22,6 +22,7 @@
 #include "OcpiOsMisc.h"
 #include "OcpiOsEther.h"
 #include "OcpiUtilValue.h"
+#include "OcpiDriverManager.h"
 #include "ContainerManager.h"
 #include "RemoteLauncher.h"
 #include "RemoteDriver.h"
@@ -92,18 +93,18 @@ class Worker
   void setPropertyValue(const OU::Property &p, const OU::Value &v) {
     std::string val;
     v.unparse(val);
-    m_launcher.setPropertyValue(m_remoteInstance, &p - properties(), val);
+    m_launcher.setPropertyValue(m_remoteInstance, p.m_ordinal, val);
   }
   bool wait(OS::Timer *t) {
     return m_launcher.wait(m_remoteInstance, t ? t->getRemaining() : 0);
   }
-  void checkControlState() {
-    setControlState(m_launcher.getState(m_remoteInstance));
+  void checkControlState() const {
+    ((Worker *)this)->setControlState(m_launcher.getState(m_remoteInstance));
   }
   // FIXME: this should be at the lower level for just reading the bytes remotely to enable caching propertly
-  void getPropertyValue(const OU::Property &p, std::string &v, bool hex, bool add,
-			bool /*uncached*/) {
-    m_launcher.getPropertyValue(m_remoteInstance, &p - properties(), v, hex, add);
+  void getPropertyValue(const OA::PropertyInfo &p, std::string &v, bool hex, bool add,
+			bool /*uncached*/) const {
+    m_launcher.getPropertyValue(m_remoteInstance, p.m_ordinal, v, hex, add);
   }
 
   void read(size_t /*offset*/, size_t /*nBytes*/, void */*p_data*/) {}
@@ -131,7 +132,7 @@ class Worker
   void propertyRead(unsigned /*ordinal*/) const {};
   void prepareProperty(OU::Property&,
 		       volatile uint8_t *&/*writeVaddr*/,
-		       const volatile uint8_t *&/*readVaddr*/) {}
+		       const volatile uint8_t *&/*readVaddr*/) const {}
   // These property access methods are called when the fast path
   // is not enabled, either due to no MMIO or that the property can
   // return errors. 
@@ -153,10 +154,17 @@ class Worker
   OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE_S
 #undef OCPI_DATA_TYPE
-  // Get Scalar Property
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
-  run get##pretty##Property(const OCPI::API::PropertyInfo &, const Util::Member *, \
-			    size_t /*offset*/, unsigned /*idx*/) const { return 0; } \
+  // Get Scalar Property by in fact getting the string and parsing it
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		             \
+  run get##pretty##Property(const OCPI::API::PropertyInfo &pi, const Util::Member *, \
+			    size_t /*offset*/, unsigned /*idx*/) const {             \
+    std::string uValue; /* unparsed value */                                         \
+    getPropertyValue(pi, uValue, true, false, false); /* get it as a string value */ \
+    OU::Value v(pi); /* the value object that knows how to parse it */               \
+    run pValue;      /* the parsed value scalar */                                   \
+    (void)v.parse(uValue.c_str());                                                   \
+    return v.m_##pretty;                                                             \
+  }                                                                                  \
   unsigned get##pretty##SequenceProperty(const OA::Property &/*p*/,	\
 					 run */*vals*/,			\
 					 size_t /*length*/) const { return 0; }
@@ -183,6 +191,8 @@ class Application
     : OC::ApplicationBase<Container,Application,Worker>(c, *this, a_name, params) {
   }
   virtual ~Application() {
+    // This really has no local (client-side) state and the server-side state is taken down
+    // by remotelauncher->appShutdown()
   }
   OC::Worker &
   createWorker(OC::Artifact *art, const char *appInstName, ezxml_t impl, ezxml_t inst,
@@ -318,6 +328,43 @@ Driver::Driver() throw() {
   if ((m_doNotDiscover = env && env[0] == '1' ? false : true))
     ocpiInfo("Remote container discovery is off.  Use OCPI::API::enableServerDiscovery() or the OCPI_ENABLE_REMOTE_DISCOVERY variable described in the Application Guide.");
 }
+
+// The driver entry point to deal with explicitly specified servers, in params or the environment
+bool Driver::
+useServers(const OU::PValue *params, bool verbose, std::string &error) {
+  char *saddr = getenv("OCPI_SERVER_ADDRESS");
+  if (saddr && probeServer(saddr, verbose, NULL, NULL, false, error))
+    return true;
+  if ((saddr = getenv("OCPI_SERVER_ADDRESSES")))
+    for (OU::TokenIter li(saddr); li.token(); li.next())
+      if (probeServer(li.token(), verbose, NULL, NULL, false, error))
+	return true;
+  if ((saddr = getenv("OCPI_SERVER_ADDRESS_FILE"))) {
+    std::string addrs;
+    const char *err = OU::file2String(addrs, saddr, ' ');
+    if (err)
+      throw OU::Error("The file indicated by the OCPI_SERVER_ADDRESS_FILE environment "
+		      "variable, \"%s\", cannot be opened: %s", saddr, err);
+    for (OU::TokenIter li(addrs); li.token(); li.next())
+      if (probeServer(li.token(), verbose, NULL, NULL, false, error))
+	return true;
+  }
+  for (const OU::PValue *p = params; p && p->name; ++p)
+    if (!strcasecmp(p->name, "server")) {
+      if (p->type != OA::OCPI_String)
+	throw OU::Error("Value of \"server\" parameter is not a string");
+      if (probeServer(p->vString, verbose, NULL, NULL, false, error))
+	return true;
+    }
+}
+
+void Driver::
+configure(ezxml_t xml) {
+  OCPI::Driver::Driver::configure(xml);
+  std::string error;
+  if (useServers(NULL, false, error))
+    ocpiBad("Error during remote server processing: %s", error.c_str());
+}
 // Called either from UDP discovery or explicitly, e.g. from ocpirun
 // If the latter, the "containers" argument will be NULL
 bool Driver::
@@ -341,6 +388,8 @@ probeServer(const char *server, bool verbose, const char **exclude, char *contai
   bool taken = false; // whether the socket has been taken by a launcher
   Client *client = OU::Parent<Client>::findChildByName(server);
   if (!containers) {
+    if (client)
+      goto out; // we already are using this server
     // We are not being called during discovery, but explicitly (when avoiding discovery).
     // Whereas during UDP discovery, this info comes back in the UDP datagram, here we must go
     // get it via TCP by opening the TCP socket early, before excluding specific containers.

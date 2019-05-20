@@ -108,8 +108,9 @@ namespace OCPI {
     }
     Member::
     Member(const Member &other) 
-      : ValueType(other), m_offset(0), m_isIn(false), m_isOut(false), m_isKey(false), 
-	m_default(NULL) {
+      : ValueType(other), m_name(other.m_name), m_abbrev(other.m_abbrev), m_pretty(other.m_pretty),
+	m_description(other.m_description), m_offset(0), m_isIn(false), m_isOut(false), m_isKey(false), 
+	m_default(NULL), m_defaultExpr(other.m_defaultExpr), m_ordinal(0) {
       if (other.m_default)
 	m_default = new Value(*other.m_default);
     }

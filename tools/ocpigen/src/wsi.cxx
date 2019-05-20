@@ -18,6 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <algorithm>
 #include "data.h"
 #include "hdl.h"
 
@@ -28,18 +29,20 @@ WsiPort(Worker &w, ezxml_t x, DataPort *sp, int ordinal, const char *&err)
     return;
   if ((err = OE::checkAttrs(x, "Name", "Clock", "DataWidth", "PreciseBurst",
 			    "ImpreciseBurst", "Continuous", "Abortable",
-			    "EarlyRequest", "MyClock", "RegRequest", "Pattern",
+			    "EarlyRequest", "MyClock", "RegRequest", "InsertEOM", "workerEOF", "Pattern",
 			    "NumberOfOpcodes", "MaxMessageValues",
 			    "datavaluewidth", "zerolengthmessages",
 			    "datavaluegranularity", "implname", "producer", "optional",
 			    DISTRIBUTION_ATTRS, PARTITION_ATTRS,
 			    (void*)0)) ||
+      (err = OE::getBoolean(x, "InsertEOM", &m_insertEOM)) ||
+      (err = OE::getBoolean(x, "WorkerEOF", &m_workerEOF)) ||
       (err = OE::getBoolean(x, "Abortable", &m_abortable)) ||
       (err = OE::getBoolean(x, "RegRequest", &m_regRequest)) ||
       (err = OE::getBoolean(x, "EarlyRequest", &m_earlyRequest)))
     return;
   m_master = m_isProducer;
-  finalize();
+  //  finalize();
 }
 
 // Our special copy constructor
@@ -51,7 +54,9 @@ WsiPort(const WsiPort &other, Worker &w , std::string &a_name, size_t count,
     return;
   m_abortable = other.m_abortable;
   m_earlyRequest = other.m_earlyRequest;
-  // The only attribute that isn't interface-related
+  // The attributes that aren't interface-related
+  m_insertEOM = false;
+  m_workerEOF = false;
   m_regRequest = false;
 }
 
@@ -80,6 +85,30 @@ emitPortDescription(FILE *f, Language lang) const {
   fprintf(f, "  %s   Abortable: %s\n", comment, BOOL(m_abortable));
   fprintf(f, "  %s   EarlyRequest: %s\n", comment, BOOL(m_earlyRequest));
   fprintf(f, "  %s   RegRequest: %s\n", comment, BOOL(m_regRequest));
+}
+
+// This is just here to supply the default output initializations of optionally-driven worker signals
+void WsiPort::
+emitRecordSignal(FILE *f, std::string &last, const char *aprefix, bool inRecord, bool inPackage,
+		 bool inWorker, const char *defaultIn, const char *defaultOut) {
+  std::string d;
+  if (inWorker && haveWorkerOutputs() && !masterIn()) {
+    d = "(";
+    if (ocp.MData.value)
+      d += "data => (others => '0'), ";
+    if (ocp.MByteEn.value)
+      d += "byte_enable => (others => '1'), ";
+    if (m_nOpcodes > 1) {
+      d += "opcode => ";
+      if (operations())
+	OU::formatAdd(d, "%s_OpCode_t'val(0), ", OU::Protocol::cname());
+      else
+	d += "(others => '0'), ";
+    }
+    d += "others => bfalse)"; // for metadata signals
+    defaultOut = d.c_str();
+  }
+  OcpPort::emitRecordSignal(f, last, aprefix, inRecord, inPackage, inWorker, defaultIn, defaultOut);
 }
 
 const char *WsiPort::
@@ -116,8 +145,7 @@ deriveOCP() {
     ocp.MDataLast.value = s;
     ocp.MDataValid.value = s;
   }
-  if (m_abortable)
-    ocp.MDataInfo.width++;
+  ocp.MDataInfo.width++; // used for abort or eof so always present
   if (m_nOpcodes > 1)
     ocp.MReqInfo.width = OU::ceilLog2(m_nOpcodes);
   ocp.MReqLast.value = s;
@@ -141,7 +169,7 @@ emitVhdlShell(FILE *f, ::Port *wci) {
     *sName = slave ? typeNameOut.c_str() : typeNameIn.c_str();
 
   size_t opcode_width = ocp.MReqInfo.value ? ocp.MReqInfo.width : 1;
-	  
+
   fprintf(f,
 	  "  --\n"
 	  "  -- The WSI interface helper component instance for port \"%s\"\n",
@@ -203,6 +231,15 @@ emitVhdlShell(FILE *f, ::Port *wci) {
     fprintf(f, "  %s <= %s; -- temp needed to workaround Vivado/xsim bug v2016.4\n",
 	    typeNameOut.c_str(), mName);
 
+  // Compute name of first WSI input port and output port, if any
+  const char *firstIn = NULL;
+  for (unsigned i = 0; i < worker().m_ports.size(); i++) {
+    ::Port &p = *worker().m_ports[i];
+    if (p.m_type == WSIPort && !firstIn && !p.m_master) {
+      firstIn = p.pname();
+      break;
+    }
+  }
   std::string width;
   OU::format(width, "ocpi_port_%s_", cname());
   fprintf(f,
@@ -214,8 +251,7 @@ emitVhdlShell(FILE *f, ::Port *wci) {
 	  "                n_bytes          => %s%s,\n"
 	  "                byte_width       => %zu,\n"
 	  "                opcode_width     => %zu,\n"
-	  "                own_clock        => %s,\n"
-	  "                early_request    => %s)\n",
+	  "                own_clock        => %s,\n",
 	  cname(),
 	  m_isPartitioned ? "part_" : "",
 	  slave ? "slave" : "master",
@@ -229,7 +265,22 @@ emitVhdlShell(FILE *f, ::Port *wci) {
 	  ocp.MByteEn.value ? "MByteEn_width" : "1",
 	  m_byteWidth,
 	  opcode_width,
-	  BOOL(myClock),
+	  BOOL(myClock));
+  if (!slave)
+    fprintf(f,
+	    "                insert_eom        => %s,\n"
+	    "                max_bytes         => to_integer(ocpi_max_bytes_%s),\n"
+	    "                max_latency       => to_integer(ocpi_max_latency_%s),\n"
+	    "                worker_eof        => %s,\n"
+	    "                fixed_buffer_size => %s,\n"
+	    "                debug             => its(ocpi_debug),\n",
+	    BOOL(m_insertEOM),
+	    cname(), cname(),
+	    BOOL(m_workerEOF),
+	    "false");
+  fprintf(f,
+	  "                hdl_version      => to_integer(ocpi_version),\n"
+	  "                early_request    => %s)\n",
 	  BOOL(m_earlyRequest));
   fprintf(f, "    port map   (Clk              => %s%s,\n",
 	  clock->port ? clock->port->typeNameIn.c_str() : clock->signal(),
@@ -264,6 +315,33 @@ emitVhdlShell(FILE *f, ::Port *wci) {
 	  wci || clock->port ? ".Clk" : "");
   fprintf(f, "                wci_reset        => %s,\n", "wci_reset");
   fprintf(f, "                wci_is_operating => %s,\n",	"wci_is_operating");
+  if (slave)
+    fprintf(f,
+	    "                first_take       => %s_first_take, -- output the input port\n"
+	    "                eof              => %s_eof,        -- output from the input port\n",
+	    cname(), cname());
+  else
+    fprintf(f,
+	    "                first_take       => %s%s,   -- from input port to output port\n"
+	    "                input_eof        => %s%s,   -- from input port to output port\n"
+	    "                eof              => %s%s,   -- from worker to output port\n"
+	    "                latency          => %s%s,\n"
+	    "                buffer_size      => %s%s,\n",
+	    firstIn ? firstIn : "bfalse", firstIn ? "_first_take" : "",
+	    firstIn ? firstIn : "bfalse", firstIn ? "_eof" : "",
+	    worker().version() > 1 ? cname() : "bfalse", worker().version() > 1 ? "_eof" : "",
+	    ::Port::m_worker->m_noControl ? "open" : "props_from_worker.ocpi_latency_",
+	    ::Port::m_worker->m_noControl ? "" : cname(),
+#if 0
+	    m_isUnbounded && !::Port::m_worker->m_noControl ?
+	    "props_to_worker.ocpi_buffer_size_" : "(others => '0')",
+	    m_isUnbounded && !::Port::m_worker->m_noControl ? cname() : ""
+#else
+	    !::Port::m_worker->m_noControl ?
+	    "props_to_worker.ocpi_buffer_size_" : "(others => '0')",
+	    !::Port::m_worker->m_noControl ? cname() : ""
+#endif
+	    );
   fprintf(f, "                reset            => %s_reset,\n", cname());
   fprintf(f, "                ready            => %s_ready,\n", cname());
   fprintf(f, "                som              => %s_som,\n", cname());
@@ -314,11 +392,148 @@ emitVhdlShell(FILE *f, ::Port *wci) {
   fprintf(f, ");\n");
 }
 
+void WsiPort::
+emitImplSignals(FILE *f) {
+  //	  const char *tofrom = p->masterIn() ? "from" : "to";
+  fprintf(f,
+	  "  signal %s_%s  : Bool_t;\n"
+	  "  signal %s_ready : Bool_t;\n"
+	  "  signal %s_reset : Bool_t; -- this port is being reset from the outside\n",
+	  cname(), masterIn() ? "take" : "give", cname(), cname());
+  if (masterIn())
+    fprintf(f,
+	    "  signal %s_first_take  : Bool_t;\n", cname());
+  if (m_dataWidth)
+    fprintf(f,
+	    "  signal %s_data  : std_logic_vector(ocpi_port_%s_data_width-1 downto 0);\n",
+	    cname(), cname());
+  if (ocp.MByteEn.value)
+    fprintf(f, "  signal %s_byte_enable: std_logic_vector(ocpi_port_%s_MByteEn_width-1 downto 0);\n",
+	    cname(), cname());
+  if (m_preciseBurst)
+    fprintf(f, "  signal %s_burst_length: std_logic_vector(%zu downto 0);\n",
+	    cname(), ocp.MBurstLength.width - 1);
+  if (m_nOpcodes > 1) {
+    fprintf(f,
+	    "  -- The strongly typed enumeration signal for the port\n"
+	    "  signal %s_opcode      : %s_OpCode_t;\n"
+	    "  -- The weakly typed temporary signals\n"
+	    "  signal %s_opcode_temp : std_logic_vector(%zu downto 0);\n"
+	    "  signal %s_opcode_pos  : integer;\n",
+	    cname(), operations() ?
+	    OU::Protocol::m_name.c_str() : cname(), cname(), ocp.MReqInfo.width - 1, cname());
+  }
+  fprintf(f,
+	  "  signal %s_som   : Bool_t;\n"
+	  "  signal %s_eom   : Bool_t;\n"
+	  "  signal %s_eof   : Bool_t;\n",
+	  cname(), cname(), cname());
+  if (m_dataWidth)
+    fprintf(f,
+	    "  signal %s_valid : Bool_t;\n", cname());
+  if (m_isPartitioned)
+    fprintf(f,
+	    "  signal %s_part_size        : UShort_t;\n"
+	    "  signal %s_part_offset      : UShort_t;\n"
+	    "  signal %s_part_start       : Bool_t;\n"
+	    "  signal %s_part_ready       : Bool_t;\n"
+	    "  signal %s_part_%s        : Bool_t;\n",
+	    cname(), cname(), cname(), cname(), cname(), masterIn() ? "take" : "give");
+  if (!masterIn())
+    // This temp/intermediate record signal is needed by xsim because some recent versions segfault
+    // when putting output port signals that are in records, in the port map of internal instances
+    fprintf(f,
+            "  signal %s_temp : %s_t; -- temp needed to workaround Vivado/xsim bug v2016.4\n",
+            typeNameOut.c_str(), typeNameOut.c_str());
+}
+
+void WsiPort::
+emitVHDLShellPortMap(FILE *f, std::string &last) {
+  OcpPort::emitVHDLShellPortMap(f, last);
+  std::string in, out;
+  OU::format(in, typeNameIn.c_str(), "");
+  OU::format(out, typeNameOut.c_str(), "");
+  fprintf(f,
+	  "%s    %s_in.reset => %s_reset,\n"
+	  "    %s_in.ready => %s_ready,\n",
+	  last.c_str(), cname(), cname(), cname(), cname());
+  if (masterIn()) {
+    if (m_dataWidth)
+      fprintf(f,
+	      "    %s_in.data => %s_data,\n",
+	      cname(), cname());
+    if (ocp.MByteEn.value)
+      fprintf(f, "    %s_in.byte_enable => %s_byte_enable,\n", cname(), cname());
+    if (m_nOpcodes > 1)
+      fprintf(f, "    %s_in.opcode => %s_opcode,\n", cname(), cname());
+    fprintf(f,
+	    "    %s_in.som => %s_som,\n"
+	    "    %s_in.eom => %s_eom,\n"
+	    "    %s_in.eof => %s_eof,\n",
+	    cname(), cname(), cname(), cname(), cname(), cname());
+    if (m_dataWidth)
+      fprintf(f,
+	      "    %s_in.valid => %s_valid,\n",
+	      cname(), cname());
+    if (m_isPartitioned)
+      fprintf(f,
+	      "    %s_in.part_size   => %s_part_size,\n"
+	      "    %s_in.part_offset => %s_part_offset,\n"
+	      "    %s_in.part_start  => %s_part_start,\n"
+	      "    %s_in.part_ready  => %s_part_ready,\n",
+	      cname(), cname(), cname(), cname(), cname(),
+	      cname(), cname(), cname());
+    fprintf(f,
+	    "    %s_out.take => %s_take",
+	    cname(), cname());
+    if (m_isPartitioned)
+      fprintf(f,
+	      ",\n"
+	      "    %s_out.part_take  => %s_part_take",
+	      cname(), cname());
+    last = ",\n";
+  } else {
+    if (m_isPartitioned)
+      fprintf(f,
+	      "    %s_in.part_ready   => %s_part_ready,\n", cname(), cname());
+    fprintf(f,
+	    "    %s_out.give => %s_give,\n",
+	    cname(), cname());
+    if (m_dataWidth)
+      fprintf(f,
+	      "    %s_out.data => %s_data,\n", cname(), cname());
+    if (ocp.MByteEn.value)
+      fprintf(f, "    %s_out.byte_enable => %s_byte_enable,\n", cname(), cname());
+    if (ocp.MReqInfo.value)
+      fprintf(f, "    %s_out.opcode => %s_opcode,\n", cname(), cname());
+    fprintf(f,
+	    "    %s_out.som => %s_som,\n"
+	    "    %s_out.eom => %s_eom,\n"
+	    "    %s_out.eof => %s_eof,\n",
+	    cname(), cname(), cname(), cname(), cname(), cname());
+    if (m_dataWidth)
+      fprintf(f,
+	      "    %s_out.valid => %s_valid",
+	      cname(), cname());
+    if (m_isPartitioned)
+      fprintf(f,
+	      ",\n"
+	      "    %s_out.part_size   => %s_part_size,\n"
+	      "    %s_out.part_offset => %s_part_offset,\n"
+	      "    %s_out.part_start  => %s_part_start,\n"
+	      "    %s_out.part_give   => %s_part_give",
+	      cname(), cname(), cname(),
+	      cname(), cname(), cname(), cname(), cname());
+    last = ",\n";
+  }
+}
+
 const char *WsiPort::
 adjustConnection(::Port &consPort, const char *masterName, Language lang,
 		 OcpAdapt *prodAdapt, OcpAdapt *consAdapt, size_t &unused) {
   WsiPort &cons = *static_cast<WsiPort *>(&consPort);
   OcpAdapt *oa;
+  
   // Bursting compatibility and adaptation
   if (m_impreciseBurst && !cons.m_impreciseBurst)
     return "consumer needs precise, and producer may produce imprecise";
@@ -378,11 +593,14 @@ adjustConnection(::Port &consPort, const char *masterName, Language lang,
   }
   // Abortable compatibility and adaptation
   if (cons.m_abortable) {
+#if 0
+    // The abort signal is now always present since it is eof too
     if (!m_abortable) {
       oa = &consAdapt[OCP_MDataInfo];
       oa->expr = lang == Verilog ? "{1'b0,%s}" : "\"0\" & %s";
       oa->comment = "Tell consumer no frames are ever aborted";
     }
+#endif
   } else if (m_abortable)
     return "consumer cannot handle aborts from producer";
   // EarlyRequest compatibility and adaptation
@@ -497,8 +715,8 @@ adjustConnection(::Port &consPort, const char *masterName, Language lang,
     unused += ocp.MByteEn.width;
   }
   size_t
-    cmdi = cons.ocp.MDataInfo.width - (cons.m_abortable ? 1 : 0),
-    pmdi = ocp.MDataInfo.width - (m_abortable ? 1 : 0),
+    cmdi = cons.ocp.MDataInfo.width - 1, // (cons.m_abortable ? 1 : 0),
+    pmdi = ocp.MDataInfo.width - 1, // (m_abortable ? 1 : 0),
     pbytes = ocp.MByteEn.value ? ocp.MByteEn.width : 1,
     cbytes = cons.ocp.MByteEn.value ? cons.ocp.MByteEn.width : 1,
     pbs = (pmdi + ocp.MData.width) / pbytes,
@@ -506,7 +724,8 @@ adjustConnection(::Port &consPort, const char *masterName, Language lang,
   ocpiInfo("pbytes %zu, cbytes %zu, pbs %zu cbs %zu cmdi %zu pmdi %zu",
 	   pbytes, cbytes, pbs, cbs, cmdi, pmdi);
   if (cons.ocp.MData.width + cmdi != ocp.MData.width + pmdi)
-    return "data widths do not match";
+    return OU::esprintf("data widths do not match (output %zu/%zu input %zu/%zu)",
+			ocp.MData.width, pmdi, cons.ocp.MData.width, cmdi);
   // total data bits do match, but may be different bytes
   std::string expr;
   if (cmdi < pmdi) {
@@ -636,17 +855,6 @@ emitImplAliases(FILE *f, unsigned n, Language lang) {
   }
 }
 
-// This temp/intermediate record signal is needed by xsim because some recent versions segfault
-// when putting output port signals that are in records, in the port map of internal instances
-void WsiPort::
-emitImplSignals(FILE *f) {
-  DataPort::emitImplSignals(f);
-  if (!masterIn())
-    fprintf(f,
-            "  signal %s_temp : %s_t; -- temp needed to workaround Vivado/xsim bug v2016.4\n",
-            typeNameOut.c_str(), typeNameOut.c_str());
-}
-
 void WsiPort::
 emitSkelSignals(FILE *f) {
   if (worker().m_language != VHDL && m_regRequest)
@@ -679,8 +887,8 @@ emitRecordInputs(FILE *f) {
 	      operations() ? OU::Protocol::cname() : pname());
     fprintf(f,
 	    m_dataWidth ?
-	    "    som, eom, valid  : Bool_t;           -- valid means data and byte_enable are present\n" :
-	    "    som, eom  : Bool_t;\n");
+	    "    som, valid, eom, eof  : Bool_t;           -- valid means data and byte_enable are present\n" :
+	    "    som, eom, eof  : Bool_t;\n");
     if (m_isPartitioned)
       fprintf(f,
 	      "    part_size        : UShort_t;\n"
@@ -722,7 +930,8 @@ emitRecordOutputs(FILE *f) {
 	      "    opcode           : %s_OpCode_t;\n",
 	      operations() ? OU::Protocol::cname() : pname());
     fprintf(f,
-	    "    som, eom, valid  : Bool_t;            -- one or more must be true when 'give' is asserted\n");
+	    "    som, eom, valid  : Bool_t;       -- one or more must be true when 'give' is asserted\n"
+	    "    eof  : Bool_t;\n");
     if (m_isPartitioned)
       fprintf(f,
 	      "    part_size        : UShort_t;\n"
@@ -731,6 +940,20 @@ emitRecordOutputs(FILE *f) {
 	      "    part_give        : Bool_t;\n");
   }
 }
+
+const char * WsiPort::
+finalize() {
+  DataPort::finalize();
+  if (isDataProducer()) {
+    //    AP(insert_eom,  Bool,  false, true,  false, false, true,  m_insertEom);
+    AP(blocked,     ULong,  true,  false, false, true,  true);    // cycles when output was blocked
+    AP(max_latency, UShort,false,true, false, false,  true, 256); // maximum input-to-output latency 
+    AP(latency,     UShort,  false, false, false, true,  true);   // measured latency
+  }
+  return NULL;
+}
+
+
 #if 0
 unsigned WsiPort::
 extraDataInfo() const {

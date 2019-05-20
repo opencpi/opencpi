@@ -11,6 +11,7 @@
   <property name='remote_count' initial='true' type='uchar' readable='true' default='1'/>
   <property name='segment_size' initial='true' type='ushort' readable='true' default='128'/>
   <property name='faults' type='uchar' volatile='true'/>
+  <property name='local_buffers_ready' type='ulong' volatile='true'/>
   <property name='readsAllowed' type='uchar' initial='true' readable='1'/>
   <!-- These values must be in the same order as in HdlOCDP.h -->
   <property name='role' type='enum' enums='passive,activeMessage,activeFlowControl' readable='1' initial='1'/>

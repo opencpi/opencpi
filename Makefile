@@ -241,7 +241,7 @@ ProjectGoals=cleanhdl cleanrcc cleanocl rcc ocl hdl applications run runtest hdl
 DoProjects=set -e; $(foreach p,$(Projects),\
                      echo Performing $1 on project $p && \
                      $(MAKE) -C projects/$p $(if $(filter build,$1),,$1) &&) :
-.PHONY: $(ProjectGoals)
+.PHONY: $(ProjectGoals) testprojects
 $(ProjectGoals):
 	$(AT)$(call DoProjects,$@)
 
@@ -249,6 +249,9 @@ $(ProjectGoals):
 projects:
 	$(AT)$(call DoProjects,build)
 	$(AT)$(call DoProjects,test)
+
+testprojects:
+	$(AT)$(call DoProjects,runtest)
 
 cleanprojects:
 	$(AT)$(call DoProjects,clean)

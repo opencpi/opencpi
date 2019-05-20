@@ -122,6 +122,7 @@ namespace OCPI {
       virtual bool
 	launch(Launcher::Members &members, Launcher::Connections &connections) = 0,
 	work(Launcher::Members &members, Launcher::Connections &connections) = 0;
+      virtual void appShutdown() = 0; // (the) app using this launcher has shutdown
     };
     // Concrete class that will be a singleton
     class LocalLauncher : public Launcher, public OCPI::Util::Singleton<LocalLauncher> {
@@ -130,6 +131,7 @@ namespace OCPI {
       virtual ~LocalLauncher();
       bool launch(Launcher::Members &members, Launcher::Connections &connections);
       bool work(Launcher::Members &members, Launcher::Connections &connections);
+      void appShutdown() {}
     };
   }
 }

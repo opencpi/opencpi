@@ -27,10 +27,11 @@
 Port::
 Port(Worker &w, ezxml_t x, Port *sp, int nameOrdinal, WIPType type, const char *defaultName,
      const char *&err)
-  : m_clone(false), m_worker(&w), m_ordinal(0), m_count(0), m_master(false), m_xml(x),
+  : m_clone(false),m_morphed(false), m_worker(&w), m_ordinal(0), m_count(0), m_master(false), m_xml(x),
     m_type(type), pattern(NULL), clock(0), clockPort(0), myClock(false), m_specXml(x) {
   if (sp) {
     // A sort of copy constructor from a spec port to an impl port
+    m_morphed = true;
     m_name = sp->m_name;
     m_ordinal = sp->m_ordinal;
     m_count = sp->m_count; // may be overridden?
@@ -88,7 +89,7 @@ Port(Worker &w, ezxml_t x, Port *sp, int nameOrdinal, WIPType type, const char *
 // instance's port in the assembly that we are cloning/externalizing.
 Port::
 Port(const Port &other, Worker &w, std::string &name, size_t count, const char *&err)
-  : m_clone(true), m_worker(&w), m_name(name), m_ordinal(w.m_ports.size()), m_count(count),
+  : m_clone(true), m_morphed(false), m_worker(&w), m_name(name), m_ordinal(w.m_ports.size()), m_count(count),
     m_master(other.m_master), m_xml(other.m_xml), m_type(other.m_type), pattern(NULL),
     clock(NULL), clockPort(NULL), myClock(false), m_specXml(other.m_specXml)
 {
@@ -180,7 +181,7 @@ doPattern(int n, unsigned wn, bool in, bool master, std::string &suff, bool port
 	break;
       case '0': // zero origin ordinal-within-profile
       case '1':
-	sprintf(s, "%u", wn + (pat[-1] - '0'));
+	sprintf(s, "%u", wn + ((unsigned)pat[-1] - '0'));
 	while (*s) s++;
 	break;
       case 'i':
@@ -266,16 +267,18 @@ doPatterns(unsigned nWip, size_t &maxPortTypeName) {
 }
 
 void Port::
-addMyClock() {
-  clock = m_worker->addClock();
+addMyClock(bool output) {
+  clock = &m_worker->addClock();
   OU::format(clock->m_name, "%s_Clk", pname());
   clock->port = this;
+  clock->m_output = output;
 }
 
 // Here are the cases for "clock" and "myclock":
 // 1. None: assume WciClock, and it there is not one from a WCI, make one.
 // 2. Clock, but not myclock, referring to a port: I'll have what he has.
-// 3. myclock but not clock: define a clock for this port to own
+// 3. Clock, referring to a worker-level clock.
+// 4. myclock but not clock: define a clock for this port to own
 // Minimal error checking has already be done with early parsing.
 const char *Port::
 checkClock() {
@@ -290,7 +293,7 @@ checkClock() {
       return OU::esprintf("Clock for interface \"%s\", \"%s\" is not defined for the worker",
 			  pname(), clockName);
   } else if (myClock)
-    addMyClock();
+    ; // clock already added
   else if (needsControlClock()) {
     if (m_worker->m_wci)
       // If no clock specified, and we have a WCI slave port then use its clock indirectly
@@ -299,7 +302,7 @@ checkClock() {
       // If no clock specified, and no WCI slave, use a wciClock if it exists
       clock = m_worker->m_wciClock;
     else
-      clock = m_worker->addWciClockReset();
+      clock = &m_worker->addWciClockReset();
   }
   return NULL;
 }
@@ -379,7 +382,7 @@ emitRecordTypes(FILE *f) {
     fprintf(f,
 	    "    clk              : std_logic;        -- %s\n",
 	    m_type == WCIPort ? "control clock for this worker" :
-	    " this port has a clk different from the control clock\n");
+	    "this port has a clk different from the control clock\n");
   if (m_type != WTIPort)
     fprintf(f,
 	    "    reset            : Bool_t;           -- this port is being reset from the outside peer\n");
@@ -532,13 +535,14 @@ emitVHDLRecordWrapperPortMap(FILE */*f*/, std::string &/*last*/) {
 }
 
 void Port::
-emitConnectionSignal(FILE */*f*/, bool /*output*/, Language /*lang*/, std::string &/*signal*/) {
+emitConnectionSignal(FILE */*f*/, bool /*output*/, Language /*lang*/, bool /*clock*/, std::string &/*signal*/) {
 }
 
 void Port::
-emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *indent,
+emitPortSignals(FILE *f, const InstancePort &ip, Language /*lang*/, const char *indent,
 		bool &any, std::string &comment, std::string &last, const char *myComment,
-		OcpAdapt */*adapt*/, std::string */*hasExprs*/, std::string &/*exprs*/) {
+		std::string &/*exprs*/) {
+  const Attachments &atts = ip.m_attachments;
   doPrev(f, last, comment, myComment);
   std::string in, out, index, empty;
   OU::format(in, typeNameIn.c_str(), "");
@@ -687,7 +691,7 @@ emitRecordInterface(FILE *f, const char *implName) {
 }
 
 void RawPropPort::
-emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
+emitConnectionSignal(FILE *f, bool output, Language /*lang*/, bool /*clock*/, std::string &signal) {
   fprintf(f, "  signal %s : wci.raw_prop_%s%s_t",
 	  signal.c_str(), m_master == output ? "out" : "in",
 	  m_count > 1 || m_countExpr.length() ? "_array" : "");
@@ -753,7 +757,7 @@ emitRecordInterface(FILE *f, const char *implName) {
 }
 
 void CpPort::
-emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
+emitConnectionSignal(FILE *f, bool output, Language /*lang*/, bool /*clock*/, std::string &signal) {
   fprintf(f, "  signal %s : platform.platform_pkg.occp_%s_t;\n",
 	  signal.c_str(), m_master == output ? "in" : "out");
 }
@@ -800,7 +804,7 @@ emitRecordTypes(FILE */*f*/) {
 }
 
 void NocPort::
-emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
+emitConnectionSignal(FILE *f, bool output, Language /*lang*/, bool /*clock*/, std::string &signal) {
   fprintf(f, "  signal %s : platform.platform_pkg.unoc_master_%s_t;\n",
 	  signal.c_str(), m_master == output ? "out" : "in" );
 }
@@ -880,9 +884,10 @@ emitVHDLSignalWrapperPortMap(FILE *f, std::string &last) {
 }
 
 void TimeServicePort::
-emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *indent,
+emitPortSignals(FILE *f, const InstancePort &ip, Language /*lang*/, const char *indent,
 		bool &any, std::string &comment, std::string &last, const char *myComment,
-		OcpAdapt */*adapt*/, std::string */*hasExprs*/, std::string &/*exprs*/) {
+		std::string &/*exprs*/) {
+  const Attachments &atts = ip.m_attachments;
   doPrev(f, last, comment, myComment);
   std::string in, out;
   OU::format(in, typeNameIn.c_str(), "");
@@ -892,13 +897,13 @@ emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *inden
 	  any ? indent : "",
 	  m_master ? out.c_str() : in.c_str());
   //	fputs(p.master ? c.m_masterName.c_str() : c.m_slaveName.c_str(), f);
-  Attachment *at = atts.front();
-  Connection *c = at ? &at->m_connection : NULL;
+  const Attachment *at = atts.front();
+  const Connection *c = at ? &at->m_connection : NULL;
   fputs(at ? c->m_masterName.c_str() : "open", f);
 }
 
 void TimeServicePort::
-emitConnectionSignal(FILE *f, bool /*output*/, Language /*lang*/, std::string &signal) {
+emitConnectionSignal(FILE *f, bool /*output*/, Language /*lang*/, bool /*clock*/, std::string &signal) {
   fprintf(f, "  signal %s : platform.platform_pkg.time_service_t;\n", signal.c_str());
 }
 
@@ -1004,7 +1009,7 @@ emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *inden
 #endif
 
 void TimeBasePort::
-emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
+emitConnectionSignal(FILE *f, bool output, Language /*lang*/, bool /*clock*/, std::string &signal) {
   fprintf(f, "  signal %s : platform.platform_pkg.time_base_%s_t;\n", signal.c_str(),
 	  m_master == output ? "out" : "in");
 }
@@ -1060,7 +1065,7 @@ emitRecordInterface(FILE *f, const char *implName) {
 }
 
 void MetaDataPort::
-emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
+emitConnectionSignal(FILE *f, bool output, Language /*lang*/, bool /*clock*/, std::string &signal) {
   fprintf(f, "  signal %s : platform.platform_pkg.metadata_%s_t;\n",
 	  signal.c_str(), (output && m_master) || (!output && !m_master) ? "out" : "in");
 }
@@ -1099,4 +1104,13 @@ emitExtAssignment(FILE *f, bool int2ext, const std::string &extName, const std::
   fprintf(f, "  %s <= %s;\n",
 	  int2ext ? ours.c_str() : theirs.c_str(),
 	  int2ext ? theirs.c_str() : ours.c_str());
+}
+const char *Port::
+adjustConnection(Connection &/*c*/, OcpAdapt */*myAdapt*/, bool &/*myHasExpr*/, ::Port &/*otherPort*/,
+		 OcpAdapt */*otherAdapt*/, bool &/*otherHasExpr*/, Language /*lang*/, size_t &/*unused*/) {
+  return NULL;
+}
+void Port::
+getClockSignal(const InstancePort &/*ip*/, Language /*lang*/, std::string &/*s*/) {
+  assert("unexpected call to getClockSignal"==0);
 }

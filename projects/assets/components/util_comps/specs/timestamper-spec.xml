@@ -4,7 +4,7 @@
      Add port elements for i/o ports -->
 <ComponentSpec>
 
-  <Property Name="enable" Type="bool" Writable="true" Default="true"/>
+  <Property Name="enable" Type="bool" Initial="true" Default="true"/>
 
   <Port Name="in" Producer="false" Protocol="iqstream_protocol.xml"/>
   <Port Name="out" Producer="true" Protocol="iqstream_with_sync_protocol.xml"/>

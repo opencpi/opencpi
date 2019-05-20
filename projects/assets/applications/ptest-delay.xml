@@ -1,0 +1,9 @@
+<application>
+  <instance component='ocpi.assets.base_comps.ptest'>
+    <property name='enables' value='9,7,3'/>
+    <property name='puchar'>
+      <set delay='3' value='3'/>
+      <set delay='8' value='8'/>
+    </property>
+  </instance>
+</application>
