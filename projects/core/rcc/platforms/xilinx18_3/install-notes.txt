@@ -1,0 +1,12 @@
+web installers locked by my VMs, so I had to download files specifically.
+was confused since Vivado installation actually installed some stuff in the SDK dir, but not all?
+so then downloaded the petalinux files (under embedded development tab)
+specifically did yum-install on chrpath socat xterm ncurses and openssl as requested.
+then also yum install ncurses-devel and openssl-devel
+
+It mentioned that it did not find tftp and that the install guide wouild tell you the impact of that.
+
+The peta install was a terminal thing and then it said I hadn't specified installation location so do it in CWD.
+Hopefully the installation will be moveable...
+
+ran installer for pico using "sh" - needed to use bash, and be IN the dir to install

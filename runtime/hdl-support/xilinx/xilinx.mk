@@ -61,7 +61,7 @@ $(if $(OCPI_XILINX_LAB_TOOLS_DIR),\
   $(foreach d,$(OCPI_XILINX_LAB_TOOLS_DIR),\
     $(or $(shell test -d $d/LabTools && echo $d/LabTools),\
       $(call $(or $1,error),OCPI_XILINX_LAB_TOOLS_DIR, $d, missing or has no LabTools subdirectory))),\
-  $(foreach t,$(call OcpiXilinxDir,$1),$(info TOP:$t)\
+  $(foreach t,$(call OcpiXilinxDir,$1),$(infox TOP:$t)\
       $(foreach v,\
         $(if $(filter-out undefined,$(origin OCPI_XILINX_VERSION)),\
           $(foreach e,$(OCPI_XILINX_VERSION),\
@@ -107,7 +107,7 @@ $(foreach t,$(OcpiXilinxTryVivadoDir)/SDK,$(infox vt:$t)\
           $(or $(shell for i in \
                         `shopt -s nullglob && echo $t/*  | tr ' ' '\n' | sort -n -r`; \
                        do \
-                         [ -d $$i -a -r $$i/settings64.sh ] && echo `basename $$i` && break; \
+                         [ -d $$i -a -r $$i/settings*.sh ] && echo `basename $$i` && break; \
                        done),\
             $(call $(or $1,error), No version directory under $t/* for Xilinx Vivado SDK))),\
         $(infox VV:$v)$(call OcpiXilinxTryVivadoDir,$1)/SDK/$v),\

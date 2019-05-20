@@ -66,7 +66,25 @@ set -e
 rm -r -f $T
 mkdir $T
 cd $T
-dd if=$SOURCE bs=64 skip=1 | gunzip > in.root.image
+if [ -r $SOURCE ]; then
+  echo "Found $SOURCE (compressed ramdisk image) in Xilinx binary release."
+  dd if=$SOURCE bs=64 skip=1 | gunzip > in.root.image
+elif [ -r $rdir/image.ub ]; then
+  echo "Found $SOURCE (FIT image combining kernel/devicetree/ramdisk) in Xilinx binary release."
+  SOURCE=$rdir/image.ub
+  x=(`$FROM/fit_info -f $SOURCE -n /images/ramdisk@1 -p data`)
+  if [ "${#x[@]}" != 6 ]; then
+      echo "Failed to extract the root FS from $SOURCE (using fit_info tool from u-boot)."
+      exit 1
+  fi
+  (set -o pipefail; dd if=$SOURCE bs=1 skip=${x[5]} count=${x[3]} | gunzip) > in.root.image
+  if [ $? != 0 ]; then
+      echo Failed to extract and decompress root FS from $SOURCE.
+      exit 1
+  fi
+else
+  echo Cannot find expected files in Xilinx linux binary release directory.
+fi
 mkdir root
 cd root
 fakeroot cpio -i --quiet -d -H newc -F ../in.root.image --no-absolute-filenames

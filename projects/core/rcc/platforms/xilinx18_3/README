@@ -1,0 +1,33 @@
+This Platform is created using the xilinx linux repo "https://github.com/Xilinx/linux-xlnx.git" 
+tag xilinx-v2018.3.  It is named 18_3 because it was released in the 3rd or 4th quarter of 2018.
+
+To create this platform the following changes were made beyond simply copying the xilinx13_4 directory:
+
+1. The Xilinx Vivado tools 2018.3 and the associated SDK were installed.
+
+2. Changes to the xilinx18_3.mk file different from xilinx13_3:
+
+   - Do not specify or check a particular SDK version, just use the installed version.
+     This shiould be fixed when the compatibility issues are clearer.
+
+   - Locate the compiler tools in a different place in the SDK (vs 2015.4)
+
+   - Remove the -mfloat-abi=softp option
+
+3. Changes made to the createXilinxKernelHeaders.sh script were:
+
+   - Update the script to be correct for OpenCPI 1.4
+   - Accomodate (backwards-compatibly) some changes in the names of kernel config options for USB/Ethernet
+   - Accomodate (backwards compatibly) changes in the location of the libstdc++ library in the newer SDK.
+
+4. Changes make to the runtime/hdl-support/xilinx/xilinx.mk script were:
+
+   - Accomodate (backwards compatibly) changes in the name of the settings startup file in the 2018.3 SDK
+
+5. The Xilinx Binary Zynq release(s)
+
+   - Now only available per platform (e.g. zed) rather than one for all platforms
+   - The 2018.3 zed release was tricky to download, and now requires a xilinx download account.
+     URL was: https://xilinx-ax-dl.entitlenow.com/dl/ul/2018/12/06/R210091589/2018.3-zed-release.tar.xz/8afc374e21bd0fd2193eb410e94e288d/5C2D543D?akdm=0&filename=2018.3-zed-release.tar.xz
+     from the initial URL: https://www.xilinx.com/member/forms/download/xef.html?filename=2018.3-zed-release.tar.xz
+

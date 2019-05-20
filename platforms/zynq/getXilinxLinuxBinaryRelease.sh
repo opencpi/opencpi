@@ -31,7 +31,7 @@ It may also want to be consistent with the release of the installed Xilinx EDK.
 
 This script takes 3 arguments:
 1. The OpenCPI zynq release name you are creating (e.g. 13_4).
-2. The download URL for the release.
+2. The download URL for the release (or the actual tarball filename)
 3. Your working directory for downloaded xilinx content.
 EOF
   exit 1
@@ -47,18 +47,31 @@ fi
 rm -r -f tmp $dir
 mkdir -p tmp $dir
 cd tmp
-echo Downloading Xilinx Binary Zynq release from URL: $2
-curl -O -L $2
-if test `find . -type f | wc -l` != 1; then
-  echo Expecting a single file from the download.
-  cd ..; rm -r -f tmp
+if [[ $2 = */* ]]; then
+  echo Assuming "$2" is a download URL rather than a file here.
+  echo Downloading Xilinx Binary Zynq release from URL: $2
+  curl -O -L $2
+  if test `find . -type f | wc -l` != 1; then
+    echo Expecting a single file from the download.
+    cd ..; rm -r -f tmp
+    exit 1
+  fi
+elif [ ! -r ../$2 ]; then
+  echo The release file "$2" is not present.
   exit 1
-fi
-REL=`echo *|sed s/\.tar\.*//`
+else
+  echo Using the release file $2 that was already present/downloaded.
+  ln -s ../$2 $2
+fi  
 echo Release file is: `ls`, unpacking it under $3/$name
 T=`pwd`
 cd $dir
 tar -xf $T/*
+x=(`ls`)
+if [ ${#x[@]} = 1 ]; then
+    mv $x/* .
+    rmdir $x
+fi
 echo Release contents is in: $3/$name
 cd $T/..
-rm -r -f tmp
+# rm -r -f tmp

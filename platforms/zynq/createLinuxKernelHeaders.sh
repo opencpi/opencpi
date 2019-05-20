@@ -19,7 +19,8 @@
 
 # See the "usage" message below
 # "make" will run in parallel unless you set MAKE_PARALLEL to blank or null string (but defined)
-export MAKE_PARALLEL=${MAKE_PARALLEL--j}
+# We set the default to 4 since using "-j" by itself blows up (infinite forks) on some systems.
+export MAKE_PARALLEL=${MAKE_PARALLEL--j4}
 set -e
 
 if test "$1" = "" -o "$1" = "--help" -o "$1" = "-help" -o "$2" = ""; then
@@ -55,19 +56,6 @@ OpenCPI Zynq release name is 13_4.
 EOF
   exit 1
 fi
-# Enable xilinx variables
-source $OCPI_CDK_DIR/scripts/util.sh
-setVarsFromMake $OCPI_CDK_DIR/include/hdl/xilinx.mk ShellIseVars=1 $verbose
-
-if test \
-  "$OcpiXilinxEdkDir" = "" -o \
-  ! -d "$OcpiXilinxEdkDir" ; then \
-  echo Error: the OpenCPI build environment for Xilinx Zynq is not set up.
-  exit 1
-fi
-OCPI_CROSS_BUILD_BIN_DIR=$OcpiXilinxEdkDir/gnu/arm/lin/bin
-OCPI_CROSS_HOST=arm-xilinx-linux-gnueabi
-CROSS_COMPILE=$OCPI_CROSS_BUILD_BIN_DIR/${OCPI_CROSS_HOST}-
 rel=$1
 tag=$2
 case $3 in (/*) gdir=$3 ;; (*) gdir=`pwd`/$3;; esac
@@ -75,6 +63,9 @@ if test ! -d $gdir/linux-xlnx; then
   echo The source directory $3/linux-xlnx does not exist. Run getXilinxLinuxSources.sh\?
   exit 1
 fi
+source $OCPI_CDK_DIR/scripts/ocpitarget.sh xilinx$rel
+CROSS_COMPILE=$OCPI_TARGET_CROSS_COMPILE
+echo CROSS COMPILE prefix is: $CROSS_COMPILE
 # Protect against sym links for the git subdir for case sensitivity
 RELDIR=`pwd`/opencpi-zynq-linux-release-$rel
 rm -r -f $RELDIR
@@ -92,7 +83,7 @@ echo ===========================================================================
 echo Building u-boot to get the mkimage command.
 make zynq_zed_config CROSS_COMPILE=$CROSS_COMPILE
 make CROSS_COMPILE=$CROSS_COMPILE ${MAKE_PARALLEL}
-cp tools/mkimage $RELDIR
+cp tools/mkimage tools/fit_info $RELDIR
 echo ==============================================================================
 echo The u-boot build is complete.  Starting linux build.
 echo ==============================================================================
@@ -117,8 +108,8 @@ EOF
 fi
 echo Adding support for USB Ethernet Dongles
 ed arch/arm/configs/xilinx_zynq_defconfig <<EOF
-/CONFIG_USB_USBNET/d
-/CONFIG_USB_ZYNQ_PHY/d
+g/CONFIG_USB_USBNET/d
+g/CONFIG_USB_ZYNQ_PHY/d
 $
 a
 CONFIG_USB_ZYNQ_PHY=y
@@ -143,7 +134,14 @@ echo Capturing the built Linux uImage file and the zynq device trees in release 
 mkdir dts lib
 cp $gdir/linux-xlnx/arch/arm/boot/dts/zynq-*.dt* dts
 cp $gdir/linux-xlnx/arch/arm/boot/uImage .
-cp -P $OCPI_CROSS_BUILD_BIN_DIR/../$OCPI_CROSS_HOST/libc/usr/lib/libstdc++.so* lib
+libstdc=$(dirname $CROSS_COMPILE)/../$(basename $CROSS_COMPILE|sed 's/-$//')/libc/
+if [ -n "$(shopt -s nullglob; echo $libstdc/usr/lib/libstdc++.so*)" ]; then
+  libstdc+=usr/
+elif [ -z "$(shopt -s nullglob; echo $libstdc/lib/libstdc++.so*)" ]; then
+  echo "WARNING: Cannot locate libstdc++.so in $libstdc/usr/lib or $libstdc/lib, so it will not be in the release"
+  libstdc=
+fi
+[ -n "$libstdc" ] && cp -P $libstdc/lib/libstdc++.so* lib
 echo ============================================================================================
 echo Preparing the kernel-headers tree based on the built kernel.
 rm -r -f kernel-headers-$tag kernel-headers
