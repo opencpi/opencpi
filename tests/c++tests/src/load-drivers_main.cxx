@@ -26,12 +26,11 @@
 
 namespace OU = OCPI::Util;
 
-#define OCPI_OPTIONS_HELP "This program loads all drivers. Supply at least one dummary argument\n"
+#define OCPI_OPTIONS_HELP "This program loads all drivers. Supply at least one dummy argument.\n"
 #include "CmdOption.h" // for convenient main program and exception handling
 
 static int
 mymain(const char **) {
-  OCPI::Container::Manager::getSingleton().suppressDiscovery();
   std::string path, list, name;
   // FIXME: add the "stubs" indicator to driver-list to avoid special casing ofed/ocl
   OU::format(path, "%s/%s/lib", OU::getCDK().c_str(), OCPI_CPP_STRINGIFY(OCPI_PLATFORM));
@@ -39,14 +38,15 @@ mymain(const char **) {
   const char *err;
   if ((err = (OU::file2String(list, name.c_str()))))
     throw OU::Error("Failed to open driver-list file %s: %s\n", name.c_str(), err);
+  OCPI::Container::Manager::getSingleton().suppressDiscovery();
   for (OU::TokenIter ti(list.c_str()); ti.token(); ti.next()) {
     OU::format(name, "%s/libocpi_%s%s%s", path.c_str(), ti.token(),
-	       OCPI_DYNAMIC ? "" : "_s",
-	       OCPI_CPP_STRINGIFY(OCPI_DYNAMIC_SUFFIX));
+               OCPI_DYNAMIC ? "" : "_s",
+               OCPI_CPP_STRINGIFY(OCPI_DYNAMIC_SUFFIX));
     ocpiBad("Trying to load driver %s from %s", ti.token(), name.c_str());
     if (!dlopen(name.c_str(),
-		strcmp(ti.token(), "ofed") && strcmp(ti.token(), "ocl") ?
-		RTLD_NOW : RTLD_LAZY))
+                strcmp(ti.token(), "ofed") && strcmp(ti.token(), "ocl") ?
+                RTLD_NOW : RTLD_LAZY))
       throw OU::Error("Failed to open driver: %s", dlerror());
   }
   ocpiBad("All drivers succesfully loaded");

@@ -75,10 +75,9 @@ component edge_detector
   port(
     clk               : in  std_logic;
     reset             : in  std_logic;
-    enable            : in  std_logic;
-    din               : in  std_logic_vector;
-    rising_pulse      : out std_logic_vector;
-    falling_pulse     : out std_logic_vector);
+    din               : in  std_logic;
+    rising_pulse      : out std_logic;
+    falling_pulse     : out std_logic);
 end component;
 
 end package misc_prims;

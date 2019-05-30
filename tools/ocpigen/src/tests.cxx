@@ -885,6 +885,7 @@ namespace {
       OU::formatAdd(file, "/%s.%02u.%s", m_name.c_str(), s, name.c_str());
       // Allow executing from the target dir in case we created some C++ programs
       std::string cmd("PATH=.:$OCPI_TOOL_DIR:$OCPI_PROJECT_DIR/scripts:$PATH ");
+      cmd += "PYTHONPATH=$OCPI_PROJECT_DIR/scripts:$PYTHONPATH ";
       cmd += env;
       size_t prefix = cmd.length();
       OU::formatAdd(cmd, " %s %s", generate.c_str(), file.c_str());
@@ -1275,8 +1276,9 @@ namespace {
               OU::format(out, "%s.$subcase.$worker.%s.out", m_name.c_str(), io.m_port->pname());
               if (io.m_script.size())
                 OU::formatAdd(verify,
-			      "  PATH=../..:../../$OCPI_TOOL_DIR:$OCPI_PROJECT_DIR/scripts:$PATH %s %s %s\n",
-			      io.m_script.c_str(), out.c_str(), inArgs.c_str());
+                  "  PATH=../..:../../$OCPI_TOOL_DIR:$OCPI_PROJECT_DIR/scripts:$PATH %s %s %s %s\n",
+                  "PYTHONPATH=$OCPI_PROJECT_DIR/scripts:$PYTHONPATH ",
+                  io.m_script.c_str(), out.c_str(), inArgs.c_str());
               else
                 OU::formatAdd(verify,
                               "  echo '    'Comparing output file to specified file: \"%s\"\n"

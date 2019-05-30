@@ -151,7 +151,7 @@ parseHdlImpl(const char *a_package) {
     const char *dot = strrchr(emulate, '.');
     if (!dot)
       return OU::esprintf("'emulate' attribute: '%s' has no authoring model suffix", emulate);
-    if (!(m_emulate = HdlDevice::get(emulate, m_file.c_str(), this, err)))
+    if (!(m_emulate = HdlDevice::get(emulate, NULL, m_file.c_str(), this, err)))
       return OU::esprintf("for emulated device worker %s: %s", emulate, err);
     for (PropertiesIter pi = m_emulate->m_ctl.properties.begin();
 	 pi != m_emulate->m_ctl.properties.end(); ++pi) {
@@ -172,7 +172,7 @@ parseHdlImpl(const char *a_package) {
     for (unsigned n = 0; n < m_paramConfigs.size(); n++) {
       m_paramConfigs[n] = new ParamConfig(*this);
       m_paramConfigs[n]->clone(*m_emulate->m_paramConfigs[n]);
-    }    
+    }
   }
   // This must be here so that when the properties are parsed,
   // the first raw one is properly aligned.
@@ -319,6 +319,7 @@ static void ucase(std::string &s) {
     else if (islower(s[n]))
       s[n] = (char)toupper(s[n]);
 }
+
 const char *Signal::directions[] = { DIRECTIONS, NULL };
 
 const char *Signal::
@@ -348,13 +349,27 @@ parseDirection(const char *direction, std::string *expr, OCPI::Util::IdentResolv
     *expr = direction;
   return NULL;
 }
+
+const char *Signal::
+parseWidth(const char *width, std::string *expr, OCPI::Util::IdentResolver &ir) {
+    OU::Value widthValue(OA::OCPI_ULong);
+    bool isVariable;
+    const char *err;
+    if ((err = widthValue.parse(width, NULL, false, &ir, &isVariable)))
+      return OU::esprintf("error parsing width attribute for \"%s\" signal: %s", cname(), err);
+    m_width = widthValue.m_ULong;
+    if (isVariable && expr)
+      *expr = width;
+     return NULL;
+}
+
 const char *Signal::
 parse(ezxml_t x, Worker *w) {
   const char *err;
   if ((err =
        OE::checkAttrs(x, "input", "inout", "bidirectional", "output", "width", "direction",
 		      "name", "differential", "type", "pos", "neg", "in", "out", "oe",
-		      "description", "pin", (void*)0)))
+		      "description", "pin", "platform", (void*)0)))
     return err;
   const char
     *name = ezxml_cattr(x, "name"),
@@ -363,7 +378,8 @@ parse(ezxml_t x, Worker *w) {
     *nameInOut = ezxml_cattr(x, "InOut"),
     *nameOutIn = ezxml_cattr(x, "OutIn"),
     *nameBiDir = ezxml_cattr(x, "Bidirectional"),
-    *direction = ezxml_cattr(x, "direction");
+    *direction = ezxml_cattr(x, "direction"),
+    *width = ezxml_cattr(x, "width");
   if (name) {
     if (nameIn || nameOut || nameInOut || nameBiDir)
       return "Signal directions must be specified using the \"direction\" attribute when the "
@@ -396,8 +412,9 @@ parse(ezxml_t x, Worker *w) {
 	m_direction = OUTIN;
     }
   }
-  if ((err = OE::getNumber(x, "Width", &m_width, 0, 0)) ||
-      (err = OE::getBoolean(x, "pin", &m_pin)) ||
+  if (width && (err = parseWidth(width, &m_widthExpr, *w)))
+    return err;
+  if ((err = OE::getBoolean(x, "pin", &m_pin)) ||
       (err = OE::getBoolean(x, "differential", &m_differential)))
     return err;
   if (m_direction == INOUT && m_differential)
@@ -550,14 +567,25 @@ void Worker::
 emitSignalMacros(FILE *f, Language lang) {
   std::string prefix, last;
   OU::format(prefix, "  %s__decl", hdlComment(lang));
-  bool first = true;
+  bool first = true, anyNonExpr = false;
+  // First pass - are there any non-parameterized signals?
   for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
     Signal &s = **si;
-    if (s.m_directionExpr.length() && (s.m_direction != Signal::UNUSED || m_type == Container)) {
-      if (first)
-	fprintf(f, "  %s Define signals that are parameterized\n", hdlComment(lang));
-      first = false;
+    if (s.m_directionExpr.empty() && s.m_widthExpr.empty() &&
+	(s.m_direction != Signal::UNUSED || m_type == Container))
+      anyNonExpr = true;
+  }
+  for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
+    Signal &s = **si;
+    if ((s.m_directionExpr.length() && (s.m_direction != Signal::UNUSED || m_type == Container)) ||
+         s.m_widthExpr.length()) {
       last += prefix;
+      if (first) {
+	fprintf(f, "  %s Define signals that are parameterized\n", hdlComment(lang));
+	if (anyNonExpr)
+	  last += "    ;\n" + prefix;
+      }
+      first = false;
       emitDeviceSignal(f, lang, last, s, prefix.c_str());
     }
   }
@@ -568,9 +596,12 @@ emitSignalMacros(FILE *f, Language lang) {
   first = true;
   for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
     Signal &s = **si;
-    if (s.m_directionExpr.length() && s.m_direction != Signal::UNUSED) {
-      if (first)
+    if ((s.m_directionExpr.length() && s.m_direction != Signal::UNUSED) ||
+       s.m_widthExpr.length()) {
+      if (first) {
 	fprintf(f, "  %s Map signals that are parameterized\n", hdlComment(lang));
+	last += prefix + "     ,\n";
+      }
       first = false;
       emitDeviceSignalMapping(f, last, s, prefix.c_str());
       last = ",\n";

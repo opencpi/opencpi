@@ -1,0 +1,8 @@
+<HdlDevice language='vhdl' spec='param_test-spec'>
+  <Property Name="NUM_INPUTS_p" Type="uChar" Parameter="true" Default="4" />
+  <Property Name="DIR_p" Type="uChar" Parameter="true" Default="0" />
+  <Signal Input="test_pin" Width="1"/>
+  <Signal Input="gpi_pin" Width="NUM_INPUTS_p"/>
+  <Signal Name="dir_pin" Width="1" direction="DIR_p == 0 ? in :
+				                              DIR_p == 1 ? out : inout"/>
+</HdlDevice>

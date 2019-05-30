@@ -289,7 +289,8 @@ parseHdlAssy() {
     InstancePort &ip = *new InstancePort(NULL, wci, ext);
     unsigned nControl = 0;
     for (n = 0, i = &a->m_instances[0]; n < a->m_instances.size(); n++, i++)
-      if (i->m_worker && i->m_worker->m_ports[0]->m_type == WCIPort && !i->m_worker->m_noControl) {
+      if (i->m_worker && i->m_worker->m_ports.size() && 
+          i->m_worker->m_ports[0]->m_type == WCIPort && !i->m_worker->m_noControl) {
 	std::string l_name;
 	OU::format(l_name, "wci%u", nControl);
 	Connection &c = *new Connection(NULL, l_name.c_str());

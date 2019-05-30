@@ -92,6 +92,7 @@ OCPI::OS::LoadableModule::open (const std::string & fileName, bool global)
 // Return handle.  Or null and set error
 void *
 OCPI::OS::LoadableModule::load(const char *fileName, bool global, std::string &error) throw () {
+  error = "";
   pthread_mutex_lock (&g_slMutex);
   void *handle = dlopen (fileName, RTLD_NOW | (global ? RTLD_GLOBAL : RTLD_LOCAL));
   if (!handle) {

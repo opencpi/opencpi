@@ -33,16 +33,15 @@ architecture rtl of matchstiq_z1_gp_out_em_worker is
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- Constants
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-constant c_num_output          : integer := 3;
+constant c_num_inputs          : integer := 3;
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- Signals for emulator logic
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 signal s_msg_ctr               : ulong_t := (others => '0');
 signal s_done                  : std_logic := '0'; -- Done sending messages
 signal s_enable                : std_logic := '0';
-signal s_gpio                  : std_logic_vector(c_num_output-1 downto 0) := (others => '0'); -- Bus of GPIO signals. Input to edge detector
-signal s_rising_pulse          : std_logic_vector(c_num_output-1 downto 0) := (others => '0'); -- Output of edge detector rising pulse
-signal s_falling_pulse         : std_logic_vector(c_num_output-1 downto 0) := (others => '0'); -- Output of edge detector falling pulse
+signal s_gpio                  : std_logic_vector(c_num_inputs-1 downto 0) := (others => '0'); -- Bus of GPIO signals.
+signal s_rising_pulse          : std_logic_vector(c_num_inputs-1 downto 0) := (others => '0'); -- Output of edge detector rising pulse
 signal s_dev_mask              : std_logic := '0'; -- Controls dev_gp_out.mask
 signal s_dev_data              : std_logic := '0'; -- Control dev_gp_out.data
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -68,17 +67,19 @@ signal out_valid               : std_logic := '0';
 
 begin
 
-  -- Concatenate the signals together for the edge_detector input port
-  s_gpio <= gpio3 & gpio2 & gpio1;
+ -- Concatenate the signals together for the edge_detector input port
+ s_gpio <= gpio3 & gpio2 & gpio1;
 
-  edge_detector : misc_prims.misc_prims.edge_detector
-    port map (
-      clk    => ctl_in.clk,
-      reset  => ctl_in.reset,
-      enable => '1',
-      din  => s_gpio,
-      rising_pulse => s_rising_pulse,
-      falling_pulse => s_falling_pulse);
+ -- edge detect the input signal
+ edge_detect_gen : for i in 0 to c_num_inputs-1 generate
+    edge_detector : misc_prims.misc_prims.edge_detector
+      port map (
+        clk    => ctl_in.clk,
+        reset  => ctl_in.reset,
+        din    => s_gpio(i),
+        rising_pulse  => s_rising_pulse(i),
+        falling_pulse => open);
+ end generate edge_detect_gen;
 
   -- Mandatory output port logic, (note that
   -- data_ready_for_out_port MUST be clock-aligned with out_out.data)

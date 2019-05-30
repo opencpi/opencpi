@@ -1,0 +1,13 @@
+<!-- This is the card definition file for cards of type: param_test_card
+     Add <signal> elements for each signal in the slot -->
+<Card type="fmc_lpc">
+  <Device worker="param_test">
+    <property name="NUM_INPUTS_p" value="3"/>
+    <property name="DIR_p" value="0"/>
+    <signal name='GPI_PIN(0)'  slot='LA05_P'/>    <!--   D11 -->
+    <signal name='GPI_PIN(1)'  slot='LA05_N'/>    <!--   D12 -->
+    <signal name='GPI_PIN(2)'  slot='LA09_P'/>    <!--   D14 -->
+    <signal name='TEST_PIN(0)' slot='LA09_N'/>    <!--   D15 -->
+    <signal name='DIR_PIN'     slot='LA13_P'/>    <!--   D17 -->
+  </Device>
+</Card>

@@ -34,7 +34,10 @@ declare -A bsp_aliases
 bsp_aliases["e310"]="Ettus E310/E312/E313"
 bsp_aliases["picoflexor"]="DRS Picoflexor S1T6A/S3T6A"
 
-## Enables color variables BOLD, RED, and RESET
+# Disables experimental HTML output
+export EXPERIMENTAL_HTML=TESTCODEDOESNOTRUN
+
+# Enables color variables BOLD, RED, and RESET
 enable_color() {
   if [ -n "$(command -v tput)" -a -n "${TERM}" ]; then
     export BOLD=$(tput bold 2>/dev/null)
@@ -496,9 +499,32 @@ compress_pdfs
 
 # If errors...
 if [ -f ${OUTPUT_PATH}/errors.log ]; then
-  echo "Errors were detected! errors.log:"
+  echo "${RED}Errors were detected! errors.log:${RESET}"
   cat ${OUTPUT_PATH}/errors.log
   exit 2
 fi
 
 echo "PDFs now available in '${OUTPUT_PATH}'"
+
+if [ "${REPO_PATH}/doc/pdfs/" == "${OUTPUT_PATH}" -a \
+  -z "${JENKINS_HOME}" -a \
+  -n "$(command -v cpio)" -a \
+  -n "$(command -v docker)" -a \
+  -z "${EXPERIMENTAL_HTML}" -a \
+  -n "$(command -v find)" \
+  ]; then
+  echo "${BOLD}Creating HTML versions in 3 seconds${RESET}"
+  sleep 3
+  cd ${OUTPUT_PATH}
+  shopt -s globstar nullglob
+  for pdf in **/*.pdf; do
+    echo "${BOLD}${pdf}${RESET}"
+    # TODO: Localize this https://imagelayers.io/?images=bwits%2Fpdf2htmlex
+    docker run -u "$(id -u):$(id -g)" -it --rm -v "$(dirname $(realpath ${pdf}))":/pdf bwits/pdf2htmlex pdf2htmlEX --zoom 1.5 --clean-tmp 0 "$(basename ${pdf})"
+  done
+  echo "${BOLD}Moving to ${REPO_PATH}/doc/html/${RESET}"
+  find . -name '*.html' | cpio -vpdm ${REPO_PATH}/doc/html/
+  find . -name '*.html' -not -name 'index.html' -delete
+  echo "${BOLD}Fixing ${REPO_PATH}/doc/html/index.html${RESET}"
+  sed -i -e 's|\(\./.*\)\.pdf|\1.html|g' ${REPO_PATH}/doc/html/index.html
+fi

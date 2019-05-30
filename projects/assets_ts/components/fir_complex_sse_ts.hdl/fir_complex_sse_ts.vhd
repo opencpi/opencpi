@@ -58,7 +58,7 @@
 
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 use ieee.math_real.all;
-library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
+library ocpi; use ocpi.types.all; use ocpi.util.all;-- remove this to avoid all ocpi name collisions
 
 --architecture rtl of fir_complex_sse_worker is
 architecture rtl of worker is
@@ -104,7 +104,7 @@ architecture rtl of worker is
   signal raw_done_r              : std_logic;
   signal group_delay_max         : std_logic;
   signal group_delay_zero        : std_logic;
-  signal group_delay_counter     : unsigned(31 downto 0);
+  signal group_delay_counter     : unsigned(width_for_max(GROUP_DELAY_c)-1 downto 0);
   signal flush_opcode            : std_logic;
   signal drop_opcode             : std_logic;
   signal flush_in_progress       : std_logic;

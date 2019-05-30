@@ -209,12 +209,33 @@ However, if developers previously made implementation-specific assumptions, thei
 Starting with 1.4, some RPMs pre-install symlinks for rules in \path{/etc/udev/rules.d/} for certain radio platforms, \textit{e.g.} a rule to create a symlink from \path{/dev/matchstiq_z1_0} to \path{/dev/ttyUSB0}.
 \input{snippets/udev_Reread}
 
-\subsection{``python3'' Symlink Missing} % AV-5477
+\subsection{Emulators Not Constrained To Specific Containers In Unit Tests} % AV-5496
+\label{bug:5496}
+When an emulator-based test harness is built for multiple simulators (\textit{e.g.} ``isim'' and ``xsim''), running the unit test does not guarantee that all workers are running on the same container.
+For example, when ``\path{lime_dac_ts.test}'' is built for both isim and xsim, test execution could pass for isim, but might later fail with xsim.
+Review of the log file shows that the emulator worker is erroneously running on an isim container and not the expected xsim container.
+The recommended workaround is to only build and test for a \textit{single} simulator at a given time, ensuring there is only one artifact that satisfies the test's requirements.
+
+\subsection{Provided LiquidDSP Build May Link Incorrectly} % AV-5543
+\label{bug:5543}
+\textit{Note:} This bug \textit{only} affects source-based building; RPM-based users will not encounter this issue.\\
+
+The ``LiquidDSP'' library is provided as a prerequisite of the ``assets'' Project.
+It is currently used by one worker, ``\path{complex_mixer.rcc}'', which uses it for its Numerically Controlled Oscillator (NCO).
+If the LiquidDSP library is built on a system that has the ``FFTW'' library installed, it will attempt to use it.
+However, any user-developed RCC Worker attempting to use LiquidDSP functions that use the FFTW back-end will fail at runtime with an undefined symbol (\textit{e.g.} \path{fftwf_execute}).
+The recommended workaround is to use the compiled \path{libliquid} from the RPM installation (\textit{e.g.} \path{/opt/opencpi/cdk/centos7/lib/libliquid.a} or \path{/opt/opencpi/cdk/xilinx13_3/lib/libliquid.a}) or to rebuild the prerequisites without the FFTW libraries installed.\\
+
+This problem was found late within the 1.5 release cycle and will be addressed with the next major release.
+
+\iffalse % Fixed in both RPM and source; will remove block in 1.6
+\subsection{``python3'' Symlink Missing} % AV-5477, AV-5478
 \label{bug:5477}
 Some ``python3'' RPMs do not provide a default symlink from \path{/usr/bin/python3} to their proper executable\footnote{For example, CentOS~7's \path{python34-3.4.10-1.el7.x86_64} does not, while the slightly-older \path{3.4.9-2.el7.x86_64} did.}.
 This is not considered a deficiency of the framework itself, but the Python packager.
 If your system does not have \path{/usr/bin/python3}, a system administrator needs to create one for you pointing to your installation of Python3, \textit{e.g.} ``\code{cd /usr/bin; sudo ln -s python3.4 python3}'' for Python 3.4.
 The \path{opencpi-devel} RPM works around this by installing a symlink, but non-RPM users \textit{may} need to manually create the symlink.
+\fi
 
 \subsection{Previously Documented Deficiencies}
 The following deficiencies are still present in 1.5:

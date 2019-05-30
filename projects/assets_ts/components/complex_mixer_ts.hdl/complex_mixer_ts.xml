@@ -1,5 +1,8 @@
 <HdlWorker language='vhdl' spec='complex_mixer_ts-spec' DataWidth='32'>
 
+  <!-- Other included XML -->
+  <xi:include href='peak-detector-properties.xml'/>
+
   <Property Name='NCO_DATA_WIDTH_p' Type='uchar' Parameter='true' Default='12'
 	    Description='Output data width of NCO'/>
 
@@ -9,14 +12,8 @@
   <Property Name='CORDIC_STAGES_p' Type='uchar' Parameter='true' Default='16'
 	    Description='Number of CORDIC stages implemented in NCO'/>
 
-  <Property Name='PEAK_MONITOR_p' Type='bool' Parameter='true' Default='true'
-	    Description='Include peak monitor circuit'/>
-
   <Property Name='LATENCY_p' Type='ushort' Parameter='true' Default='2'
 	    Description='Number of clock cycles between a valid input and a valid output'/>
-
-  <Property Name='peak' Type='short' Volatile='true'
-	    Description='Output of peak detector'/>
 
   <Property Name='phs_init' Type='short' Writable='true' Default='0'
 	    Description='Initial phase of NCO'/>

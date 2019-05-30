@@ -1,12 +1,22 @@
-<HdlWorker Language='vhdl' Spec='cic_dec_ts-spec.xml' datawidth='32' version='2'>
+<HdlWorker Language='vhdl' Spec='cic_dec_ts-spec.xml' version='2' datawidth='32'>
 
-  <Property Name='LATENCY_p' Type='ushort' Parameter='true' Default='1'
-	    Description='Number of clock cycles between a valid input and a valid output'/>
+  <!-- Other included XML -->
+  <xi:include href='peak-detector-properties.xml'/>
 
-  <Property Name='GROUP_DELAY_p' Type='ushort' Parameter='true' Default='(N+1)*R'
+  <SpecProperty Name='N' Parameter='true' Default='3'/>
+
+  <SpecProperty Name='M' Parameter='true' Default='1'/>
+
+  <SpecProperty Name='R' Parameter='true' Default='4'/>
+
+  <SpecProperty Name='DATA_WIDTH' Parameter='true' Default='16'/>
+
+  <SpecProperty Name='ACC_WIDTH' Parameter='true' Default='22'/>
+
+  <Property Name='GROUP_DELAY_p' Parameter='true' Default='N*M*R' 
 	    Description='Number of valid inputs before a valid output is given'/>
 
   <StreamInterface Name='in'/>
-  <StreamInterface Name='out' insertEOM='1' workerEOF='1'/>
+  <StreamInterface Name='out'/>
 
 </HdlWorker>

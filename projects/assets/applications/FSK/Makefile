@@ -60,7 +60,7 @@ remote system and, subsequent verification of the output data on the development
 Test 1: filerw - Application Workers only in loopback mode (no RF; no device workers)
 Test 2: rx - receive only
 Test 3: tx - transmit only
-Test 4: txrx - transmit and receive (may use COAX cable for loopback)
+Test 4: txrx - transmit and receive (may use coax cable for loopback)
 Test 5: bbloopback - TX/RX with baseband loopback path of the transceiver device
 
 There are four steps for executing a test:
@@ -74,7 +74,6 @@ NOTE: Required only if ACI has never been built.
 ocpidev build --rcc-platform xilinx13_3
 or
 ocpidev build --rcc-platform xilinx13_4
-or
 ----------------------------------------------------------------------------
 2) Setup the OCPI_LIBRARY_PATH: (remote system)
 IMPORTANT NOTE: this guide assumes you are operating in NFS/Network mode on the

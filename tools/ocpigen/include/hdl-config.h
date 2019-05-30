@@ -46,7 +46,7 @@ typedef std::list<DevInstance> DevInstances;
 typedef DevInstances::const_iterator DevInstancesIter;
 
 #define HDL_CONFIG_ATTRS "platform", "sdpWidth", "constraints"
-#define HDL_CONFIG_ELEMS "cpmaster", "nocmaster", "device", "property"
+#define HDL_CONFIG_ELEMS "cpmaster", "nocmaster", "device", "property", "signal"
 
 typedef std::vector<const Card*> Plugged;
 
@@ -61,7 +61,7 @@ protected:
   DevInstances &devInstances() { return m_devInstances; }
   const char *
   parseDevInstances(ezxml_t xml, const char *parentFile, Worker *parent,
-		    DevInstances *baseInstances); 
+		    DevInstances *baseInstances);
   const char *
   parseDevInstance(const char *device, ezxml_t x, const char *parentFile, Worker *parent,
 		   bool control,
@@ -86,7 +86,7 @@ class HdlConfig : public Worker, public HdlHasDevInstances {
   const HdlPlatform &m_platform;
   Plugged      m_plugged;      // what card is in each slot in this configuration
   size_t       m_sdpWidth;
-public:  
+public:
   static HdlConfig *
   create(ezxml_t xml, const char *knownPlatform, const char *xfile, Worker *parent,
 	 const char *&err);

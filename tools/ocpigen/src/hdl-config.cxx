@@ -66,7 +66,7 @@ findDevInstance(const Device &dev, const Card *card, const Slot *slot,
 
 const char *HdlHasDevInstances::
 addDevInstance(const Device &dev, const Card *card, const Slot *slot,
-	       bool control, const DevInstance *parent, DevInstances *baseInstances,
+	       bool control, const DevInstance *parent, DevInstances */*baseInstances*/,
 	       ezxml_t xml, const DevInstance *&devInstance) {
   const char *err;
   m_devInstances.push_back(DevInstance(dev, card, slot, control, parent));
@@ -75,6 +75,7 @@ addDevInstance(const Device &dev, const Card *card, const Slot *slot,
   if (slot && !m_plugged[slot->m_ordinal])
     m_plugged[slot->m_ordinal] = card;
   DevInstance &di = m_devInstances.back();
+#if 0
   // See which (sub)devices on the same board support this added device, 
   // and make sure they are present.
   const Board &bd =
@@ -91,6 +92,7 @@ addDevInstance(const Device &dev, const Card *card, const Slot *slot,
 					  NULL, sdi)))
 	  return err;
       }
+#endif
   devInstance = &di;
   if ((err = dev.m_deviceType.parseDeviceProperties(xml, di.m_instancePVs)))
     return err;
@@ -279,7 +281,29 @@ parseDevInstances(ezxml_t xml, const char *parentFile, Worker *parent,
       err = parseDevInstance(name.c_str(), xd, parentFile, parent, control, baseInstances, NULL,
 			     NULL);
   }
-  return err;
+  if (err)
+    return err;
+  // After the first pass, which creates explicit device instances that might have parameters,
+  // we auto-instantiate devices that support the ones we have
+  for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
+    const DevInstance &di = *dii;
+    // See which (sub)devices on the same board support this added device, 
+    // and make sure they are present.
+    const Board &bd =
+      di.card ? static_cast<const Board&>(*di.card) : static_cast<const Board&>(m_platform);
+    for (DevicesIter bi = bd.m_devices.begin(); bi != bd.m_devices.end(); bi++)
+      for (SupportsIter si = (*bi)->m_deviceType.m_supports.begin();
+	   si != (*bi)->m_deviceType.m_supports.end(); si++)
+	// FIXME: use the package name here...
+	//      if (&(*si).m_type == &dev.m_deviceType && // the sdev supports this TYPE of device
+	if (!strcasecmp((*si).m_type.m_implName, di.device.m_deviceType.m_implName) &&
+	    (*bi)->m_ordinal == di.device.m_ordinal) { // the ordinals match. FIXME allow mapping
+	  const DevInstance *sdi = findDevInstance(**bi, di.card, di.slot, baseInstances, NULL);
+	  if (!sdi && (err = addDevInstance(**bi, di.card, di.slot, false, &di, NULL, NULL, sdi)))
+	    return err;
+      }
+  }
+  return NULL;
 }
 
 void HdlHasDevInstances::
@@ -414,7 +438,7 @@ create(ezxml_t xml, const char *knownPlatform, const char *xfile, Worker *parent
   std::string pfile;
   ezxml_t pxml;
   HdlPlatform *pf;
-  // 
+
   if ((err = parseFile(myPlatform.c_str(), xfile, "HdlPlatform", &pxml, pfile)) ||
       !(pf = HdlPlatform::create(pxml, pfile.c_str(), NULL, err)))
     return NULL;
@@ -456,7 +480,8 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
   // Add the platform worker as a device instance
   const DevInstance *pfdi;
   const HdlPlatform &cpf = pf;
-  if ((err = addDevInstance(cpf, NULL, NULL, control, NULL, NULL, xml, pfdi)))
+  if ((err = addDevInstance(cpf, NULL, NULL, control, NULL, NULL, xml, pfdi)) ||
+      (err = pf.parseSignalMappings(xml, pf, NULL)))
     return;
   //hdlAssy = true;
   m_plugged.resize(pf.m_slots.size());

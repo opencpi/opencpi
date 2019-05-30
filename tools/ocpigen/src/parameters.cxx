@@ -207,7 +207,7 @@ parse(ezxml_t px, const OU::Property *p, const Worker *worker, bool global) {
       return err;
     value = fileValue.c_str();
   } else if (valuesFile) {
-    if ((err = (prop.needsComma() ? 
+    if ((err = (prop.needsComma() ?
 		OU::file2String(fileValue, valuesFile, "{", "},{", "}") :
 		OU::file2String(fileValue, valuesFile, ','))))
       return err;
@@ -359,7 +359,7 @@ parse(ezxml_t cx, const ParamConfigs &configs) { // , bool includeInitial) {
     OU::format(id, "%zu", nConfig);
   }
   // Note that this resize when including initial props, will overallocate, e.g. volatiles.
-  params.resize(//includeInitial ? m_worker.m_ctl.properties.size() : 
+  params.resize(//includeInitial ? m_worker.m_ctl.properties.size() :
 		m_worker.m_ctl.nParameters);
   for (ezxml_t px = ezxml_cchild(cx, "parameter"); px; px = ezxml_cnext(px)) {
     if ((err = OE::checkAttrs(px, PARAM_ATTRS, NULL)))
@@ -628,7 +628,7 @@ parseBuildXml(ezxml_t x, const std::string &file) {
       return err;
   }
   // Third pass: if we encountered no configurations at all, we generate default ones.
-  if (!m_paramConfigs.size() && 
+  if (!m_paramConfigs.size() &&
       (err = doParam(m_build.m_globalParams, m_ctl.properties.begin(), true, 0)))
     return err;
   return m_build.parse(x, file.c_str());
@@ -869,7 +869,7 @@ emitMakefile(FILE *xmlFile) {
     return err;
   for (size_t n = 0; n < m_paramConfigs.size(); n++)
     m_paramConfigs[n]->used = true;
-  return writeParamFiles(mkFile, xmlFile);  
+  return writeParamFiles(mkFile, xmlFile);
 }
 // Based on worker xml, read the <worker>-build.xml, and emit the generics file
 const char *Worker::
@@ -890,22 +890,6 @@ emitHDLConstants(size_t config, bool other) {
     OU::esprintf("File close of VHDL generics file failed.  Disk full?") : NULL;
 }
 
-#if 0
-const char *Worker::
-getParamConfig(const char *id, const ParamConfig *&config) {
-  const char *err = parseConfigFile();
-  if (!err) {
-    const ParamConfig *pc = &m_paramConfigs[0];
-    for (size_t n = m_paramConfigs.size(); n; n--, pc++)
-      if (!strcasecmp(id, pc->id.c_str())) {
-	config = pc;
-	return NULL;
-      }
-    err = OU::esprintf("No parameter configuration found with id: '%s'", id);
-  }
-  return err;
-}
-#endif
 // Given assembly instance properties or a parameter configuration,
 // establish the parameter values for this worker.
 // Note this worker will then be parameter-value-specific.
@@ -1045,7 +1029,7 @@ const char *Build::
 parse(ezxml_t x, const char *buildFile) {
   Model m = m_worker.m_model;
   // Expand and make sure they are valid platform names
-  const char 
+  const char
     *err,
     *aonly = ezxml_cattr(x, "onlyplatforms"),
     *aexclude = ezxml_cattr(x, "excludeplatforms");

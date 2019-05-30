@@ -231,8 +231,7 @@ specific partition and content. The recommend method for formatting a new SD car
 \begin{enumerate}
 	\item Format an SD card for OpenCPI, (restore to its original factory default captured in the previous section), run the command \\ \\
 	\texttt{\$ dd of=DEVICENAME if=backup.image}
-	\item In addition to the factory default partition and its contents, only one file, named \textit{u-boot.bin}, is necessary to be maintained from the factory SD card.
-For convenience, the OpenCPI RPM installation provides a copy of this required u-boot.bin file and is discussed in the following section. For this step, simply remove all factory files and directories to allow OpenCPI content (and copy of u-boot.bin) to be placed onto the SD card, as detailed in the following section.
+	\item To prepare for OpenCPI provided content to be placed onto the SD card, remove all factory files and directories from the ATLAS partition.
 \end{enumerate}
 
 \subsection{Copy embedded OS files to SD card, ``ATLAS'' partition}
@@ -240,10 +239,6 @@ For convenience, the OpenCPI RPM installation provides a copy of this required u
 \begin{flushleft}
 
 WARNING: The user must ensure that the contents of the SD, match the version of the OpenCPI release that the artifacts were built against.\\ \medskip
-
-NOTE: When using the factory SD card, all files except the \textit{u-boot.bin} can be ignored or deleted. \\ \medskip
-
-Any files/directories copied to the ``ATLAS'' partition will appear at \texttt{/mnt/card} on the Matchstiq-Z1.\\ \medskip
 
 Copy the following files/directories into the ``ATLAS'' partition:
 \begin{verbatim}
@@ -256,7 +251,9 @@ $ cp /opt/opencpi/cdk/matchstiq_z1/sdcard-xilinx13_3/uImage /run/media/<user>/AT
 $ cp /opt/opencpi/cdk/matchstiq_z1/sdcard-xilinx13_3/uramdisk.image.gz /run/media/<user>/ATLAS/
 \end{verbatim}
 
-\textbf{The need to copy the \textit{/opt/opencpi/cdk/matchstiq\_z1/opencpi} onto the SD card is dependent on the desired operating mode (Standalone vs Network) and is discussed in the following sections.}
+Any files/directories copied to the ``ATLAS'' partition will appear at /mnt/card on the Matchstiq-Z1.\\ \medskip
+
+The need to copy the \textit{/opt/opencpi/cdk/matchstiq\_z1/opencpi} onto the SD card is dependent on the desired operating mode (Standalone vs Network) and is discussed in the following sections.
 \end{flushleft}
 
 \subsection{Copy files to SD card for desired Mode(s)}

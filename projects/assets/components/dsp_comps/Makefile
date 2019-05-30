@@ -29,6 +29,7 @@ Tests = \
 	pr_cordic.test \
 	cic_dec.test \
 	cic_int.test \
+	downsample.test \
 
 # All workers created here will be built automatically
 # If you want to limit the workers that actually get built, set the Workers= variable
@@ -45,5 +46,6 @@ Workers = \
 	pr_cordic.hdl \
 	cic_dec.hdl \
 	cic_int.hdl \
+	downsample.hdl \
 
 include $(OCPI_CDK_DIR)/include/library.mk

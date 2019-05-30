@@ -657,15 +657,15 @@ emitDeviceSignalMappings(FILE *f, std::string &last) {
     Signal &s = **si;
     ocpiDebug("DeviceSignalMappings %s: %zu %u %d",
 	      s.cname(), m_paramConfig->nConfig, s.m_direction, m_type == Container);
-    if (s.m_directionExpr.size() && m_type != Container)
+    if ((s.m_directionExpr.size() || s.m_widthExpr.size()) && m_type != Container)
       anyExpr = true;
     else
       emitDeviceSignalMapping(f, last, s, "");
   }
   if (anyExpr) {
-    fputs(last.c_str(), f);
+    fputs("\n", f); // last.c_str(), f);
     fprintf(f,
-	    "  %s There are additional signals whose direction is parameterized and are not\n"
+	    "  %s There are additional signals whose direction or width are parameterized and are not\n"
 	    "  %s mapped here. They are defined in comments in the generics.vhd file for each\n"
 	    "  %s specific build configuration.  They are inserted below in the copy of this\n"
 	    "  %s file that is created in each target directory.\n"
@@ -678,14 +678,14 @@ void Worker::
 emitDeviceSignals(FILE *f, Language lang, std::string &last) {
   bool anyExpr = false;
   for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++)
-    if ((*si)->m_directionExpr.size() && lang == VHDL)
+    if (((*si)->m_directionExpr.size() || (*si)->m_widthExpr.size()) && lang == VHDL)
       anyExpr = true;
     else
       emitDeviceSignal(f, lang, last, **si, "");
   if (anyExpr) {
-    emitLastSignal(f, last, lang, false);
+    emitLastSignal(f, last, lang, true);  // we're still not sure there will non-UNUSED signals
     fprintf(f,
-	    "  %s There are additional signals whose direction is parameterized and are not\n"
+	    "  %s There are additional signals whose direction or width are parameterized and are not\n"
 	    "  %s defined here. They are defined in comments in the generics.vhd file for each\n"
 	    "  %s specific build configuration.  They are inserted below in the copy of this\n"
 	    "  %s file that is created in each target directory.\n"
@@ -1811,7 +1811,7 @@ emitImplHDL(bool wrap) {
 	      maxPropName, "abort_control_op",
 #if 1
 	      ";"
-#else	      
+#else
 	      !m_scalable && m_ctl.nRunProperties == 0 ? " " : ";"
 #endif
 	      );
@@ -2801,4 +2801,3 @@ emitBsvHDL() {
 #endif
   return 0;
 }
-

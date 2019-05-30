@@ -1,5 +1,8 @@
 <HdlWorker Language='vhdl' Spec='fir_complex_sse_ts-spec.xml' DataWidth='32' Version='2'>
 
+  <!-- Other included XML -->
+  <xi:include href='peak-detector-properties.xml'/>
+
   <SpecProperty Name='taps' Raw='true'/>
 
   <Property Name='DATA_WIDTH_p'                Parameter='true' Default='16' 
@@ -10,10 +13,6 @@
 	    Description='Number of clock cycles between a valid input and a valid output'/>
   <Property Name='GROUP_DELAY_p'               Parameter='true' Default='NUM_TAPS_p/2+4' 
 	    Description='Number of valid inputs before a valid output is given'/>
-  <Property Name='PEAK_MONITOR_p' Type='bool'  Parameter='true' Default='true'
-	    Description='Include peak monitor circuit'/>
-  <Property Name='peak'           Type='short' Volatile='true'
-	    Description='Read-only amplitude which may be useful for gain control'/>
 
   <StreamInterface Name='in'/>
   <StreamInterface Name='out' insertEOM='1'/>

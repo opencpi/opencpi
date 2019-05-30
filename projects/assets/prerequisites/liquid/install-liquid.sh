@@ -50,7 +50,7 @@ ACLOCAL="aclocal -Iscripts" ./bootstrap.sh
 echo Performing '"./configure"'
 ./configure ${OcpiCrossHost:+--host=$OcpiCrossHost} \
   --prefix=$OcpiInstallDir --exec-prefix=$OcpiInstallExecDir \
-  --includedir=$OcpiInstallDir/include \
+  --includedir=$OcpiInstallDir/include --enable-fftoverride\
   CFLAGS=-g CXXFLAGS=-g
 make
 make install

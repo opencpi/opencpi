@@ -1,0 +1,9 @@
+<ComponentSpec>
+
+  <Property Name='R' Type='ushort'
+	    Description='Decimation Factor'/>
+
+  <Port Name='in'  Protocol='iqstream_protocol.xml'/>
+  <Port Name='out' Protocol='iqstream_protocol.xml' Producer='true'/>
+
+</ComponentSpec>

@@ -43,7 +43,7 @@ create(ezxml_t xml, const char *xfile, Worker *parent, const char *&err) {
 HdlPlatform::
 HdlPlatform(ezxml_t xml, const char *xfile, Worker *parent, const char *&err)
   : HdlDevice(xml, xfile, "", parent, Worker::Platform, NULL, err), Board(m_sigmap, m_signals),
-    ::Device(*this, *this, cname(), NULL, true, 0, NULL, err),
+    ::Device(*this, *this, cname(), xml, true, 0, NULL, err),
     m_control(false) {
   m_isDevice = true;
   if (err ||

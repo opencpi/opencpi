@@ -1,0 +1,7 @@
+<!-- This is the spec file (OCS) for: param_test
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<ComponentSpec>
+  <!-- Add property and port elements here -->
+</ComponentSpec>

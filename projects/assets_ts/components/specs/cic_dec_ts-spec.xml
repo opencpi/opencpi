@@ -1,18 +1,18 @@
 <ComponentSpec>
 
-  <Property Name='N' Type='uchar' Parameter='true' Default='3'
+  <Property Name='N' Type='uchar'
 	    Description='Number of Stages'/>
 
-  <Property Name='M' Type='uchar' Parameter='true' Default='1'
+  <Property Name='M' Type='uchar'
 	    Description='Differential Delay'/>
 
-  <Property Name='R' Type='ushort' Parameter='true' Default='4'
+  <Property Name='R' Type='ushort'
 	    Description='Decimation Factor'/>
 
-  <Property Name='DATA_WIDTH' Type='uchar' Parameter='true' Default='16'
+  <Property Name='DATA_WIDTH' Type='uchar'
 	    Description='Data width'/>
 
-  <Property Name='ACC_WIDTH' Type='uchar' Parameter='true'
+  <Property Name='ACC_WIDTH' Type='uchar'
 	    Description='Accumulation Width'/>
 
   <Port Name='in'  Protocol='ComplexShortWithMetadata-prot'/>

@@ -951,7 +951,7 @@ mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
 	std::string dname, ename;
 	if (di.slot && !inContainer)
 	  OU::format(dname, "%s_%s_%s", di.slot->m_name.c_str(), di.device.cname(), devSig.c_str());
-	else if (inContainer)
+	else if (inContainer || di.device.m_deviceType.m_type == Worker::Platform)
 	  dname = devSig.c_str();
 	else
 	  OU::format(dname, "%s_%s", di.device.cname(), devSig.c_str());
@@ -971,8 +971,8 @@ mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
 	} else
 	  ename = boardName;
 	//	if (ename.length())
-	  OU::formatAdd(assy, "    <signal name='%s' external='%s'/>\n",
-			dname.c_str(), ename.c_str());
+	OU::formatAdd(assy, "    <signal name='%s' external='%s'/>\n",
+		      dname.c_str(), ename.c_str());
       } else {
 	Signal *ns = new Signal(**i);
 	if (di.device.deviceType().m_type != Worker::Platform)

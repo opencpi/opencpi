@@ -1,0 +1,30 @@
+<build>
+  <configuration>
+    <parameter name='NUM_INPUTS_p' value='1'/>
+    <parameter name='DIR_p' value='0'/>
+  </configuration>
+  <configuration>
+    <parameter name='NUM_INPUTS_p' value='2'/>
+    <parameter name='DIR_p' value='1'/>
+  </configuration>
+  <configuration>
+    <parameter name='NUM_INPUTS_p' value='3'/>
+    <parameter name='DIR_p' value='2'/>
+  </configuration>
+  <configuration>
+    <parameter name='NUM_INPUTS_p' value='4'/>
+    <parameter name='DIR_p' value='3'/>
+  </configuration>
+  <configuration>
+    <parameter name='NUM_INPUTS_p' value='5'/>
+    <parameter name='DIR_p' value='0'/>
+  </configuration>
+  <configuration>
+    <parameter name='NUM_INPUTS_p' value='3'/>
+    <parameter name='DIR_p' value='0'/>
+  </configuration>
+  <configuration>
+    <parameter name='NUM_INPUTS_p' value='4'/>
+    <parameter name='DIR_p' value='0'/>
+  </configuration>
+</build>

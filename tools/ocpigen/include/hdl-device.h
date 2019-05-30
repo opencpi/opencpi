@@ -58,7 +58,7 @@ public:
   bool               m_canControl;    // Can this interconnect worker provide control?
   Supports           m_supports;      // what subdevices are supported?
   static HdlDevice *
-  get(const char *name, const char *parentFile, Worker *parent, const char *&err);
+    get(const char *name, ezxml_t xml, const char *parentFile, Worker *parent, const char *&err);
   static HdlDevice *create(ezxml_t xml, const char *file, const char *parentFile, Worker *parent,
 			   OU::Assembly::Properties *instancePVs, const char *&err);
   HdlDevice(ezxml_t xml, const char *file, const char *parentFile, Worker *parent,
@@ -93,6 +93,7 @@ struct Device {
   create(Board &b, ezxml_t xml, const char *parentFile, Worker *parent, bool single,
 	 unsigned ordinal, SlotType *stype, const char *&err);
   const char *parse(ezxml_t x, Board &b, SlotType *stype);
+  const char *parseSignalMappings(ezxml_t x, Board &b, SlotType *stype);
   const DeviceType &deviceType() const { return m_deviceType; }
   const char *cname() const { return m_name.c_str(); }
   static const Device *

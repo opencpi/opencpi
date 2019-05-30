@@ -1,0 +1,3 @@
+<HdlContainer Platform="zed">
+  <Device Name="param_test" Card="param_test_card_2"/>
+</HdlContainer>

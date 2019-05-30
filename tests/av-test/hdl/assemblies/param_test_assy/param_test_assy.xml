@@ -1,0 +1,5 @@
+<!-- The param_test_assy HDL assembly xml file -->
+<HdlAssembly>
+  <!-- Remove this instance and replace it with real ones -->
+  <Instance Worker='nothing' name='nothing'/>
+</HdlAssembly>

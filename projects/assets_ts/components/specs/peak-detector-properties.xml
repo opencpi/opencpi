@@ -1,0 +1,9 @@
+<Properties>
+
+  <Property Name='PEAK_MONITOR_p' Type='bool' Parameter='true' Default='true'
+	    Description='Include peak monitor circuit'/>
+
+  <Property Name='peak' Type='short' Volatile='true'
+	    Description='Output of peak detector'/>
+
+</Properties>

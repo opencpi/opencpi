@@ -86,6 +86,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \usepackage{amsmath} % Advanced math typesetting
 \usepackage[utf8]{inputenc} % Unicode support (Umlauts etc.)
 \usepackage[english]{babel} % Change hyphenation rules
+\usepackage[toc,page]{appendix}
 
 %\usepackage[backend=bibtex,style=verbose-trad2]{biblatex} % Use biblatex package
 %\bibliography{quick} % The name of the .bib file (name without .bib)
@@ -114,7 +115,7 @@ Revision & Description of Change & Date\\
 & Initial, from earlier doc sources & 02-2018\\ \hline
 1.0 & Revision for v1.4& 09-2018\\  \hline
 2.0 & Updates for v1.5 & 05-2019 \\\hline
-2.1 & Converted to \LaTeX & 05-2019\\
+2.1 & Converted to \LaTeX, added build instructions & 05-2019\\
 \hline
 \end{tabular}
 
@@ -899,10 +900,11 @@ The figure below demonstrates this behavior. An input element can either have a 
 	\includegraphics[width=.65\textwidth]{DisplayofAttributeChoice.png}
  \end{figure}
 
-
 \newpage
-\section{Appendix A}
-\subsection{Eclipse Basics}
+\setcounter{secnumdepth}{1} % Put section numbers on appendices
+\begin{appendices}
+\appendix
+\section{Eclipse Basics}
 A central abstraction for Eclipse is \textbf{the workspace}. This is a directory Eclipse uses to maintain state and projects. When Eclipse opens, it prompts the user to Select a workspace with the following dialog preset for a default directory name in the user’s home directory. If the workspace directory does not exist yet, it will be created. This directory path name can be changed. The Browse Button allows navigation to another location to either create the workspace or select an existing workspace directory.
  \begin{figure}[h!]
 	\centering
@@ -934,7 +936,7 @@ OpenCPI projects will not appear in the OpenCPI Projects View unless they are op
 	\caption{Eclipse Workspace}{}
 	\includegraphics[width=\textwidth]{EclipseWorkspace.png}
  \end{figure}
-
+\newpage
 \section{Eclipse Basic Concepts}
 Eclipse uses \textbf{Perspectives} to provide various sets of tools that together focus on a given perspective of development. A perspective consists of a workbench layout of a complimentary set of Eclipse views. A \textbf{view} is a workbench panel that provides a specific capability. For example, the Eclipse Project Explorer View provides a graphical view of the file system and the ability to navigate through and act upon it. The Window Tab in the Main Menu Bar at the top of the window provides navigation to the available perspectives and views, as well as, workbench window controls and user preferences. \\
 
@@ -944,9 +946,91 @@ A final note: the user can rearrange a perspective layout, add, or remove views,
 
 The OpenCPI Projects View or the ocpidev command should be used to delete OpenCPI projects and assets. Editors and tool chains – Review the Workbench Overview panel and look over C/C++ Development documentation.
 \newpage
-\section{Appendix B}
-\subsection{Additional Plugins for the IDE}
+\section{Additional Plugins for the IDE}
 If the development machine has access to the internet or a mirrored Eclipse Marketplace, consider the following software to enhance the AV IDE experience. The Marketplace link is found under the Help link in the top navigation bar. The Marketplace makes it very easy to search, browse and review software. Using the IDE navigate to Help-Eclipse Marketplace. Search for the packages below; it is a simple install button click to get the package.\\
 \subsection{TM Terminal 4.0}
-Search for Terminal in the Marketplace to see a number of available terminal packages. The TM Terminal 4 has been used successfully by the AV team. Click the install button to install the product. Typically, an agreement must be excepted to continue.\\
+Search for Terminal in the Marketplace to see a number of available terminal packages. The TM Terminal 4 has been used successfully by the AV team. Click the install button to install the product. Typically, an agreement must be accepted to continue.\\
+\newpage
+\section{Build The IDE}
+\newcommand{\cmd}[1]{\subitem \textbf{cmd:} \code{#1}}
+\subsection{Introduction}
+The OpenCPI/ANGRYVIPER IDE Plugin can be built from source with the following instructions. These commands assume they are performed by the ``root'' user, while normally discouraged, is usually performed within a Docker container running a Fedora OS.
+\subsection{Instructions}
+Follow the steps below, in the directory of your choice ``\path{$DIR}''. %$
+\begin{enumerate}
+\item Install Sapphire Dependency
+\cmd{mkdir \$DIR/temp \&\& cd \$DIR/temp}
+\cmd{wget --output-document=tempo.zip}
+\url{"http://www.eclipse.org/downloads/download.php?file=/sapphire/9.1/sapphire-repository-9.1.zip&r=1"}
+\cmd{unzip -q tempo.zip}
+\cmd{mkdir -p /usr/share/java/sapphire/}
+\cmd{mv plugins/*jar /usr/share/java/sapphire/}
+\cmd{rm -rf *}
+
+\item Install Web Tools Platform (WTP) Dependency
+\cmd{mkdir \$DIR/temp \&\& cd \$DIR/temp}
+\cmd{wget --output-document=tempo.zip}
+\url{"https://www.eclipse.org/downloads/download.php?file=/webtools/downloads/drops/R3.9.5/R-3.9.5-20180409100740/wtp-repo-R-3.9.5-20180409100740.zip&r=1"}
+\cmd{unzip -q tempo.zip}
+\cmd{mkdir -p /usr/share/java/wtp/}
+\cmd{mv plugins/*jar /usr/share/java/wtp/}
+\cmd{rm -rf *}
+
+\item Install Eclipse Dependencies
+\cmd{dnf install eclipse-gef-sdk tycho tycho-extras}
+
+\item Download Eclipse Neon
+\cmd{cd \$DIR}
+\cmd{wget --output-document=eclipse.tar.gz}
+\url{"https://www.eclipse.org/downloads/download.php?file=/technology/epp/downloads/release/neon/3/eclipse-cpp-neon-3-linux-gtk-x86_64.tar.gz&r=1"}
+\cmd{tar xf eclipse-cpp-neon-3-linux-gtk-x86\_64.tar.gz}
+
+\item Use Eclipse Command-Line To Download Prerequisites
+\cmd{cd \$DIR}
+\bgroup\obeylines
+\cmd{./eclipse/eclipse \textbackslash
+-clean -purgeHistory -noSplash -destination ./temp \textbackslash
+-application org.eclipse.equinox.p2.director \textbackslash
+-repository \textbackslash
+"http://download.eclipse.org/tools/gef/updates/legacy/releases/, \textbackslash
+http://download.eclipse.org/releases/neon" \textbackslash
+-installIUs "\textbackslash
+org.eclipse.gef.sdk.feature.group, \textbackslash
+org.eclipse.jdt.feature.group, \textbackslash
+org.eclipse.sapphire.feature.group, \textbackslash
+org.eclipse.sapphire.ui.feature.group, \textbackslash
+org.eclipse.sapphire.platform.feature.group, \textbackslash
+org.eclipse.sapphire.java.jdt.feature.group, \textbackslash
+org.eclipse.sapphire.java.feature.group, \textbackslash
+org.eclipse.sapphire.osgi.feature.group, \textbackslash
+org.eclipse.sapphire.sdk.feature.group, \textbackslash
+org.eclipse.sapphire.ui.swt.gef.feature.group, \textbackslash
+org.eclipse.sapphire.ui.swt.xml.editor.feature.group, \textbackslash
+org.eclipse.sapphire.modeling.xml.feature.group"}
+\egroup
+\cmd{mkdir -p \$DIR/eclipse/av\_prereqs/plugins}
+\cmd{cp -r \$DIR/temp/plugins/. \$DIR/eclipse/av\_prereqs/plugins}
+\cmd{cd \$DIR/eclipse/av\_prereqs/plugins }
+\cmd{ls -1 \$DIR/eclipse/plugins/ | xargs -r rm -rf}
+
+\item Clone OpenCPI IDE repository
+\cmd{cd \$DIR}
+\cmd{git clone}
+\url{https://github.com/opencpi/angryviper_gui.git}
+\cmd{} $<$\code{git checkout} appropriate branch$>$
+\item Build OpenCPI Plugin
+\cmd{cd angryviper\_gui/av.proj.ide.tycho}
+\cmd{xmvn -o clean verify}
+\item Combine Prerequisites + OpenCPI Plugin + Eclipse
+\cmd{mdkir -p \$DIR/eclipse/dropins/angryviper/plugins}
+\cmd{mv \$DIR/eclipse/av\_prereqs/plugins/* \$DIR/eclipse/dropins/angryviper/plugins/}
+\cmd{rm -rf \$DIR/eclipse/av\_prereqs}
+\cmd{mv \\
+\$DIR/angryviper\_gui/av.proj.ide.tycho/releng/av.proj.ide.update/target/repository/plugins/*.jar \\
+\$DIR/eclipse/dropins/angryviper/plugins/}
+\item Start Eclipse With IDE Plugin
+\cmd{\$DIR/eclipse/eclipse \&}
+\end{enumerate}
+
+\end{appendices}
 \end{document}

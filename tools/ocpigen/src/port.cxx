@@ -601,7 +601,7 @@ emitPortSignal(FILE *f, bool any, const char *indent, const std::string &fName,
   fprintf(f, "%s%s => ", any ? indent : "", fName.c_str());
   if (aName.empty()) {
     const char *missing = m_master ? slaveMissing() : masterMissing();
-    if (m_count <= 1)
+    if (m_count <= 1 && m_countExpr.empty())
       fprintf(f, "%s", missing);
     else
       fprintf(f, "(others => %s)", missing);
@@ -645,7 +645,11 @@ RawPropPort(const RawPropPort &other, Worker &w , std::string &name, size_t coun
 Port &RawPropPort::
 clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *, const char *&err)
   const {
-  return *new RawPropPort(*this, w, name, count, err);
+  RawPropPort *rpp = new RawPropPort(*this, w, name, count, err);
+  // We need to externalize the fact that the count was an expression, to preserve "array-ness"
+  if (m_countExpr.length())
+    OU::format(rpp->m_countExpr, "%zu", count);
+  return *rpp;
 }
 
 void RawPropPort::
@@ -662,12 +666,6 @@ emitRecordTypes(FILE *f) {
 
 void RawPropPort::
 emitRecordInterface(FILE *f, const char *implName) {
-  std::string scount = m_countExpr;
-  if (scount.empty())
-    OU::format(scount, "%zu", m_count);
-  else
-    OU::format(scount, "to_integer(%s)", m_countExpr.c_str());
-  fprintf(f, "  constant ocpi_port_%s_count : natural := %s;\n", pname(), scount.c_str());
   std::string in, out;
   OU::format(in, typeNameIn.c_str(), "");
   OU::format(out, typeNameOut.c_str(), "");
@@ -698,7 +696,7 @@ emitConnectionSignal(FILE *f, bool output, Language /*lang*/, bool /*clock*/, st
     Worker &w = *m_worker;
     std::string lib(w.m_library);
     w.addParamConfigSuffix(lib);
-    fprintf(f, "(0 to %s.%s_defs.ocpi_port_%s_count-1)", lib.c_str(), w.m_implName, pname());
+    fprintf(f, "(0 to %s.%s_constants.ocpi_port_%s_count-1)", lib.c_str(), w.m_implName, pname());
   }
   fprintf(f, ";\n");
 }
@@ -1089,7 +1087,7 @@ void Port::
 emitExtAssignment(FILE *f, bool int2ext, const std::string &extName, const std::string &intName,
 		  const Attachment &extAt, const Attachment &intAt, size_t connCount) const {
   std::string ours = extName;
-  if (connCount < m_count) {
+  if (connCount < m_count || m_countExpr.size()) {
     if (connCount == 1)
       OU::formatAdd(ours, "(%zu)", extAt.m_index);
     else

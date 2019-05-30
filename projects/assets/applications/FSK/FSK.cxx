@@ -90,7 +90,7 @@ template<typename T> void prompt_with_range(T& val, const char* val_c_str,
   validate_limits(val, error_message, min, max);
 }
 
-template<typename T> void prompt_auto_range(OA::Application& app,T& val, const char* val_c_str,
+template<typename T> void prompt_auto_range(OA::Application& app, T& val, const char* val_c_str,
     const char* error_message, const char* worker, const char* propmin, const char* propmax)
 {
   T min = get_worker_prop_val<T>(app, worker, propmin);
@@ -281,7 +281,7 @@ int main(int argc, char **argv) {
       printf("FSK App for alst4\n");
     }
     else if (container->platform() == "alst4x" && container->model() == "hdl")
-    { 
+    {
       ///@TODO add support
       //currentPlatform = alst4x;
       //currentFrontend = zipperFrontend;
@@ -289,7 +289,7 @@ int main(int argc, char **argv) {
       return 1;
     }
     else if (container->platform() == "ml605" && container->model() == "hdl")
-    { 
+    {
       currentPlatform = ml605;
 
       if (argc > 1)

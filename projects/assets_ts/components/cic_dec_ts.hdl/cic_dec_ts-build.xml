@@ -1,4 +1,5 @@
 <!--
+
 Build Configuration Notes:
 
 - ACC_WIDTH >= CEIL(N*log2(R*M))+DATA_WIDTH
@@ -6,14 +7,7 @@ Build Configuration Notes:
 -->
 
 <build>
-  <configuration id='0'>
-    <parameter name='N' value='3'/>
-    <parameter name='M' value='1'/>
-    <parameter name='R' value='8'/>
-    <parameter name='ACC_WIDTH' value='25'/>
-  </configuration>
-<!-- Standard Build Configurations -->
-<!--  
+
   <configuration id='0'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='1'/>
@@ -68,15 +62,6 @@ Build Configuration Notes:
     <parameter name='R' value='2048'/>
     <parameter name='ACC_WIDTH' value='60'/>
   </configuration>
--->
-<!--
-  These configurations are included for now for all builds
-  and selectivly removed in the unit test xml file until
-  the framework worker build xml file supports the ability to
-  selectively build specific configurations for specific platforms.
-  In these cases, build only for hardware platforms, not simulation platforms.
--->
-<!--
   <configuration id='9'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='1'/>
@@ -85,20 +70,26 @@ Build Configuration Notes:
   </configuration>
   <configuration id='10'>
     <parameter name='N' value='3'/>
-    <parameter name='M' value='2'/>
-    <parameter name='R' value='8191'/>
-    <parameter name='ACC_WIDTH' value='58'/>
-  </configuration>
-  <configuration id='11'>
-    <parameter name='N' value='3'/>
     <parameter name='M' value='1'/>
     <parameter name='R' value='8192'/>
     <parameter name='ACC_WIDTH' value='55'/>
   </configuration>
-  <configuration id='12'>
+  <configuration id='11'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='2'/>
     <parameter name='R' value='8192'/>
+    <parameter name='ACC_WIDTH' value='58'/>
+  </configuration>
+<!-- 
+This configuration produces an output of all zeros during the impulse test.
+That may be correct, as the python implementation produces the same output 
+but should verify.
+-->
+<!--
+  <configuration id='12'>
+    <parameter name='N' value='3'/>
+    <parameter name='M' value='2'/>
+    <parameter name='R' value='8191'/>
     <parameter name='ACC_WIDTH' value='58'/>
   </configuration>
 -->

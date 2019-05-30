@@ -21,14 +21,14 @@
 -------------------------------------------------------------------------------
 -- Revision Log:
 -------------------------------------------------------------------------------
--- 10/12/15: RMM
+-- 10/12/15:
 -- File Created
 -------------------------------------------------------------------------------
--- 07/01/17: RMM
+-- 07/01/17:
 -- Change in architecture to allow for back pressure. The input and output
 -- data now make use of DIN_RDY and DOUT_RDY to accomplish this.
 -------------------------------------------------------------------------------
--- 11/07/17: RMM
+-- 11/07/17:
 -- Another major rewrite. Simplified control logic and fixed corner cases
 -------------------------------------------------------------------------------
 
@@ -40,86 +40,86 @@ use ieee.math_real.all;
 entity cic_dec_gen2 is
 
 generic(
-   N          : positive;  -- CIC Stages: Number of Comb & Integrator sections
-   M          : positive;  -- Differential Delay: delay in comb feedforward paths (usually 1 or 2)
-   R          : positive;  -- Decimation Rate: 1 output value for every R input values
-   DIN_WIDTH  : positive;
-   ACC_WIDTH  : positive;  -- >= N*log2(RM)+DIN_WIDTH
-   DOUT_WIDTH : positive);
+   g_n          : positive;  -- CIC Stages: Number of Comb & Integrator sections
+   g_m          : positive;  -- Differential Delay: delay in comb feedforward paths (usually 1 or 2)
+   g_r          : positive;  -- Decimation Rate: 1 output value for every R input values
+   g_din_width  : positive;
+   g_acc_width  : positive;  -- >= n*log2(rm)+din_width
+   g_dout_width : positive);
 
 port(
-   CLK        : in std_logic;
-   RST        : in std_logic;
-   DIN        : in std_logic_vector(DIN_WIDTH-1 downto 0);
-   DIN_VLD    : in std_logic;
-   DIN_RDY    : out std_logic;
-   DOUT       : out std_logic_vector(DOUT_WIDTH-1 downto 0);
-   DOUT_VLD   : out std_logic;
-   DOUT_RDY   : in std_logic);
+   i_clk        : in std_logic;
+   i_rst        : in std_logic;
+   i_din        : in std_logic_vector(g_din_width-1 downto 0);
+   i_din_vld    : in std_logic;
+   o_din_rdy    : out std_logic;
+   o_dout       : out std_logic_vector(g_dout_width-1 downto 0);
+   o_dout_vld   : out std_logic;
+   i_dout_rdy   : in std_logic);
 
 end cic_dec_gen2;
 
 architecture rtl of cic_dec_gen2 is
 
-   constant RCNT_WIDTH : integer := integer(ceil(log(real(R))/log(2.0)))+1;
+   constant c_rcnt_width : integer := integer(ceil(log(real(g_r))/log(2.0)))+1;
 
-   type integ_t is array (0 to N) of std_logic_vector(ACC_WIDTH-1 downto 0);
-   type comb_t is array (0 to N) of std_logic_vector(ACC_WIDTH-1 downto 0);
-   type comb_dly_t  is array (0 to N, 0 to M) of std_logic_vector(ACC_WIDTH-1 downto 0);
+   type t_integ is array (0 to g_n) of std_logic_vector(g_acc_width-1 downto 0);
+   type t_comb is array (0 to g_n) of std_logic_vector(g_acc_width-1 downto 0);
+   type t_comb_dly is array (0 to g_n, 0 to g_m) of std_logic_vector(g_acc_width-1 downto 0);
 
-   signal rcnt         : std_logic_vector(RCNT_WIDTH-1 downto 0);
-   signal integ_en     : std_logic;
-   signal comb_en      : std_logic;
-   signal comb         : comb_t;
-   signal comb_dly     : comb_dly_t;
-   signal integ        : integ_t;
+   signal s_rcnt         : std_logic_vector(c_rcnt_width-1 downto 0);
+   signal s_integ_en     : std_logic;
+   signal s_comb_en      : std_logic;
+   signal s_comb         : t_comb;
+   signal s_comb_dly     : t_comb_dly;
+   signal s_integ        : t_integ;
 
 begin
 
    ----------------------------------------------------------------------------
    -- Timing Control for Comb and Integrator Sections:
    ----------------------------------------------------------------------------
-   -- * Integrator stages enabled when working = 0 and DIN_VLD = 1
-   -- * A single DIN_VLD sets working = 1
-   -- * Comb stages enabled when working = 1 and DOUT_RDY = 1
+   -- * Integrator stages enabled when working = 0 and i_din_vld = 1
+   -- * A single i_din_vld sets working = 1
+   -- * Comb stages enabled when working = 1 and o_dout_rdy = 1
    -- * Counter rcnt tracks processed comb samples
-   -- * done flag set when rcnt reaches R-1, setting working = 0
+   -- * done flag set when rcnt reaches g_r-1, setting working = 0
    -- * Process repeats
    ----------------------------------------------------------------------------
 
-   process(CLK)
+   process(i_clk)
    begin
-      if rising_edge(CLK) then
-         if (RST = '1') or (comb_en = '1') then
-            rcnt <= (others => '0');
-         elsif (integ_en = '1') then
-            rcnt <= std_logic_vector(unsigned(rcnt)+1);
+      if rising_edge(i_clk) then
+         if (i_rst = '1') or (s_comb_en = '1') then
+            s_rcnt <= (others => '0');
+         elsif (s_integ_en = '1') then
+            s_rcnt <= std_logic_vector(unsigned(s_rcnt)+1);
          end if;
       end if;
    end process;
 
-   integ_en <= '1' when (unsigned(rcnt) < R) and (DIN_VLD = '1') else '0';
-   comb_en <= '1' when (unsigned(rcnt) = R) and (DOUT_RDY = '1') else '0';
+   s_integ_en <= '1' when (unsigned(s_rcnt) < g_r) and (i_din_vld = '1') else '0';
+   s_comb_en <= '1' when (unsigned(s_rcnt) = g_r) and (i_dout_rdy = '1') else '0';
 
-   DIN_RDY <= '1' when (unsigned(rcnt) < R) else '0';
+   o_din_rdy <= '1' when (unsigned(s_rcnt) < g_r) else '0';
 
    ----------------------------------------------------------------------------
-   -- Integrator Stages : Operate at max rate of 1 * CLK Rate
+   -- Integrator Stages : Operate at max rate of 1 * i_clk Rate
    ----------------------------------------------------------------------------
 
 
-   integ(0)(ACC_WIDTH-1 downto DIN_WIDTH) <= (others => DIN(DIN_WIDTH-1));
-   integ(0)(DIN_WIDTH-1 downto 0) <= DIN;
+   s_integ(0)(g_acc_width-1 downto g_din_width) <= (others => i_din(g_din_width-1));
+   s_integ(0)(g_din_width-1 downto 0) <= i_din;
 
-   gen_integ: for i in 1 to N generate
+   gen_integ: for i in 1 to g_n generate
 
-      integ_i: process (CLK)
+      integ_i: process (i_clk)
       begin
-         if rising_edge(CLK) then
-            if (RST = '1') then
-               integ(i) <= (others => '0');
-            elsif (integ_en = '1') then
-               integ(i) <= std_logic_vector( signed(integ(i)) + signed(integ(i-1)) );
+         if rising_edge(i_clk) then
+            if (i_rst = '1') then
+               s_integ(i) <= (others => '0');
+            elsif (s_integ_en = '1') then
+               s_integ(i) <= std_logic_vector( signed(s_integ(i)) + signed(s_integ(i-1)) );
             end if;
          end if;
       end process;
@@ -127,34 +127,34 @@ begin
    end generate;
 
    ----------------------------------------------------------------------------
-   -- Comb Stages: Operate at max rate of 1/R * CLK Rate
+   -- Comb Stages: Operate at max rate of 1/R * i_clk Rate
    ----------------------------------------------------------------------------
 
-   comb(0) <= integ(N);
+   s_comb(0) <= s_integ(g_n);
 
-   gen_comb: for i in 1 to N generate
+   gen_comb: for i in 1 to g_n generate
 
-      comb_i: process (CLK)
+      comb_i: process (i_clk)
       begin
-         if rising_edge(CLK) then
-            if (RST = '1') then
-               comb(i) <= (others => '0');
-            elsif (comb_en = '1') then
-               comb(i) <= std_logic_vector( signed(comb(i-1)) - signed(comb_dly(i,M)) );
+         if rising_edge(i_clk) then
+            if (i_rst = '1') then
+               s_comb(i) <= (others => '0');
+            elsif (s_comb_en = '1') then
+               s_comb(i) <= std_logic_vector( signed(s_comb(i-1)) - signed(s_comb_dly(i,g_m)) );
             end if;
          end if;
       end process;
 
-      comb_dly(i,0) <= comb(i-1);
+      s_comb_dly(i,0) <= s_comb(i-1);
 
-      gen_comb_dly: for j in 1 to M generate
-         comb_dly_j: process(CLK)
+      gen_comb_dly: for j in 1 to g_m generate
+         comb_dly_j: process(i_clk)
          begin
-            if rising_edge(CLK) then
-               if (RST = '1') then
-                  comb_dly(i,j) <= (others => '0');
-               elsif (comb_en = '1') then
-                  comb_dly(i,j) <= comb_dly(i,j-1);
+            if rising_edge(i_clk) then
+               if (i_rst = '1') then
+                  s_comb_dly(i,j) <= (others => '0');
+               elsif (s_comb_en = '1') then
+                  s_comb_dly(i,j) <= s_comb_dly(i,j-1);
                end if;
             end if;
          end process;
@@ -166,8 +166,8 @@ begin
    -- Final Output
    ----------------------------------------------------------------------------
 
-   DOUT <= comb(N)(ACC_WIDTH-1 downto ACC_WIDTH-DOUT_WIDTH);
-   DOUT_VLD <= comb_en;
+   o_dout <= s_comb(g_n)(g_acc_width-1 downto g_acc_width-g_dout_width);
+   o_dout_vld <= s_comb_en;
 
    ----------------------------------------------------------------------------
 

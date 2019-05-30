@@ -1,0 +1,8 @@
+<HdlWorker Language='vhdl' Spec='downsample-spec.xml' version='2' datawidth='32'>
+
+  <SpecProperty Name='R' Initial='true'/>
+
+  <StreamInterface Name='in'/>
+  <StreamInterface Name='out' insertEOM='1'/>
+
+</HdlWorker>
