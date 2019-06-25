@@ -97,7 +97,7 @@ After git is installed, you issue these commands to download the repository and 
 
    `./scripts/install-opencpi-docs.sh`
 
-   When this script completes successfully, you can view the documents by opening up the `doc/pdfs/index.html` file in your browser.
+   When this script completes successfully, you can view the documents by opening the `doc/pdfs/index.html` file in your browser.
 
 
 # License
