@@ -47,9 +47,9 @@ You can either download a tar file for the release, which results in a ~300MB di
 
 #### Obtaining sources via downloading a tar file.
 To download the tar file associated with a release, select the release on the OpenCPI repository releases page [here](https://github.com/opencpi/opencpi/releases) and select the tar file to download.
-When the tar file is extracted it will create a directory called `opencpi-<release-tag>`, which you should change into.  Some browsers will automatically extract the file, but the first command assumes it does not.
+When the tar file is extracted it will create a directory called <code>opencpi-<em>\<release-tag\></em></code>, which you should change into.  Some browsers will automatically extract the file, but the first command assumes it does not.
    - <code>tar xzf opencpi-<em>\<release-tag\></em>.gz</code>
-   - `cd opencpi-<release-tag>`
+   - <code>cd opencpi-<em>\<release-tag\></em></code>
 
 #### Obtaining sources via cloning the OpenCPI git repository.
 To download via cloning the entire OpenCPI, first ensure that you have `git` installed on your system.  If `git` is not present, on CentOS systems this is accomplished (installing or updating `git`) by using the command:
