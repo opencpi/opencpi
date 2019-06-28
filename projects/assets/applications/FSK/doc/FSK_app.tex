@@ -109,6 +109,42 @@ The FSK App may be run in one of five available modes. The modes are \textit{fil
 \noindent The \textit{txrx} mode is the full transceiver mode of the application which combines the functionality of Figures \ref{fig:rx_mode_block_diagram} and \ref{fig:tx_mode_block_diagram} into a single application. This mode transmits input file data as the radio RF TX output and inputs RF RX radio input that is written to file. The \textit{bbloopback} mode utilizes the same HDL assembly and application XML as the \textit{txrx} mode but utilizes a built-in test mode of the Lime transceiver to loopback analog data at baseband.\par\medskip
 
 \noindent The \textit{tx}, \textit{txrx}, and \textit{bbloopback} modes for the Matchstiq-Z1 contain the matchstiq\_z1\_gp\_out device worker which can control the three GPIO pins present on the Matchstiq-Z1. The application XMLs give an example of how to use the device worker.\par\medskip
+\subsection{Application Specifications}
+\subsubsection{Baud Rate}
+The baud rate for the application is based on the following properties:
+	\begin{itemize}
+		\item ADC/DAC Sample Rate (S)
+		\item CIC Decimation/Interpolation Factor (R)
+		\item Number of zeros inserted between symbols (Z)
+	\end{itemize}
+It can be computed using the following equation:
+	      \begin{equation} \label{eq:cic_gain}
+	      	Baud\ Rate = S\ /\ R\ /\ (Z +1)
+	      \end{equation}
+Using the default settings for the Ettus E310 platform, the resulting baud rate is approximately 6.4K baud.
+	      \begin{equation} \label{eq:cic_gain}
+	      	Baud\ Rate = S\ /\ R\ /\ (Z+1) = 4e6 \ /\ 16\ /\ (38+1) \ =\ 6410
+	      \end{equation}
+\subsubsection{Frequency Deviation}
+The frequency deviation for the application is based on the following characteristics of the application:
+	\begin{itemize}
+		\item Pulse shaping FIR output amplitude (fir\_output)
+		\item Width of data (DATA\_WIDTH)
+		\item CIC Decimation/Interpolation Factor (R)
+		\item ADC/DAC Sample Rate (S)
+	\end{itemize}
+After the bits of the input file are mapped to symbols, zeros are inserted in between symbols. After zero padding, the output is pulse shaped by a root raised cosine FIR filter. The taps of the filter are configurable and should be based on the expected baud rate of the application. See \texttt{applications/FSK/scripts/gen\_rrcos\_taps.py} for more information. Using the default tap values, the output of the filter ranges from approximately +3300 to -3300. These output values from the FIR determine the min and max frequencies produced by the phase\_to\_amp\_cordic according to the following equation.
+	\begin{equation} \label{eq:output_freq}
+		cordic\_freq = \frac{fir\_output}{2^{DATA\_WIDTH}} = \frac{+/-3300}{2^{16}} = +/- 0.0504\ cycles\ per\ sample
+	\end{equation}
+The output of the CORDIC is upsampled by a interpolating CIC filter. The output data of the CIC is passed to the DAC, which has a configurable sample rate. The resulting output frequency of the DAC is defined by:
+	\begin{equation} \label{eq:output_freq}
+		output\_freq = cordic\_freq\ /\ R\ *\ S
+	\end{equation}
+Using the default settings for the Ettus E310 platform, the resulting frequency deviation is approximately 12588 Hz with mark and space frequencies at 2400012588 Hz and 2399987411 Hz.
+	\begin{equation} \label{eq:output_freq}
+		output\_freq = cordic\_freq\ /\ R\ *\ S = 0.717\ /\ 16\ *\ 4e6 \ =\ 12588\ Hz
+	\end{equation}
 
 \newpage
 \section{Building the Application}
@@ -366,7 +402,7 @@ To build for the host platform (which is the case if ML605 or Stratix IV platfor
 
 \section{Testing the Application}
 \subsection{Baud Synchronization}
-The input filename for the application is idata/Os.jpeg. It is modified from an original JPEG image (see Figure \ref{fig:os_pic}) with data prepended to it for baud synchronization purposes (240 bytes of an alternating 1-0 pattern followed by 2 bytes are the value 0xFACE). In the receive data stream, real\_digitizer.rcc worker makes symbol/bit decisions and only sends out bits that occur after the first detected 0xFACE bit pattern (b1111101011001110).
+The input filename for the application is idata/Os.jpeg. It is modified from an original JPEG image (see Figure \ref{fig:os_pic}) with data prepended to it for baud synchronization purposes (240 bytes of an alternating 1-0 pattern followed by 2 bytes are the value 0xFACE). In the receive data stream, real\_digitizer.rcc worker makes symbol/bit decisions and only sends out bits that occur after the first detected 0xFACE bit pattern (b1111101011001110). The image is also padded with 40 bytes of zeros. This padding ensures that all image data is pushed through the signal processing chain.
 \subsection{Sample test setup}
 The test setup varies per mode of operation. The base test setup includes a hardware platform of choice and appropriate power and USB cables (Matchstiq-Z1 uses the USB cable to access the terminal via a program such as \textit{screen} or over a USB-over-Ethernet connection; Stratix IV and ML605 require a USB cable for JTAG loading). All other test modes expand upon this base configuration, and may or may not include additional RF cabling or external equipment.\par\medskip
 \noindent The \textit{filerw} mode requires only the base test setup since no transceiver operations are actuated (data passes to and from the FPGA in a ``loopback'' fashion). Upon application execution, the expected result is written to odata/out\_app\_fsk\_filerw.bin, which is a transmitted copy of the input file idata/Os.jpeg, without the prepended synchronizing pattern.\par\medskip

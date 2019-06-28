@@ -207,6 +207,25 @@ However, if developers previously made implementation-specific assumptions, thei
 \label{bug:5275}
 Starting with 1.4, some RPMs pre-install symlinks for rules in \path{/etc/udev/rules.d/} for certain radio platforms, \textit{e.g.} a rule to create a symlink from \path{/dev/matchstiq_z1_0} to \path{/dev/ttyUSB0}. If the OpenCPI installation location is on a different partition than the host machine's root partition, the symlinks for these rules may be broken at boot-time because the target partition is not yet mounted when \path{udev} is reading the rules. To fix this, the command ``\code{sudo udevadm control --reload}'' should be executed upon a full boot. With CentOS~7, a \href{https://askubuntu.com/a/679600/139131}{custom \path{systemd} service can be implemented}.
 
+\subsection{Emulators Not Constrained To Specific Containers In Unit Tests} % AV-5496
+\label{bug:5496}
+When an emulator-based test harness is built for multiple simulators (\textit{e.g.} ``isim'' and ``xsim''), running the unit test does not guarantee that all workers are running on the same container.
+For example, when ``\path{lime_dac_ts.test}'' is built for both isim and xsim, test execution could pass for isim, but might later fail with xsim.
+Review of the log file shows that the emulator worker is erroneously running on an isim container and not the expected xsim container.
+The recommended workaround is to only build and test for a \textit{single} simulator at a given time, ensuring there is only one artifact that satisfies the test's requirements.
+
+\subsection{Provided LiquidDSP Build May Link Incorrectly} % AV-5543
+\label{bug:5543}
+\textit{Note:} This bug \textit{only} affects source-based building; RPM-based users will not encounter this issue.\\
+
+The ``LiquidDSP'' library is provided as a prerequisite of the ``assets'' Project.
+It is currently used by one worker, ``\path{complex_mixer.rcc}'', which uses it for its Numerically Controlled Oscillator (NCO).
+If the LiquidDSP library is built on a system that has the ``FFTW'' library installed, it will attempt to use it.
+However, any user-developed RCC Worker attempting to use LiquidDSP functions that use the FFTW back-end will fail at runtime with an undefined symbol (\textit{e.g.} \path{fftwf_execute}).
+The recommended workaround is to use the compiled \path{libliquid} from the RPM installation (\textit{e.g.} \path{/opt/opencpi/cdk/centos7/lib/libliquid.a} or \path{/opt/opencpi/cdk/xilinx13_3/lib/libliquid.a}) or to rebuild the prerequisites without the FFTW libraries installed.\\
+
+This problem was found late within the 1.5 release cycle and will be addressed with the next major release.
+
 \iffalse % Fixed in both RPM and source; will remove block in 1.6
 \subsection{``python3'' Symlink Missing} % AV-5477, AV-5478
 \label{bug:5477}
