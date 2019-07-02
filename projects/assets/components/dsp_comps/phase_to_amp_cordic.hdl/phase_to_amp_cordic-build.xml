@@ -3,14 +3,10 @@
     <parameter name='DATA_WIDTH' value='16'/>
     <parameter name='DATA_EXT' value='6'/>
     <parameter name='STAGES' value='12'/>
-    <parameter name='ocpi_debug' value='false'/>
-    <parameter name='ocpi_endian' value='little'/>
   </configuration>
   <configuration id='1'>
     <parameter name='DATA_WIDTH' value='16'/>
     <parameter name='DATA_EXT' value='6'/>
     <parameter name='STAGES' value='16'/>
-    <parameter name='ocpi_debug' value='false'/>
-    <parameter name='ocpi_endian' value='little'/>
   </configuration>
 </build>

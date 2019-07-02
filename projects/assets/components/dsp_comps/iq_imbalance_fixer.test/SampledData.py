@@ -18,30 +18,32 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-import matplotlib.pyplot as plt
+# Cannot use pyplot in verify.py!
+# import matplotlib.pyplot as plt
+
 
 class SampledData:
-  def __init__(self, data, fs):
-      """
-      Parameters
-      ----------------
-      data
+    def __init__(self, data, fs):
+        """
+        Parameters
+        ----------------
+        data
           Sampled data.
-      fs
+        fs
           Sampling frequency of sampled data in Hz.
-      """
-      self.data = data
-      self.fs = fs
+        """
+        self.data = data
+        self.fs = fs
 
-  def get_time_series(self, start_time):
-      return start_time + (np.arange(len(self.data),dtype=float) / self.fs)
+    def get_time_series(self, start_time):
+        return start_time + (np.arange(len(self.data), dtype=float) / self.fs)
 
-  def plot(start_time = 0):
-      t = get_time_series(start_time)
-      plt.plot(t, np.real(sampled_data.data), '-o')
-      plt.plot(t, np.imag(sampled_data.data), '-o', color='green')
-      btm_subplot.set_xlabel('Frequency (Hz)')
-      btm_subplot.set_ylabel('Amplitude')
-      plt.grid()
-      plt.show()
-
+    # Cannot use pyplot in verify.py!
+    #def plot(self, start_time=0):
+    #    t = self.get_time_series(start_time)
+    #    plt.plot(t, np.real(self.data), '-o')
+    #    plt.plot(t, np.imag(self.data), '-o', color='green')
+    #    plt.xlabel('Time (sec)')
+    #    plt.ylabel('Amplitude')
+    #    plt.grid()
+    #    plt.show()

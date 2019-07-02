@@ -34,7 +34,8 @@ SourceFiles=$(patsubst %,%.vhd,\
 	pd/src/peakDetect \
 	zp/src/zero_padding_gen \
 	mult/src/complex_mult \
-	divide_by_constant/src/divide_by_constant)
+	divide_by_constant/src/divide_by_constant \
+	set_clr/src/set_clr)
 
 # Remember two rules for OpenCPI primitive libraries, in order to be usable with all tools:
 # 1. Any entity (VHDL) or module (verilog) must have a VHDL component declaration in util_prims_pkg.vhd

@@ -4,17 +4,22 @@
      Add port elements for i/o ports -->
 <ComponentSpec>
 
-  <Property Name="enable" Type="bool" Readable="true" Writable="true" Default="true"/>
+  <Property Name="enable" Type="bool" Writable="true" Default="true"
+	    Description="Enable/bypass control"/>
 
-  <Property Name="update" Type="bool" Readable="true" Writable="true" Default="true"/>
+  <Property Name="update" Type="bool" Writable="true" Default="true"
+	    Description="Update the calculated amplitude and phase errors or hold previous"/>
 
-  <Property Name="log2_averaging_length" Type="uchar" Readable="true" Writable="true" Default="11"/>
+  <Property Name="log2_averaging_length" Type="uchar" Writable="true" Default="11"
+	    Description="Update interval control, where 2^(n+1) samples define the averaging length"/>
 
-  <Property Name="neg_log2_loop_gain" Type="uchar" Readable="true" Writable="true" Default="5"/>
+  <Property Name="neg_log2_loop_gain" Type="uchar" Writable="true" Default="5"
+	    Description="Loop gain control, where the value is 2^(-n)"/>
 
-  <Property Name="messageSize" Type="ushort" Readable="true" Writable="true" Default="8192"/>
+  <Property Name="messageSize" Type="ushort" Writable="true" Default="8192"
+	    Description="Unused property. Formerly used to set output message size"/>
 
-  <DataInterfaceSpec Name="in" Producer="false" Protocol="iqstream_protocol.xml"/>
-  <DataInterfaceSpec Name="out" Producer="true" Protocol="iqstream_protocol.xml"/>
+  <Port Name="in"  Protocol="iqstream_protocol.xml"/>
+  <Port Name="out" Protocol="iqstream_protocol.xml" Producer="true"/>
 
 </ComponentSpec>

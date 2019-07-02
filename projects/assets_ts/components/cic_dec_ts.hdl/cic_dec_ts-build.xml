@@ -1,84 +1,63 @@
-<!--
-
-Build Configuration Notes:
-
-- ACC_WIDTH >= CEIL(N*log2(R*M))+DATA_WIDTH
-
--->
-
 <build>
-
   <configuration id='0'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='1'/>
     <parameter name='R' value='4'/>
-    <parameter name='ACC_WIDTH' value='22'/>
   </configuration>
   <configuration id='1'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='2'/>
     <parameter name='R' value='4'/>
-    <parameter name='ACC_WIDTH' value='25'/>
   </configuration>
   <configuration id='2'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='1'/>
     <parameter name='R' value='5'/>
-    <parameter name='ACC_WIDTH' value='23'/>
   </configuration>
   <configuration id='3'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='2'/>
     <parameter name='R' value='5'/>
-    <parameter name='ACC_WIDTH' value='26'/>
   </configuration>
   <configuration id='4'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='1'/>
     <parameter name='R' value='8'/>
-    <parameter name='ACC_WIDTH' value='25'/>
   </configuration>
   <configuration id='5'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='1'/>
     <parameter name='R' value='16'/>
-    <parameter name='ACC_WIDTH' value='28'/>
   </configuration>
   <configuration id='6'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='1'/>
     <parameter name='R' value='2048'/>
-    <parameter name='ACC_WIDTH' value='49'/>
   </configuration>
   <configuration id='7'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='2'/>
     <parameter name='R' value='2048'/>
-    <parameter name='ACC_WIDTH' value='52'/>
   </configuration>
   <configuration id='8'>
     <parameter name='N' value='4'/>
     <parameter name='M' value='1'/>
     <parameter name='R' value='2048'/>
-    <parameter name='ACC_WIDTH' value='60'/>
   </configuration>
   <configuration id='9'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='1'/>
     <parameter name='R' value='8191'/>
-    <parameter name='ACC_WIDTH' value='55'/>
   </configuration>
   <configuration id='10'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='1'/>
     <parameter name='R' value='8192'/>
-    <parameter name='ACC_WIDTH' value='55'/>
   </configuration>
   <configuration id='11'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='2'/>
     <parameter name='R' value='8192'/>
-    <parameter name='ACC_WIDTH' value='58'/>
   </configuration>
 <!-- 
 This configuration produces an output of all zeros during the impulse test.
@@ -90,7 +69,6 @@ but should verify.
     <parameter name='N' value='3'/>
     <parameter name='M' value='2'/>
     <parameter name='R' value='8191'/>
-    <parameter name='ACC_WIDTH' value='58'/>
   </configuration>
 -->
 </build>

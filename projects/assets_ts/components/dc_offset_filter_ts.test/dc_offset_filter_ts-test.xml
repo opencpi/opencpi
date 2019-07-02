@@ -1,0 +1,6 @@
+<tests timeout='1000' useHDLFileIo='true'>
+ <input port='in' stressorMode='full' script='generate.py 32768'/>
+ <output port='out' script='verify.py 32768' view='view.sh'/>
+ <property name='tc' values='121'/>
+ <property name='enable' values='0,1'/>
+</tests>

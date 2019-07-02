@@ -1,0 +1,20 @@
+<!-- This is the spec file (OCS) for: dc_offset_filter_ts
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<ComponentSpec>
+
+  <Property Name='enable' Type='bool' Writable='true' Default='true'
+	    Description='Enable(true) or bypass(false) mixer'/>
+
+  <Property Name="update" Type="bool" Writable="true" Default="true"
+	    Description="Update the calculated DC value to be removed or hold previous"/>
+
+  <Property Name="tc" Type="uchar" Writable="true" Default="121"
+	    Description="Filter pole location along the x-axis between 0 (origin)
+			 and 1 (unit circle) where alpha = tc/128"/>
+
+  <Port Name='in'  Protocol='ComplexShortWithMetadata-prot'/>
+  <Port Name='out' Protocol='ComplexShortWithMetadata-prot' Producer='true'/>
+
+</ComponentSpec>

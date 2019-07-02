@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -43,7 +43,6 @@ import numpy as np
 if len(sys.argv) != 3:
     print("Invalid arguments:  usage is: verify.py <output-file> <input-file>")
     sys.exit(1)
-print "    VALIDATE (I/Q 16b binary data file):"
 
 # from OCS or OWD
 enable = os.environ.get("OCPI_TEST_enable")
@@ -72,18 +71,14 @@ ifilename.close()
 
 # Test #1 - Check that output data is not all zeros
 if all(odata == 0):
-    print '    ' + color.RED + color.BOLD + 'FAIL, values are all zero' + color.END
+    print ("\tValues are all zero")
     sys.exit(1)
-else:
-    print '    PASS - File is not all zeros'
 
 # Test #2 - Check that output data is the expected amount
 if len(odata) != int(NUM_SAMPLES-STAGES-2):
-    print '    ' + color.RED + color.BOLD + 'FAIL, output file length is unexpected' + color.END
-    print '    ' + color.RED + color.BOLD + 'Length ofilename = ', len(odata), 'while expected length is = ' + color.END, int(NUM_SAMPLES-STAGES-2)
+    print ("\tOutput file length is unexpected")
+    print ("\tLength ofilename = ", len(odata), "while expected length is = ", int(NUM_SAMPLES-STAGES-2))
     sys.exit(1)
-else:
-    print '    PASS - Input and output file lengths match'
 
 # Test #3 - Check that output data values
 if (enable == "true"): # => NORMAL MODE
@@ -102,7 +97,7 @@ if (enable == "true"): # => NORMAL MODE
     # Perform FFT
     w = np.fft.fft(data)
     freqs = np.fft.fftfreq(len(w), 1.0/Fs)
-    #print "DBG: ", (freqs.min(), freqs.max())
+    #print ("DBG: ", (freqs.min(), freqs.max()))
     # Locate max Tone
     idx = np.argmax(np.abs(w))
     measured_freq = freqs[idx]
@@ -112,26 +107,21 @@ if (enable == "true"): # => NORMAL MODE
     max_delta = 1/float(2**(DATA_WIDTH))
     calc_delta = abs(expected_freq - measured_freq)
 
-    #print "DBG: ", DATA_WIDTH, DATA_EXT, STAGES, CONSTANT_VALUE, NUM_SAMPLES
-    #print "DBG: expected_freq\t=", expected_freq
-    #print "DBG: measured_freq\t=", measured_freq
-    #print "DBG: max_delta\t\t=", max_delta
-    #print "DBG: calc_delta\t\t=", calc_delta
+    #print ("DBG: ", DATA_WIDTH, DATA_EXT, STAGES, CONSTANT_VALUE, NUM_SAMPLES)
+    #print ("DBG: expected_freq\t=", expected_freq)
+    #print ("DBG: measured_freq\t=", measured_freq)
+    #print ("DBG: max_delta\t\t=", max_delta)
+    #print ("DBG: calc_delta\t\t=", calc_delta)
 
     # Check that the difference between the calculated and expected frequencies is greater
     # than the max possible difference (max_delta).
     if (calc_delta > max_delta):
-        print '    FAIL - Expected:Max:Delta ', expected_freq, measured_freq, calc_delta, max_delta
+        print ("\tExpected:Max:Delta ", expected_freq, measured_freq, calc_delta, max_delta)
         sys.exit(1)
-    else:
-        print '    PASS - Max freq is within the expected range'
+    print ("\tResults (Normal Mode): Max freq is within the expected range")
 
 else: # => BYPASS MODE
     if (idata[0:NUM_SAMPLES-STAGES-2] != odata['real_idx']).all():
-        print '    FAIL: Input and output data files do not match'
+        print ("\tInput and output data files do not match")
         sys.exit(1)
-    else:
-        print '    PASS - Input and output data files match'
-
-print '    Data matched expected results.'
-print '    ' + color.GREEN + color.BOLD + 'PASSED' + color.END
+    print ("\tResults (Bypass Mode): Input and output data files match")

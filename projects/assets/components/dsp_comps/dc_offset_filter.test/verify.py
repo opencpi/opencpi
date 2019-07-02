@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -54,16 +54,18 @@ ifile = open(IFILENAME, 'rb')
 din = np.fromfile(ifile, dtype=np.dtype((np.uint32, {'real_idx':(np.int16,0), 'imag_idx':(np.int16,2)})), count=-1)
 ifile.close()
 
-#Ensure output data is not all zeros
+# Test #1 - Check that output data is not all zeros
 if all(dout == 0):
-    print "    FAILED: values are all zero"
-    sys.exit(1)
-#Ensure that output data is the expected amount of data
-if len(dout) != NUM_SAMPLES:
-    print "    FAILED: Output file length is unexpected"
-    print "    Length = ", len(dout), "while expected length is = ", NUM_SAMPLES
+    print ("\tValues are all zero")
     sys.exit(1)
 
+# Test #2 - Check that output data is the expected amount
+if len(dout) != NUM_SAMPLES:
+    print ("\tOutput file length is unexpected")
+    print ("\tLength = ", len(dout), "while expected length is = ", NUM_SAMPLES)
+    sys.exit(1)
+
+# Test #3 - Check that output data values
 if(bypass=="false"): # => NORMAL MODE
     #share values used during generation of the input file
     #convert to complex data type to perform fft and power measurements
@@ -74,7 +76,7 @@ if(bypass=="false"): # => NORMAL MODE
     Fs = 100
     complex_idata = np.array(np.zeros(NUM_SAMPLES), dtype=np.complex)
     complex_odata = np.array(np.zeros(NUM_SAMPLES), dtype=np.complex)
-    for i in xrange(0,NUM_SAMPLES):
+    for i in range(0,NUM_SAMPLES):
         complex_idata[i] = complex(din['real_idx'][i], din['imag_idx'][i])
         complex_odata[i] = complex(dout['real_idx'][i], dout['imag_idx'][i])
     IFFT = 1.0/NUM_SAMPLES * abs(np.fft.fft(complex_idata,NUM_SAMPLES))
@@ -84,36 +86,37 @@ if(bypass=="false"): # => NORMAL MODE
     IPowerT1 = 20*np.log10(IFFT[int(round(float(Tone05)/(float(Fs)/2.0)*float(len(IFFT)/2.0)))]+eps)
     IPowerT2 = 20*np.log10(IFFT[int(round(float(Tone13)/(float(Fs)/2.0)*float(len(IFFT)/2.0)))]+eps)
     IPowerT3 = 20*np.log10(IFFT[int(round(float(Tone27)/(float(Fs)/2.0)*float(len(IFFT)/2.0)))]+eps)
-    print "    Input DC power level     =", IPowerDC, " dBm"
-    print "    Input Tone 1 power level =", IPowerT1, " dBm"
-    print "    Input Tone 2 power level =", IPowerT2, " dBm"
-    print "    Input Tone 3 power level =", IPowerT3, " dBm"
+    print ("\tInput DC power level     =", IPowerDC, " dBm")
+    print ("\tInput Tone 1 power level =", IPowerT1, " dBm")
+    print ("\tInput Tone 2 power level =", IPowerT2, " dBm")
+    print ("\tInput Tone 3 power level =", IPowerT3, " dBm")
     OPowerDC = 20*np.log10(OFFT[ToneDC]+eps)
     OPowerT1 = 20*np.log10(OFFT[int(round(float(Tone05)/(float(Fs)/2.0)*float(len(OFFT)/2.0)))]+eps)
     OPowerT2 = 20*np.log10(OFFT[int(round(float(Tone13)/(float(Fs)/2.0)*float(len(OFFT)/2.0)))]+eps)
     OPowerT3 = 20*np.log10(OFFT[int(round(float(Tone27)/(float(Fs)/2.0)*float(len(OFFT)/2.0)))]+eps)
-    print "    Output DC power level     = ", OPowerDC, " dBm"
-    print "    Output Tone 1 power level = ", OPowerT1, " dBm"
-    print "    Output Tone 2 power level = ", OPowerT2, " dBm"
-    print "    Output Tone 3 power level = ", OPowerT3, " dBm"
+    print ("\tOutput DC power level     = ", OPowerDC, " dBm")
+    print ("\tOutput Tone 1 power level = ", OPowerT1, " dBm")
+    print ("\tOutput Tone 2 power level = ", OPowerT2, " dBm")
+    print ("\tOutput Tone 3 power level = ", OPowerT3, " dBm")
 
     #Perform calculations comparing output power to input power for dc and tones
     if OPowerDC > IPowerDC - 83.9:
-        print "    FAILED, Output DC power level = ", OPowerDC, " dBm"
+        print ("\tOutput DC power level = ", OPowerDC, " dBm")
         sys.exit(1)
     if abs(OPowerT1 - IPowerT1) > 5.3:
-        print "    FAILED, Output Tone 1 level = ", OPowerT1, " dBm"
+        print ("\tOutput Tone 1 level = ", OPowerT1, " dBm")
         sys.exit(1)
     if abs(OPowerT2 - IPowerT2) > 0.4:
-        print "    FAILED, Output Tone 2 level = ", OPowerT2, " dBm"
+        print ("\tOutput Tone 2 level = ", OPowerT2, " dBm")
         sys.exit(1)
     if abs(OPowerT3 - IPowerT3) > 2.3:
-        print "    FAILED, Output Tone 3 level = ", OPowerT3, " dBm"
+        print ("\tOutput Tone 3 level = ", OPowerT3, " dBm")
         sys.exit(1)
+    print ("\tResults (Normal Mode): Tones measured at expected power levels")
+
 else: #=> BYPASS MODE
     #Test that odata is the expected amount
     if (din != dout).all():
-        print "    FAILED: Input and output file do not match"
+        print ("\tInput and output file do not match")
         sys.exit(1)
-    else:
-        print "    PASS: Input and output file match"
+    print ("\tResults (Bypass Mode): Input and output file match")

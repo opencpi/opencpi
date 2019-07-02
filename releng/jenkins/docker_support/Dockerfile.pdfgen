@@ -1,0 +1,79 @@
+# OpenCPI pdfgen Docker container
+# Do not execute manually: use "build_docker_pdfgen.sh"
+
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+# NOTE: Prior to AV-4085 (60b51ec) there was custom texmf code. If non-RPM LaTeX extensions
+# are required, revisit that code!
+
+FROM centos:7
+ARG TEX_PKGS
+ARG JENKINSUID
+ARG JENKINSGID
+ARG NAME
+ARG VERSION
+ARG GIT_PORT
+ARG GIT_SERVER
+LABEL maintainer="ANGRYVIPER Team <discuss@lists.opencpi.org>"
+LABEL name="${NAME}"
+LABEL version="${VERSION}"
+
+# Let us see where this came from
+ADD Dockerfile.pdfgen /Dockerfile
+
+# Add self-reap notifier (AV-3550)
+ADD sleeper /bin/
+
+# Upgrade first to avoid e.g. "Error:  Multilib version problems found."
+# All the gcc etc is for the host name spoofing
+RUN yum upgrade -y && yum install -y epel-release && yum install -y \
+  gcc \
+  ghostscript \
+  glibc{,-static,-devel}{,.i686} \
+  git \
+  libgcc.i686 \
+  libreoffice-headless \
+  make \
+  mlocate \
+  openssh-clients \
+  perl \
+  python34 \
+  rpm-build \
+  rubber \
+  sudo \
+  unoconv \
+  ${TEX_PKGS} && \
+  yum clean all && \
+  rm -rf /usr/share/{doc,info,man} && \
+  rm -rf /var/cache/yum
+
+RUN groupadd -g ${JENKINSGID} jenkins && useradd -g jenkins -m -s /sbin/nologin -u ${JENKINSUID} jenkins
+RUN groupadd -r opencpi && useradd -M -r -s /sbin/nologin -c "OpenCPI System Account" -n -g opencpi opencpi
+
+# Normally we shouldn't have to manually create this link? Why do we have to now?
+RUN cd /usr/bin && ln -s python3.4 python3
+
+# Import git repo's keys
+RUN mkdir /root/.ssh && ssh-keyscan -p ${GIT_PORT} ${GIT_SERVER} 2>/dev/null >> /root/.ssh/known_hosts
+
+# Make container look like Jenkins to the outside world
+ADD jenkins_private_keys.tar.bz2 /root/.ssh/
+
+# Satisfy linter with default cmd, though not used because we DO supply a cmd in build_docker_pdfgen.sh
+CMD ["/bin/sleeper", "12h"]

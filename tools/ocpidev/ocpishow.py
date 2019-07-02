@@ -23,6 +23,7 @@ Main program that processes the show verb for ocpidev
 
 import argparse
 import os
+import sys
 import types
 import pydoc
 import _opencpi.util as ocpiutil
@@ -87,8 +88,8 @@ def parse_cl_vars():
             exit(1)
             ), parser)
 
-    parser.add_argument("noun", type=str, help="This is either the noun to show or the " +
-                        "authoring model to operate on. If choosing an authoring model " +
+    parser.add_argument("noun", type=str, nargs='?', help="This is either the noun to show or " +
+                        "the authoring model to operate on. If choosing an authoring model " +
                         "(hdl/rcc), the platforms or targets nouns can follow.",
                         choices=FIRST_NOUNS)
     parser.add_argument("-v", "--verbose", action="store_const", dest="verbose", default=0, const=1,
@@ -126,7 +127,7 @@ def parse_cl_vars():
     scope_group_top = parser.add_argument_group("scope arguments",
                                                 "mutually exclusive arguments to specify how to " +
                                                 "search for assets to be output, the default is " +
-                                                "--golobal-scope if nothing is specified.")
+                                                "--global-scope if nothing is specified.")
     scope_group = scope_group_top.add_mutually_exclusive_group()
     scope_group.add_argument("--local-scope", action="store_const", dest="scope", const="local",
                              default="global",
@@ -238,7 +239,7 @@ def get_noun_from_plural(args, noun, scope):
 
 def main():
     """
-    Function that is called if this module is called as a mian function
+    Function that is called if this module is called as a main function
     """
     (args, noun) = parse_cl_vars()
     action = "show"
@@ -250,6 +251,8 @@ def main():
             name = args.get("name", None)
             if not name:
                 name = ""
+            if not noun:
+                noun = ocpiutil.get_dirtype()
             # Now that we have grabbed name, delete it from the args that will be passed into the
             # AssetFactory because name is explicitly passed to AssetFactory as a separate argument
             del args['name']
@@ -258,8 +261,7 @@ def main():
                 directory = ocpiregistry.Registry.get_registry_dir()
             elif noun not in ["libraries", "hdlplatforms", "hdltargets", "rccplatforms",
                               "rcctargets", "platforms", "targets", "workers", "components"]:
-                directory = ocpiutil.get_ocpidev_working_dir(origin_path=cur_dir,
-                                                             noun=noun,
+                directory = ocpiutil.get_ocpidev_working_dir(noun=noun,
                                                              name=name,
                                                              library=args['library'],
                                                              hdl_library=args['hdl_library'],
@@ -305,6 +307,8 @@ def main():
             # pylint:enable=eval-used
     except ocpiutil.OCPIException as ex:
         ocpiutil.logging.error(ex)
+        sys.exit(1)
+
 
 if __name__ == '__main__':
     main()

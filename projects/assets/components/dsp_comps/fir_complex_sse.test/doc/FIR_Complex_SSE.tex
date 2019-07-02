@@ -23,7 +23,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.5}
+\def\docVersion{1.6}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -49,7 +49,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & 4/2019 \\
+	Release Date      & 11/2019 \\
 	\hline
 	Component Library & ocpi.assets.dsp\_comps                                        \\
 	\hline
@@ -59,6 +59,25 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 \end{tabular}
 
+\begin{center}
+	\textit{\textbf{Revision History}}
+		\begin{table}[H]
+		\label{table:revisions} % Add "[H]" to force placement of table
+			\begin{tabularx}{\textwidth}{|c|X|l|}
+			\hline
+			\rowcolor{blue}
+			\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+		    \hline
+		    v1.4 & & 10/2018 \\
+		    \hline
+       	 	v1.5 &  & 4/2019 \\
+		    \hline
+		     v1.6 & Converted Worker to version 2 & 11/2019 \\
+		    \hline
+			\end{tabularx}
+		\end{table}
+	\end{center}	
+
 \section*{Functionality}
 \begin{flushleft}
 	The FIR Complex SSE (Systolic Symmetric Even) component inputs complex signed samples and filters them based upon a programmable number of coefficient tap values. The underlying FIR Filter implementation makes use of a symmetric systolic structure to construct a filter with an even number of taps and symmetry about its midpoint.
@@ -66,12 +85,18 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \section*{Worker Implementation Details}
 \subsection*{\comp.hdl}
+\subsubsection*{Filter taps}
 \begin{flushleft}
-	The \verb+NUM_TAPS_p+ parameter defines N/2 coefficient values. Care should be taken to ensure that the \verb+COEFF_WIDTH_p+ parameter is $\le$ the type (size) of the taps property - i.e. a \verb+COEFF_WIDTH_p+ of 1-8 should use a taps type of char; a \verb+COEFF_WIDTH_p+ of 9-16 should use a taps type of short; and a \verb+COEFF_WIDTH_p+ of 17-32 should use a taps type of long. Identical filter tap coefficients are applied to both real and imaginary input samples.\medskip
+	The \verb+NUM_TAPS_p+ parameter determines the length of the \verb+taps+ property.  Each 16-bit tap within the \verb+taps+ property is truncated by taking the \verb+COEFF_WIDTH_p+ number of least significant bits. Care should be taken to ensure that the \verb+COEFF_WIDTH_p+ parameter is $\le$ 16. The most significant bit of the truncated value is used as a sign bit. The truncated data is formatted as QN.0, where N is \verb+COEFF_WIDTH_p+-1. The truncated taps are effectively the first half of all coefficients used to perform convolution. The last half is equivalent to the reverse-indexed copy of the first half, allowing the coefficients to have symmetry about their midpoint. This symmetry of FIR coefficients results in group delay being constant across all frequencies.
+\medskip
+\end{flushleft}
+
+\subsection*{Filter function}
+\begin{flushleft}
 
 	This implementation uses \verb+NUM_TAPS_p+ multipliers per each input rail to process input data at the clock rate - i.e. this worker can handle a new input value every clock cycle. It is unnecessary to round the output data from this filter at the worker level because it is already being done within the macc\_systolic\_sym primitive.\medskip
 
-	The FIR Complex SSE worker utilizes the OCPI \textit{iqstream\_protocol} for both input and output ports. The \textit{iqstream\_protocol} defines an interface of 16-bit complex signed samples. The \verb+DATA_WIDTH_p+ parameter may be used to reduce the worker's internal data width to less than 16-bits.
+	The FIR Complex SSE worker utilizes the OCPI \textit{iqstream\_protocol} for both input and output ports. The \textit{iqstream\_protocol} defines an interface of 16-bit complex signed samples. The \verb+DATA_WIDTH_p+ parameter may be used to reduce the FIR Complex SSE hdl worker's internal data width to less than 16-bits.
 \end{flushleft}
 {\centering\captionsetup{type=figure}\includegraphics[scale=0.65]{fir_systolic_sym_even}\par\captionof{figure}{FIR Complex SSE Block Diagram - 8-tap example per I/Q rail}\label{fig:circuit}}
 
@@ -105,15 +130,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\end{tikzpicture}
 \end{center}
 
-\subsection*{State Machine}
-\begin{flushleft}
-	Only one finite-state machine (FSM) is implemented by this worker. The FSM supports Zero-Length Messages.
-\end{flushleft}
-{\centering\captionsetup{type=figure}\includegraphics[scale=0.7]{zlm_fsm}\par\captionof{figure}{Zero-Length Message FSM}\label{fig:zlm_fsm}}
-\begin{flushleft}
-        Note: In future releases this finite-state machine will be replaced with a register-delay based mechanism, currently exemplified in the dc offset filter
-\end{flushleft}
-
 \newpage
 
 \section*{Source Dependencies}
@@ -131,13 +147,13 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 			\rowcolor{blue}
 			Name               & Type   & SequenceLength & ArrayDimensions   & Accessibility       & Valid Range                                                                      & Default & Usage                                                                        \\
 			\hline
-			\verb+NUM_TAPS_p+  & ULong  & -              & -                 & Readable, Parameter & 1-?                                                                              & 16      & Half the number of coefficients used by each real/imag even symmetric filter \\
+			\verb+NUM_TAPS_p+  & UChar  & -              & -                 & Parameter & 1-?                                                                              & 16      & Half the number of coefficients used by each real/imag even symmetric filter \\
 			\hline
-			\verb+peak+        & Short  & -              & -                 & Volatile            & Standard                                                                         & 0       & Read-only amplitude which may be useful for gain control                     \\
+			\verb+peak+        & Short  & -              & -                 & Volatile            & Standard                                                                         & 0       &   Peak value of I/Q output (valid when PEAK\_MONITOR = true)                 \\
 			\hline
-			\verb+messageSize+ & UShort & -              & -                 & Writable, Readable  & 8192                                                                             & 8192    & Number of bytes in output message                                            \\
+			\verb+messageSize+ & UShort & -              & -                 & Writable  & 8192                                                                             & 8192    & Number of bytes in output message (Not implemented by Version 2)  \\
 			\hline
-			\verb+taps+        & Short  & -              & \verb+NUM_TAPS_p+ & Writable, Readable  & -2\textsuperscript{COEFF\_WIDTH\_p-1} to +2\textsuperscript{COEFF\_WIDTH\_p-1}-1 & -       & Symmetric filter coefficient values loaded into both real/imag filters       \\
+			\verb+taps+        & Short  & -              & \verb+NUM_TAPS_p+ & Initial  & -2\textsuperscript{COEFF\_WIDTH\_p-1} to +2\textsuperscript{COEFF\_WIDTH\_p-1}-1 & -       & Symmetric filter coefficient values loaded into both real/imag filters       \\
 			\hline
 		\end{tabular}
 	\end{scriptsize}
@@ -150,9 +166,11 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 			\rowcolor{blue}
 			Type     & Name                 & Type  & SequenceLength & ArrayDimensions & Accessibility       & Valid Range & Default & Usage                                        \\
 			\hline
-			Property & \verb+DATA_WIDTH_p+  & ULong & -              & -               & Readable, Parameter & 1-16        & 16      & Worker internal non-sign-extended data width \\
+			Property & \verb+DATA_WIDTH_p+  & UChar & -              & -               & Parameter & 1-16        & 16      & Data Width of I and Q for internal processing \\
 			\hline
-			Property & \verb+COEFF_WIDTH_p+ & ULong & -              & -               & Readable, Parameter & 1-32        & 16      & Coefficient width                            \\
+			Property & \verb+COEFF_WIDTH_p+ & UChar & -              & -               & Parameter & 1-32        & 16      & Coefficient width in bits.                 \\
+			\hline
+			Property & \verb+PEAK_MONITOR+ & bool & -              & -               & Parameter &  -       & true      & Enable/Disable build-time inclusion of Peak Monitoring                            \\
 			\hline
 		\end{tabular}
 	\end{scriptsize}
@@ -180,9 +198,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 			\rowcolor{blue}
 			Type            & Name & DataWidth & Advanced                & Usage                  \\
 			\hline
-			StreamInterface & in   & 32        & ZeroLengthMessages=true & Signed complex samples \\
+			StreamInterface & in   & 32        & - & Signed complex samples \\
 			\hline
-			StreamInterface & out  & 32        & ZeroLengthMessages=true & Signed complex samples \\
+			StreamInterface & out  & 32        & InsertEOM=1 & Signed complex samples \\
 			\hline
 		\end{tabular}
 	\end{scriptsize}

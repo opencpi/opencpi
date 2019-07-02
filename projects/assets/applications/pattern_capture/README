@@ -1,0 +1,19 @@
+The pattern_capture application utilizes the pattern_v2, and capture_v2 components.
+
+The app uses the pattern_capture_asm assembly.
+
+To run the application on an embedded platform, with the assumption you are operating in NFS/Network mode on the
+embedded platform and you have your projects mounted at /mnt/ocpi_core and /mnt/ocpi_assets do:
+
+export OCPI_LIBRARY_PATH=/mnt/ocpi_assets/artifacts:/mnt/ocpi_core/artifacts
+ocpirun -d -v -x pattern_capture
+
+The pattern_v2 component sends the following messages:
+
+msg1 = {0x00000000} with opcode 251, msg2 = {0x00000000,0x00000001} with opcode 252, msg3 = {0x00000000,0x00000001,0x00000002} with opcode 253,
+msg4 = {0x00000000,0x00000001,0x00000002,0x00000003} with opcode 254, msg5 = {0x00000000,0x00000001,0x00000002,0x00000003,0x00000004} with opcode 255
+
+The expected messages capture_v2 will receive are:
+
+msg1 = {0x00000000} with opcode 251, msg2 = {0x00000000,0x00000001} with opcode 252, msg3 = {0x00000000,0x00000001,0x00000002} with opcode 253,
+msg4 = {0x00000000,0x00000001,0x00000002,0x00000003} with opcode 254, msg5 = {0x00000000,0x00000001,0x00000002,0x00000003,0x00000004} with opcode 255

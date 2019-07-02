@@ -37,8 +37,8 @@ class Worker(ShowableComponent):
     and implements an OCS (OpenCPI Component Specification).
     """
     def __init__(self, directory, name=None, **kwargs):
-        if name in [None, ""]:
-            name = os.path.basename(directory).rsplit('.', 1)[0]
+        if not name:
+            name = os.path.basename(os.path.realpath(directory)).rsplit('.', 1)[0]
         rchoped_name = ocpiutil.rchop(name, "." + self.get_authoring_model(directory))
         self.ocpigen_xml = (directory + "/" + rchoped_name + ".xml")
         super().__init__(directory, name, **kwargs)
@@ -59,8 +59,8 @@ class Worker(ShowableComponent):
         Print out the ports, properties, and slaves of a given worker in the format that is
         provided by the caller
 
-        Function attribtes:
-          details    - the mode to print out the informoton in table or simple are the only valid
+        Function attributes:
+          details    - the mode to print out the information in table or simple are the only valid
                        options
           verbose    - integer for verbosity level 0 is default and lowest and anything above 1
                        shows struct internals and hidden properties
@@ -97,6 +97,39 @@ class Worker(ShowableComponent):
             json.dump(json_dict, sys.stdout)
             print()
 
+    @staticmethod
+    def get_working_dir(name, library, hdl_library, hdl_platform):
+        """
+        return the directory of a Worker given the name (name) and
+        library specifiers (library, hdl_library, hdl_platform)
+        """
+        # if more then one of the library location variable are not None it is an error
+        if len(list(filter(None, [library, hdl_library, hdl_platform]))) > 1:
+            ocpiutil.throw_invalid_libs_e()
+        valid_dirtypes = ["project", "libraries", "library", "worker", "hdl-platform"]
+        cur_dirtype = ocpiutil.get_dirtype()
+        if cur_dirtype not in valid_dirtypes:
+            ocpiutil.throw_not_valid_dirtype_e(valid_dirtypes)
+        if library:
+            if not library.startswith("components"):
+                library = "components/" + library
+            return ocpiutil.get_path_to_project_top() + "/" + library + "/" + name
+        elif hdl_library:
+            return ocpiutil.get_path_to_project_top() + "/hdl/" + hdl_library + "/" + name
+        elif hdl_platform:
+            return (ocpiutil.get_path_to_project_top() + "/hdl/platforms/" + hdl_platform +
+                    "/devices/" + name)
+        elif name:
+            if cur_dirtype == "hdl-platform":
+                return "devices/" + name
+            elif cur_dirtype == "project":
+                if ocpiutil.get_dirtype("components") == "libraries":
+                    ocpiutil.throw_specify_lib_e()
+                return "components/" + name
+            else:
+                return name
+        else: ocpiutil.throw_not_blank_e("worker", "name", True)
+
 # Placeholder class
 class RccWorker(Worker):
     """
@@ -107,7 +140,7 @@ class RccWorker(Worker):
 
 class HdlCore(HDLBuildableAsset):
     """
-    This represents any buildable HDL Asset that is core-like (i.e. is not a primitive library).
+    This represents any build-able HDL Asset that is core-like (i.e. is not a primitive library).
 
     For synthesis tools, compilation of a HdlCore generally results in a netlist.
         Note: for simulation tools, this criteria generally cannot be used because netlists
@@ -141,7 +174,7 @@ class HdlCore(HDLBuildableAsset):
 #      TLDR TODO: Merge HdlWorker and HdlLibraryWorker classes, rename init_configs()
 #                 to init_build_configs(), rename HdlPlatformWorker's init_configs()
 #                 to init_platform_configs() since it now inherits init_build_configs().
-#                 Have HdlAssembly and/or its subclasses inherit from HdlWorker.
+#                 Have HdlAssembly and/or its sub-classes inherit from HdlWorker.
 
 # pylint:disable=too-many-ancestors
 class HdlWorker(Worker, HdlCore):
@@ -226,7 +259,7 @@ class HdlLibraryWorker(HdlWorker, ReportableAsset):
                 value = param.get("value")
                 param_dict[pname] = value
 
-            # Initialize the config instance with this worker's dir and name, and the
+            # Initialize the config instance with this worker's directory and name, and the
             # configuration's ID and parameter dictionary
             if config_id:
                 self.configs[int(config_id)] = HdlLibraryWorkerConfig(directory=self.directory,
@@ -267,7 +300,7 @@ class HdlLibraryWorker(HdlWorker, ReportableAsset):
             latex: print table in LaTeX format to configurations.inc file in this
                    HdlLibraryWorker's directory
         """
-        # TODO should this function and its output modes be moved into a superclass?
+        # TODO should this function and its output modes be moved into a super-class?
         dirtype = ocpiutil.get_dirtype(self.directory)
         caption = "Table of Worker Configurations for " + str(dirtype) + ": " + str(self.name)
         if self.output_format == "table":
@@ -314,7 +347,7 @@ class HdlLibraryWorker(HdlWorker, ReportableAsset):
             sub_report = self.configs[cfg_name].get_utilization()
             if sub_report:
                 # We want to add the container name as a report element
-                # Add this dataset to the list of utilization dictionaries. It will serve
+                # Add this data-set to the list of utilization dictionaries. It will serve
                 # as a single data-point/row in the report
                 sub_report.assign_for_all_points(key="Configuration", value=cfg_name)
                 util_report += sub_report
@@ -348,7 +381,7 @@ class HdlLibraryWorkerConfig(HdlCore, ReportableAsset):
         # We expect the config_index to be passed in via kwargs
         # These are generally defined in the worker build XML
         self.index = kwargs.get("config_index", 0)
-        # The worker subdirectory starts with 'target'.
+        # The worker sub-directory starts with 'target'.
         # It is then followed by the configuration index,
         # unless the index is 0.
         if self.index == 0:

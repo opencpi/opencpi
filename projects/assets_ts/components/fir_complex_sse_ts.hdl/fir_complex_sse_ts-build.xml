@@ -1,14 +1,14 @@
 <build>
   <configuration id='0'>
-    <parameter name='COEFF_WIDTH_p' value='16'/>
-    <parameter name='NUM_TAPS_p' value='32'/>
+    <parameter name='COEFF_WIDTH' value='16'/>
+    <parameter name='NUM_TAPS' value='32'/>
   </configuration>
   <configuration id='1'>
-    <parameter name='COEFF_WIDTH_p' value='8'/>
-    <parameter name='NUM_TAPS_p' value='32'/>
+    <parameter name='COEFF_WIDTH' value='8'/>
+    <parameter name='NUM_TAPS' value='32'/>
   </configuration>
   <configuration id='2'>
-    <parameter name='COEFF_WIDTH_p' value='16'/>
-    <parameter name='NUM_TAPS_p' value='128'/>
+    <parameter name='COEFF_WIDTH' value='16'/>
+    <parameter name='NUM_TAPS' value='128'/>
   </configuration>
 </build>

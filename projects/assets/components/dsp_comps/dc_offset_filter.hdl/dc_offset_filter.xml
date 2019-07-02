@@ -1,14 +1,18 @@
-<HdlWorker Language="vhdl" Spec="dc_offset_filter-spec.xml" version='2'>
+<HdlWorker Language="vhdl" Spec="dc_offset_filter-spec.xml" Version="2" DataWidth="32">
 
-  <Property Name="DATA_WIDTH_p" Type="ulong" Parameter="true" Readable="true" Default="16"/>
+  <Property Name="LATENCY_p" Type="uchar" Parameter="true" Default="1"
+	    Description='Number of clock cycles between a valid input and a valid output'/>
 
-  <Property Name="LATENCY_p" Type="ushort" Parameter="true" Readable="true" Default="1"/>
+  <Property Name="DATA_WIDTH_p" Type="uchar" Parameter="true" Default="16"
+	    Description="Data Width of I and Q for internal processing" />
 
-  <Property Name="PEAK_MONITOR_p" Type="bool" Parameter="true" Readable="true" Default="true"/>
+  <Property Name="PEAK_MONITOR_p" Type="bool" Parameter="true" Default="true"
+	    Description="Enable/Disable build-time inclusion of Peak Monitoring"/>
 
-  <Property Name="peak" Type="short" Volatile="true"/>
+  <Property Name="peak" Type="short" Volatile="true"
+	    Description="Peak value of I or Q output (valid when PEAK_MONITOR_p=true)"/>
 
-  <StreamInterface Name="in"  DataWidth="32" ZeroLengthMessages="true"/>
-  <StreamInterface Name="out" DataWidth="32" ZeroLengthMessages="true" inserteom='1'/>
+  <StreamInterface Name="in"/>
+  <StreamInterface Name="out" insertEOM="1"/>
 
 </HdlWorker>

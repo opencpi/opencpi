@@ -46,7 +46,7 @@ int main(int argc, char **argv)
   }
   if (argc > 2)
   {
-    printf("too many arguments, (must either have no arguments or swing argument 'swonly'')");
+    printf("too many arguments, (must either have no arguments or single argument 'swonly'')");
     goto failed;
   }
 

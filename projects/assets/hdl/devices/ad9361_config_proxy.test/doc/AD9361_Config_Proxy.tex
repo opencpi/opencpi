@@ -95,7 +95,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.5}
+\def\docVersion{\color{red}develop}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -129,7 +129,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Worker Type       & Device Proxy     \\
 	\hline
-	OpenCPI Release & v\docVersion ~ (released 4/2019) \\
+	OpenCPI Release & v\docVersion \\
 	\hline
 	Workers           & \comp.rcc        \\
 	\hline
@@ -164,6 +164,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		    \hline
 		    v1.5 & \begin{itemize} \item Added \verb+digital_rx_block_delay+ worker property \item Updated new source dependencies \end{itemize} & 4/2019 \\
 		    \hline
+		    \color{red}vdevelop & \item Worker updated to latest No-OS 2018\_R2 release & N/A \\
+		    \hline
 			\end{longtable}
 		\end{table}
 	\end{center}
@@ -172,7 +174,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	The \Comp{} device worker proxy is a software wrapper for Analog Device's No-OS software library\cite{no_os}. No-OS provides command and control of the AD9361 IC\cite{ad9361} via a high-level API which ultimately controls SPI writes to the AD9361 register set. In order to provide functionality analogous to the No-OS API, this worker provides a one-to-one mapping between the No-OS function calls and worker properties.
 \section*{Worker Implementation Details}
 \subsection*{\comp.rcc}
-The version of No-OS used was GitHub commit 06bfc76060d5b9767ae9aad7bf40e3648474ebb7\cite{no_os_06bfc76060d5b9767ae9aad7bf40e3648474ebb7}, which was the latest update to the Analog Devices-recommended 2017\_R1 release at the time of development. \\ \\
+The version of No-OS used was GitHub commit 8c52aa42e74841e3975a6f33cc5303ed2a670124 \cite{no_os_8c52aa42e74841e3975a6f33cc5303ed2a670124}, which was the latest commit in the Analog Devices-recommended latest 2018\_R2 release branch at the time of development. \\ \\
 No-OS features ``platform layers'' which are .c/.h files which implement hardware-specific SPI register accesses within generic API calls. No-OS includes several platform layers which are all specific to the Analog Devices HDL design\cite{adi_hdl_github}. In order to use No-OS with OpenCPI, a new platform layer was added within the \comp{}.rcc code which provided OpenCPI-specific functionality for SPI accesses via slave device property read/writes. This new platform layer was implemented via the ad9361\_platform.cc, ad9361\_platform.h, and parameter.h files. \\
 \noindent \begin{sloppypar}
 \noindent This worker implements every No-OS API call as a property, with the matching ad9361\_get...()/ad9361\_set...() API calls collapsed into a single volatile and writable \comp{}.rcc property. Each property's type(s)/data structure(s) map directly to the type(s)/data structure(s) passed as argument(s) to that property's analogous No-OS function. The only exception to this methodology are:
@@ -1158,8 +1160,8 @@ ad9361_init : Unsupported PRODUCT_ID 0xC0ad9361_init : AD936x initialization err
 
 \begin{thebibliography}{1}
 
-\bibitem{no_os_06bfc76060d5b9767ae9aad7bf40e3648474ebb7} analogdevicesinc/no-OS@06bfc76 GitHub\\
-\url{https://github.com/analogdevicesinc/no-OS/commit/06bfc76060d5b9767ae9aad7bf40e3648474ebb7}
+\bibitem{no_os_8c52aa42e74841e3975a6f33cc5303ed2a670124} scripts: xstc.tcl: Set the heap and stack sizes for MICROBLAZE analogdevicesinc/no-OS@06bfc76 GitHub\\
+\url{https://github.com/analogdevicesinc/no-OS/commit/8c52aa42e74841e3975a6f33cc5303ed2a670124}
 \bibitem{no_os} AD9361 No-OS Software [Analog Devices Wiki]\\
 \url{https://wiki.analog.com/resources/eval/user-guides/ad-fmcomms2-ebz/software/no-os-functions}
 \bibitem{adi_hdl_github} GitHub - analogdevicesinc/hdl: HDL libraries and projects \\

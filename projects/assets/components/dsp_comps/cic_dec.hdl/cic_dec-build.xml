@@ -13,91 +13,55 @@ Build Configuration Notes:
     <parameter name='N' value='3'/>
     <parameter name='M' value='1'/>
     <parameter name='R' value='4'/>
-    <parameter name='DIN_WIDTH' value='16'/>
     <parameter name='ACC_WIDTH' value='22'/>
-    <parameter name='DOUT_WIDTH' value='16'/>
-    <parameter name='ocpi_debug' value='false'/>
-    <parameter name='ocpi_endian' value='little'/>
   </configuration>
   <configuration id='1'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='2'/>
     <parameter name='R' value='4'/>
-    <parameter name='DIN_WIDTH' value='16'/>
     <parameter name='ACC_WIDTH' value='25'/>
-    <parameter name='DOUT_WIDTH' value='16'/>
-    <parameter name='ocpi_debug' value='false'/>
-    <parameter name='ocpi_endian' value='little'/>
   </configuration>
   <configuration id='2'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='1'/>
     <parameter name='R' value='5'/>
-    <parameter name='DIN_WIDTH' value='16'/>
     <parameter name='ACC_WIDTH' value='23'/>
-    <parameter name='DOUT_WIDTH' value='16'/>
-    <parameter name='ocpi_debug' value='false'/>
-    <parameter name='ocpi_endian' value='little'/>
   </configuration>
   <configuration id='3'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='2'/>
     <parameter name='R' value='5'/>
-    <parameter name='DIN_WIDTH' value='16'/>
     <parameter name='ACC_WIDTH' value='26'/>
-    <parameter name='DOUT_WIDTH' value='16'/>
-    <parameter name='ocpi_debug' value='false'/>
-    <parameter name='ocpi_endian' value='little'/>
   </configuration>
   <configuration id='4'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='1'/>
     <parameter name='R' value='8'/>
-    <parameter name='DIN_WIDTH' value='16'/>
     <parameter name='ACC_WIDTH' value='25'/>
-    <parameter name='DOUT_WIDTH' value='16'/>
-    <parameter name='ocpi_debug' value='false'/>
-    <parameter name='ocpi_endian' value='little'/>
   </configuration>
   <configuration id='5'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='1'/>
     <parameter name='R' value='16'/>
-    <parameter name='DIN_WIDTH' value='16'/>
     <parameter name='ACC_WIDTH' value='28'/>
-    <parameter name='DOUT_WIDTH' value='16'/>
-    <parameter name='ocpi_debug' value='false'/>
-    <parameter name='ocpi_endian' value='little'/>
   </configuration>
   <configuration id='6'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='1'/>
     <parameter name='R' value='2048'/>
-    <parameter name='DIN_WIDTH' value='16'/>
     <parameter name='ACC_WIDTH' value='49'/>
-    <parameter name='DOUT_WIDTH' value='16'/>
-    <parameter name='ocpi_debug' value='false'/>
-    <parameter name='ocpi_endian' value='little'/>
   </configuration>
   <configuration id='7'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='2'/>
     <parameter name='R' value='2048'/>
-    <parameter name='DIN_WIDTH' value='16'/>
     <parameter name='ACC_WIDTH' value='52'/>
-    <parameter name='DOUT_WIDTH' value='16'/>
-    <parameter name='ocpi_debug' value='false'/>
-    <parameter name='ocpi_endian' value='little'/>
   </configuration>
   <configuration id='8'>
     <parameter name='N' value='4'/>
     <parameter name='M' value='1'/>
     <parameter name='R' value='2048'/>
-    <parameter name='DIN_WIDTH' value='16'/>
     <parameter name='ACC_WIDTH' value='60'/>
-    <parameter name='DOUT_WIDTH' value='16'/>
-    <parameter name='ocpi_debug' value='false'/>
-    <parameter name='ocpi_endian' value='little'/>
   </configuration>
 
 <!--
@@ -111,55 +75,25 @@ Build Configuration Notes:
     <parameter name='N' value='3'/>
     <parameter name='M' value='1'/>
     <parameter name='R' value='8191'/>
-    <parameter name='DIN_WIDTH' value='16'/>
     <parameter name='ACC_WIDTH' value='55'/>
-    <parameter name='DOUT_WIDTH' value='16'/>
-    <parameter name='ocpi_debug' value='false'/>
-    <parameter name='ocpi_endian' value='little'/>
   </configuration>
   <configuration id='10'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='2'/>
     <parameter name='R' value='8191'/>
-    <parameter name='DIN_WIDTH' value='16'/>
     <parameter name='ACC_WIDTH' value='58'/>
-    <parameter name='DOUT_WIDTH' value='16'/>
-    <parameter name='ocpi_debug' value='false'/>
-    <parameter name='ocpi_endian' value='little'/>
   </configuration>
   <configuration id='11'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='1'/>
     <parameter name='R' value='8192'/>
-    <parameter name='DIN_WIDTH' value='16'/>
     <parameter name='ACC_WIDTH' value='55'/>
-    <parameter name='DOUT_WIDTH' value='16'/>
-    <parameter name='ocpi_debug' value='false'/>
-    <parameter name='ocpi_endian' value='little'/>
   </configuration>
   <configuration id='12'>
     <parameter name='N' value='3'/>
     <parameter name='M' value='2'/>
     <parameter name='R' value='8192'/>
-    <parameter name='DIN_WIDTH' value='16'/>
     <parameter name='ACC_WIDTH' value='58'/>
-    <parameter name='DOUT_WIDTH' value='16'/>
-    <parameter name='ocpi_debug' value='false'/>
-    <parameter name='ocpi_endian' value='little'/>
   </configuration>
-
-<!-- Debug Build Configurations -->
-<!--
-  <configuration id='0'>
-    <parameter name='N' value='3'/>
-    <parameter name='M' value='1'/>
-    <parameter name='R' value='8192'/>
-    <parameter name='DIN_WIDTH' value='16'/>
-    <parameter name='ACC_WIDTH' value='55'/>
-    <parameter name='DOUT_WIDTH' value='16'/>
-    <parameter name='ocpi_debug' value='false'/>
-    <parameter name='ocpi_endian' value='little'/>
-  </configuration>
--->
 
 </build>

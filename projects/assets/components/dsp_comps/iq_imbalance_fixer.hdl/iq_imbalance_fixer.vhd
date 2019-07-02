@@ -38,142 +38,37 @@ library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 use ieee.math_real.all;
 library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
 
-architecture rtl of iq_imbalance_fixer_worker is
+architecture rtl of worker is
 
-  constant DATA_WIDTH_c         : integer := to_integer(unsigned(DATA_WIDTH_p));
-  constant ACC_PREC_c           : integer := to_integer(unsigned(ACC_PREC_p));
-  constant MAX_MESSAGE_VALUES_c : integer := 4096;  -- from iqstream_protocol
+  constant c_data_width : integer := to_integer(DATA_WIDTH_p);
+  constant c_acc_prec   : integer := to_integer(ACC_PREC_p);
 
-  signal i_odata           : signed(DATA_WIDTH_c-1 downto 0);
-  signal q_odata           : signed(DATA_WIDTH_c-1 downto 0);
-  signal odata_vld         : std_logic;
-  signal missed_odata_vld  : std_logic := '0';
-  signal peak_out          : std_logic_vector(15 downto 0);
-  signal msg_cnt           : unsigned(integer(ceil(log2(real(MAX_MESSAGE_VALUES_c))))-1 downto 0);
-  signal max_sample_cnt    : unsigned(integer(ceil(log2(real(MAX_MESSAGE_VALUES_c))))-1 downto 0);
-  signal enable            : std_logic;
-  signal take              : std_logic;
-  signal force_som         : std_logic;
-  signal force_eom         : std_logic;
-  type state_t is (INIT_s, WAIT_s, SEND_s);
-  signal current_state     : state_t;
-  -- Temp signals to make older VHDL happy
-  signal peak_rst_in       : std_logic;
-  signal peak_a_in         : std_logic_vector(16-1 downto 0);
-  signal peak_b_in         : std_logic_vector(16-1 downto 0);
+  signal s_data_vld_i : std_logic;
+  signal s_data_vld_o : std_logic;
+  signal s_i_o        : signed(c_data_width-1 downto 0);
+  signal s_q_o        : signed(c_data_width-1 downto 0);
+  --
+  signal s_peak_rst_i : std_logic;
+  signal s_peak_a_i   : std_logic_vector(15 downto 0);
+  signal s_peak_b_i   : std_logic_vector(15 downto 0);
+  signal s_peak_o     : std_logic_vector(15 downto 0);
 
 begin
 
-  peak_rst_in <= ctl_in.reset or std_logic(props_in.peak_read);
-  peak_a_in   <= std_logic_vector(resize(i_odata,16));
-  peak_b_in   <= std_logic_vector(resize(q_odata,16));
+  -- WSI Interface
+  in_out.take <= s_data_vld_i;
 
-  -----------------------------------------------------------------------------
-  -- 'enable' worker (when up/downstream Workers ready, input data valid)
-  -----------------------------------------------------------------------------
+  out_out.data <= std_logic_vector(resize(s_q_o, c_data_width)) &
+                  std_logic_vector(resize(s_i_o, c_data_width));
 
-  enable <= '1' when (out_in.ready = '1' and in_in.ready = '1' and in_in.valid = '1'
-                and ctl_in.is_operating = '1') else '0';
+  out_out.valid <= s_data_vld_o;
 
-  -----------------------------------------------------------------------------
-  -- Take (when up/downstream Workers ready and not sending a ZLM)
-  -----------------------------------------------------------------------------
+  -- Internal
+  s_data_vld_i <= in_in.valid and out_in.ready;
 
-  in_out.take <= '1' when (out_in.ready = '1' and in_in.ready = '1' and take = '1'
-                     and ctl_in.is_operating = '1') else '0';
-
-  -----------------------------------------------------------------------------
-  -- Give (when downstream Worker ready & primitive has valid output OR the
-  -- primitive was disabled and there is one valid sample on the primitive
-  -- output OR we detected a ZLM and need to end the current message early)
-  -----------------------------------------------------------------------------
-
-  out_out.give <= '1' when (out_in.ready = '1' and ctl_in.is_operating = '1'
-                      and (odata_vld = '1' or missed_odata_vld = '1' or force_eom = '1')) else '0';
-
-  -----------------------------------------------------------------------------
-  -- Valid (when downstream Worker ready & primitive has valid output OR the
-  -- primitive was disabled and there is one valid sample on the primitive
-  -- output)
-  -----------------------------------------------------------------------------
-
-  out_out.valid <= '1' when (out_in.ready = '1' and (odata_vld = '1' or missed_odata_vld = '1')) else '0';
-
-  -----------------------------------------------------------------------------
-  -- Zero-Length Message FSM
-  -- the zlm_fsm is being depreciated, instead see dc_offset_filter.vhd
-  -- for recommended mechanism for dealing with primitive latency
-  -----------------------------------------------------------------------------
-
-  zlm_fsm : process (ctl_in.clk)
-  begin
-    if rising_edge(ctl_in.clk) then
-      if(ctl_in.reset = '1') then
-        current_state <= INIT_s;
-        take          <= '1';
-        force_som     <= '0';
-        force_eom     <= '0';
-      else
-        -- defaults
-        current_state <= current_state;
-        take          <= '1';
-        force_som     <= '0';
-        force_eom     <= '0';
-
-        case current_state is
-          when INIT_s =>
-            if (in_in.ready = '1' and in_in.som = '1' and in_in.eom = '1' and in_in.valid = '0') then
-              current_state <= SEND_s;
-            elsif (in_in.ready = '1' and in_in.som = '1' and in_in.valid = '0') then
-              current_state <= WAIT_s;
-            end if;
-          when WAIT_s =>
-            if (in_in.ready = '1' and in_in.valid = '1') then
-              current_state <= INIT_s;
-            elsif (in_in.ready = '1' and in_in.eom = '1') then
-              current_state <= SEND_s;
-            end if;
-          when SEND_s =>
-            take <= '0';
-            if (msg_cnt /= 1 and out_in.ready = '1') then
-              force_eom     <= '1';
-            elsif (out_in.ready = '1') then
-              current_state <= INIT_s;
-              force_som     <= '1';
-              force_eom     <= '1';
-            end if;
-        end case;
-
-      end if;
-    end if;
-  end process zlm_fsm;
-
-  -----------------------------------------------------------------------------
-  -- SOM/EOM - counter set to message size, increment while giving
-  -----------------------------------------------------------------------------
-
-  max_sample_cnt <= resize(props_in.messageSize srl 2, max_sample_cnt'length);
-
-  messageSize_count : process (ctl_in.clk)
-  begin
-    if rising_edge(ctl_in.clk) then
-      if(ctl_in.reset = '1' or force_eom = '1') then
-        msg_cnt   <= (0 => '1', others => '0');
-      elsif (odata_vld = '1') then
-        if(msg_cnt = max_sample_cnt) then
-          msg_cnt <= (0 => '1', others => '0');
-        else
-          msg_cnt <= msg_cnt + 1;
-        end if;
-      end if;
-    end if;
-  end process messageSize_count;
-
-  out_out.som <= '1' when ((out_in.ready = '1' and odata_vld = '1' and
-                           msg_cnt = 1) or force_som = '1') else '0';
-  out_out.eom <= '1' when ((out_in.ready = '1' and odata_vld = '1' and
-                           msg_cnt = max_sample_cnt) or
-                           force_eom = '1') else '0';
+  s_peak_rst_i <= ctl_in.reset or std_logic(props_in.peak_read);
+  s_peak_a_i   <= std_logic_vector(resize(s_i_o, 16));
+  s_peak_b_i   <= std_logic_vector(resize(s_q_o, 16));
 
   -----------------------------------------------------------------------------
   -- IQ Imbalance Correction component
@@ -181,8 +76,8 @@ begin
 
   iq_imbalance : dsp_prims.dsp_prims.iq_imbalance_corrector
     generic map (
-      DATA_WIDTH => DATA_WIDTH_c,
-      ACC_PREC   => ACC_PREC_c)
+      DATA_WIDTH => c_data_width,
+      ACC_PREC   => c_acc_prec)
     port map (
       CLK             => ctl_in.clk,
       RST             => ctl_in.reset,
@@ -190,29 +85,14 @@ begin
       UPDATE          => std_logic(props_in.update),
       LOG2_AVG_LEN    => unsigned(props_in.log2_averaging_length(4 downto 0)),
       NLOG2_LOOP_GAIN => unsigned(props_in.neg_log2_loop_gain(4 downto 0)),
-      DIN_I           => signed(in_in.data(DATA_WIDTH_c-1    downto  0)),
-      DIN_Q           => signed(in_in.data(DATA_WIDTH_c-1+16 downto 16)),
-      DIN_VLD         => enable,
-      DOUT_I          => i_odata,
-      DOUT_Q          => q_odata,
-      DOUT_VLD        => odata_vld,
+      DIN_I           => signed(in_in.data(c_data_width-1 downto 0)),
+      DIN_Q           => signed(in_in.data(c_data_width-1+16 downto 16)),
+      DIN_VLD         => s_data_vld_i,
+      DOUT_I          => s_i_o,
+      DOUT_Q          => s_q_o,
+      DOUT_VLD        => s_data_vld_o,
       C_CORR          => open,
       D_CORR          => open);
-
-  backPressure : process (ctl_in.clk)
-  begin
-    if rising_edge(ctl_in.clk) then
-      if(ctl_in.reset = '1' or out_in.ready = '1') then
-        missed_odata_vld <= '0';
-      elsif (out_in.ready = '0' and odata_vld = '1') then
-        missed_odata_vld <= '1';
-      end if;
-    end if;
-  end process backPressure;
-
-  out_out.data        <= std_logic_vector(resize(q_odata,16)) &
-                         std_logic_vector(resize(i_odata,16));
-  out_out.byte_enable <= (others => '1');
 
   -----------------------------------------------------------------------------
   -- Peak Detection primitive. Value is cleared when read
@@ -221,13 +101,16 @@ begin
     pd : util_prims.util_prims.peakDetect
       port map (
         CLK_IN   => ctl_in.clk,
-        RST_IN   => peak_rst_in,
-        EN_IN    => odata_vld,
-        A_IN     => peak_a_in,
-        B_IN     => peak_b_in,
-        PEAK_OUT => peak_out);
+        RST_IN   => s_peak_rst_i,
+        EN_IN    => s_data_vld_o,
+        A_IN     => s_peak_a_i,
+        B_IN     => s_peak_b_i,
+        PEAK_OUT => s_peak_o);
 
-    props_out.peak <= signed(peak_out);
+    props_out.peak <= signed(s_peak_o);
   end generate pm_gen;
 
+  no_pm_gen : if its(not PEAK_MONITOR_p) generate
+    props_out.peak <= (others => '0');
+  end generate no_pm_gen;
 end rtl;

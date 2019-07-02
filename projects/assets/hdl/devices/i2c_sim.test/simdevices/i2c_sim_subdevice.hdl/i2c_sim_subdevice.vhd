@@ -20,7 +20,7 @@
 -- Normally an I2C subdevice would be specialized for the platform
 -- and for the devices it is multiplexing
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
-library ocpi; use ocpi.all, ocpi.types.all; -- remove this to avoid all ocpi name collisions
+library ocpi; use ocpi.all, ocpi.types.all, ocpi.util.all; -- remove this to avoid all ocpi name collisions
 library i2c; use i2c.i2c.all;
 architecture rtl of i2c_sim_subdevice_worker is
   constant addr_width_c    : natural := 7;

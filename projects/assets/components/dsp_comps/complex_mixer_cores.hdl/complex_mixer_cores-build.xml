@@ -1,0 +1,6 @@
+<build>
+  <configuration id='0'>
+    <parameter name='VENDOR_TOOLS' value='vivado'/>
+  </configuration>
+
+</build>

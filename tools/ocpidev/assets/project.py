@@ -23,12 +23,16 @@ import os
 import sys
 import logging
 import json
+import jinja2
+import subprocess
 import _opencpi.util as ocpiutil
+import _opencpi.assets.template as ocpitemplate
 from .abstract import (RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset,
                        ReportableAsset)
 from .factory import AssetFactory
 from .library import Library
 from .registry import Registry
+
 
 # TODO: Should also extend CreatableAsset, ShowableAsset
 # pylint:disable=too-many-instance-attributes
@@ -104,8 +108,8 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
 
     def initialize_platforms(self, **kwargs):
         """
-        initilize the variables self.hdlplatforms, self.rccplatforms, and self.hdlassemblies with
-        lists of these asset types if the init varable associated with them
+        initialize the variables self.hdlplatforms, self.rccplatforms, and self.hdlassemblies with
+        lists of these asset types if the init variable associated with them
         (init_rccplats, init_hdlplats, and init_hdlassembs) are set to True
         """
         if kwargs.get("init_rccplats", False):
@@ -139,7 +143,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
 
     def __eq__(self, other):
         """
-        Two projects are equivalent iff their directories match
+        Two projects are equivalent if their directories match
         """
         #TODO: do we need realpath too? remove the abs/realpaths if we instead call
         # them in the Asset constructor
@@ -180,7 +184,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                                                        mk_arg="projectpackage ShellProjectVars=1",
                                                        verbose=True)
             if (not project_vars is None and 'ProjectPackage' in project_vars and
-               len(project_vars['ProjectPackage']) > 0):
+                    len(project_vars['ProjectPackage']) > 0):
                 # There is only one value associated with ProjectPackage, so get element 0
                 project_package = project_vars['ProjectPackage'][0]
             else:
@@ -268,7 +272,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
     # pylint:disable=unused-argument
     def show_tests(self, details, verbose, **kwargs):
         """
-        Print out all the tests ina project in the format given by details
+        Print out all the tests in a project in the format given by details
         (simple, verbose, or json)
 
         JSON format:
@@ -357,7 +361,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
     # pylint:disable=unused-argument
     def _show_non_verbose(self, details, **kwargs):
         """
-        show all the information about a project with level 1 of verbocity in the format specified
+        show all the information about a project with level 1 of verbosity in the format specified
         by details (simple, table, or json)
         """
         project_vars = ocpiutil.set_vars_from_make(mk_file=self.directory + "/Makefile",
@@ -387,7 +391,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
 
     def _collect_plats_dict(self):
         """
-        Generate a dictonary that contains all the rcc and hdl platforms within this project
+        Generate a dictionary that contains all the rcc and hdl platforms within this project
         """
         rcc_plats_dict = {}
         for rcc_plats_col in self.rccplatforms:
@@ -402,7 +406,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
 
     def _collect_verbose_dict(self):
         """
-        Generate a dictonary that contains all the information about a project with verbocity
+        Generate a dictionary that contains all the information about a project with verbosity
         level 1
         """
         proj_dict = {}
@@ -441,7 +445,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
 
     def _get_very_verbose_assemblies_dict(self):
         """
-        Generate the dictonary of assemblies within a project that is used with verbocity level 2
+        Generate the dictionary of assemblies within a project that is used with verbosity level 2
         """
         assys_dict = {}
         if self.hdlassemblies:
@@ -451,7 +455,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
 
     def _get_very_verbose_prims_dict(self):
         """
-        Generate the dictonary of primatives within a project that is used with verbocity level 2
+        Generate the dictionary of primitives within a project that is used with verbosity level 2
         """
         prims_dict = {}
         prim_dir = self.directory + "/hdl/primitives"
@@ -465,7 +469,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
 
     def _get_very_verbose_libs_dict(self):
         """
-        Generate the dictonary of libraries within a project that is used with verbocity level 2
+        Generate the dictionary of libraries within a project that is used with verbosity level 2
         """
         libraries_dict = {}
         for lib in self.lib_list:
@@ -498,7 +502,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
 
     def _collect_very_verbose_dict(self):
         """
-        Generate a dictonary with all the information about a project with verbocity level 2
+        Generate a dictionary with all the information about a project with verbosity level 2
         """
         have_any_tests = False
         have_any_wkrs = False
@@ -540,7 +544,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
 
     def _show_verbose(self, details, **kwargs):
         """
-        print out information about the project with verbocity level 1 in the format specified by
+        print out information about the project with verbosity level 1 in the format specified by
         details (simple, table, or json)
         """
         proj_dict = self._collect_verbose_dict()
@@ -618,13 +622,13 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
 
     def _show_very_verbose_table(self, proj_dict, have_any_tests, have_any_wkrs, have_any_comps):
         """
-        Prints out information about a project with verbocity level 2 in table format
+        Prints out information about a project with verbosity level 2 in table format
 
         Arguments:
-          proj_dict      - dictonary with all the project information
-          have_any_tests - boolean flag denoting if this project has any tests
-          have_any_wkrs  - boolean flag denoting if this project has any workers
-          have_any_comps - boolean flag denoting if this project has any components
+          proj_dict      - dictionary with all the project information
+          have_any_tests - Boolean flag denoting if this project has any tests
+          have_any_wkrs  - Boolean flag denoting if this project has any workers
+          have_any_comps - Boolean flag denoting if this project has any components
         """
         print("Overview:")
         rows = [["Project Directory", "Package-ID", "Project Dependencies"]]
@@ -705,7 +709,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
 
     def _show_very_verbose(self, details, **kwargs):
         """
-        Prints out information about a project verbocity level 2 in the format specified by details
+        Prints out information about a project verbosity level 2 in the format specified by details
         (simple, table, json)
         """
         proj_dict, have_any_tests, have_any_wkrs, have_any_comps = self._collect_very_verbose_dict()
@@ -743,12 +747,12 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         for library in self.lib_list:
             library.show_utilization()
 
-        # if this project has an hdl/platforms dir, show its utilization
+        # if this project has an hdl/platforms directory, show its utilization
         if self.hdlplatforms:
             for hdlplatforms in self.hdlplatforms:
                 hdlplatforms.show_utilization()
 
-        # if this project has an hdl/assemblies dir, show its utilization
+        # if this project has an hdl/assemblies directory, show its utilization
         if self.hdlassemblies:
             self.hdlassemblies.show_utilization()
 
@@ -791,10 +795,10 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                                          "This can be done by running 'ocpidev unregister project" +
                                          " " + self.package_id + "'.")
         # pylint:enable=bad-continuation
-        if( os.path.realpath(registry_path) != os.path.realpath(default_registry_path)):
+        if os.path.realpath(registry_path) != os.path.realpath(default_registry_path):
             ocpiutil.logging.warning("To use this registry, run the following command and add it " +
-                                    "to your ~/.bashrc:\nexport OCPI_PROJECT_REGISTRY_DIR=" +
-                                    os.path.realpath(registry_path))
+                                     "to your ~/.bashrc:\nexport OCPI_PROJECT_REGISTRY_DIR=" +
+                                     os.path.realpath(registry_path))
 
         #self.__registry = AssetFactory.factory("registry", registry_path)
         # TODO: pull this relative link functionality into a helper function
@@ -891,7 +895,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
     @classmethod
     def collect_projects_from_path(cls):
         """
-        Finds all projects in the OCPI_PROJECT_PATH envriment variable and in the registry
+        Finds all projects in the OCPI_PROJECT_PATH environment variable and in the registry
         """
         project_path = os.environ.get('OCPI_PROJECT_PATH')
         projects_from_env = {}
@@ -914,7 +918,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
     def show_all(cls, details):
         """
         Print out information about all the projects in the registry and in OCPI_PROJECT_PATH
-        enviroment variable
+        environment variable
         """
         reg = AssetFactory.factory("registry", Registry.get_registry_dir())
         json_dict = reg.get_dict(True)
@@ -935,6 +939,109 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         elif details == "json":
             json.dump(json_dict, sys.stdout)
             print()
+
+    @staticmethod
+    def get_working_dir(name, library, hdl_library, hdl_platform):
+        """
+        return the directory of a Project given the name (name) and
+        library specifiers (library, hdl_library, hdl_platform)
+        """
+        cur_dirtype = ocpiutil.get_dirtype()
+        ocpiutil.check_no_libs("project", library, hdl_library, hdl_platform)
+        if cur_dirtype not in [None, "project"]:
+            ocpiutil.throw_not_valid_dirtype_e(["project"])
+        if cur_dirtype == "project":
+            return "."
+        else:
+            return name
+
+    def _get_template_dict(name, **kwargs):
+        """
+        used by the create function/verb to generate the dictionary of viabales to send to the
+        jinja2 template.
+        valid kwargs handled at this level are:
+            package_id     (string)      - Package ID for a project  (used instead of package_prefix
+                                           and package_name usually)
+            package_prefix (string)      - Package prefix for a project (used instead of package_id
+                                           usually)
+            package_name   (string)      - Package name for a project  (used instead of package_id
+                                           usually)
+            comp_lib       (list of str) - Specify ComponentLibraries in Makefile
+            xml_include    (list of str) - Specify XmlIncludeDirs in Makefile
+            include_dir    (list of str) - Specify IncludeDirs in Makefile
+            prim_lib       (list of str) - Specify Libraries in Makefile
+            depend         (list of str) - Specify ProjectDependencies in Makefile
+        """
+        package_id = kwargs.get("package_id", None)
+        package_prefix =kwargs.get("package_prefix", None)
+        package_name =  kwargs.get("package_name", None)
+        comp_lib = kwargs.get("comp_lib", None)
+        if comp_lib:
+            comp_lib = " ".join(comp_lib)
+        xml_include = kwargs.get("xml_include", None)
+        if xml_include:
+            xml_include = " ".join(xml_include)
+        include_dir = kwargs.get("include_dir", None)
+        if include_dir:
+            include_dir = " ".join(include_dir)
+        prim_lib = kwargs.get("prim_lib", None)
+        if prim_lib:
+            prim_lib = " ".join(prim_lib)
+        depend = kwargs.get("depend", None)
+        if depend:
+            depend = " ".join(depend)
+
+        template_dict = {
+                        "name" : name,
+                        "comp_lib" : comp_lib,
+                        "xml_include" :xml_include,
+                        "include_dir" : include_dir,
+                        "prim_lib" : prim_lib,
+                        "package_id" : package_id,
+                        "package_name" : package_name,
+                        "package_prefix" : package_prefix,
+                        "depend" : depend,
+                        "determined_package_id" : ocpiutil.get_package_id_from_vars(package_id,
+                                                                                    package_prefix,
+                                                                                    package_name)
+                        }
+        return template_dict
+
+    @staticmethod
+    def create(name, directory, **kwargs):
+        """
+        this is a static method that will create a new Project given a name and directory
+        """
+        proj_dir = directory + "/" + name
+        if os.path.isdir(proj_dir):
+            raise ocpiutil.OCPIException("Cannot create this project" + proj_dir + "because this " +
+                                         "folder already exists.")
+        os.mkdir(name)
+        template_dict = Project._get_template_dict(name, **kwargs)
+
+        ocpiutil.write_file_from_string( proj_dir + "/Project.exports", ocpitemplate.PROJ_EXPORTS)
+        ocpiutil.write_file_from_string( proj_dir + "/.gitignore", ocpitemplate.PROJ_GIT_IGNORE)
+        ocpiutil.write_file_from_string( proj_dir + "/.gitattributes", ocpitemplate.PROJ_GIT_ATTR)
+        template = jinja2.Template(ocpitemplate.PROJ_MAKEFILE, trim_blocks=True)
+        ocpiutil.write_file_from_string( proj_dir + "/Makefile", template.render(**template_dict))
+        template = jinja2.Template(ocpitemplate.PROJ_PROJECT_MK, trim_blocks=True)
+        ocpiutil.write_file_from_string( proj_dir + "/Project.mk", template.render(**template_dict))
+        template = jinja2.Template(ocpitemplate.PROJ_GUI_PROJECT, trim_blocks=True)
+        ocpiutil.write_file_from_string( proj_dir + "/.project", template.render(**template_dict))
+
+        if kwargs.get("register", None):
+            AssetFactory.factory(
+                "registry",
+                Registry.get_registry_dir(name)).add(name, True)
+
+        proc = subprocess.Popen(["make", "-C", name, "imports", "exports"],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        my_out = proc.communicate()
+        if proc.returncode != 0:
+            logging.warning("Failed to import or export  projectat " + name + " because of " +
+                            "error: \n" + str(my_out[1]))
+
 
 # pylint:enable=too-many-instance-attributes
 # pylint:enable=too-many-ancestors

@@ -146,7 +146,7 @@ diff -rupN util.h util.h
 @@ -489,4 +489,6 @@ int32_t ad9361_do_dcxo_tune_fine(struct
  /* Get the temperature. */
  int32_t ad9361_get_temperature(struct ad9361_rf_phy *phy,
- 							   int32_t *temp);
+ 			       int32_t *temp);
 +/* Free all memory allocations which occurred during runtime */
 +void ad9361_free(struct ad9361_rf_phy *phy);
  #endif

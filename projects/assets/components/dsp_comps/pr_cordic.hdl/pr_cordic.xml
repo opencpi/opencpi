@@ -1,10 +1,16 @@
-<HdlWorker Language="vhdl" Spec="pr_cordic-spec.xml">
+<HdlWorker Language="vhdl" Spec="pr_cordic-spec.xml" Version="2" DataWidth="32">
 
   <SpecProperty Name="DATA_WIDTH" Parameter="true" Default="16"/>
-  <SpecProperty Name="DATA_EXT" Parameter="true" Default="16"/>
-  <SpecProperty Name="STAGES" Parameter="true" Default="16"/>
+  <SpecProperty Name="DATA_EXT" Parameter="true" Default="6"/>
+  <SpecProperty Name="STAGES" Parameter="true" Default="18"/>
 
-  <StreamInterface Name="in"  DataWidth="32" ZeroLengthMessages="true"/>
-  <StreamInterface Name="out" DataWidth="32" ZeroLengthMessages="true"/>
+  <Property Name="PEAK_MONITOR" Type="bool" Parameter="true" Default="true"
+	    Description="Enable/Disable build-time inclusion of Peak Monitoring" />
+
+  <Property Name="peak" Type="short" Volatile="true"
+	    Description="Peak value of I/Q output."/>
+
+  <StreamInterface Name="in"/>
+  <StreamInterface Name="out" insertEOM='1'/>
 
 </HdlWorker>

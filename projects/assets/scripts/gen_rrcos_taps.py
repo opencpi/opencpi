@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -26,10 +26,10 @@ import os.path
 import numpy as np
 
 def main():
-    print "\n","*"*80
-    print "*** Python: Generate Root-Raised Cosine taps ***"
+    print(("\n","*"*80))
+    print("*** Python: Generate Root-Raised Cosine taps ***")
     if len(sys.argv) < 2:
-        print "Exit: must enter the Length of the filter in samples"
+        print("Exit: must enter the Length of the filter in samples")
         return
     elif len(sys.argv) < 3:
         print("Exit: must enter the roll-off factor Alpha in the range (0,1)")
@@ -63,11 +63,11 @@ def main():
 
     #set taps scale to integers
     scale = max(abs(h_rrc))
-    print scale
+    print(scale)
     taps = (np.int16)(h_rrc * max_tap / scale)
-    print taps
-    print sum(taps)
-    print (float)(sum(taps))/(float)(max_tap)
+    print(taps)
+    print((sum(taps)))
+    print(((sum(taps))/max_tap))#variables were previously cast to float 
     #print taps[0:int(np.ceil(length/2.0))]
 
     fo = open(sys.argv[6], 'w')

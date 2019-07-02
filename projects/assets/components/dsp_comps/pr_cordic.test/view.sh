@@ -17,6 +17,9 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+# For convencience, plotting input file as 'complex', despite data actually being 'real': phase='I' and 'magnitude='Q'
+isize=$(du -sb $2 | awk '{ print $1 }')
+$OCPI_PROJECT_DIR/scripts/plotAndFft.py $2 complex $(($isize/4)) 1 &
 
-#$OCPI_PROJECT_DIR/scripts/plotAndFft.py $2 real 262136 1 &
-$OCPI_PROJECT_DIR/scripts/plotAndFft.py $1 complex `echo "$OCPI_TEST_NUM_SAMPLES-$OCPI_TEST_STAGES-1" | bc` 1 &
+osize=$(du -sb $1 | awk '{ print $1 }')
+$OCPI_PROJECT_DIR/scripts/plotAndFft.py $1 complex $(($osize/4)) 1 &

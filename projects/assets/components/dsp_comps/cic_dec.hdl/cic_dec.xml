@@ -8,7 +8,11 @@
 
   <SpecProperty Name="DIN_WIDTH" Parameter="true"  Default="16"/>
 
-  <SpecProperty Name="ACC_WIDTH" Parameter="true" Default="22"/>
+  <!-- 
+       ACC_WIDTH is not used in this worker, but kept for compatibility purposes
+       It is calculated internally by the worker as ACC_WIDTH = CEIL(N*log2(R*M))+DIN_WIDTH
+  -->
+  <SpecProperty Name="ACC_WIDTH" Parameter="true" Default="0"/>
 
   <SpecProperty Name="DOUT_WIDTH" Parameter="true" Default="16"/>
 

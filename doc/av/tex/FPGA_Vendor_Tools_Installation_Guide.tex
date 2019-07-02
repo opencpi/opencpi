@@ -388,6 +388,11 @@ To enable a license for use by OpenCPI, the OpenCPI environment variable which s
 \item license server:
 \\ \verb+export OCPI_XILINX_LICENSE_FILE=<port>@<server.ip.addr>+
 \end{itemize}
+If the \verb+OCPI_XILINX_LICENSE_FILE+ environment variable is not set, the license is assumed to be in one of the following locations:
+\begin{itemize}
+\item /opt/Xilinx/Xilinx-License.lic
+\item /opt/Xilinx/Vivado/Xilinx-License.lic
+\end{itemize}
 Alternatively, if using a floating license server, it is possible to set to the license server and Xilinx's environment variable, which will allow use of a local license, e.g. a local WebPACK license, by default and the served floating license when WebPACK license is not sufficient.\footnote{See Xilinx ``\href{https://www.xilinx.com/support/answers/42507.html}{AR\# 42507: What are the search order and locations...}'' and ``\href{https://www.xilinx.com/support/answers/44024.html}{AR\# 44024: If a feature is licensed in multiple locations...}''} \medskip
 \begin{itemize}
 \item license server and local license:
@@ -411,7 +416,7 @@ The steps herein are a slightly modified subset of those outlined in \url{https:
 \end{enumerate}
 
 \subsubsection{ISE}
-\textbf{Verifying udev rules}
+Verify that the udev rules have been created by the Xilinx cable driver installation scripts. This may require some modification to the xusbdfwu.rules file
 \begin{enumerate}
 \item Run the following command : \code{ls -al /etc/udev/rules.d}
 \item Check if the following file is present : \code{xusbdfwu.rules}

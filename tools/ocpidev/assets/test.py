@@ -82,3 +82,38 @@ class Test(RunnableAsset, HDLBuildableAsset, RCCBuildableAsset):
         This is a placeholder function will be the function that builds this Asset
         """
         raise NotImplementedError("Test.build() is not implemented")
+
+    @staticmethod
+    def get_working_dir(name, library, hdl_library, hdl_platform):
+        """
+        return the directory of a Test given the name (name) and
+        library specifiers (library, hdl_library, hdl_platform)
+        """
+        # if more then one of the library location variable are not None it is an error
+        if len(list(filter(None, [library, hdl_library, hdl_platform]))) > 1:
+            ocpiutil.throw_invalid_libs_e()
+        cur_dirtype = ocpiutil.get_dirtype()
+        valid_dirtypes = ["project", "libraries", "library", "test"]
+        if cur_dirtype not in valid_dirtypes:
+            ocpiutil.throw_not_valid_dirtype_e(valid_dirtypes)
+        #add on the .test to the test name if its not already there
+        name = name if name.endswith((".test", ".test/")) else name + ".test"
+        if library:
+            if not library.startswith("components"):
+                library = "components/" + library
+            return ocpiutil.get_path_to_project_top() + "/" + library + "/" + name
+        elif hdl_library:
+            return ocpiutil.get_path_to_project_top() + "/hdl/" + hdl_library + "/" + name
+        elif hdl_platform:
+            return (ocpiutil.get_path_to_project_top() + "/hdl/platforms/" + hdl_platform +
+                    "/devices/" + name)
+        elif name:
+            if cur_dirtype == "hdl-platform":
+                return "devices/" + name
+            elif cur_dirtype == "project":
+                if ocpiutil.get_dirtype("components") == "libraries":
+                    ocpiutil.throw_specify_lib_e()
+                return "components/" + name
+            else:
+                return name
+        else: ocpiutil.throw_not_blank_e("test", "name", True)

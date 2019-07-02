@@ -20,8 +20,6 @@
 library ieee; use ieee.std_logic_1164.all, ieee.numeric_std.all;
 package i2c is
 
-  function count_ones(slv : std_logic_vector) return natural;
-
   component i2c_master_bit_ctrl is
     port (clk     : in  std_logic;
           rst     : in  std_logic;

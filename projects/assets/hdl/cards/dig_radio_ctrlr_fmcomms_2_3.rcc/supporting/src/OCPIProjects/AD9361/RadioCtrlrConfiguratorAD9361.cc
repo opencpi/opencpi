@@ -147,8 +147,8 @@ void ConfiguratorAD9361<LC>::constrain_config_by_Rx_RFPLL_LO_freq(
     some_range_within_70_to_1300_is_possible = (test_range.m_ranges.size()>0);
   }
   if(some_range_within_70_to_1300_is_possible) {
-    // see No-OS ad9361.c ad9361_init_gain_tables()
-    VR_gain_new.add_valid_range(1., 77.);
+    // see No-OS ad9361.c full_gain_table_abs_gain
+    VR_gain_new.add_valid_range(1., 73.);
   }
   // see No-OS ad9361.c ad9361_gt_table_index()
   bool some_range_within_1300_4000_is_possible;
@@ -161,7 +161,7 @@ void ConfiguratorAD9361<LC>::constrain_config_by_Rx_RFPLL_LO_freq(
     some_range_within_1300_4000_is_possible= (test_range.m_ranges.size()>0);
   }
   if(some_range_within_1300_4000_is_possible) {
-    // see No-OS ad9361.c ad9361_init_gain_tables()
+    // see No-OS ad9361.c full_gain_table_abs_gain
     VR_gain_new.add_valid_range(-3., 71.);
   }
   // see No-OS ad9361.c ad9361_gt_table_index()
@@ -175,7 +175,7 @@ void ConfiguratorAD9361<LC>::constrain_config_by_Rx_RFPLL_LO_freq(
     some_range_within_4000_6000_is_possible = (test_range.m_ranges.size()>0);
   }
   if(some_range_within_4000_6000_is_possible) {
-    // see No-OS ad9361.c ad9361_init_gain_tables()
+    // see No-OS ad9361.c full_gain_table_abs_gain
     VR_gain_new.add_valid_range(-10., 62);
   }
 

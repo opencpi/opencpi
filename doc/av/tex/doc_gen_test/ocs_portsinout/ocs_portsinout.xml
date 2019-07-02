@@ -1,0 +1,6 @@
+<ComponentSpec>
+
+  <Port name='in' producer='false'/>
+  <Port name='out' producer='true'/>
+
+</ComponentSpec>

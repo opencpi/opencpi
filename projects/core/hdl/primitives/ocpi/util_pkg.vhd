@@ -38,6 +38,7 @@ function min(l,r: natural) return natural;
 function max(l,r: natural) return natural;
 function min(l: unsigned; r: natural) return unsigned;
 function max(l: unsigned; r: natural) return unsigned;
+function count_ones(slv : std_logic_vector) return natural;
 component message_bounds
   generic(width     : natural);
   port(Clk          : in  std_logic;

@@ -1,4 +1,6 @@
 <tests useHDLFileIo='true'>
-  <input port='in' stressorMode='full' script='generate.py 32768' messagesize='8192'/>
-  <output port='out' script='verify.py 32768' view='view.sh'/>
+  <input port='in' stressorMode='full' script='generate.py'/>
+  <output port='out' script='verify.py' view='view.sh'/>
+
+  <property name='NUM_SAMPLES' test='true' values='8192'/>
 </tests>

@@ -4,20 +4,25 @@
      Add port elements for i/o ports -->
 <ComponentSpec>
 
-  <Property Name="DATA_WIDTH" Type="uchar" Readable="True"/>
+  <Property Name="DATA_WIDTH" Type="uchar"
+	    Description="Data width of complex input and real output"/>
 
-  <Property Name="DATA_EXT" Type="uchar" Readable="True"/>
+  <Property Name="DATA_EXT" Type="uchar"
+	    Description="Number of extension/growth bits"/>
 
-  <Property Name="STAGES" Type="uchar" Readable="True"/>
+  <Property Name="STAGES" Type="uchar"
+	    Description="Number of CORDIC stages to implement"/>
 
-  <Property Name="messageSize" Type="ushort" Readable="true" Writable="true" Default="8192"/>
+  <Property Name="messageSize" Type="ushort" Writable="true" Default="8192"
+	    Description="Unused property. Formerly used to set output message size"/>
 
-  <Property Name="enable" Type="bool" Readable="true" Writable="true" Default="true"/>
+  <Property Name="enable" Type="bool" Writable="true" Default="true"
+	    Description="Enable/bypass control"/>
 
-  <Property Name="magnitude" Type="ushort" Default="16384" Readable="true" Writable="true"/> 
+  <Property Name="magnitude" Type="ushort" Writable="true" Default="16384"
+	    Description="Set magnitude input of CORDIC"/>
 
-
- <DataInterfaceSpec Name="in" Producer="false" Protocol="rstream_protocol.xml"/>
- <DataInterfaceSpec Name="out" Producer="true" Protocol="iqstream_protocol.xml"/>
+ <Port Name="in"  Protocol="rstream_protocol.xml"/>
+ <Port Name="out" Protocol="iqstream_protocol.xml" Producer="true"/>
 
 </ComponentSpec>

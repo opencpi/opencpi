@@ -41,8 +41,8 @@ class Registry(ShowableAsset):
         super().__init__(directory, name, **kwargs)
 
         # Each registry instance has a list of projects registered within it.
-        # Initialize this list by probing the filesystem for links that exist
-        # in the registry dir.
+        # Initialize this list by probing the file-system for links that exist
+        # in the registry directory.
         # __projects maps package-ID --> project instance
         self.__projects = {}
         for proj in glob(self.directory + '/*'):
@@ -69,7 +69,7 @@ class Registry(ShowableAsset):
                                              "configurations.")
 
         # If the project is registered here by package-ID, return True.
-        # If not, or if a different project is registered here with that pacakge-ID, return False
+        # If not, or if a different project is registered here with that package-ID, return False
         if package_id in self.__projects:
             # pylint:disable=bad-continuation
             if (directory is not None and
@@ -131,7 +131,8 @@ class Registry(ShowableAsset):
             # remove the broken link that would conflict
             self.remove_link(pid)
 
-        # Perform the actual registration: create the symlink to the project in this registry dir
+        # Perform the actual registration: create the symlink to the project in this registry
+        # directory
         self.create_link(project)
         # Add the project to this registry's projects dictionary
         self.__projects[project.package_id] = project
@@ -275,11 +276,11 @@ class Registry(ShowableAsset):
 
         Determine whether the resulting path exists.
 
-        Return the exists boolean and the path to the project registry directory.
+        Return the exists Boolean and the path to the project registry directory.
         """
         if (ocpiutil.is_path_in_project(directory) and
-            os.path.isdir(ocpiutil.get_path_to_project_top(directory) + "/imports")):
-            # allow imports to be a link OR a dir (needed for deep copies of exported projects)
+                os.path.isdir(ocpiutil.get_path_to_project_top(directory) + "/imports")):
+            #allow imports to be a link OR a directory (needed for deep copies of exported projects)
             project_registry_dir = os.path.realpath(ocpiutil.get_path_to_project_top(directory) +
                                                     "/imports")
         else:
@@ -299,7 +300,7 @@ class Registry(ShowableAsset):
 
     def _collect_workers_dict(self):
         """
-        return a dictonary with all the workers in all the projects in the registry
+        return a dictionary with all the workers in all the projects in the registry
         """
         ret_dict = {}
         proj_dict = {}
@@ -317,8 +318,8 @@ class Registry(ShowableAsset):
                                  "directory":lib.directory,
                                  "package_id": lib.package_id}
                     lib_package = lib.package_id
-                    # in case two or more  libraries have the same package id we update the key to end
-                    # with a number
+                    # in case two or more libraries have the same package id we update the key to
+                    # end with a number
                     i = 1
                     while lib_package in lib_dict:
                         lib_package += ":" + str(i)
@@ -335,7 +336,7 @@ class Registry(ShowableAsset):
 
     def _collect_components_dict(self):
         """
-        return a dictonary with all the components in all the projects in the registry
+        return a dictionary with all the components in all the projects in the registry
         """
         ret_dict = {}
         proj_dict = {}
@@ -429,7 +430,7 @@ class Registry(ShowableAsset):
 
     def get_dict(self, get_package):
         """
-        return a dictonary with with information about the registry
+        return a dictionary with with information about the registry
         """
         proj_dict = {}
         for proj in self.__projects:
@@ -441,7 +442,7 @@ class Registry(ShowableAsset):
                 proj_dict[package_id] = {
                     "real_path":self.__projects[proj].directory,
                     "exists":(os.path.exists(self.__projects[proj].directory) and
-                                             os.path.isdir(self.__projects[proj].directory))}
+                              os.path.isdir(self.__projects[proj].directory))}
 
         json_dict = {"registry_location": self.directory}
         json_dict["projects"] = proj_dict

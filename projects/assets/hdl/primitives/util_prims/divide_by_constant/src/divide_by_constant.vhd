@@ -55,7 +55,7 @@ begin
 
   o_din_rdy <= s_din_rdy;
   
-  prod_reg : process (i_clk)
+  process (i_clk)
   begin
     if rising_edge(i_clk) then
       if i_rst = '1' then

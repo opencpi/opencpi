@@ -109,6 +109,8 @@ PKGS_S+=(glibc-devel.i686)
 # E. installations that have to happen after we run yum-install once, and also rpm-required
 #    for devel.  For RPM installations we somehow rely on the user pre-installing epel
 #
+#    for ocpidev
+PKGS_E+=(python34 python34-jinja2)
 #    for various testing scripts
 PKGS_E+=(python34-numpy)
 #    for bash completion - a noarch package  (AV-2398)
@@ -124,6 +126,6 @@ function ypkgs {
 # The list for RPMs: first line
 [ "$1" = list ] && rpkgs PKGS_R && rpkgs PKGS_D && rpkgs PKGS_S && rpkgs PKGS_E && exit 0
 [ "$1" = yumlist ] && ypkgs PKGS_R && ypkgs PKGS_D && ypkgs PKGS_S && ypkgs PKGS_E && exit 0
-sudo yum -y install $(ypkgs PKGS_R) $(ypkgs PKGS_D) $(ypkgs PKGS_S)
+sudo yum -y install $(ypkgs PKGS_R) $(ypkgs PKGS_D) $(ypkgs PKGS_S) --setopt=skip_missing_names_on_install=False
 # Now those that depend on epel, e.g.
-sudo yum -y install $(ypkgs PKGS_E)
+sudo yum -y install $(ypkgs PKGS_E) --setopt=skip_missing_names_on_install=False

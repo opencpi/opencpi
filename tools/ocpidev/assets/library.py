@@ -82,6 +82,10 @@ class Library(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ReportableAss
 
     @staticmethod
     def get_package_id(directory='.'):
+        """
+        return the package id of the library.  This information is determined from the make build
+        system in order to be accurate.
+        """
         lib_vars = ocpiutil.set_vars_from_make(mk_file=directory + "/Makefile",
                                                mk_arg="ShellLibraryVars=1 showlib",
                                                verbose=True)
@@ -111,7 +115,7 @@ class Library(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ReportableAss
         """
         Probe make in order to determine the list of active tests in the library
         """
-        # If this function has alredy been called dont call make again because its very expencive
+        # If this function has already been called don't call make again because its very expensive
         if self.tests_names is not None and self.wkr_names is not None:
             return (self.tests_names, self.wkr_names)
         ret_tests = []
@@ -162,7 +166,35 @@ class Library(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ReportableAss
         """
         raise NotImplementedError("Library.build() is not implemented")
 
+    @staticmethod
+    def get_working_dir(name, library, hdl_library, hdl_platform):
+        """
+        return the directory of a Library given the name (name) and
+        library specifiers (library, hdl_library, hdl_platform)
+        """
+        # if more then one of the library location variable are not None it is an error.
+        # a length of 0 means that a name is required and a default location of components/
+        if len(list(filter(None, [library, hdl_library, hdl_platform]))) > 1:
+            ocpiutil.throw_invalid_libs_e()
+        if name: ocpiutil.check_no_libs("library", library, hdl_library, hdl_platform)
+        if library:
+            return "components/" + library
+        elif hdl_library:
+            return "hdl/" + hdl_library
+        elif hdl_platform:
+            return "hdl/platforms/" + hdl_platform + "/devices"
+        elif name:
+            if name != "components" and ocpiutil.get_dirtype() != "libraries":
+                name = "components/" + name
+            return name
+        else:
+            ocpiutil.throw_specify_lib_e()
+
 class LibraryCollection(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ReportableAsset):
+    """
+    This class represents an OpenCPI Library Collection.  Contains a list of the libraries that
+    are in this library collection and can be initialized or left as None if not needed
+    """
     def __init__(self, directory, name=None, **kwargs):
         self.check_dirtype("libraries", directory)
         super().__init__(directory, name, **kwargs)

@@ -46,7 +46,7 @@ entity slave is
            opcode_width     : natural; -- width of opcode, which may be zero
            own_clock        : boolean; -- does the port have a clock different thanthe wci?
            hdl_version      : natural; -- hdl interface version
-           early_request    : boolean -- are datavalid and datalast used? 
+           early_request    : boolean -- are datavalid and datalast used?
            );
   port (
     -- Exterior OCP input/master signals
@@ -54,7 +54,7 @@ entity slave is
     Clk              : in  std_logic;
     --- only used if burst are precise
     MBurstLength     : in  std_logic_vector(burst_width - 1 downto 0);
-    --- only used if bytesize < data width or zlm 
+    --- only used if bytesize < data width or zlm
     MByteEn          : in  std_logic_vector(n_bytes - 1 downto 0);
     MCmd             : in  ocpi.ocp.MCmd_t;
     MData            : in  std_logic_vector(mdata_width-1 downto 0);
@@ -222,13 +222,13 @@ begin
   eom_i        <= fifo_eom or zlm_eof or trailing_eom;
   eom          <= eom_i;
   abort        <= fifo_eof and not at_end_r;
-  eof          <= to_bool(wci_is_operating and fifo_count_r /= 0 and fifo_eof and
+  eof          <= to_bool(fifo_count_r /= 0 and fifo_eof and
                           its(fifo_eom or at_end_r));
   -- Signals to OCP - cannot be based on fifo_deq
   -- SThreadBusy(0) <= fifo_busy;
   -- ocp is busy if it cannot enqueue in the next cycle
   SThreadBusy(0) <= to_bool((fifo_count_r = 3 and fifo_enq) or fifo_count_r = 4);
-  --SThreadBusy(0) <= ocp_busy_r; 
+  --SThreadBusy(0) <= ocp_busy_r;
   -- True once
   first_take <= take and ready_i and not seen_any_r;
   -- keep track of message state as it comes out the back of the fifo
@@ -340,4 +340,3 @@ begin
     end if;
   end process;
 end architecture rtl;
-

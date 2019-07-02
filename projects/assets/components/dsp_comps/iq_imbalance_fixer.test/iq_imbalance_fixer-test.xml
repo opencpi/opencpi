@@ -1,5 +1,5 @@
 <tests useHDLFileIo='true'>
-  <input port='in' stressorMode='full' script='generate.py 131072' messagesize='8192'/>
+  <input port='in' stressorMode='full' script='generate.py 131072'/>
   <output port='out' script='verify.py 131072' view='view.sh'/>
   <property name='log2_averaging_length' value='3'/>
   <property name='neg_log2_loop_gain' value='6'/>

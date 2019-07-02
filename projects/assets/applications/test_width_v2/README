@@ -1,6 +1,6 @@
 The test_width_v2 application utilizes the pattern_v2, bias, wsi_width_adapter, and capture_v2 components.
 Because the app sets the nWide property for the two bias components, a property of the bias_wide worker,
-it uses an assembly containing the bias_wide worker.
+it uses an assembly containing the bias_wide worker, the test_width_v2 assembly.
 
 To run the application on an embedded platform, with the assumption you are operating in NFS/Network mode on the
 embedded platform and you have your projects mounted at /mnt/ocpi_core and /mnt/ocpi_assets do:

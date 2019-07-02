@@ -1,0 +1,11 @@
+jenkins_private_keys.tar.bz2
+arm_iveia_tools_feb2014.tgz
+jenkins-cli.jar
+Dockerfile-*
+# AV-1014:
+texmf
+*.sty
+*.tds.zip
+# IDE Builder
+idebuild
+tempo.zip

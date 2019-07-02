@@ -1,0 +1,6 @@
+<tests useHDLFileIo='true'>
+ <property name='R' values='4,8,16,2048,8192'/>  
+ <property name='R' values='2048,8192' exclude='*sim'/>
+ <input port='in' script='generate.py' messagesInFile='true' stressorMode='full'/>
+ <output port='out' script='verify.py' messagesInFile='true'/>
+</tests>

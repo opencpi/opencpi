@@ -195,7 +195,9 @@ begin
   begin
     if rising_edge(Clk) then
       if its(reset_i) then
-        state_r      <= BEFORE_SOM_e;
+        if (its(wci_reset) or state_r /= FINISHED_e) then
+          state_r      <= BEFORE_SOM_e;
+        end if;
         ready_r      <= bfalse;
         opcode_r     <= (others => '0'); -- perhaps unnecessary, but supresses a warning
         latency_r    <= (others => '0');
@@ -204,7 +206,7 @@ begin
         data_count_r <= (others => '0');
         input_eof_r  <= bfalse;
       else
-        ready_r <= wci_is_operating and not SThreadBusy(0); -- for next cycle.  OCP pipelining
+        ready_r <= (wci_is_operating or eof_now) and not SThreadBusy(0); -- for next cycle.  OCP pipelining
         if ready_r and its(first_take) and not its(my_give) then -- start latency measurement
           first_data_r <= btrue;
         end if;

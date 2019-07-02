@@ -1,0 +1,47 @@
+ <!-- for all cases, delay assert_eof long enough that, given max_count_value
+      and the control plane clock rate, >=1 messages are received by file_read -->
+<Tests usehdlfileio='true'>
+  <Output port='event_out' script='verify.py' messagesinfile='true'/>
+  <Case>
+     <Property name='max_count_value' value='1'/>
+     <Property name='assert_eof'>
+       <Set delay='3' value='true'/>
+     </Property>
+  </Case>
+  <Case>
+     <Property name='max_count_value' value='2'/>
+     <Property name='assert_eof'>
+       <Set delay='3' value='true'/>
+     </Property>
+  </Case>
+  <Case>
+     <Property name='max_count_value' value='16'/>
+     <Property name='assert_eof'>
+       <Set delay='3' value='true'/>
+     </Property>
+  </Case>
+  <Case>
+     <Property name='max_count_value' value='1024'/>
+     <Property name='assert_eof'>
+       <Set delay='3' value='true'/>
+     </Property>
+  </Case>
+  <Case>
+     <Property name='max_count_value' value='2048'/>
+     <Property name='assert_eof'>
+       <Set delay='3' value='true'/>
+     </Property>
+  </Case>
+  <Case>
+     <Property name='max_count_value' value='32768'/>
+     <Property name='assert_eof'>
+       <Set delay='6' value='true'/>
+     </Property>
+  </Case>
+  <Case>
+     <Property name='max_count_value' value='1M'/>
+     <Property name='assert_eof'>
+       <Set delay='90' value='true'/>
+     </Property>
+  </Case>
+</Tests>

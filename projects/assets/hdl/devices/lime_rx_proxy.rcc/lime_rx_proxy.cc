@@ -146,12 +146,10 @@ private:
   }
   // notification that post_lpf_gain_db property has been written
   RCCResult post_lpf_gain_db_written() {
-    uint8_t tempReg;
     if(m_properties.post_lpf_gain_db % 3 || m_properties.post_lpf_gain_db > 30)
       return setError("Invalid gain: %u. Valid values are 0-30 dB in increments of 3.",
 		      m_properties.post_lpf_gain_db);
     //Set rx_vga2gain register
-    tempReg=slave.get_rx_vga2gain()&0xE0;
     slave.set_rx_vga2gain((slave.get_rx_vga2gain() & 0xE0) |
 			  (m_properties.post_lpf_gain_db / 3));
     return RCC_OK;

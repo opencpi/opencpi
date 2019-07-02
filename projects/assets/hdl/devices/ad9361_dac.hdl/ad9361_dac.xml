@@ -1,5 +1,5 @@
 <!-- AD9361 DAC worker -->
-<HdlDevice language="vhdl" spec='qdac-spec'>
+<HdlDevice language="vhdl" spec='qdac-spec' version='2'>
   <!-- Properties -->
   <Property name='fifo_depth' type='ulong' parameter='1' default='64' description='Depth in number of samples of the control-to-DAC clock domain crossing FIFO.'/> <!-- default depth of 64 has been tested and known to be valid -->
   <Property Name="IDATA_WIDTH_p" Type="ushort" Default="32" Parameter="true"/>

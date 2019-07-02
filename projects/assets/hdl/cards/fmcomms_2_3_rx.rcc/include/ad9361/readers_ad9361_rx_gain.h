@@ -92,17 +92,17 @@ void get_AD9361_rx_gain_min_dB(
   OA::Property p(app, app_inst_name_proxy, "rx_lo_freq");
   OA::ULongLong f = p.getULongLongValue();
 
-  if(f <= 1.3e9) // see ad9361.c ad9361_gt_tableindex()
+  if(f <= 1.3e9)
   {
-    val = 1; // see ad9361.c ad9361_init_gain_tables()
+    val = 1; // see ad9361.c full_gain_table_abs_gain
   }
-  else if(f <= 4e9) // see ad9361.c ad9361_gt_tableindex()
+  else if(f <= 4e9)
   {
-    val = -3; // see ad9361.c ad9361_init_gain_tables()
+    val = -3; // see ad9361.c full_gain_table_abs_gain
   }
   else
-  { // 4e9 < Rx_RFPLL_freq_Hz <= 6e9 // see ad9361.c ad9361_gt_tableindex()
-    val = -10; // see ad9361.c ad9361_init_gain_tables()
+  { // 4e9 < Rx_RFPLL_freq_Hz <= 6e9
+    val = -10; // see ad9361.c full_gain_table_abs_gain
   }
 }
 
@@ -147,17 +147,17 @@ void get_AD9361_rx_gain_max_dB(
   OA::Property p(app, app_inst_name_proxy, "rx_lo_freq");
   OA::ULongLong f = p.getULongLongValue();
 
-  if(f <= 1.3e9) // see ad9361.c ad9361_gt_tableindex()
+  if(f <= 1.3e9)
   {
-    val = 77; // see ad9361.c ad9361_init_gain_tables()
+    val = 73; // see ad9361.c full_gain_table_abs_gain
   }
-  else if(f <= 4e9) // see ad9361.c ad9361_gt_tableindex()
+  else if(f <= 4e9)
   {
-    val = 71; // see ad9361.c ad9361_init_gain_tables()
+    val = 71; // see ad9361.c full_gain_table_abs_gain
   }
   else
-  { // 4e9 < Rx_RFPLL_freq_Hz <= 6e9 // see ad9361.c ad9361_gt_tableindex()
-    val = 62; // see ad9361.c ad9361_init_gain_tables()
+  { // 4e9 < Rx_RFPLL_freq_Hz <= 6e9
+    val = 62; // see ad9361.c full_gain_table_abs_gain
   }
 }
 

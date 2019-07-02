@@ -29,23 +29,9 @@ Tests = \
 	pr_cordic.test \
 	cic_dec.test \
 	cic_int.test \
-	downsample.test \
+	downsample_complex.test \
 
 # All workers created here will be built automatically
 # If you want to limit the workers that actually get built, set the Workers= variable
-Workers = \
-	Baudtracking_simple.rcc \
-	real_digitizer.rcc \
-	dc_offset_filter.hdl \
-	iq_imbalance_fixer.hdl \
-	complex_mixer.rcc \
-	complex_mixer.hdl \
-	fir_real_sse.hdl fir_complex_sse.hdl \
-	phase_to_amp_cordic.hdl \
-	rp_cordic.hdl \
-	pr_cordic.hdl \
-	cic_dec.hdl \
-	cic_int.hdl \
-	downsample.hdl \
 
 include $(OCPI_CDK_DIR)/include/library.mk

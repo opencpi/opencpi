@@ -31,9 +31,9 @@
 ################################################################################
 # 1. Download/clone and setup directories in the prereq area
 ################################################################################
-# As of 23 Apr 2018, 2017_R1 points to 06bfc76060d5b9767ae9aad7bf40e3648474ebb7
-OCPI_AD9361_CURRENT_2017_R1_GIT_COMMIT_ID=06bfc76060d5b9767ae9aad7bf40e3648474ebb7
-OCPI_AD9361_VERSION=$OCPI_AD9361_CURRENT_2017_R1_GIT_COMMIT_ID
+# As of 13 Jun 2019, 2018_R2 points to 8c52aa42e74841e3975a6f33cc5303ed2a670124
+OCPI_AD9361_CURRENT_2018_R2_GIT_COMMIT_ID=8c52aa42e74841e3975a6f33cc5303ed2a670124
+OCPI_AD9361_VERSION=$OCPI_AD9361_CURRENT_2018_R2_GIT_COMMIT_ID
 [ -z "$OCPI_CDK_DIR" ] && echo Environment variable OCPI_CDK_DIR not set && exit 1
 source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        "$1" \

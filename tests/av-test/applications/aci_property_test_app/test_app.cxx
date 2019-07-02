@@ -183,7 +183,7 @@ void printPhase(OA::Application* app)
   printProp(app, "test_ushort");
 }
 
-int main(int argc, char **argv) {
+int main(/*int argc, char **argv*/) {
   programRet = 0; 
 
   try {

@@ -1,13 +1,16 @@
-<HdlWorker Language="vhdl" Spec="phase_to_amp_cordic-spec.xml">
+<HdlWorker Language="vhdl" Spec="phase_to_amp_cordic-spec.xml" Version="2">
 
   <SpecProperty Name="DATA_WIDTH" Parameter="true" Default="16"/>
-
   <SpecProperty Name="DATA_EXT" Parameter="true" Default="6"/>
-
   <SpecProperty Name="STAGES" Parameter="true" Default="12"/>
 
+  <Property Name="PEAK_MONITOR" Type="bool" Parameter="true" Default="true"
+	    Description="Enable/Disable build-time inclusion of peak monitor circuit" />
 
-  <StreamInterface Name="in"  DataWidth="16" ZeroLengthMessages="true"/>
-  <StreamInterface Name="out" DataWidth="32" ZeroLengthMessages="true"/> 
+  <Property Name="peak" Type="short" Volatile="true"
+	    Description="Peak value of I/Q output (valid when PEAK_MONITOR=true)"/>
+
+  <StreamInterface Name="in"  DataWidth="16"/>
+  <StreamInterface Name="out" DataWidth="32" insertEOM="1"/>
 
 </HdlWorker>

@@ -1,10 +1,9 @@
 <ComponentSpec>
 
-  <Property Name='NUM_TAPS_p' Type='ulong' Parameter='true' Default='32' 
+  <Property Name='NUM_TAPS' Type='ulong' Parameter='true' Default='32' 
 	    Description='The number of coefficients used by each real/imag even symmetric filter'/>
 
-  <!-- tap values  Format: short[NUM_TAPS_p] -->
-  <Property Name='taps' Type='short' ArrayLength='NUM_TAPS_p/2' Initial='true'
+  <Property Name='taps' Type='short' ArrayLength='NUM_TAPS/2' Initial='true'
 	    Description='Symmetric filter coefficient values loaded into both real/imag filters'/>
 
   <Port Name='in'  Protocol='ComplexShortWithMetadata-prot'/>

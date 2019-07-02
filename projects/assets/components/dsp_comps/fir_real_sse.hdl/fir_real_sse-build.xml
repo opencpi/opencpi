@@ -1,16 +1,8 @@
 <build>
   <configuration id='0'>
     <parameter name='NUM_TAPS_p' value='64'/>
-    <parameter name='ocpi_debug' value='false'/>
-    <parameter name='ocpi_endian' value='little'/>
-    <parameter name='DATA_WIDTH_p' value='16'/>
-    <parameter name='COEFF_WIDTH_p' value='16'/>
   </configuration>
   <configuration id='1'>
     <parameter name='NUM_TAPS_p' value='128'/>
-    <parameter name='ocpi_debug' value='false'/>
-    <parameter name='ocpi_endian' value='little'/>
-    <parameter name='DATA_WIDTH_p' value='16'/>
-    <parameter name='COEFF_WIDTH_p' value='16'/>
   </configuration>
 </build>

@@ -61,6 +61,7 @@ architecture rtl of cic_dec_worker is
   signal zlm_force_eom_l    : std_logic;
   --
   signal idata_vld          : std_logic;
+  signal idata_rdy          : std_logic;
   signal odata_vld          : std_logic;
   signal i_out, q_out       : std_logic_vector(DOUT_WIDTH_c-1 downto 0);
 
@@ -71,7 +72,8 @@ begin
   -- and downstream workers ready)
   -----------------------------------------------------------------------------
 
-  idata_vld <= '1' when ctl_in.is_operating = '1' and out_in.ready = '1' and in_in.ready = '1' and in_in.valid = '1' else '0';
+  idata_vld <= '1' when ctl_in.is_operating = '1' and out_in.ready = '1' and in_in.ready = '1'
+               and idata_rdy = '1' and in_in.valid = '1' else '0';
 
   -----------------------------------------------------------------------------
   -- Take (when in operating state, up/downstream workers ready and not sending a ZLM)
@@ -200,37 +202,42 @@ begin
 
   Dec_I : dsp_prims.dsp_prims.cic_dec_gen
     generic map(
-      N          => N_c,
-      M          => M_c,
-      R          => R_c,
-      DIN_WIDTH  => DIN_WIDTH_c,
-      ACC_WIDTH  => ACC_WIDTH_c,
-      DOUT_WIDTH => DOUT_WIDTH_c
+      g_n          => N_c,
+      g_m          => M_c,
+      g_r          => R_c,
+      g_din_width  => DIN_WIDTH_c,
+      g_acc_width  => ACC_WIDTH_c,
+      g_dout_width => DOUT_WIDTH_c
       )
     port map(
-      CLK      => ctl_in.clk,
-      RST      => ctl_in.reset,
-      DIN_VLD  => idata_vld,
-      DIN      => in_in.data(DIN_WIDTH_c-1 downto 0),
-      DOUT_VLD => odata_vld,
-      DOUT     => i_out
+      i_clk      => ctl_in.clk,
+      i_rst      => ctl_in.reset,
+      i_din      => in_in.data(DIN_WIDTH_c-1 downto 0),
+      i_din_vld  => idata_vld,
+      o_din_rdy  => idata_rdy,
+      o_dout     => i_out,
+      o_dout_vld => odata_vld,
+      i_dout_rdy => out_in.ready
       );
+  
   Dec_Q : dsp_prims.dsp_prims.cic_dec_gen
     generic map(
-      N          => N_c,
-      M          => M_c,
-      R          => R_c,
-      DIN_WIDTH  => DIN_WIDTH_c,
-      ACC_WIDTH  => ACC_WIDTH_c,
-      DOUT_WIDTH => DOUT_WIDTH_c
+      g_n          => N_c,
+      g_m          => M_c,
+      g_r          => R_c,
+      g_din_width  => DIN_WIDTH_c,
+      g_acc_width  => ACC_WIDTH_c,
+      g_dout_width => DOUT_WIDTH_c
       )
     port map(
-      CLK      => ctl_in.clk,
-      RST      => ctl_in.reset,
-      DIN_VLD  => idata_vld,
-      DIN      => in_in.data(DIN_WIDTH_c-1+16 downto 16),
-      DOUT_VLD => open,
-      DOUT     => q_out
+      i_clk      => ctl_in.clk,
+      i_rst      => ctl_in.reset,
+      i_din      => in_in.data(2*DIN_WIDTH_c-1 downto DIN_WIDTH_c),
+      i_din_vld  => idata_vld,
+      o_din_rdy  => open,
+      o_dout     => q_out,
+      o_dout_vld => open,
+      i_dout_rdy => out_in.ready
       );
 
 end rtl;

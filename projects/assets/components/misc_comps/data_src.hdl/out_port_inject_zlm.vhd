@@ -21,6 +21,7 @@
 -- indicates that backpressure finally allowed ZLM to be injected (and that the
 -- som_i/eom_i/valid_i values were ignored)
 library IEEE; use IEEE.std_logic_1164.all, ieee.numeric_std.all;
+library util_prims;
 entity out_port_inject_zlm is
   port (clk          : in  std_logic;
         reset        : in  std_logic; -- active-high reset
@@ -55,7 +56,7 @@ begin
     end if;
   end process;
 
-  pending_zlm_set_clr : entity work.set_clr
+  pending_zlm_set_clr : util_prims.util_prims.set_clr
     port map(
       clk => clk,
       rst => reset,

@@ -26,11 +26,11 @@
 -- samples and filters them based upon a programmable number of coefficient tap
 -- values. The underlying FIR Filter implementation makes use of a symmetric
 -- systolic structure to construct a filter with an even number of taps and
--- symmetry about its midpoint. Thus the NUM_TAPS_p parameter defines N
--- coefficient values. Care should be taken to make sure that the COEFF_WIDTH_p
+-- symmetry about its midpoint. Thus the NUM_TAPS parameter defines N
+-- coefficient values. Care should be taken to make sure that the COEFF_WIDTH
 -- parameter is <= the type (size) of the taps property.
 --
--- This implementation uses NUM_TAPS_p/2 multipliers to process input data at the
+-- This implementation uses NUM_TAPS/2 multipliers to process input data at the
 -- clock rate - i.e. this worker can handle a new input value every clock cycle.
 -- It is unnecessary to round the output data from this filter.
 --
@@ -40,12 +40,12 @@
 --
 -- For an FIR filter with symmetric impulse response we are guaranteed
 -- to have linear phase response and thus constant group delay vs
--- frequency. In general the group delay will be equal to (N-1)/2 where
+-- frequency. In general the group delay will be equal to (NUM_TAPS-1)/2 where
 -- N is the number of filter taps.
 --
 -- The filter topology itself will add some propagation delay to the
 -- response. For this design the total delay from an impulse input to the
--- beginning of the impulse response will be NUM_TAPS_p/2 + 4 samples
+-- beginning of the impulse response will be NUM_TAPS/2 + 4 samples
 --
 -- The worker only outputs samples after the delay has occurred. During flush
 -- opcodes, the worker continues to produce valid data until the
@@ -60,300 +60,247 @@ library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 use ieee.math_real.all;
 library ocpi; use ocpi.types.all; use ocpi.util.all;-- remove this to avoid all ocpi name collisions
 
---architecture rtl of fir_complex_sse_worker is
 architecture rtl of worker is
-
-  constant NUM_SECTIONS_c : positive := to_integer(NUM_TAPS_p)/2;
-  constant DATA_WIDTH_c   : positive := to_integer(DATA_WIDTH_p);
-  constant COEFF_WIDTH_c  : positive := to_integer(COEFF_WIDTH_p);
-  constant TAPS_BYTES_c   : positive := ushort_t'length/8;
-  constant LATENCY_c      : positive := to_integer(LATENCY_p);
-  constant OPCODE_WIDTH_c : positive := ocpi.util.width_for_max(ComplexShortWithMetadata_OpCode_t'pos(ComplexShortWithMetadata_OpCode_t'right));
-  constant GROUP_DELAY_c  : positive := to_integer(GROUP_DELAY_p);
-
-  constant PORT_WIDTH_c    : positive := ocpi_port_in_data_width;
-  constant BYTE_EN_WIDTH_c : positive := ocpi_port_in_MByteEn_width;
   
-  signal enable                  : std_logic;
-  signal idata_vld               : std_logic;
-  signal opcode_vld              : std_logic;
-  signal eom                     : std_logic;
-  signal delayline_eom           : std_logic;
-  signal valid                   : std_logic;
-  signal data                    : std_logic_vector(ocpi_port_in_data_width-1 downto 0);
-  signal byte_enable             : std_logic_vector(ocpi_port_in_MByteEn_width-1 downto 0);
-  signal in_opcode_slv           : std_logic_vector(OPCODE_WIDTH_c-1 downto 0);
-  signal out_opcode_slv          : std_logic_vector(OPCODE_WIDTH_c-1 downto 0);
-  signal out_opcode_int          : integer;
-  signal fir_wdata               : std_logic_vector(COEFF_WIDTH_c-1 downto 0);
-  signal fir_rdata               : std_logic_vector(COEFF_WIDTH_c-1 downto 0);
-  signal i_idata                 : std_logic_vector(DATA_WIDTH_c-1 downto 0);
-  signal q_idata                 : std_logic_vector(DATA_WIDTH_c-1 downto 0);
-  signal i_odata                 : std_logic_vector(DATA_WIDTH_c-1 downto 0);
-  signal q_odata                 : std_logic_vector(DATA_WIDTH_c-1 downto 0);
-  signal prim_rdy                : std_logic;
-  signal odata_vld               : std_logic;
-  signal missed_odata_vld        : std_logic := '0';
-  signal peak_out                : std_logic_vector(15 downto 0);
-  signal peak_rst_in             : std_logic;
-  signal peak_a_in               : std_logic_vector(15 downto 0);
-  signal peak_b_in               : std_logic_vector(15 downto 0);
-  signal raw_byte_enable         : std_logic_vector(3 downto 0);
-  signal raw_addr                : std_logic_vector(props_in.raw.address'length-1 downto 0);
-  signal prim_vld                : std_logic;
-  signal raw_done_r              : std_logic;
-  signal group_delay_max         : std_logic;
-  signal group_delay_zero        : std_logic;
-  signal group_delay_counter     : unsigned(width_for_max(GROUP_DELAY_c)-1 downto 0);
-  signal flush_opcode            : std_logic;
-  signal drop_opcode             : std_logic;
-  signal flush_in_progress       : std_logic;
-  signal flush_in_progress_r     : std_logic;
-  signal flush_in_progress_redge : std_logic;
+  --FIR primitive hard codes address width to 16
+  constant c_fir_prim_addr_width   : positive := 16;
+  constant c_num_sections          : positive := to_integer(NUM_TAPS)/2;
+  constant c_data_width            : positive := to_integer(DATA_WIDTH);
+  constant c_coeff_width           : positive := to_integer(COEFF_WIDTH);
+  constant c_taps_bytes            : positive := ushort_t'length/8;
+  constant c_latency               : positive := to_integer(LATENCY);
+  constant c_opcode_width          : positive := width_for_max(to_integer(ocpi_max_opcode_in));
+
+  signal s_raw_byte_enable         : std_logic_vector(props_in.raw.byte_enable'length-1 downto 0);
+  signal s_raw_addr                : std_logic_vector(c_fir_prim_addr_width-1 downto 0);
+  signal s_fir_wdata               : std_logic_vector(c_coeff_width-1 downto 0);
+  
+  signal s_do_work                 : std_logic;
+  signal s_samples_opcode          : std_logic;
+  signal s_samples_eom             : Bool_t;
+  signal s_dly_enable, s_dly_eof   : Bool_t;
+  signal s_dly_som, s_dly_eom      : Bool_t;
+  signal s_dly_ready, s_dly_valid  : Bool_t;
+  signal s_dly_data                : std_logic_vector(ocpi_port_in_data_width-1 downto 0);
+  signal s_dly_byte_enable         : std_logic_vector(ocpi_port_in_MByteEn_width-1 downto 0);
+  signal s_dly_opcode              : std_logic_vector(c_opcode_width-1 downto 0);
+
+  signal s_i_idata, s_q_idata      : std_logic_vector(c_data_width-1 downto 0);
+  signal s_i_odata, s_q_odata      : std_logic_vector(c_data_width-1 downto 0);
+
+  signal s_peak_rst_in             : std_logic;
+  signal s_peak_a_in, s_peak_b_in  : std_logic_vector(c_data_width-1 downto 0);
+  signal s_peak_out                : std_logic_vector(c_data_width-1 downto 0);
+  
+  type   state_type is (idle_s, samples_s, flush_s, bypass_s);
+  signal state : state_type;
 
 begin
 
-  raw_byte_enable     <= props_in.raw.byte_enable;
+  s_raw_byte_enable   <= props_in.raw.byte_enable;
   --The FIR primitive uses TAPS_BYTES_c addresses, but the raw properties interface uses
   --single byte addresses, so the incoming address must be shifted
-  raw_addr            <= std_logic_vector(props_in.raw.address srl TAPS_BYTES_c-1);
+  s_raw_addr          <= std_logic_vector(props_in.raw.address(c_fir_prim_addr_width-1 downto 0)
+                                          srl c_taps_bytes-1);
   props_out.raw.done  <= '1';
-  
-  --opcodes which require data to be flushed out of the FIR primitives
-  flush_opcode <= in_in.eof or (in_in.ready and to_bool(in_in.opcode=ComplexShortWithMetadata_flush_op_e));
-
-  --opcodes which require data inside the FIR primitives to be dropped
-  drop_opcode <= in_in.ready and
-                 to_bool(in_in.opcode=ComplexShortWithMetadata_sync_op_e);
-
-  -- 'enable' circuit when up/downstream Workers ready and operating
-  enable <= ctl_in.is_operating and in_in.ready and out_in.ready;
-
-  -- 'idata_vld' enables primitives when enabled and input valid or we're flushing/dropping
-  idata_vld <= enable and
-               ((in_in.valid and to_bool(in_in.opcode=ComplexShortWithMetadata_samples_op_e)) or
-                ((flush_opcode or drop_opcode) and not group_delay_zero));
-
-  -- 'opcode_vld' enables delayline primitive
-  opcode_vld <= in_in.valid and to_bool(in_in.opcode/=ComplexShortWithMetadata_samples_op_e);
-
-  -- 'din_vld' is enable for delay line primitive
-  -- (wait for group delay zero when flushing)
-  prim_rdy <= out_in.ready and group_delay_zero when its(flush_opcode) or its(drop_opcode) else
-             out_in.ready;
-  
-  -- Take when up/downstream Workers ready and operating and when flushing,
-  -- wait until flush complete (group delay zero)
-  in_out.take <= enable and group_delay_zero when its(flush_opcode) or its(drop_opcode) else enable;
-
-  -- Primitive output valid only once group delay samples have been processed
-  -- unless flushing
-  prim_vld <= (odata_vld or missed_odata_vld) and not group_delay_zero when its(flush_opcode) else
-              group_delay_max and (odata_vld or missed_odata_vld);
-  
-  -- Give when downstream worker ready and operating and
-  -- FIR primitive has valid output or
-  -- non-sample valid data or 
-  -- zlms
-  out_out.give <= ctl_in.is_operating and out_in.ready and
-                  ((prim_vld and not drop_opcode)or
-                   valid or
-                   ((eom) and not valid));
-
-  -- Valid when FIR primitive has valid output or non-sample valid data
-  out_out.valid <= prim_vld or valid;                            
-
-  -- Translate opcode to slv for delay primitive
-  -- Xilinx/ISE 14.6 synthesis doesn't do the t'val(x) function properly
-  -- Hence this workaround
-  in_opcode_slv <=
-    std_logic_vector(to_unsigned(1,in_opcode_slv'length)) when in_in.opcode = ComplexShortWithMetadata_time_op_e else
-    std_logic_vector(to_unsigned(2,in_opcode_slv'length)) when in_in.opcode = ComplexShortWithMetadata_interval_op_e else
-    std_logic_vector(to_unsigned(3,in_opcode_slv'length)) when in_in.opcode = ComplexShortWithMetadata_flush_op_e else
-    std_logic_vector(to_unsigned(4,in_opcode_slv'length)) when in_in.opcode = ComplexShortWithMetadata_sync_op_e else
-    std_logic_vector(to_unsigned(0,in_opcode_slv'length)); --in_in.opcode = ComplexShortWithMetadata_samples_op_e
-
-  -- Delay line to match the latency of the primitive for non-sample data
-  delay : ocpi.wsi.delayline
-  generic map (
-    LATENCY         => LATENCY_c)
-  port map (
-    CLK             => ctl_in.clk,
-    RESET           => ctl_in.reset,
-    IS_OPERATING    => ctl_in.is_operating,
-    IN_READY        => in_in.ready,
-    IN_SOM          => in_in.som,
-    IN_EOM          => in_in.eom,
-    IN_OPCODE       => in_opcode_slv,
-    IN_VALID        => opcode_vld,
-    IN_BYTE_ENABLE  => in_in.byte_enable,
-    IN_DATA         => in_in.data,
-    OUT_READY       => prim_rdy,
-    OUT_SOM         => open,
-    OUT_EOM         => delayline_eom,
-    OUT_OPCODE      => out_opcode_slv,
-    OUT_VALID       => valid,
-    OUT_BYTE_ENABLE => byte_enable,
-    OUT_DATA        => data);
-
-  
-  flush_in_progress <= flush_opcode and prim_vld;
-  flushInProgress : process (ctl_in.clk)
-  begin
-    if rising_edge(ctl_in.clk) then
-      if its(ctl_in.reset) then
-        flush_in_progress_r <= '0';
-      else
-        flush_in_progress_r <= flush_in_progress;
-      end if;
-    end if;
-  end process;
-  
-  flush_in_progress_redge <= flush_in_progress and not flush_in_progress_r;
-
-  --Prevent ZLMs on opcode 0 when group delay has not been exceeded
-  eom                 <= delayline_eom and group_delay_max when out_opcode_int = 0 else delayline_eom;
-  --eom is passed along from input to output and at the end of flushing
-  out_out.eom         <= eom or (flush_opcode and to_bool(group_delay_counter=1));
-  out_out.byte_enable <= byte_enable;
-  --data comes from primitive or delayline (when delayline is valid)
-  out_out.data        <= std_logic_vector(resize(signed(q_odata),16)) &
-                         std_logic_vector(resize(signed(i_odata),16)) when its(not valid) else data;
-  
-  -- Translate opcode output of delayline primitive to enumerated type
-  -- Xilinx/ISE 14.6 synthesis doesn't do the t'pos(x) function properly
-  -- Hence this workaround
-  out_opcode_int <= to_integer(unsigned(out_opcode_slv));
-  out_out.opcode <=
-    ComplexShortWithMetadata_samples_op_e  when out_opcode_int = 0 else
-    ComplexShortWithMetadata_time_op_e     when out_opcode_int = 1 else
-    ComplexShortWithMetadata_interval_op_e when out_opcode_int = 2 else
-    ComplexShortWithMetadata_flush_op_e    when out_opcode_int = 3 else
-    ComplexShortWithMetadata_sync_op_e     when out_opcode_int = 4;
 
   -- handle coefficient resizing and byte enables
-  be_16_gen : if COEFF_WIDTH_c <= 16 and COEFF_WIDTH_c > 8 generate
+  be_16_gen : if c_coeff_width <= 16 generate
     --Input byte enable decode
-    be_input : process (raw_byte_enable, props_in.raw.data)
-    begin
-      case raw_byte_enable is
-        when "0011" => fir_wdata <= std_logic_vector(props_in.raw.data(COEFF_WIDTH_c-1    downto  0));
-        when "0110" => fir_wdata <= std_logic_vector(props_in.raw.data(COEFF_WIDTH_c-1+8  downto  8));
-        when "1100" => fir_wdata <= std_logic_vector(props_in.raw.data(COEFF_WIDTH_c-1+16 downto 16));
-        when others => fir_wdata <= (others => '0');
-      end case;
-    end process be_input;
-  end generate be_16_gen;
+    s_fir_wdata <= props_in.raw.data(c_coeff_width-1 downto 0) when (s_raw_byte_enable = "0011") else
+                   props_in.raw.data(c_coeff_width-1+16 downto 16) when (s_raw_byte_enable = "1100") else (others => '0');
+  end generate be_16_gen;  
+  
+  s_samples_opcode  <= in_in.valid and to_bool(in_in.opcode=ComplexShortWithMetadata_samples_op_e);
+  s_samples_eom     <= in_in.eom and s_samples_opcode;
+  
+  s_do_work   <= in_in.ready and out_in.ready;
 
-  be_8_gen : if COEFF_WIDTH_c <= 8 generate
-    --Input byte enable decode
-    be_input : process (raw_byte_enable, props_in.raw.data)
-    begin
-      case raw_byte_enable is
-        when "0011" => fir_wdata <= std_logic_vector(props_in.raw.data(COEFF_WIDTH_c-1    downto  0));
-        when "0110" => fir_wdata <= std_logic_vector(props_in.raw.data(COEFF_WIDTH_c-1+8  downto  8));
-        when "1100" => fir_wdata <= std_logic_vector(props_in.raw.data(COEFF_WIDTH_c-1+16 downto 16));
-        when others => fir_wdata <= (others => '0');
-      end case;
-    end process be_input;
-  end generate be_8_gen;
-
-  -- Input data to primitive (zeros when flushing or dropping)
-  i_idata <= (others => '0') when its(flush_opcode) or its(drop_opcode) else in_in.data(DATA_WIDTH_c-1 downto 0);
-  q_idata <= (others => '0') when its(flush_opcode) or its(drop_opcode) else in_in.data(DATA_WIDTH_c-1+16 downto 16);
-
-  -- FIR Systolic Symmetrical Even primitive
-  i_fir : dsp_prims.dsp_prims.fir_systolic_sym_even
-    generic map (
-      NUM_SECTIONS  => NUM_SECTIONS_c,
-      DATA_WIDTH    => DATA_WIDTH_c,
-      COEFF_WIDTH   => COEFF_WIDTH_c,
-      ACC_PREC      => DATA_WIDTH_c + COEFF_WIDTH_c + 1 + integer(ceil(log2(real(NUM_SECTIONS_c)))),
-      DATA_ADDR     => (others => '0'),
-      PTR_ADDR      => (others => '0'),
-      USE_COEFF_PTR => false)
-    port map (
-      CLK      => ctl_in.clk,
-      RST      => ctl_in.reset,
-      DIN      => i_idata,
-      DIN_VLD  => idata_vld,
-      DOUT     => i_odata,
-      DOUT_VLD => odata_vld,
-      ADDR     => raw_addr,
-      RDEN     => props_in.raw.is_read,
-      WREN     => props_in.raw.is_write,
-      RDATA    => fir_rdata,
-      WDATA    => fir_wdata);
-
-  -- FIR Systolic Symmetrical Even primitive
-  q_fir : dsp_prims.dsp_prims.fir_systolic_sym_even
-    generic map (
-      NUM_SECTIONS  => NUM_SECTIONS_c,
-      DATA_WIDTH    => DATA_WIDTH_c,
-      COEFF_WIDTH   => COEFF_WIDTH_c,
-      ACC_PREC      => DATA_WIDTH_c + COEFF_WIDTH_c + 1 + integer(ceil(log2(real(NUM_SECTIONS_c)))),
-      DATA_ADDR     => (others => '0'),
-      PTR_ADDR      => (others => '0'),
-      USE_COEFF_PTR => false)
-    port map (
-      CLK      => ctl_in.clk,
-      RST      => ctl_in.reset,
-      DIN      => q_idata,
-      DIN_VLD  => idata_vld,
-      DOUT     => q_odata,
-      DOUT_VLD => open,
-      ADDR     => raw_addr,
-      RDEN     => '0',
-      WREN     => props_in.raw.is_write,
-      RDATA    => open,
-      WDATA    => fir_wdata);
-
-  backPressure : process (ctl_in.clk)
-  begin
-    if rising_edge(ctl_in.clk) then
-      if(ctl_in.reset = '1' or out_in.ready = '1') then
-        missed_odata_vld <= '0';
-      elsif (out_in.ready = '0' and odata_vld = '1') then
-        missed_odata_vld <= '1';
-      end if;
-    end if;
-  end process backPressure;
-
-  -- Peak Detection primitive. Value is cleared when read
-  peak_rst_in         <= ctl_in.reset or std_logic(props_in.peak_read);
-  peak_a_in           <= std_logic_vector(resize(signed(i_odata),16));
-  peak_b_in           <= std_logic_vector(resize(signed(q_odata),16));
-
-  pm_gen : if its(PEAK_MONITOR_p) generate
-    pd : util_prims.util_prims.peakDetect
-      port map (
-        CLK_IN   => ctl_in.clk,
-        RST_IN   => peak_rst_in,
-        EN_IN    => odata_vld,
-        A_IN     => peak_a_in,
-        B_IN     => peak_b_in,
-        PEAK_OUT => peak_out);
-
-    props_out.peak <= signed(peak_out);
-  end generate pm_gen;
-
-  groupDelayCounterProc : process (ctl_in.clk)
+  fsm_seq: process(ctl_in.clk)
   begin
     if rising_edge(ctl_in.clk) then
       if its(ctl_in.reset) then
-        group_delay_counter <= (others => '0');
-      elsif its(enable) then
-        --Decrement group delay counter when flushing or dropping
-        if (its(flush_opcode) or its(drop_opcode)) and group_delay_counter > 0 then
-          group_delay_counter <= group_delay_counter - 1;
-        --Increment group delay counter when taking samples data
-        elsif group_delay_counter < GROUP_DELAY_c  and in_in.opcode = ComplexShortWithMetadata_samples_op_e then
-          group_delay_counter <= group_delay_counter + 1;
+        state <= idle_s;
+      elsif its(s_do_work) then
+        if state = idle_s then
+          if its(s_samples_opcode) then
+            state <= samples_s;
+          else
+            state <= bypass_s;
+          end if;
+          
+        elsif state = samples_s then
+          if its(not s_samples_opcode) then
+            state <= flush_s;
+          end if;
+          
+        elsif state = flush_s then
+          if its(out_in.ready and s_dly_ready and s_dly_eom) then
+            if its(in_in.ready) then
+              state <= bypass_s;
+            else
+              state <= idle_s;
+            end if;
+          end if;
+
+        elsif state = bypass_s then
+          if its(in_in.eom) then
+            state <= idle_s;
+          end if;
+        end if;
+        
+      elsif its(in_in.eof) then
+        if state = samples_s then
+          state <= flush_s;
         end if;
       end if;
     end if;
   end process;
-  group_delay_max <= to_bool(group_delay_counter >= GROUP_DELAY_c);
-  group_delay_zero <= to_bool(group_delay_counter = 0);
+
+  fsm_comb : process(state, s_do_work, in_in.valid, in_in.data, in_in.som, in_in.eom, in_in.eof,
+                     s_samples_opcode, s_dly_ready, s_dly_valid, s_q_odata, s_i_odata, s_dly_som,
+                     s_dly_eom, s_dly_eof, out_in.ready)
+  begin
+    -- FSM Output Defaults
+    s_dly_enable        <= bfalse;
+    in_out.take         <= s_do_work;
+    out_out.give        <= s_do_work;
+    out_out.valid       <= in_in.valid;
+    out_out.data        <= in_in.data;
+    out_out.eom         <= in_in.eom;
+    out_out.eof         <= in_in.eof;
+    out_out.opcode      <= in_in.opcode;
+    s_i_idata           <= (others => '0');
+    s_q_idata           <= (others => '0');
+    
+    -- Output Assertions
+    case (state) is
+      
+      when idle_s =>
+        s_dly_enable        <= bfalse;
+        in_out.take         <= bfalse;
+        out_out.give        <= bfalse;
+        out_out.valid       <= bfalse;
+        
+      when samples_s =>
+        s_dly_enable        <= s_do_work and s_samples_opcode;
+        in_out.take         <= s_do_work and s_samples_opcode;
+        out_out.give        <= s_do_work and s_samples_opcode and s_dly_ready;
+        out_out.valid       <= s_do_work and s_samples_opcode and s_dly_valid;
+        out_out.data        <= s_q_odata & s_i_odata;
+        out_out.eom         <= '0';
+        out_out.eof         <= '0';
+        out_out.opcode      <= ComplexShortWithMetadata_samples_op_e;
+        s_i_idata           <= in_in.data(c_data_width-1 downto 0);
+        s_q_idata           <= in_in.data(2*c_data_width-1 downto c_data_width);
+        
+      when flush_s =>
+        s_dly_enable        <= out_in.ready;
+        in_out.take         <= bfalse;
+        out_out.give        <= out_in.ready and s_dly_ready;
+        out_out.valid       <= out_in.ready and s_dly_valid;
+        out_out.data        <= s_q_odata & s_i_odata;
+        out_out.eom         <= s_dly_eom;
+        out_out.eof         <= s_dly_eof;
+        out_out.opcode      <= ComplexShortWithMetadata_samples_op_e;
+
+      when bypass_s =>
+        -- Outputs are default
+        
+    end case;
+  end process;
+
+  -- FIR Systolic Symmetrical Even primitive
+  i_fir : dsp_prims.dsp_prims.fir_systolic_sym_even
+    generic map (
+      NUM_SECTIONS  => c_num_sections,
+      DATA_WIDTH    => c_data_width,
+      COEFF_WIDTH   => c_coeff_width,
+      ACC_PREC      => c_data_width + c_coeff_width + 1 + integer(ceil(log2(real(c_num_sections)))),
+      DATA_ADDR     => (others => '0'),
+      PTR_ADDR      => (others => '0'),
+      USE_COEFF_PTR => false)
+    port map (
+      CLK      => ctl_in.clk,
+      RST      => ctl_in.reset,
+      DIN      => s_i_idata,
+      DIN_VLD  => s_dly_enable,
+      DOUT     => s_i_odata,
+      DOUT_VLD => open,
+      ADDR     => s_raw_addr,
+      RDEN     => '0',
+      WREN     => props_in.raw.is_write,
+      RDATA    => open,
+      WDATA    => s_fir_wdata);
+
+  -- FIR Systolic Symmetrical Even primitive
+  q_fir : dsp_prims.dsp_prims.fir_systolic_sym_even
+    generic map (
+      NUM_SECTIONS  => c_num_sections,
+      DATA_WIDTH    => c_data_width,
+      COEFF_WIDTH   => c_coeff_width,
+      ACC_PREC      => c_data_width + c_coeff_width + 1 + integer(ceil(log2(real(c_num_sections)))),
+      DATA_ADDR     => (others => '0'),
+      PTR_ADDR      => (others => '0'),
+      USE_COEFF_PTR => false)
+    port map (
+      CLK      => ctl_in.clk,
+      RST      => ctl_in.reset,
+      DIN      => s_q_idata,
+      DIN_VLD  => s_dly_enable,
+      DOUT     => s_q_odata,
+      DOUT_VLD => open,
+      ADDR     => s_raw_addr,
+      RDEN     => '0',
+      WREN     => props_in.raw.is_write,
+      RDATA    => open,
+      WDATA    => s_fir_wdata);
+  
+  delay_inst : ocpi.wsi.delayline
+  generic map (
+    g_latency     => c_latency)
+  port map (
+    i_clk         => ctl_in.clk,
+    i_reset       => ctl_in.reset,
+    i_enable      => s_dly_enable,
+    i_ready       => s_samples_opcode,
+    i_som         => '0',
+    i_eom         => s_samples_eom,
+    i_opcode      => (c_opcode_width-1 downto 0 => '0'),
+    i_valid       => s_samples_opcode,
+    i_byte_enable => (ocpi_port_in_MByteEn_width-1 downto 0 => '0'),
+    i_data        => (ocpi_port_in_data_width-1 downto 0 => '0'),
+    i_eof         => in_in.eof,
+    o_ready       => s_dly_ready,
+    o_som         => open,
+    o_eom         => s_dly_eom,
+    o_opcode      => s_dly_opcode,      --not used, but build fails without it
+    o_valid       => s_dly_valid,
+    o_byte_enable => s_dly_byte_enable, --not used, but build fails without it
+    o_data        => s_dly_data,        --not used, but build fails without it
+    o_eof         => s_dly_eof);
+
+
+  -- Peak Detection primitive. Value is cleared when read
+  s_peak_rst_in <= ctl_in.reset or std_logic(props_in.peak_read);
+  s_peak_a_in   <= std_logic_vector(resize(signed(s_i_odata),16));
+  s_peak_b_in   <= std_logic_vector(resize(signed(s_q_odata),16));
+
+  pm_gen : if its(PEAK_MONITOR) generate
+    pd : util_prims.util_prims.peakDetect
+      port map (
+        CLK_IN   => ctl_in.clk,
+        RST_IN   => s_peak_rst_in,
+        EN_IN    => s_dly_valid,
+        A_IN     => s_peak_a_in,
+        B_IN     => s_peak_b_in,
+        PEAK_OUT => s_peak_out);
+
+    props_out.peak <= signed(s_peak_out);
+  end generate pm_gen;
+
+  no_pm_gen : if its(not PEAK_MONITOR) generate
+    props_out.peak <= (others => '0');
+  end generate no_pm_gen;
 
 end rtl;

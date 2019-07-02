@@ -1,0 +1,10 @@
+<hdlworker language='vhdl' version='2'>
+  <componentspec nocontrol='1'>
+    <property name='width' parameter='1' type='uchar' default='32' />
+    <property name='latency' parameter='1' type='uchar' default='8'/>
+    <port name='in'/>
+    <port name='out' producer='true'/>
+  </componentspec>
+  <streaminterface name='in' datawidth='width'/>
+  <streaminterface name='out' datawidth='width' workereof='1'/>
+</hdlworker>

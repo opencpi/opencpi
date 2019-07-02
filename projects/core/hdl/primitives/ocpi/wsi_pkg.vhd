@@ -277,25 +277,27 @@ package wsi is
   
   component delayline is
     generic (
-      LATENCY : integer);
+      g_latency     : integer);
     port (
-      CLK                : in std_logic;
-      RESET              : in std_logic;
-      IS_OPERATING       : in std_logic;
-      IN_READY           : in std_logic;
-      IN_SOM             : in std_logic;
-      IN_EOM             : in std_logic;
-      IN_OPCODE          : in std_logic_vector;
-      IN_VALID           : in std_logic;
-      IN_BYTE_ENABLE     : in std_logic_vector;
-      IN_DATA            : in std_logic_vector;
-      OUT_READY          : in std_logic;
-      OUT_SOM            : out std_logic;
-      OUT_EOM            : out std_logic;
-      OUT_OPCODE         : out std_logic_vector;
-      OUT_VALID          : out std_logic;
-      OUT_BYTE_ENABLE    : out std_logic_vector;
-      OUT_DATA           : out std_logic_vector
+      i_clk         : in std_logic;
+      i_reset       : in std_logic;
+      i_enable      : in std_logic;
+      i_ready       : in std_logic;
+      i_som         : in std_logic;
+      i_eom         : in std_logic;
+      i_opcode      : in std_logic_vector;
+      i_valid       : in std_logic;
+      i_byte_enable : in std_logic_vector;
+      i_data        : in std_logic_vector;
+      i_eof         : in std_logic;
+      o_ready       : out std_logic;
+      o_som         : out std_logic;
+      o_eom         : out std_logic;
+      o_opcode      : out std_logic_vector;
+      o_valid       : out std_logic;
+      o_byte_enable : out std_logic_vector;
+      o_data        : out std_logic_vector;
+      o_eof         : out std_logic
       );
   end component;
 end package wsi;

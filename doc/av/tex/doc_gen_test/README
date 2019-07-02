@@ -1,0 +1,27 @@
+# Prerequisites
+
+1. GNU make must be installed.
+
+2. Python must be installed.
+
+3. rubber must be installed.
+
+# Test Execution Instructions
+
+1. Must be in this directory.
+
+2. Run the following bash command:
+./test.sh
+
+3. Exit status of 0 indicates success.
+
+4. A PDF file named ocs.pdf is produced for viewing.
+
+# Expanding Test Coverage To Include New Bugs
+
+Modify ocs.xml and component_spec_properties.inc.golden in order to exemplify
+bugs as they are found.
+
+# TODOs:
+
+Add more tests

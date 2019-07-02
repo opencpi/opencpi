@@ -45,215 +45,114 @@ library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 use ieee.math_real.all;
 library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
 
-architecture rtl of pr_cordic_worker is
+architecture rtl of worker is
 
-  constant DATA_WIDTH_c         : positive := to_integer(unsigned(DATA_WIDTH));
-  constant DATA_EXT_c           : positive := to_integer(unsigned(DATA_EXT));
-  constant STAGES_c             : positive := to_integer(unsigned(STAGES));
-  constant MAX_MESSAGE_VALUES_c : integer  := 4096;  -- from iqstream_protocol
+  -- Normalize Property Parameters
+  constant c_data_width       : positive := to_integer(DATA_WIDTH);
+  constant c_data_ext         : positive := to_integer(DATA_EXT);
+  constant c_stages           : positive := to_integer(STAGES);
+  --
+  -- Breakdown of CORDIC primitive(s) delays:
+  --  cordic_pr.vhd : 1
+  --  cordic_pr.vhd/cordic.vhd/cordic_stage.vhd : c_stages (build property parameter)
+  --  cordic_pr.vhd/round_conv.vhd : 1
+  constant c_primitive_delays : positive := c_stages+2;
 
-  signal mag_in_data   : std_logic_vector(DATA_WIDTH_c-1 downto 0);
-  signal phase_in_data : std_logic_vector(DATA_WIDTH_c-1 downto 0);
-  signal real_out_data : std_logic_vector(DATA_WIDTH_c-1 downto 0);
-  signal imag_out_data : std_logic_vector(DATA_WIDTH_c-1 downto 0);
-  signal odata_vld     : bool_t;
-  signal idata_vld     : bool_t;
-  signal scnt          : integer;
-  signal hold_off      : std_logic;
-
-  signal msg_cnt        : unsigned(integer(ceil(log2(real(MAX_MESSAGE_VALUES_c))))-1 downto 0);
-  signal max_sample_cnt : unsigned(integer(ceil(log2(real(MAX_MESSAGE_VALUES_c))))-1 downto 0);
-
-  -- Zero Length Messages
-  type state_zlm_t is (INIT_s, WAIT_s, SEND_s, TERM_CURR_MSG_s);
-  signal zlm_current_state : state_zlm_t;
-  signal zlm_take          : std_logic;
-  signal zlm_force_som     : std_logic;
-  signal zlm_force_eom     : std_logic;
-  signal zlm_force_eom_l   : std_logic;
-  signal zlm_force_vld     : std_logic;
+  signal s_transient_cnt  : unsigned(integer(ceil(log2(real(c_primitive_delays))))-1 downto 0);
+  signal s_transient_done : std_logic;
+  signal s_data_vld_i     : std_logic;
+  signal s_data_vld_o     : std_logic;
+  signal s_magnitude      : std_logic_vector(c_data_width-1 downto 0);
+  signal s_phase          : std_logic_vector(c_data_width-1 downto 0);
+  signal s_real_o         : std_logic_vector(c_data_width-1 downto 0);
+  signal s_imag_o         : std_logic_vector(c_data_width-1 downto 0);
+  --
+  signal s_peak_rst_i     : std_logic;
+  signal s_peak_a_i       : std_logic_vector(15 downto 0);
+  signal s_peak_b_i       : std_logic_vector(15 downto 0);
+  signal s_peak_o         : std_logic_vector(15 downto 0);
 
 begin
 
-  -----------------------------------------------------------------------------
-  -- Data Input (unpack iqstream into upper 16-bits & lower 16-bit to their
-  -- respective Worker input ports)
-  -----------------------------------------------------------------------------
-  mag_in_data   <= in_in.data((2*DATA_WIDTH_c)-1 downto DATA_WIDTH_c);
-  phase_in_data <= in_in.data(DATA_WIDTH_c-1 downto 0);
+  -- WSI Interface
+  in_out.take <= s_data_vld_i;
+
+  out_out.data(31 downto 16) <= std_logic_vector(resize(signed(s_imag_o), 16));
+  out_out.data(15 downto 0)  <= std_logic_vector(resize(signed(s_real_o), 16));
+
+  out_out.valid <= s_data_vld_o;
+
+  -- Internal
+  s_data_vld_i <= in_in.valid and out_in.ready;
+
+  s_data_vld_o <= s_data_vld_i and s_transient_done;
+
+  s_magnitude <= in_in.data(c_data_width-1+16 downto 16);
+  s_phase     <= in_in.data(c_data_width-1 downto 0);
+
+  s_peak_rst_i <= ctl_in.reset or std_logic(props_in.peak_read);
+  s_peak_a_i   <= std_logic_vector(resize(signed(s_real_o), 16));
+  s_peak_b_i   <= std_logic_vector(resize(signed(s_imag_o), 16));
 
   -----------------------------------------------------------------------------
-  -- Valid Input (when up/downstream Workers ready, input data valid & Worker
-  -- is operating)
+  -- Flag to indicate when Start-Up Transient data has been pushed output of
+  -- the CORIDC primitive and that the first 'valid' data is available on the
+  -- output of the CORIDC primitive.
   -----------------------------------------------------------------------------
-  idata_vld <= '1' when (ctl_in.is_operating = '1' and in_in.valid = '1' and
-                         in_in.ready = '1' and out_in.ready = '1') else '0';
-
-  -----------------------------------------------------------------------------
-  -- Take (when up/downstream Workers ready, input data valid & Worker input ready)
-  -----------------------------------------------------------------------------
-  in_out.take <= '1' when (ctl_in.is_operating = '1' and in_in.ready = '1' and
-                           out_in.ready = '1' and zlm_take = '1') else '0';
-
-  -----------------------------------------------------------------------------
-  -- Propagation Delay Count - counter to disable output for STAGES_c+1 input samples
-  -----------------------------------------------------------------------------
-  proc_PropagationDelayCnt : process (ctl_in.clk)
+  Flag_StartUpTransientDone : process (ctl_in.clk)
   begin
     if rising_edge(ctl_in.clk) then
-      if(ctl_in.reset = '1') then
-        scnt     <= 0;
-        hold_off <= '0';
-      elsif (scnt = STAGES_c+1 and idata_vld = '1') then
-        hold_off <= '1';
-      elsif (idata_vld = '1') then
-        scnt <= scnt + 1;
+      if (ctl_in.reset = '1') then
+        s_transient_cnt  <= (others => '0');
+        s_transient_done <= '0';
+      elsif (s_data_vld_i = '1') then
+        if (s_transient_cnt = c_primitive_delays-1) then
+          s_transient_done <= '1';
+        else
+          s_transient_cnt <= s_transient_cnt + 1;
+        end if;
       end if;
     end if;
-  end process;
+  end process Flag_StartUpTransientDone;
 
   -----------------------------------------------------------------------------
   -- Polar-to-Rectangular CORDIC
   -----------------------------------------------------------------------------
   cord : dsp_prims.dsp_prims.cordic_pr
     generic map (
-      DATA_WIDTH => DATA_WIDTH_c,
-      DATA_EXT   => DATA_EXT_c,
-      STAGES     => STAGES_c
+      DATA_WIDTH => c_data_width,
+      DATA_EXT   => c_data_ext,
+      STAGES     => c_stages
       )
     port map (
       CLK     => ctl_in.clk,
       RST     => ctl_in.reset,
-      MAG     => mag_in_data,
-      PHASE   => phase_in_data,
-      VLD_IN  => idata_vld,
-      I       => real_out_data,
-      Q       => imag_out_data,
-      VLD_OUT => odata_vld
+      MAG     => s_magnitude,
+      PHASE   => s_phase,
+      VLD_IN  => s_data_vld_i,
+      I       => s_real_o,
+      Q       => s_imag_o,
+      VLD_OUT => open
       );
 
   -----------------------------------------------------------------------------
-  -- Data Output (pack respective Worker output ports into iqstream)
-  -----------------------------------------------------------------------------
-  out_out.data(31 downto 16) <= std_logic_vector(resize(signed(imag_out_data), 16));
-  out_out.data(15 downto  0) <= std_logic_vector(resize(signed(real_out_data), 16));
-
-  -- Since ZeroLengthMessages=true for the output WSI, this signal must be controlled
-  out_out.byte_enable <= (others => '1');
-
-  -----------------------------------------------------------------------------
-  -- Give (when downstream Worker ready & Worker output valid)
-  -----------------------------------------------------------------------------
-  out_out.give <= '1' when (ctl_in.is_operating = '1' and out_in.ready = '1' and
-                            hold_off = '1' and (odata_vld = '1' or zlm_force_eom = '1')) else '0';
-
-  -----------------------------------------------------------------------------
-  -- Valid Output (when "Give")
-  -----------------------------------------------------------------------------
-  out_out.valid <= '1' when (out_in.ready = '1' and hold_off = '1' and odata_vld = '1') else '0';
-
-  -----------------------------------------------------------------------------
-  -- SOM/EOM - counter set to message size, increment while giving
+  -- Peak Detection primitive. Value is cleared when read
   -----------------------------------------------------------------------------
 
-  max_sample_cnt <= resize(props_in.messageSize srl 2, max_sample_cnt'length);
+  pm_gen : if its(PEAK_MONITOR) generate
+    pd : util_prims.util_prims.peakDetect
+      port map (
+        CLK_IN   => ctl_in.clk,
+        RST_IN   => s_peak_rst_i,
+        EN_IN    => s_data_vld_o,
+        A_IN     => s_peak_a_i,
+        B_IN     => s_peak_b_i,
+        PEAK_OUT => s_peak_o);
 
-  messageWord_count : process (ctl_in.clk)
-  begin
-    if rising_edge(ctl_in.clk) then
-      if (ctl_in.reset = '1') then
-        msg_cnt   <= (0 => '1', others => '0');
-      elsif (out_in.ready = '1' and odata_vld = '1') then
-        if (msg_cnt = max_sample_cnt) then
-          msg_cnt <= (0 => '1', others => '0');
-        else
-          msg_cnt <= msg_cnt + 1;
-        end if;
-      end if;
-    end if;
-  end process messageWord_count;
+    props_out.peak <= signed(s_peak_o);
+  end generate pm_gen;
 
-  -----------------------------------------------------------------------------
-  -- SOM Output (when downstream Worker is ready, output is valid and
-  -- message count is zero)
-  -----------------------------------------------------------------------------
-  out_out.som <= '1' when (out_in.ready = '1' and hold_off = '1' and
-                           (msg_cnt = 1 or zlm_force_som = '1')) else '0';
-
-  -----------------------------------------------------------------------------
-  -- EOM Output (when downstream Worker is ready, output is valid and
-  -- message count is equal to message length - 1)
-  -----------------------------------------------------------------------------
-  out_out.eom <= '1' when (out_in.ready = '1' and hold_off = '1' and
-                           (msg_cnt = max_sample_cnt or zlm_force_eom = '1')) else '0';
-
-  -----------------------------------------------------------------------------
-  -- Zero-Length Message FSM
-  -- the zlm_fsm is being depreciated, instead see dc_offset_filter.vhd
-  -- for recommended mechanism for dealing with primitive latency
-  -----------------------------------------------------------------------------
-
-  zlm_fsm : process (ctl_in.clk)
-  begin
-    if rising_edge(ctl_in.clk) then
-      if(ctl_in.reset = '1') then
-        zlm_current_state <= INIT_s;
-        zlm_take          <= '1';
-        zlm_force_som     <= '0';
-        zlm_force_eom     <= '0';
-        zlm_force_eom_l   <= '0';
-        zlm_force_vld     <= '0';
-      else
-        -- defaults
-        zlm_current_state <= zlm_current_state;
-        zlm_force_som     <= '0';
-        zlm_force_eom     <= '0';
-
-        case zlm_current_state is
-          when INIT_s =>
-            zlm_take <= '1';
-            -- 'Full' ZLM present, send a ZLM
-            if (in_in.ready = '1' and in_in.som = '1' and in_in.eom = '1' and in_in.valid = '0' and zlm_force_eom_l = '0') then
-              zlm_current_state <= SEND_s;
-            -- 'Partial' ZLM present, wait for remaining portion of ZLM
-            elsif (in_in.ready = '1' and in_in.som = '1' and in_in.valid = '0') then
-              zlm_current_state <= WAIT_s;
-            end if;
-          when WAIT_s =>
-            zlm_take <= '1';
-            -- Valid message from upstream, return to ZLM detection
-            if (in_in.ready = '1' and in_in.valid = '1') then
-              zlm_current_state <= INIT_s;
-            -- Remainder of 'partial' ZLM present, send a ZLM
-            elsif (in_in.ready = '1' and in_in.eom = '1') then
-              zlm_current_state <= SEND_s;
-            end if;
-          when SEND_s =>
-            if (out_in.ready = '1') then
-              zlm_force_eom_l <= '1';
-              -- Determine if in the middle of a message
-              if (msg_cnt /= 1 and zlm_force_eom_l = '0')then
-                zlm_current_state <= TERM_CURR_MSG_s;
-                zlm_take          <= '1';
-                zlm_force_eom     <= '1';
-                zlm_force_vld     <= '1';
-              -- Send a ZLM
-              else
-                zlm_take          <= '0';
-                zlm_current_state <= INIT_s;
-                zlm_force_som     <= '1';
-                zlm_force_eom     <= '1';
-              end if;
-            end if;
-          when TERM_CURR_MSG_s =>
-            if (out_in.ready = '1') then
-              zlm_current_state <= SEND_s;
-              zlm_force_eom     <= '0';
-              zlm_force_vld     <= '0';
-            end if;
-        end case;
-      end if;
-    end if;
-  end process zlm_fsm;
-
+  no_pm_gen : if its(not PEAK_MONITOR) generate
+    props_out.peak <= (others => '0');
+  end generate no_pm_gen;
 end rtl;

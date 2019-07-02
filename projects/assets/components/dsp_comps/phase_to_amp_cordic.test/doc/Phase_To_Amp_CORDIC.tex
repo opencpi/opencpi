@@ -89,7 +89,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.5}
+\def\docVersion{1.6}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -115,15 +115,34 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & 4/2019 \\
+	Release Date      & 11/2019 \\
 	\hline
 	Component Library & ocpi.assets.dsp\_comps                              \\
 	\hline
 	Workers           & \comp.hdl                                          \\
 	\hline
-	Tested Platforms  & xsim, isim, modelsim, alst4, ml605, ZedBoard(PL), Matchstiq-Z1(PL) \\
+	Tested Platforms  & xsim, isim, modelsim, alst4, ml605, ZedBoard(PL), Matchstiq-Z1(PL), E310(PL) \\
 	\hline
 \end{tabular}
+
+\begin{center}
+	\textit{\textbf{Revision History}}
+	\begin{table}[H]
+	\label{table:revisions} % Add "[H]" to force placement of table
+		\begin{tabularx}{\textwidth}{|c|X|l|}
+		\hline
+		\rowcolor{blue}
+		\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+		\hline
+		v1.4 & & 10/2018 \\
+		\hline
+		v1.5 & & 4/2019\\
+		\hline
+		v1.6 & Convert Worker to Version 2 HDL API & 11/2019\\
+		\hline
+		\end{tabularx}
+	\end{table}
+\end{center}
 
 \section*{Functionality}
 \begin{flushleft}
@@ -178,19 +197,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \newpage
 
-\subsection*{State Machine}
-\begin{flushleft}
-	Only one finite-state machine (FSM) is implemented by this worker. The FSM supports Zero-Length Messages.
-\end{flushleft}
-{\centering\captionsetup{type=figure}\includegraphics[scale=0.45]{phase_to_amp_cordic_zlm_fsm}
-	\captionof{figure}{Zero-Length Message FSM}
-	\label{fig:zlm_fsm}}
-\begin{flushleft}
-        Note: In future releases, this worker will be converted to the HDL version 2 API which will remove the need for this state machine.
-\end{flushleft}
-
-\newpage
-
 \section*{Source Dependencies}
 \subsection*{\comp.hdl}
 \begin{itemize}
@@ -201,93 +207,102 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	      \subitem projects/assets/hdl/primitives/dsp\_prims/cordic/src/cordic\_stage.vhd
 	\item projects/assets/hdl/primitives/misc\_prims/misc\_prims\_pkg.vhd
 	      \subitem projects/assets/hdl/primitives/misc\_prims/round\_conv/src/round\_conv.vhd
+	      	\item projects/assets/hdl/primitives/util\_prims/util\_prims\_pkg.vhd
+	      \subitem projects/assets/hdl/primitives/util\_prims/pd/src/peakDetect.vhd
 \end{itemize}
+
 \begin{landscape}
-
-	\section*{Component Spec Properties}
-	\begin{scriptsize}
-		\begin{tabular}{|p{3cm}|p{1.5cm}|c|c|c|c|c|p{7cm}|}
-			\hline
-			\rowcolor{blue}
-			Name               & Type   & SequenceLength & ArrayDimensions & Accessibility      & Valid Range & Default & Usage                                                               \\
-			\hline
-			\verb+DATA_WIDTH+  & UChar  & -              & -               & Readable           & -           & -       & Input (real) and Output (I/Q) data width                            \\
-			\hline
-			\verb+DATA_EXT+    & UChar  & -              & -               & Readable           & -           & -       & CORDIC requirement: \# of extension bits                            \\
-			\hline
-			\verb+STAGES+      & UChar  & -              & -               & Readable           & -           & -       & Number of CORDIC stages implemented                                 \\
-			\hline
-			\verb+messageSize+ & UShort & -              & -               & Readable, Writable & -           & 8192    & Number of bytes in output message                                   \\
-			\hline
-			\verb+enable+      & Bool   & -              & -               & Readable, Writable & -           & True    & Enable(true) or bypass(false)                                       \\
-			\hline
-			\verb+magnitude+   & UShort & -              & -               & Readable, Writable & -           & 16384   & Magnitude of output \scriptsize\begin{verbatim} * +2^(DATA_WIDTH)-1
+\section*{Component Spec Properties}
+\begin{scriptsize}
+	\begin{tabular}{|p{3cm}|p{1.5cm}|c|c|c|c|c|p{7cm}|}
+		\hline
+		\rowcolor{blue}
+		Name               & Type   & SequenceLength & ArrayDimensions & Accessibility      & Valid Range & Default & Usage                                                               \\
+		\hline
+		\verb+DATA_WIDTH+  & UChar  & -              & -               &          & -           & -       & Input (real) and Output (I/Q) data width                            \\
+		\hline
+		\verb+DATA_EXT+    & UChar  & -              & -               &          & -           & -       & CORDIC requirement: \# of extension bits                            \\
+		\hline
+		\verb+STAGES+      & UChar  & -              & -               &          & -           & -       & Number of CORDIC stages implemented                                 \\
+		\hline
+		\verb+messageSize+ & UShort & -              & -               & Writable & -           & 8192    & Number of bytes in output message (Not implemented by Version 2) \\
+		\hline
+		\verb+enable+      & Bool   & -              & -               & Writable & -           & True    & Enable(true) or bypass(false)                                       \\
+		\hline
+		\verb+magnitude+   & UShort & -              & -               & Writable & -           & 16384   & Magnitude of output \scriptsize\begin{verbatim} * +2^(DATA_WIDTH)-1
 			to -2^(DATA_WIDTH)\end{verbatim}\\
-			\hline
-		\end{tabular}
-	\end{scriptsize}
+		\hline
+	\end{tabular}
+\end{scriptsize}
 
-	\section*{Worker Properties}
-	\subsection*{\comp.hdl}
-	\begin{scriptsize}
-		\begin{tabular}{|p{3cm}|p{2cm}|c|c|c|c|c|p{1cm}|p{6cm}|}
-			\hline
-			\rowcolor{blue}
-			Type         & Name              & Type & SequenceLength & ArrayDimensions & Accessibility & Valid Range & Default & Usage                                    \\
-			\hline
-			SpecProperty & \verb+DATA_WIDTH+ & -    & -              & -               & Parameter     & 8-16        & 16      & Input (real) and Output (I/Q) data width \\
-			\hline
-			SpecProperty & \verb+DATA_EXT+   & -    & -              & -               & Parameter     & 6           & 6       & CORDIC requirement: \# of extension bits \\
-			\hline
-			SpecProperty & \verb+STAGES+     & -    & -              & -               & Parameter     & 8-16        & 12      & Number of CORDIC stages implemented      \\
-			\hline
-		\end{tabular}
-	\end{scriptsize}
+\section*{Worker Properties}
+\subsection*{\comp.hdl}
+\begin{scriptsize}
+	\begin{tabular}{|p{3cm}|p{2cm}|c|c|c|c|c|p{1cm}|p{6cm}|}
+		\hline
+		\rowcolor{blue}
+		Type         & Name              & Type & SequenceLength & ArrayDimensions & Accessibility & Valid Range & Default & Usage                                    \\
+		\hline
+		SpecProperty & \verb+DATA_WIDTH+ & -    & -              & -               & Parameter     & 8-16        & 16      & Input (real) and Output (I/Q) data width \\
+		\hline
+		SpecProperty & \verb+DATA_EXT+   & -    & -              & -               & Parameter     & 6           & 6       & CORDIC requirement: Number of extension bits \\
+		\hline
+		SpecProperty & \verb+STAGES+     & -    & -              & -               & Parameter     & 8-16        & 12      & Number of CORDIC stages implemented      \\
+		\hline
+		Property & \verb+PEAK_MONITOR+     & Bool    & -              & -               & Parameter     & Standard        & true      & Enable/Disable build-time inclusion of peak monitor circuit\\
+		\hline
+		Property & \verb+peak+     & Short & -              & -               & Volatile & Standard        & 0 & Peak value of I/Q output (valid when PEAK\_MONITOR=true)\\
+		\hline
+	\end{tabular}
+\end{scriptsize}
 
-	\section*{Component Ports}
-	\begin{scriptsize}
-		\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|c|M{9cm}|}
-			\hline
-			\rowcolor{blue}
-			Name & Producer & Protocol           & Optional & Advanced & Usage                  \\
-			\hline
-			in   & false    & rstream\_protocol  & false    & -        & Signed real samples    \\
-			\hline
-			out  & true     & iqstream\_protocol & false    & -        & Signed complex samples \\
-			\hline
-		\end{tabular}
-	\end{scriptsize}
-	\section*{Worker Interfaces}
-	\subsection*{\comp.hdl}
-	\begin{scriptsize}
-		\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|M{10cm}|}
-			\hline
-			\rowcolor{blue}
-			Type            & Name & DataWidth & Advanced                & Usage                  \\
-			\hline
-			StreamInterface & in   & 16        & ZeroLengthMessages=true & Signed real samples    \\
-			\hline
-			StreamInterface & out  & 32        & ZeroLengthMessages=true & Signed complex samples \\
-			\hline
-		\end{tabular}
-	\end{scriptsize}
+\section*{Component Ports}
+\begin{scriptsize}
+	\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|c|M{9cm}|}
+		\hline
+		\rowcolor{blue}
+		Name & Producer & Protocol           & Optional & Advanced & Usage                  \\
+		\hline
+		in   & false    & rstream\_protocol  & false    & -        & Signed real samples    \\
+		\hline
+		out  & true     & iqstream\_protocol & false    & -        & Signed complex samples \\
+		\hline
+	\end{tabular}
+\end{scriptsize}
+
+\section*{Worker Interfaces}
+\subsection*{\comp.hdl}
+\begin{scriptsize}
+	\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|M{10cm}|}
+		\hline
+		\rowcolor{blue}
+		Type            & Name & DataWidth & Advanced                & Usage                  \\
+		\hline
+		StreamInterface & in   & 16        & & Signed real samples    \\
+		\hline
+		StreamInterface & out  & 32        & InsertEOM=1 & Signed complex samples \\
+		\hline
+	\end{tabular}
+\end{scriptsize}
 \end{landscape}
 
 \section*{Control Timing and Signals}
-\begin{flushleft}
-	The Phase to Amplitude CORDIC worker uses the clock from the Control Plane and standard Control Plane signals.\medskip
+The Phase to Amplitude CORDIC worker uses the clock from the Control Plane and standard Control Plane signals. This worker has a start-up transient delay of \verb+STAGES++2 valid samples. This means that once the input is ready and valid and the output is ready, it takes that many valid input samples before the first output sample is made available. The delays for this worker are itemized be as follows:
+\begin{itemize}
+	\item 0 : pr\_cordic.vhd
+	\item 1 : pr\_cordic.vhd/cordic\_pr.vhd
+	\item STAGES : pr\_cordic.vhd/cordic\_pr.vhd/cordic.vhd/cordic\_stage.vhd 
+	\item 1 : cordic\_pr.vhd/round\_conv.vhd
+\end{itemize}
 
-	There is a startup delay for this worker. Once the input is ready and valid and the output is ready, there is a delay of \verb+STAGES++1 before the first sample is taken. After this initial delay, valid output data is given \verb+STAGES++1 clock cycles after input data is taken.
-
-	\begin{tabular}{|M{4.5cm}|M{1cm}|M{1cm}|M{1.5cm}|M{2cm}|M{1cm}|M{1cm}|M{2.5cm}|}
-		\hline
-		\rowcolor{blue}
-		Latency                      \\
-		\hline
-		\verb+STAGES++1 clock cycles \\
-		\hline
-	\end{tabular}
-\end{flushleft}
+\begin{tabular}{|M{4.5cm}|M{1cm}|M{1cm}|M{1.5cm}|M{2cm}|M{1cm}|M{1cm}|M{2.5cm}|}
+	\hline
+	\rowcolor{blue}
+	Latency                      \\
+	\hline
+	\verb+STAGES++2 clock cycles \\
+	\hline
+\end{tabular}
 
 \begin{landscape}
 \section*{Worker Configuration Parameters}

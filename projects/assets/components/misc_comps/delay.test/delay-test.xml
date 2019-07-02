@@ -1,0 +1,4 @@
+<tests useHDLFileIo='true'>
+  <input port='in' script='generate.py' messagesinfile='true' stressormode='full'/>
+  <output port='out' script='verify.py' messagesinfile='true'/>
+</tests>

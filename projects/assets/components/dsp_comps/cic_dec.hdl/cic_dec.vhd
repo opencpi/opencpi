@@ -41,97 +41,77 @@ library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisio
 
 architecture rtl of worker is
 
-  constant N_c              : integer := to_integer(unsigned(N));
-  constant M_c              : integer := to_integer(unsigned(M));
-  constant R_c              : integer := to_integer(unsigned(R));
-  constant DIN_WIDTH_c      : integer := to_integer(unsigned(DIN_WIDTH));
-  constant ACC_WIDTH_c      : integer := to_integer(unsigned(ACC_WIDTH));
-  constant DOUT_WIDTH_c     : integer := to_integer(unsigned(DOUT_WIDTH));
+  constant c_n              : integer := to_integer(N);
+  constant c_m              : integer := to_integer(M);
+  constant c_r              : integer := to_integer(R);
+  constant c_din_width      : integer := to_integer(DIN_WIDTH);
+  constant c_acc_width      : integer := to_integer(ACC_WIDTH);
+  constant c_dout_width     : integer := to_integer(DOUT_WIDTH);
 
-  signal idata_vld          : std_logic;
-  signal odata_vld          : std_logic;
-  signal i_out, q_out       : std_logic_vector(DOUT_WIDTH_c-1 downto 0);
---  signal in_in_eof_r        : bool_t;
+  signal s_idata_vld        : std_logic;
+  signal s_idata_rdy        : std_logic;
+  signal s_odata_vld        : std_logic;
+  signal s_i_out, s_q_out   : std_logic_vector(c_dout_width-1 downto 0);
 
 begin
 
   ---------------------------------------------------------------------------------
-  -- Enable input to primitive (idata_vld) and take from input (in_out.take)
-  -- when data is present/valid and output is allowed
+  -- Enable input to primitive (s_idata_vld) and take from input (in_out.take)
+  -- when data is present/valid and when primitive input is ready for data
   ---------------------------------------------------------------------------------
 
-  idata_vld   <= in_in.valid and out_in.ready;
-  in_out.take <= idata_vld;
+  s_idata_vld <= in_in.valid and s_idata_rdy;
+  in_out.take <= s_idata_vld;
 
   --------------------------------------------------------------------------------
-  -- Give to output porty when output of primitive is valid and output is allowed)
+  -- Give to output port when output of primitive is valid and output is allowed
   --------------------------------------------------------------------------------
 
-  out_out.give        <= to_bool(out_in.ready and odata_vld = '1');
-  out_out.valid       <= odata_vld;
-  out_out.data        <= std_logic_vector(resize(signed(q_out), 16)) & std_logic_vector(resize(signed(i_out), 16));
-  out_out.byte_enable <= (others => '1');
-  -- out_out.eof         <= in_in_eof_r;
-  -----------------------------------------------------------------------------
-  -- We do not use the default eof-propagation from input to output because
-  -- our output is not continuous, and thus we can have pipelined output data
-  -- to "ship" that occurs AFTER the input happens on input.  In this case
-  -- it is only one cycle, but since the eof input is valid on the next cycle
-  -- after the last input value is taken
-  -- Delay the input EOF according to the known latency of the primitive so that
-  -- we don't assert the output eof while there is still data in the pipeline
-  -----------------------------------------------------------------------------
-  -- eof_delay : process (ctl_in.clk)
-  -- begin
-  --   if rising_edge(ctl_in.clk) then
-  --     if (ctl_in.reset = '1') then
-  --       in_in_eof_r <= bfalse;
-  --     elsif its(out_in.ready) and in_in.eof and odata_vld = '0' then
-  --       in_in_eof_r <= btrue;
-  --     end if;
-  --   end if;
-  -- end process;  
+  out_out.valid       <= s_odata_vld;
+  out_out.data        <= std_logic_vector(resize(signed(s_q_out), 16)) & std_logic_vector(resize(signed(s_i_out), 16));
   
-
-
-
   -----------------------------------------------------------------------------
   -- CIC Decimation primitives (I & Q)
   -----------------------------------------------------------------------------
 
   Dec_I : dsp_prims.dsp_prims.cic_dec_gen
     generic map(
-      N          => N_c,
-      M          => M_c,
-      R          => R_c,
-      DIN_WIDTH  => DIN_WIDTH_c,
-      ACC_WIDTH  => ACC_WIDTH_c,
-      DOUT_WIDTH => DOUT_WIDTH_c
+      g_n          => c_n,
+      g_m          => c_m,
+      g_r          => c_r,
+      g_din_width  => c_din_width,
+      g_acc_width  => c_acc_width,
+      g_dout_width => c_dout_width
       )
     port map(
-      CLK      => ctl_in.clk,
-      RST      => ctl_in.reset,
-      DIN_VLD  => idata_vld,
-      DIN      => in_in.data(DIN_WIDTH_c-1 downto 0),
-      DOUT_VLD => odata_vld,
-      DOUT     => i_out
+      i_clk      => ctl_in.clk,
+      i_rst      => ctl_in.reset,
+      i_din      => in_in.data(c_din_width-1 downto 0),
+      i_din_vld  => s_idata_vld,
+      o_din_rdy  => s_idata_rdy,
+      o_dout     => s_i_out,
+      o_dout_vld => s_odata_vld,
+      i_dout_rdy => out_in.ready
       );
+  
   Dec_Q : dsp_prims.dsp_prims.cic_dec_gen
     generic map(
-      N          => N_c,
-      M          => M_c,
-      R          => R_c,
-      DIN_WIDTH  => DIN_WIDTH_c,
-      ACC_WIDTH  => ACC_WIDTH_c,
-      DOUT_WIDTH => DOUT_WIDTH_c
+      g_n          => c_n,
+      g_m          => c_m,
+      g_r          => c_r,
+      g_din_width  => c_din_width,
+      g_acc_width  => c_acc_width,
+      g_dout_width => c_dout_width
       )
     port map(
-      CLK      => ctl_in.clk,
-      RST      => ctl_in.reset,
-      DIN_VLD  => idata_vld,
-      DIN      => in_in.data(DIN_WIDTH_c-1+16 downto 16),
-      DOUT_VLD => open,
-      DOUT     => q_out
+      i_clk      => ctl_in.clk,
+      i_rst      => ctl_in.reset,
+      i_din      => in_in.data(2*c_din_width-1 downto c_din_width),
+      i_din_vld  => s_idata_vld,
+      o_din_rdy  => open,
+      o_dout     => s_q_out,
+      o_dout_vld => open,
+      i_dout_rdy => out_in.ready
       );
 
 end rtl;

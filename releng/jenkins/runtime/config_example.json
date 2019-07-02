@@ -1,0 +1,154 @@
+{
+  "_config_json_description_": {
+    "notifications": "List of emails for notifications of problems in this branch",
+    "team_notify": "List of branches that should notify the entire team on build errors",
+    "team_email": "Email address to send when team_notify is positive",
+    "fallback": "What branch to fallback onto when another repo does not have same branch name (e.g. develop)",
+    "hdl_platforms": {
+      "_overview_": "List of available targets or platforms",
+      "base_target": "If a platform is based upon another, the one it is based on, e.g. zed => zynq",
+      "bsp_repo": "Git repo location for the BSP repo. Build system will bring in as required",
+      "bsp_prereqs": "List of prerequisites for a BSP",
+      "enabled": "Boolean (default: true) indicating platform should be built in this branch",
+      "hdl_enabled": "Boolean (default: true) indicating HDL for this platform should be built in this branch",
+      "job2_envvars": "List of env variables to set for Job 2, e.g. vendor-provided locations. @VENDOR@ will be replaced with 'job2_support' checkout location. This will be delivered via a bash 'export' command",
+      "tool_license": "Licensing ruleset to use (see 'tools' below). Defaults to 'unlimited'",
+      "target_only": "Boolean (default: false) indicating 'platforms' stage should NOT run (vs. 'targets' stage only)",
+      "vendor_repo": {
+        "_overview_": "External git repo with vendor-provided code",
+        "project_name": "Jenkins job/project to copy from (always gets latest STABLE)",
+        "file_filter": "File list to copy (always checks out to 'vendor') - uses ant-style listing. If there is a file 'executable_files.txt' then those files will have executable flag restored (JENKINS-13128/JENKINS-14269)",
+        "git_branch": "Git branch to use, e.g. 'origin/version5_5'",
+        "job2_support": "File list (NOT ant-style like 'file_filter') to capture in Job 1 and push to Job 2 for build support, e.g. vendor-provided HDL source. Passed directly into 'cp -R'. opencpi_required_files*.tar* will be extracted automatically. Requires that 'bsp_repo' is defined"
+      }
+    },
+    "rcc_platforms": {
+      "_overview_": "List of available RCC platforms",
+      "enabled": "Boolean (default: true) indicating platform should be targeted in this branch",
+      "hdl_project": "If the RCC platform is defined in a BSP, an HDL platform that would contain it"
+    },
+    "tools": {
+      "_overview_": "List of tools used to build HDL and their licensing rules. Default is to only need license when creating assemblies (phase 5). Can override with 'always_license' or 'phases'. Implied base targets inherit licenses from the platforms that implied them, e.g. PlatA uses TgtA and there is no explicit entry in this file for TgtA",
+      "lock_name": "Resouce to lock on Jenkins. Automatically appended to 'License_', e.g. License_Modelsim (NOTE: This is NOT YET IMPLEMENTED - see JENKINS-44141)",
+      "node_label": "Legacy node-based licensing name until JENKINS-44141 implemented",
+      "phases": "Numerical list, e.g. '[3, 4, 5]', of phases that require licensing",
+      "always_license": "Tool always requires license; not just for HDL assembly phase (phase 5)",
+      "never_license": "Tool never requires license"
+    }
+  },
+
+  "notifications": [""],
+  "team_notify": ["develop", "v1.4.0", "v1.5.0"],
+  "team_email": "<PLACEHOLDER>",
+  "fallback": "develop",
+
+  "hdl_platforms": {
+    "modelsim": {
+      "enabled": true,
+      "tool_license": "modelsim"
+    },
+    "isim": {},
+    "xsim": {},
+
+    "zynq": {
+      "target_only": true
+    },
+    "zynq_ise": {
+      "enabled": false,
+      "target_only": true
+    },
+    "arria10soc": {
+      "target_only": true
+    },
+
+    "matchstiq_z1": {
+      "base_target": "zynq"
+    },
+    "shared_pf_1_of_2": {
+      "base_target": "zynq",
+      "bsp_repo": "ssh://<placeholder>",
+      "bsp_prereqs": ["<placeholder>"],
+      "job2_envvars": ["OCPI_PLATFORM_SOURCE_DIR=@VENDOR@/subpath1","OCPI_SHARED_HOME=@VENDOR@"],
+      "vendor_repo": {
+        "project_name": "Support/Vendor_Repo_Checkout",
+        "file_filter": "zynq_kernel/**,executable_files.txt,opencpi_required_files.tar.xz,compiler.tar",
+        "git_branch": "origin/vendor1_v4.3",
+        "job2_support": ["opencpi_required_files.tar.xz"]
+      },
+      "_hdl_enabled": false,
+      "_enabled": false
+    },
+    "shared_pf_2_of_2": {
+      "base_target": "zynq",
+      "bsp_repo": "ssh://<placeholder>",
+      "bsp_prereqs": ["<placeholder>"],
+      "job2_envvars": ["OCPI_PLATFORM_SOURCE_DIR=@VENDOR@/subpath2","OCPI_SHARED_HOME=@VENDOR@"],
+      "vendor_repo": {
+        "project_name": "Support/Vendor_Repo_Checkout",
+        "file_filter": "zynq_kernel/**,executable_files.txt,opencpi_required_files.tar.xz,compiler.tar",
+        "git_branch": "origin/vendor1_v4.3",
+        "job2_support": ["opencpi_required_files.tar.xz"]
+      },
+      "tool_license": "vivado_paid",
+      "_hdl_enabled": false,
+      "_enabled": false
+    },
+
+    "zed": {
+      "base_target": "zynq"
+    },
+
+    "zed_ise": {
+      "base_target": "zynq_ise"
+    },
+
+    "e3xx": {
+      "base_target": "zynq",
+      "bsp_repo": "<PLACEHOLDER>"
+    },
+
+    "alst4": {
+      "enabled": false,
+      "base_target": "stratix4",
+      "tool_license": "altera"
+    },
+    "ml605": {
+      "enabled": false,
+      "base_target": "virtex6",
+      "tool_license": "ise_paid"
+    }
+  },
+
+  "rcc_platforms": {
+    "rcc_pf1" : {
+      "hdl_project": "shared_pf_1_of_2"
+    },
+    "xilinx13_3" : {},
+    "xilinx13_4" : {}
+  },
+
+  "tools" : {
+    "altera" : {
+      "lock_name": "Altera",
+      "node_label": "hdlbuilder-alst4",
+      "always_license": true
+    },
+    "modelsim" : {
+      "lock_name": "Modelsim",
+      "node_label": "hdlbuilder-modelsim",
+      "__not_always_license": true
+    },
+    "unlimited": {
+      "never_license": true
+    },
+    "ise_paid": {
+      "lock_name": "Xilinx",
+      "node_label": "hdlbuilder-ml605"
+    },
+    "vivado_paid": {
+      "lock_name": "Xilinx",
+      "node_label": "hdlbuilder-ml605",
+      "phases": [3, 5]
+    }
+  }
+}

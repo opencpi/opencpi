@@ -167,7 +167,7 @@ def parse_cl_vars():
                                choices=subnouns)
 
     # finally, parse the actual name of the asset to act on
-    subparser.add_argument("name", default=".", type=str, action="store", nargs='?',
+    subparser.add_argument("name", default="", type=str, action="store", nargs='?',
                            help="This is the name of the asset to show utilization for.")
 
     args, remaining_args1 = subparser.parse_known_args(remaining_args0, namespace=first_pass_args)
@@ -198,7 +198,7 @@ def set_init_values(args, dir_type):
         args['init_libs'] = True
     if my_noun in ["hdl-platforms", "project"] or dir_type in ["hdl-platforms", "project"]:
         args['init_hdlplats'] = True
-    if my_noun == "library" and dir_type == "libraries":
+    if my_noun in ["library", "workers", ""] and dir_type == "libraries":
         args['init_libs_col'] = True
     if my_noun == "workers":
         if dir_type not in ["library", "libraries", "project"]:
@@ -210,7 +210,7 @@ def set_init_values(args, dir_type):
 
 def main():
     """
-    Function that is called if this module is called as a mian function
+    Function that is called if this module is called as a main function
     """
     args = parse_cl_vars()
     try:
@@ -225,8 +225,7 @@ def main():
 
             # From the current directory and directory-modifier options, determine
             # the directory to operate from for this ocpidev command
-            directory = ocpiutil.get_ocpidev_working_dir(origin_path=".",
-                                                         noun=args.get("noun", ""),
+            directory = ocpiutil.get_ocpidev_working_dir(noun=args.get("noun", ""),
                                                          name=name,
                                                          library=args['library'],
                                                          hdl_library=args['hdl_library'],
@@ -244,7 +243,7 @@ def main():
                                              ", ".join(DIR_TYPES))
 
             # If name is not set, set it to the current directory's basename
-            if name == "." and dir_type in DIR_TYPES:
+            if not name and dir_type in DIR_TYPES:
                 name = cur_dir_basename
 
             # Initialize settings to be used by Asset classes
@@ -261,7 +260,6 @@ def main():
             ocpiutil.logging.debug("Creating asset object with the following \nname: " +
                                    str(name) + "\n" + "directory: " + str(directory) +
                                    "\nargs: " + str(args))
-
             my_asset = ocpifactory.AssetFactory.factory(dir_type, directory, name, **args)
 
             my_asset.show_utilization()
@@ -271,7 +269,7 @@ def main():
         # Construct error message and exit
         if args['noun'] is not None:
             my_noun = '' if args['noun'] is None else ' "' + args['noun'] + '"'
-            my_name = '' if name == "." else ' named "' + name + '"'
+            my_name = '' if not name else ' named "' + name + '"'
             my_dir = ' in directory "' + args['cur_dir'] + '"'
             ocpiutil.logging.error("Unable to show utilization for " + my_noun +  my_name + my_dir +
                                    " due to previous errors")

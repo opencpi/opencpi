@@ -21,122 +21,109 @@ library ocpi; use ocpi.types.all; use ocpi.util.all;
 
 entity delayline is
   generic (
-    LATENCY : integer  := 1
+    g_latency     : integer  := 1
   );
   port (
-    CLK                : in std_logic;
-    RESET              : in Bool_t;
-    IS_OPERATING       : in Bool_t;
-    IN_READY           : in Bool_t;
-    IN_SOM             : in Bool_t;
-    IN_EOM             : in Bool_t;
-    IN_OPCODE          : in std_logic_vector;
-    IN_VALID           : in Bool_t;
-    IN_BYTE_ENABLE     : in std_logic_vector;
-    IN_DATA            : in std_logic_vector;
-    OUT_READY          : in Bool_t;
-    OUT_SOM            : out Bool_t;
-    OUT_EOM            : out Bool_t;
-    OUT_OPCODE         : out std_logic_vector;
-    OUT_VALID          : out Bool_t;
-    OUT_BYTE_ENABLE    : out std_logic_vector;
-    OUT_DATA           : out std_logic_vector
+    i_clk         : in std_logic;
+    i_reset       : in Bool_t;
+    i_enable      : in Bool_t;
+    i_ready       : in Bool_t;
+    i_som         : in Bool_t;
+    i_eom         : in Bool_t;
+    i_opcode      : in std_logic_vector;
+    i_valid       : in Bool_t;
+    i_byte_enable : in std_logic_vector;
+    i_data        : in std_logic_vector;
+    i_eof         : in Bool_t;
+    o_ready       : out Bool_t;
+    o_som         : out Bool_t;
+    o_eom         : out Bool_t;
+    o_opcode      : out std_logic_vector;
+    o_valid       : out Bool_t;
+    o_byte_enable : out std_logic_vector;
+    o_data        : out std_logic_vector;
+    o_eof         : out Bool_t
   );
 end delayline;
 
 architecture rtl of delayline is
 
-  type data_array is array (natural range <>) of std_logic_vector(IN_DATA'range);
-  type byte_enable_array is array (natural range <>) of std_logic_vector(IN_BYTE_ENABLE'range);
-  type opcode_array is array (natural range <>) of std_logic_vector(IN_OPCODE'range);
+  type t_data_array is array (natural range <>) of std_logic_vector(i_data'range);
+  type t_byte_enable_array is array (natural range <>) of std_logic_vector(i_byte_enable'range);
+  type t_opcode_array is array (natural range <>) of std_logic_vector(i_opcode'range);
 
-  signal som              : std_logic_vector(LATENCY-1 downto 0);
-  signal eom              : std_logic_vector(LATENCY-1 downto 0);
-  signal valid            : std_logic_vector(LATENCY-1 downto 0);
-  signal data             : data_array(LATENCY-1 downto 0);
-  signal byte_enable      : byte_enable_array(LATENCY-1 downto 0);
-  signal opcode           : opcode_array(LATENCY-1 downto 0);
+  signal s_ready       : std_logic_vector(g_latency-1 downto 0);
+  signal s_som         : std_logic_vector(g_latency-1 downto 0);
+  signal s_eom         : std_logic_vector(g_latency-1 downto 0);
+  signal s_eof         : std_logic_vector(g_latency-1 downto 0);
+  signal s_valid       : std_logic_vector(g_latency-1 downto 0);
+  signal s_data        : t_data_array(g_latency-1 downto 0);
+  signal s_byte_enable : t_byte_enable_array(g_latency-1 downto 0);
+  signal s_opcode      : t_opcode_array(g_latency-1 downto 0);
 
 begin
 
------------------------------------------------------------------------------
--- Delay line to match the latency of the primitive for non-sample data
------------------------------------------------------------------------------
-
-  latency_eq_one_gen : if LATENCY = 1 generate
-    delayLine : process (CLK)
+  latency_eq_one_gen : if g_latency = 1 generate
+    delayLine : process (i_clk)
     begin
-      if rising_edge(CLK) then
-        if (RESET = '1') then
-          som              <= (others => '0');
-          eom              <= (others => '0');
-          opcode           <= (others => (others => '0'));
-          valid            <= (others => '0');
-          data             <= (others => (others => '0'));
-          byte_enable      <= (others => (others => '0'));
-        elsif (IS_OPERATING = '1' and OUT_READY = '1') then
-          if IN_READY = '1' then
-            som(0)         <= IN_SOM;
-            eom(0)         <= IN_EOM;
-            opcode(0)      <= IN_OPCODE;
-            byte_enable(0) <= IN_BYTE_ENABLE;
-            valid(0)       <= IN_VALID;
-            data(0)        <= IN_DATA;
-          else
-            som            <= (others => '0');
-            eom            <= (others => '0');
-            opcode         <= (others => (others => '0'));
-            valid          <= (others => '0');
-            data           <= (others => (others => '0'));
-            byte_enable    <= (others => (others => '0'));            
-          end if;    
-        end if;
+      if rising_edge(i_clk) then
+        if (i_reset = '1') then
+          s_ready          <= (others => '0');
+          s_som            <= (others => '0');
+          s_eom            <= (others => '0');
+          s_eof            <= (others => '0');
+          s_opcode         <= (others => (others => '0'));
+          s_valid          <= (others => '0');
+          s_data           <= (others => (others => '0'));
+          s_byte_enable    <= (others => (others => '0'));
+        elsif i_enable = '1' then
+          s_ready(0)       <= i_ready;
+          s_som(0)         <= i_som;
+          s_eom(0)         <= i_eom;
+          s_eof(0)         <= i_eof;
+          s_opcode(0)      <= i_opcode;
+          s_byte_enable(0) <= i_byte_enable;
+          s_valid(0)       <= i_valid;
+          s_data(0)        <= i_data;
+        end if;    
       end if;
     end process delayLine;
   end generate latency_eq_one_gen;
 
-  latency_gt_one_gen : if LATENCY > 1 generate
-    delayLine : process (CLK)
+  latency_gt_one_gen : if g_latency > 1 generate
+    delayLine : process (i_clk)
     begin
-      if rising_edge(CLK) then
-        if (RESET = '1') then
-          som                                 <= (others => '0');
-          eom                                 <= (others => '0');
-          opcode                              <= (others => (others => '0'));
-          valid                               <= (others => '0');
-          data                                <= (others => (others => '0'));
-          byte_enable                         <= (others => (others => '0'));
-        elsif (IS_OPERATING = '1' and OUT_READY = '1') then
-          if IN_READY = '1' then
-            som                               <= som(som'high-1 downto 0) & IN_SOM;
-            eom                               <= eom(eom'high-1 downto 0) & IN_EOM;
-            byte_enable                       <= byte_enable(byte_enable'high-1 downto 0) & IN_BYTE_ENABLE;
-            opcode                            <= opcode(opcode'high-1 downto 0) & IN_OPCODE;
-            valid                             <= valid(valid'high-1 downto 0) & IN_VALID;
-            data                              <= data(data'high-1 downto 0) & IN_DATA;
-          else
-            som                               <= som(som'high-1 downto 0) & '0';
-            eom                               <= eom(eom'high-1 downto 0) & '0';
-            valid                             <= valid(valid'high-1 downto 0) & '0';
-            --Upper array elements
-            byte_enable(opcode'high downto 1) <= byte_enable(byte_enable'high-1 downto 0);
-            opcode(opcode'high downto 1)      <= opcode(opcode'high-1 downto 0);
-            data(opcode'high downto 1)        <= data(data'high-1 downto 0);
-            --Bottom array element
-            opcode(0)                         <= (others => '0');
-            data(0)                           <= (others => '0');
-            byte_enable(0)                    <= (others => '0');            
-          end if;
+      if rising_edge(i_clk) then
+        if (i_reset = '1') then
+          s_ready       <= (others => '0');
+          s_som         <= (others => '0');
+          s_eom         <= (others => '0');
+          s_eof         <= (others => '0');
+          s_byte_enable <= (others => (others => '0'));
+          s_opcode      <= (others => (others => '0'));
+          s_valid       <= (others => '0');
+          s_data        <= (others => (others => '0'));
+        elsif i_enable = '1' then
+          s_ready       <= s_ready(s_ready'high-1 downto 0) & i_ready;
+          s_som         <= s_som(s_som'high-1 downto 0) & i_som;
+          s_eom         <= s_eom(s_eom'high-1 downto 0) & i_eom;
+          s_eof         <= s_eof(s_eof'high-1 downto 0) & i_eof;
+          s_byte_enable <= s_byte_enable(s_byte_enable'high-1 downto 0) & i_byte_enable;
+          s_opcode      <= s_opcode(s_opcode'high-1 downto 0) & i_opcode;
+          s_valid       <= s_valid(s_valid'high-1 downto 0) & i_valid;
+          s_data        <= s_data(s_data'high-1 downto 0) & i_data;
         end if;
       end if;
     end process delayLine;
   end generate latency_gt_one_gen;
 
-OUT_SOM    <= som(som'high);
-OUT_EOM    <= eom(eom'high);
-OUT_OPCODE <= opcode(opcode'high);
-OUT_VALID   <= valid(valid'high);
-OUT_BYTE_ENABLE  <= byte_enable(byte_enable'high);
-OUT_DATA     <=   data(data'high);
+o_ready       <= s_ready(s_ready'high);
+o_som         <= s_som(s_som'high);
+o_eom         <= s_eom(s_eom'high);
+o_eof         <= s_eof(s_eof'high);
+o_opcode      <= s_opcode(s_opcode'high);
+o_valid       <= s_valid(s_valid'high);
+o_byte_enable <= s_byte_enable(s_byte_enable'high);
+o_data        <= s_data(s_data'high);
 
 end rtl;

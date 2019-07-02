@@ -48,18 +48,18 @@ bool did_pass_test_ocpi_app_max_value_rf_gain_dB()
     {
       OA::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "rf_gain_dB");
       try {
-        p.setDoubleValue(78.);
-        did_pass = false; // set to 78. should not have succeeded
+        p.setDoubleValue(74.);
+        did_pass = false; // set to 74. should not have succeeded
       }
       catch(...) {
         did_pass = true;
       }
       TEST_EXPECTED_VAL(did_pass, true);
-      p.setDoubleValue(77.);
+      p.setDoubleValue(73.);
     }
     did_pass = did_pass_test_expected_value_frequency_MHz(app, 1299.999999, (OA::ULongLong) 1299999999);
     if(!did_pass) { return false; }
-    did_pass = did_pass_test_expected_value_rf_gain_dB(app, 77., (OA::Long) 77);
+    did_pass = did_pass_test_expected_value_rf_gain_dB(app, 73., (OA::Long) 73);
     if(!did_pass) { return false; }
 
     {

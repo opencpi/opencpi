@@ -47,8 +47,135 @@ ocpidev create test -P temp_plat plat_comp.test
 ocpidev create hdl assembly temp_assy
 cd ..
 
-#$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin/ocpidev build -d ../../av-test
-#$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin/ocpidev build -d temp_proj
+# need to add things we expect to fail to this test as well
+set +e
+VERB="run"
+OCPI_WD="../../av-test"
+#application
+echo "Running Failure Test 1"
+ex_ocpidev "application --hdl-libary adapters multislave_test" && fail
+echo "Running Failure Test 2"
+ex_ocpidev "application" && fail
+OCPI_WD="../../av-tes/components"
+echo "Running Failure Test 3"
+ex_ocpidev "application multislave_test" && fail
+
+#applications
+VERB="run"
+OCPI_WD="../../av-test"
+echo "Running Failure Test 4"
+ex_ocpidev "applications --hdl-libary adapters" && fail
+OCPI_WD="../../av-tes/components"
+echo "Running Failure Test 5"
+ex_ocpidev "applications" && fail
+
+#assembly
+VERB="utilization"
+OCPI_WD="../../av-test"
+echo "Running Failure Test 6"
+ex_ocpidev "assembly --hdl-libary adapters param_test_assy" && fail
+echo "Running Failure Test 7"
+ex_ocpidev "assembly" && fail
+OCPI_WD="../../av-tes/components"
+echo "Running Failure Test 8"
+ex_ocpidev "assembly param_test_assy" && fail
+
+#assemblies
+VERB="utilization"
+OCPI_WD="../../av-test"
+echo "Running Failure Test 9"
+ex_ocpidev "assemblies --hdl-libary adapters" && fail
+echo "Running Failure Test 10"
+ex_ocpidev "assemblies param_test_assy" && fail
+OCPI_WD="../../av-tes/components"
+echo "Running Failure Test 11"
+ex_ocpidev "assemblies" && fail
+
+#library/libraries
+VERB="run"
+OCPI_WD="../../av-test"
+echo "Running Failure Test 12"
+ex_ocpidev "library -l components --hdl-libary adapters -P my_plat" && fail
+echo "Running Failure Test 13"
+ex_ocpidev "library -l components my_lib_name" && fail
+echo "Running Failure Test 14"
+ex_ocpidev "library" && fail
+OCPI_WD="temp_proj"
+echo "Running Failure Test 15"
+ex_ocpidev "library -l components --hdl-libary adapters -P my_plat" && fail
+echo "Running Failure Test 16"
+ex_ocpidev "library -l components my_lib_name" && fail
+echo "Running Failure Test 17"
+ex_ocpidev "library" && fail
+
+#hdl platform
+VERB="show"
+OCPI_WD="temp_proj"
+echo "Running Failure Test 18"
+ex_ocpidev "hdl platform --hdl-library adapters temp_plat" && fail
+echo "Running Failure Test 19"
+ex_ocpidev "hdl platform" && fail
+OCPI_WD="temp_proj/components"
+echo "Running Failure Test 20"
+ex_ocpidev "hdl platform temp_plat" && fail
+
+#hdl platforms
+VERB="utilization"
+OCPI_WD="temp_proj"
+echo "Running Failure Test 21"
+ex_ocpidev "hdl platforms --hdl-library adapters" && fail
+echo "Running Failure Test 22"
+ex_ocpidev "hdl platform" && fail
+OCPI_WD="temp_proj/components"
+echo "Running Failure Test 23"
+ex_ocpidev "hdl platform temp_plat" && fail
+
+#test
+VERB="run"
+OCPI_WD="../../av-test"
+echo "Running Failure Test 24"
+ex_ocpidev "test -l components --hdl-libary adapters -P my_plat test_worker" && fail
+echo "Running Failure Test 25"
+ex_ocpidev "test -l components my_lib_name test_worker" && fail
+echo "Running Failure Test 26"
+ex_ocpidev "test" && fail
+OCPI_WD="../../av-test/components/test_worker.hdl"
+echo "Running Failure Test 27"
+ex_ocpidev "test test_worker" && fail
+OCPI_WD="temp_proj"
+echo "Running Failure Test 28"
+ex_ocpidev "test temp_comp" && fail
+
+#worker
+VERB="show"
+OCPI_WD="../../av-test"
+echo "Running Failure Test 29"
+ex_ocpidev "worker -l components --hdl-libary adapters -P my_plat test_worker.hdl" && fail
+echo "Running Failure Test 30"
+ex_ocpidev "worker -l components my_lib_name test_worker.hdl" && fail
+echo "Running Failure Test 31"
+ex_ocpidev "worker" && fail
+OCPI_WD="../../av-test/components/test_worker.test"
+echo "Running Failure Test 32"
+ex_ocpidev "worker test_worker" && fail
+OCPI_WD="temp_proj"
+echo "Running Failure Test 33"
+ex_ocpidev "worker temp_comp.hdl" && fail
+
+#component
+VERB="show"
+OCPI_WD="../../av-test"
+echo "Running Failure Test 34"
+ex_ocpidev "component -l components --hdl-libary adapters -P my_plat test_worker.hdl" && fail
+echo "Running Failure Test 35"
+ex_ocpidev "component -l components my_lib_name test_worker.hdl" && fail
+echo "Running Failure Test 36"
+ex_ocpidev "component" && fail
+OCPI_WD="../../av-test/components/test_worker.test"
+echo "Running Failure Test 37"
+ex_ocpidev "component test_worker" && fail
+
+set -e
 
 VERB="run"
 OCPI_WD="."
@@ -76,32 +203,38 @@ ex_ocpidev "application multislave_test"
 echo "Running Test 9"
 ex_ocpidev "applications"
 OCPI_WD="../../av-test/applications/multislave_test"
-#echo "Running Test 10"
-#ex_ocpidev ""
+echo "Running Test 10"
+ex_ocpidev ""
 echo "Running Test 11"
 ex_ocpidev "application"
 ex_ocpidev "application multislave_test"
 OCPI_WD="temp_proj/components"
 echo "Running Test 12"
 ex_ocpidev ""
-echo "Running Test 13"
+echo "Running Test 13.1"
 ex_ocpidev "library sub_lib"
+echo "Running Test 13.2"
 ex_ocpidev "library"
+echo "Running Test 13.3"
 ex_ocpidev "library components"
-#echo "Running Test 14"
-#ex_ocpidev "tests"
+echo "Running Test 14"
+ex_ocpidev "tests"
 echo "Running Test 15"
 ex_ocpidev "-l sub_lib test temp_comp"
 OCPI_WD="temp_proj/components/sub_lib"
 echo "Running Test 16"
 ex_ocpidev ""
 echo "Running Test 17"
-#ex_ocpidev "library sub_lib"
+ex_ocpidev "library sub_lib"
 ex_ocpidev "library"
 echo "Running Test 18"
 ex_ocpidev "tests"
-echo "Running Test 19"
+echo "Running Test 19.1"
 ex_ocpidev "test temp_comp"
+echo "Running Test 19.2"
+ex_ocpidev "test temp_comp.test"
+echo "Running Test ???.1"
+
 VERB="show"
 OCPI_WD="."
 echo "Running Test 20"
@@ -127,26 +260,30 @@ ex_ocpidev "hdl platforms"
 echo "Running Test 30"
 ex_ocpidev "workers"
 OCPI_WD="temp_proj"
-#echo "Running Test 31"
-#ex_ocpidev ""
+echo "Running Test 31"
+ex_ocpidev ""
 OCPI_WD="temp_proj/components"
 echo "Running Test 32"
-ex_ocpidev "-l sub_lib component temp_comp"
+ex_ocpidev "-l sub_lib components temp_comp"
 echo "Running Test 33"
 ex_ocpidev "-l sub_lib worker temp_comp.rcc"
 OCPI_WD="../../av-test/components"
-echo "Running Test 34"
-ex_ocpidev "component "
+echo "Running Test 34.1"
+ex_ocpidev "component test_worker"
+echo "Running Test 34.2"
+ex_ocpidev "component test_worker-spec.xml"
+echo "Running Test 34."
+ex_ocpidev "component test_worker-spec"
 echo "Running Test 35"
-ex_ocpidev "worker "
+ex_ocpidev "worker test_worker.rcc"
 OCPI_WD="temp_proj/components/sub_lib"
 echo "Running Test 36"
 ex_ocpidev "component temp_comp"
 echo "Running Test 37"
 ex_ocpidev "worker temp_comp.rcc"
 OCPI_WD="temp_proj/components/sub_lib/temp_comp.rcc"
-#echo "Running Test 38"
-#ex_ocpidev ""
+echo "Running Test 38"
+ex_ocpidev ""
 echo "Running Test 39"
 ex_ocpidev "worker"
 ex_ocpidev "worker temp_comp.rcc"
@@ -162,8 +299,8 @@ ex_ocpidev ""
 echo "Running Test 42"
 ex_ocpidev "hdl platform temp_plat"
 OCPI_WD="temp_proj/components"
-#echo "Running Test 43"
-#ex_ocpidev ""
+echo "Running Test 43"
+ex_ocpidev ""
 echo "Running Test 44"
 ex_ocpidev "library sub_lib"
 echo "Running Test 45"
@@ -175,7 +312,7 @@ echo "Running Test 47"
 ex_ocpidev ""
 echo "Running Test 48"
 ex_ocpidev "library"
-#ex_ocpidev "library components"
+ex_ocpidev "library components"
 echo "Running Test 49"
 ex_ocpidev "worker unit_tester.hdl"
 echo "Running Test 50"
@@ -185,14 +322,14 @@ echo "Running Test 51"
 ex_ocpidev ""
 echo "Running Test 52"
 ex_ocpidev "library"
-#ex_ocpidev "library sub_lib"
+ex_ocpidev "library sub_lib"
 echo "Running Test 53"
 ex_ocpidev "worker temp_comp.hdl"
 echo "Running Test 54"
 ex_ocpidev "workers"
 OCPI_WD="temp_proj/components/sub_lib/temp_comp.hdl"
-#echo "Running Test 55"
-#ex_ocpidev ""
+echo "Running Test 55"
+ex_ocpidev ""
 echo "Running Test 56"
 ex_ocpidev "worker"
 ex_ocpidev "worker temp_comp.hdl"
@@ -201,23 +338,19 @@ echo "Running Test 57"
 ex_ocpidev ""
 echo "Running Test 58"
 ex_ocpidev "worker plat_comp.hdl"
-echo "Running Test 59"
-ex_ocpidev "workers"
 echo "Running Test 60"
 ex_ocpidev "hdl platform"
-#ex_ocpidev "hdl platform temp_plat"
+ex_ocpidev "hdl platform temp_plat"
 OCPI_WD="temp_proj/hdl/platforms"
 echo "Running Test 61"
 ex_ocpidev ""
-echo "Running Test 62"
-ex_ocpidev "workers"
 echo "Running Test 63"
 ex_ocpidev "hdl platform temp_plat"
 echo "Running Test 64"
 ex_ocpidev "hdl platforms"
 OCPI_WD="temp_proj/hdl/assemblies/temp_assy"
-#echo "Running Test 65"
-#ex_ocpidev ""
+echo "Running Test 65"
+ex_ocpidev ""
 echo "Running Test 66"
 ex_ocpidev "hdl assembly"
 ex_ocpidev "hdl assembly temp_assy"
@@ -231,11 +364,5 @@ ex_ocpidev "hdl assemblies"
 OCPI_WD="."
 echo "Running Test 70"
 ex_ocpidev "project temp_proj"
-
-
-# need to add things we expect to fail to this test as well
-#set +e
-#echo "Running Fail Test 1: Expecting Error"
-#$OCPIDEV junk test_worker.test && fail
 
 ocpidev delete -f project temp_proj

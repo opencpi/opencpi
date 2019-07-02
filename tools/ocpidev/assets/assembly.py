@@ -95,10 +95,12 @@ class HdlApplicationAssembly(HdlAssembly, ReportableAsset):
                                                           " shellhdlassemblyvars " +
                                                           "ShellHdlAssemblyVars=1",
                                                           verbose=False)
-            except:
-                # if the make call throws a error this means that that hdl platform isnt build
-                # better fix is to have make handle this more gracefully
+            #pylint:disable=broad-except
+            except Exception:
+                # if the make call throws a error this means that that hdl platform isn't built
+                # the better fix is to have make handle this more gracefully
                 continue
+            #pylint:enable=broad-except
             if "Containers" not in assemb_vars:
                 raise ocpiutil.OCPIException("Could not get list of HDL containers from " +
                                              "directory\"" + self.directory + "\"")
@@ -156,7 +158,7 @@ class HdlApplicationAssembly(HdlAssembly, ReportableAsset):
         for cname, impls in container_impl_dict.items():
             # It would be best if the AssetFactory used _get_or_create for
             # containers, but it cannot because it uses class type and directory
-            # to determine uniqueness, and multiple containers share the same assembly dir
+            # to determine uniqueness, and multiple containers share the same assembly directory
             self.containers[cname] = AssetFactory.factory("hdl-container", self.directory,
                                                           name=cname, container_impls=impls)
 
@@ -179,6 +181,19 @@ class HdlApplicationAssembly(HdlAssembly, ReportableAsset):
             # Add all data-points for this container to the running list
             util_report += self.containers[cname].get_utilization()
         return util_report
+
+    @staticmethod
+    def get_working_dir(name, library, hdl_library, hdl_platform):
+        """
+        return the directory of a HDL Assembly given the name (name) and
+        library specifiers (library, hdl_library, hdl_platform)
+        """
+        ocpiutil.check_no_libs("hdl-assembly", library, hdl_library, hdl_platform)
+        if not name: ocpiutil.throw_not_blank_e("hdl-assembly", "name", True)
+        if ocpiutil.get_dirtype() not in ["project", "hdl-assemblies", "hdl-assembly"]:
+            ocpiutil.throw_not_valid_dirtype_e(["project", "hdl-assemblies", "hdl-assembly"])
+        if not name: ocpiutil.throw_not_blank_e("hdl-assembly", "name", True)
+        return ocpiutil.get_path_to_project_top() + "/hdl/assemblies/" + name
 
 class HdlAssembliesCollection(HDLBuildableAsset, ReportableAsset):
     """
@@ -236,6 +251,17 @@ class HdlAssembliesCollection(HDLBuildableAsset, ReportableAsset):
         """
         raise NotImplementedError("HdlAssembliesCollection.build() is not implemented")
 
+    @staticmethod
+    def get_working_dir(name, library, hdl_library, hdl_platform):
+        """
+        return the directory of a HDL Assembly Collection given the name (name) and
+        library specifiers (library, hdl_library, hdl_platform)
+        """
+        ocpiutil.check_no_libs("hdl-assembly", library, hdl_library, hdl_platform)
+        if name: ocpiutil.throw_not_blank_e("applications", "name", False)
+        if ocpiutil.get_dirtype() not in ["project", "hdl-assemblies"]:
+            ocpiutil.throw_not_valid_dirtype_e(["project", "hdl-assemblies"])
+        return ocpiutil.get_path_to_project_top() + "/hdl/assemblies"
 
 class HdlContainer(HdlAssembly, ReportableAsset):
     """
@@ -246,7 +272,7 @@ class HdlContainer(HdlAssembly, ReportableAsset):
     An HDL Container can also be implied (e.g. the base/default container)
 
     Containers have various implementations which are bound to platform configurations.
-    These implementations are storded in an instance field "implementations" that maps
+    These implementations are stored in an instance field "implementations" that maps
     HDL Container Implementation name to HdlContainerImplementation instance.
     """
 
@@ -300,7 +326,7 @@ class HdlContainer(HdlAssembly, ReportableAsset):
             if sub_report:
                 # We want to add the container name as a report element
                 sub_report.assign_for_all_points(key="Container", value=self.name)
-                # Add this dataset to the list of utilization dictionaries. It will serve
+                # Add this data-set to the list of utilization dictionaries. It will serve
                 # as a single data-point/row in the report
                 util_report += sub_report
         return util_report
@@ -320,7 +346,7 @@ class HdlContainerImplementation(HdlAssembly):
         """
         super().__init__(directory, name, **kwargs)
         self.platform = kwargs.get("platform", None)
-        # The subdirectory where target-specific artifacts will be made for this
+        # The sub-directory where target-specific artifacts will be made for this
         # container implementation
         self.target_subdir = self.directory + "/target-" + self.platform.target.name
 
@@ -332,7 +358,7 @@ class HdlContainerImplementation(HdlAssembly):
 
     def get_utilization(self):
         """
-        Generate a report/dataset containing the utilization for this implementation
+        Generate a report/data-set containing the utilization for this implementation
         This will basically just be a report with a single datapoint in it
 
         The returned Report contains a single data-point (dict) for this container implementation,

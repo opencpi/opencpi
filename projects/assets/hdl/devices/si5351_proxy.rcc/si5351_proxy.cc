@@ -174,7 +174,7 @@ private:
   {
     float outputFreqHz = m_properties.channels[k].output_hz;
     double inputFreqHz = m_properties.input_hz[m_properties.channels[k].source];
-    double VCO_Hz;
+    //double VCO_Hz;
     double feedbackDivider;
     bool int_mode;
     float multisynthDivider;
@@ -182,11 +182,11 @@ private:
     double freq,fmin=600000000,fmax=900000000;
     double availablefreqplla[10000],bestvcoa=0,bestvcob=0;
     unsigned int bestscore=0;
-    int availableintplla[10000];
+    //int availableintplla[10000];
     unsigned long it_second[10000];
     int DivA,DivB,DivC,a,b,temp,i,j=0;
     unsigned MSX_P1, MSX_P2,MSX_P3;
-    double tmp1;
+    //double tmp1;
     int MSNX_P1,MSNX_P2,MSNX_P3;
     uint8_t tempReg;
 	
@@ -217,7 +217,7 @@ private:
     while (freq >= fmin && freq <= fmax)
       {
 	availablefreqplla[i]=freq;
-	availableintplla[i]=0;
+	//availableintplla[i]=0;
 	freq=freq+outputFreqHz;
 	i++;
       }
@@ -243,7 +243,7 @@ private:
 
       }
 
-    VCO_Hz = bestvcoa;
+    //VCO_Hz = bestvcoa;
     feedbackDivider = bestvcoa/inputFreqHz;
     multisynthDivider = bestvcoa/outputFreqHz;
 
@@ -261,7 +261,7 @@ private:
 
     bestvcob=bestvcoa;
 
-    VCO_Hz=bestvcob;
+    //VCO_Hz=bestvcob;
     feedbackDivider = bestvcob/inputFreqHz;
 
     multisynthDivider = bestvcob/outputFreqHz;
@@ -300,7 +300,7 @@ private:
 
     if(outputFreqHz <= 150000000)
       {
-	tmp1=128 *((float)DivB/DivC);
+	//tmp1=128 *((float)DivB/DivC);
 	MSX_P1 = 128 * DivA + floor(128 *((float)DivB/DivC)) - 512;
 	MSX_P2 = 128 * DivB - DivC * floor(128 * DivB/DivC);
 	MSX_P3 = DivC;

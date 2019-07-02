@@ -52,6 +52,19 @@ class Application(RunnableAsset, RCCBuildableAsset):
         """
         raise NotImplementedError("Application.build() is not implemented")
 
+    @staticmethod
+    def get_working_dir(name, library, hdl_library, hdl_platform):
+        """
+        return the directory of an Application given the name (name) and
+        library specifiers (library, hdl_library, hdl_platform)
+        """
+        ocpiutil.check_no_libs("application", library, hdl_library, hdl_platform)
+        if ocpiutil.get_dirtype() not in ["application", "applications", "project"]:
+            ocpiutil.throw_not_valid_dirtype_e(["applications", "project"])
+        if not name: ocpiutil.throw_not_blank_e("application", "name", True)
+        #assume the only valid place for a application in a project is in the applications directory
+        return ocpiutil.get_path_to_project_top() + "/applications/" + name
+
 class ApplicationsCollection(RunnableAsset, RCCBuildableAsset):
     """
     This class represents an OpenCPI applications directory.  Ability act on multiple applications
@@ -103,3 +116,17 @@ class ApplicationsCollection(RunnableAsset, RCCBuildableAsset):
         This is a placeholder function will be the function that builds this Asset
         """
         raise NotImplementedError("ApplicationsCollection.build() is not implemented")
+
+    @staticmethod
+    def get_working_dir(name, library, hdl_library, hdl_platform):
+        """
+        return the directory of an Application Collection given the name (name) and
+        library specifiers (library, hdl_library, hdl_platform)
+        """
+        ocpiutil.check_no_libs("applications", library, hdl_library, hdl_platform)
+        if name: ocpiutil.throw_not_blank_e("applications", "name", False)
+        if ocpiutil.get_dirtype() not in ["applications", "project"]:
+            ocpiutil.throw_not_valid_dirtype_e(["applications", "project"])
+        #assume the only valid place for a applications collection in a project is in the
+        #applications directory
+        return ocpiutil.get_path_to_project_top() + "/applications"

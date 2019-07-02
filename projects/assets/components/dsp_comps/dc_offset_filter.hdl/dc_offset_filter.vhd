@@ -49,41 +49,34 @@ library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisio
 
 architecture rtl of worker is
 
-  constant DATA_WIDTH_c   : integer := to_integer(unsigned(DATA_WIDTH_p));
+  constant c_data_width : integer := to_integer(DATA_WIDTH_p);
 
-  signal idata_vld        : std_logic;
-  signal i_odata          : signed(DATA_WIDTH_c-1 downto 0);
-  signal q_odata          : signed(DATA_WIDTH_c-1 downto 0);
-  signal odata_vld        : std_logic;
-  signal peak_out         : std_logic_vector(15 downto 0);
-  -- Temp signals to make older VHDL happy
-  signal peak_rst_in       : std_logic;
-  signal peak_a_in         : std_logic_vector(15 downto 0);
-  signal peak_b_in         : std_logic_vector(15 downto 0);
+  signal s_data_vld_i : std_logic;
+  signal s_data_vld_o : std_logic;
+  signal s_i_o        : signed(c_data_width-1 downto 0);
+  signal s_q_o        : signed(c_data_width-1 downto 0);
+  --
+  signal s_peak_rst_i : std_logic;
+  signal s_peak_a_i   : std_logic_vector(15 downto 0);
+  signal s_peak_b_i   : std_logic_vector(15 downto 0);
+  signal s_peak_o     : std_logic_vector(15 downto 0);
 
 begin
 
-  peak_rst_in <= ctl_in.reset or std_logic(props_in.peak_read);
-  peak_a_in   <= std_logic_vector(resize(i_odata,16));
-  peak_b_in   <= std_logic_vector(resize(q_odata,16));
+  -- WSI Interface
+  in_out.take <= s_data_vld_i;
 
-  -----------------------------------------------------------------------------
-  -- 'enable' circuit (when up/downstream Workers ready and operating)
-  -----------------------------------------------------------------------------
+  out_out.data <= std_logic_vector(resize(s_q_o, c_data_width)) &
+                  std_logic_vector(resize(s_i_o, c_data_width));
 
-  idata_vld <= in_in.valid and out_in.ready;
+  out_out.valid <= s_data_vld_o;
 
-  -----------------------------------------------------------------------------
-  -- Take (when up/downstream Workers ready and operating)
-  -----------------------------------------------------------------------------
+  -- Internal
+  s_data_vld_i <= in_in.valid and out_in.ready;
 
-  in_out.take <= idata_vld;
-
-  -----------------------------------------------------------------------------
-  -- Valid is always true since we only give valid data.
-  -----------------------------------------------------------------------------
-
-  out_out.valid <= odata_vld;
+  s_peak_rst_i <= ctl_in.reset or std_logic(props_in.peak_read);
+  s_peak_a_i   <= std_logic_vector(resize(s_i_o, 16));
+  s_peak_b_i   <= std_logic_vector(resize(s_q_o, 16));
 
   -----------------------------------------------------------------------------
   -- DC offset cancellation filter
@@ -91,36 +84,33 @@ begin
 
   i_dc_filter : dsp_prims.dsp_prims.dc_offset_cancellation
     generic map (
-      DATA_WIDTH => DATA_WIDTH_c)
+      DATA_WIDTH => c_data_width)
     port map (
-      CLK       => ctl_in.clk,
-      RST       => ctl_in.reset,
-      BYPASS    => std_logic(props_in.bypass),
-      UPDATE    => std_logic(props_in.update),
-      TC        => signed(props_in.tc),
-      DIN       => signed(in_in.data(DATA_WIDTH_c-1 downto 0)),
-      DIN_VLD   => idata_vld,
-      DOUT_RDY  => out_in.ready,
-      DOUT      => i_odata,
-      DOUT_VLD  => odata_vld);
+      CLK      => ctl_in.clk,
+      RST      => ctl_in.reset,
+      BYPASS   => std_logic(props_in.bypass),
+      UPDATE   => std_logic(props_in.update),
+      TC       => signed(props_in.tc),
+      DIN      => signed(in_in.data(c_data_width-1 downto 0)),
+      DIN_VLD  => s_data_vld_i,
+      DOUT_RDY => out_in.ready,
+      DOUT     => s_i_o,
+      DOUT_VLD => s_data_vld_o);
 
   q_dc_filter : dsp_prims.dsp_prims.dc_offset_cancellation
     generic map (
-      DATA_WIDTH => DATA_WIDTH_c)
+      DATA_WIDTH => c_data_width)
     port map (
-      CLK       => ctl_in.clk,
-      RST       => ctl_in.reset,
-      BYPASS    => std_logic(props_in.bypass),
-      UPDATE    => std_logic(props_in.update),
-      TC        => signed(props_in.tc),
-      DIN       => signed(in_in.data(DATA_WIDTH_c-1+16 downto 16)),
-      DIN_VLD   => idata_vld,
-      DOUT_RDY  => out_in.ready,
-      DOUT      => q_odata,
-      DOUT_VLD  => open);
-
-    out_out.data        <= std_logic_vector(resize(q_odata,16)) &
-                           std_logic_vector(resize(i_odata,16));
+      CLK      => ctl_in.clk,
+      RST      => ctl_in.reset,
+      BYPASS   => std_logic(props_in.bypass),
+      UPDATE   => std_logic(props_in.update),
+      TC       => signed(props_in.tc),
+      DIN      => signed(in_in.data(c_data_width-1+16 downto 16)),
+      DIN_VLD  => s_data_vld_i,
+      DOUT_RDY => out_in.ready,
+      DOUT     => s_q_o,
+      DOUT_VLD => open);
 
   -----------------------------------------------------------------------------
   -- Peak Detection primitive. Value is cleared when read
@@ -129,13 +119,16 @@ begin
     pd : util_prims.util_prims.peakDetect
       port map (
         CLK_IN   => ctl_in.clk,
-        RST_IN   => peak_rst_in,
-        EN_IN    => odata_vld,
-        A_IN     => peak_a_in,
-        B_IN     => peak_b_in,
-        PEAK_OUT => peak_out);
+        RST_IN   => s_peak_rst_i,
+        EN_IN    => s_data_vld_o,
+        A_IN     => s_peak_a_i,
+        B_IN     => s_peak_b_i,
+        PEAK_OUT => s_peak_o);
 
-    props_out.peak <= signed(peak_out);
+    props_out.peak <= signed(s_peak_o);
   end generate pm_gen;
 
+  no_pm_gen : if its(not PEAK_MONITOR_p) generate
+    props_out.peak <= (others => '0');
+  end generate no_pm_gen;
 end rtl;

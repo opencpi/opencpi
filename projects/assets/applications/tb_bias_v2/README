@@ -1,5 +1,7 @@
 The tb_bias_v2 application utilizes the pattern_v2, bias, and capture_v2 components.
 
+The app uses the tb_bias_v2, tb_bias_vhdl_v2, or tb_bias_param_v2 assemblies.
+
 To run the application on an embedded platform, with the assumption you are operating in NFS/Network mode on the
 embedded platform and you have your projects mounted at /mnt/ocpi_core and /mnt/ocpi_assets do:
 

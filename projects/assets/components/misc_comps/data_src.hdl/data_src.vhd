@@ -124,7 +124,7 @@ begin
   valid_data <= ctl_in.is_operating and out_in.ready and
                 data_ready_for_out_port;
 
-  num_samples_valid_gen : entity work.set_clr
+  num_samples_valid_gen : util_prims.util_prims.set_clr
     port map(
       clk => ctl_in.clk,
       rst => ctl_in.reset,

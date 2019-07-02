@@ -1,11 +1,7 @@
 <build>
-
   <configuration id='0'>
     <parameter name='DATA_WIDTH' value='16'/>
     <parameter name='DATA_EXT' value='6'/>
     <parameter name='STAGES' value='18'/>
-    <parameter name='ocpi_debug' value='false'/>
-    <parameter name='ocpi_endian' value='little'/>
   </configuration>
-
 </build>

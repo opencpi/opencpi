@@ -44,7 +44,7 @@ export SPOOF_HOSTNAME
 .PHONY: all rpms
 .SILENT: all rpms
 
--include ../jenkins/angryviper_config.mk
+-include ../config_files/custom_git_path.mk
 
 include ../myhostname.mk
 

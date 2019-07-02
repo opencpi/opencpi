@@ -98,8 +98,8 @@ def addmsg(f, opcode, data):
 def impulse_cmplx_bin(filename): #COMPLEX - BINARY
     print("\n*** Python: Generate a binary impulse file, complex ***")
     #binary, 16b values packed into 32bit word, little-endian
-    scnt=int(os.environ.get("OCPI_TEST_NUM_TAPS_p"))
-    coeff_width = int(os.environ.get("OCPI_TEST_COEFF_WIDTH_p"))
+    scnt=int(os.environ.get("OCPI_TEST_NUM_TAPS"))
+    coeff_width = int(os.environ.get("OCPI_TEST_COEFF_WIDTH"))
     data = np.zeros(scnt, dtype=np.int32)
     if coeff_width == 16: 
         data[0] = 0x7fff7fff

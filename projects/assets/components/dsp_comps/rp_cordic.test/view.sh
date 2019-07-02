@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+NUM_WORKER_DELAYS=$((8 + $OCPI_TEST_STAGES))
 
-$OCPI_PROJECT_DIR/scripts/plotAndFft.py $2 complex 32768 10000&
-$OCPI_PROJECT_DIR/scripts/plotAndFft.py $1 real $((32768 - 8 - $OCPI_TEST_STAGES)) 10000&
+$OCPI_PROJECT_DIR/scripts/plotAndFft.py $2 complex $OCPI_TEST_NUM_SAMPLES 10000&
+$OCPI_PROJECT_DIR/scripts/plotAndFft.py $1 real $(($OCPI_TEST_NUM_SAMPLES - $NUM_WORKER_DELAYS)) 10000&

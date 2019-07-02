@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-SourceFiles=	i2c_pkg.vhd i2c_body.vhd \
+SourceFiles=	i2c_pkg.vhd \
 		i2c_master_bit_ctrl.v \
 		i2c_master_byte_ctrl.v \
 		i2c_opencores_ctrl.vhd \

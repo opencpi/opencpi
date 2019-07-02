@@ -23,10 +23,12 @@
 
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
-architecture rtl of test_tx_event_worker is
+architecture rtl of worker is
   signal doit           : bool_t;
   signal opcode_bit     : std_logic := '0';
   signal ctr            : unsigned(31 downto 0);
+  signal en_assert_eof  : std_logic := '0';
+  signal assert_eof     : std_logic := '0';
 begin
   doit <= event_out_in.ready and ctl_in.is_operating;
   event_out_out.give <= doit and to_bool(ctr = props_in.max_count_value-1);
@@ -47,4 +49,30 @@ begin
   end process;
 
   props_out.opcode_bit <= opcode_bit;
+
+  en_assert_eof_gen : process(ctl_in.clk)
+  begin
+    if rising_edge(ctl_in.clk) then
+      if (ctl_in.reset = '1') then
+        en_assert_eof <= '0';
+      elsif (props_in.assert_eof_written = '1' )then
+        en_assert_eof <= '1';
+      end if;
+    end if;
+  end process en_assert_eof_gen;
+
+  assert_eof_gen : process(ctl_in.clk)
+  begin
+    if rising_edge(ctl_in.clk) then
+      if (ctl_in.reset = '1') then
+        assert_eof <= '0';
+      elsif (en_assert_eof = '1') then
+        assert_eof <= props_in.assert_eof;
+      else
+        assert_eof <= '0';
+      end if;
+    end if;
+  end process assert_eof_gen;
+
+  event_out_out.eof <= assert_eof;
 end rtl;

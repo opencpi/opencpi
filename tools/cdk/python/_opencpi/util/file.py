@@ -390,6 +390,14 @@ def match_regex_get_first_num(target_file, regex):
     # no number/match found
     return None
 
+def write_file_from_string(file_name, string):
+    """
+    Generates a file on the filesystem from the string that is passed in the file of file_name
+    """
+    out_file = open(file_name, "w")
+    out_file.write(string)
+    out_file.close()
+
 ###############################################################################
 # Functions to ease filesystem navigation
 ###############################################################################

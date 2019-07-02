@@ -10,12 +10,12 @@
                   |p{\dimexpr0.3\linewidth-2\tabcolsep\relax}|}
 \hline
 \rowcolor{blue}
-Name & Producer & Protocol & Optional 
+Name & Producer & Protocol & Optional
 \\
 \hline
-in & false & iqstream\_protocol& False\\
+in & false & iqstream\_protocol & false\\
 \hline
-out & true & iqstream\_protocol& False\\
+out & true & iqstream\_protocol & false\\
 \hline
 \end{longtable}
 \end{scriptsize}

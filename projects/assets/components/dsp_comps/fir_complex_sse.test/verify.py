@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -28,15 +28,12 @@ To test the FIR Complex filter, a binary data file is generated containing an im
 The output of the filter is thus an impulse response, showing the symmetric tap values.
 
 """
+
 import sys
 import os.path
 import opencpi.colors as color
+import bin2int
 
-
-print "\n","*"*80
-print "*** Python: FIR Complex ***"
-
-print "*** Validation of Complex FIR output (binary data file) ***"
 
 if len(sys.argv) < 2:
     print("Usage expected: output filename, input filename\n")
@@ -44,38 +41,34 @@ if len(sys.argv) < 2:
 
 #Generate text file of symmetric tap values for comparison
 num_taps=2*int(os.environ.get("OCPI_TEST_NUM_TAPS_p"))
-taps=map(int, os.environ.get("OCPI_TEST_taps").split(",")) #tap values are comma-separated
+taps=list(map(int, os.environ.get("OCPI_TEST_taps").split(","))) #tap values are comma-separated
 output_file=sys.argv[1]
 
 #This section tests the framework and is not generally needed for enduser testing
 #start framework test
 goldTapsFilename="../../gen/properties/{0}.{1}.{2}".format(os.environ['OCPI_TESTCASE'], os.environ['OCPI_TESTSUBCASE'], "taps")
 fp=open(goldTapsFilename)
-goldtaps=map(int,fp.readlines())
+goldtaps=list(map(int,fp.readlines()))
 fp.close()
 
 if goldtaps!=taps:
-    print color.RED + color.BOLD + 'FAILED: taps does not match goldtaps in ' + goldTapsFilename
-    print color.RED + color.BOLD + '*** Error: End Validation ***\n' + color.END
+    print ('taps does not match goldtaps in ' + goldTapsFilename)
     sys.exit(1)
 #end framework test
 
 #Check to confirm number of taps is as expected
 if num_taps != 2*len(taps):
-    print color.RED + color.BOLD + 'FAILED: Actual number of taps does not match specified NUM_TAPS_p'
-    print color.RED + color.BOLD + '*** Error: End Validation ***\n' + color.END
+    print ('Actual number of taps does not match specified NUM_TAPS_p')
     sys.exit(1)
 
 #Check to make sure not all taps are zero
 if( sum(map(abs,taps)) == 0):
-    print color.RED + color.BOLD + 'FAILED: taps are all zero'
-    print color.RED + color.BOLD + '*** Error: End Validation ***\n' + color.END
+    print ('taps are all zero')
     sys.exit(1)
 
 #Convert output binary file to text file
-build_str = 'python ../../bin2int.py ' + output_file + ' ' + output_file.rstrip('out')+'tmp' + ' ' + str(2*num_taps) + ' ' + str(int(num_taps)/2+4)
-print '\n'+build_str
-os.system(build_str)
+filter_group_delay = int(num_taps/2)+4
+bin2int.bin2int_complex(output_file, output_file.rstrip('out')+'tmp', 2*num_taps, filter_group_delay)
 
 #Compare symmetric taps file to output
 taps.extend(reversed(taps)); #extend the taps to be symmetric
@@ -83,18 +76,14 @@ data2cmp = [line.strip() for line in open(output_file.rstrip('out')+'tmp')]
 i_result = data2cmp[::2]
 q_result = data2cmp[1::2]
 if i_result != q_result:
-    print color.RED + color.BOLD + 'FAILED: i & q taps do not match' + color.END
+    print ('i & q taps do not match')
     sys.exit(1)
 for x in range(len(taps)):
     if abs(abs(int(taps[x])) - abs(int(i_result[x]))) > 1:
-        print color.RED + color.BOLD + 'FAILED' + color.END, x, taps[x], i_result[x]
-        print color.RED + color.BOLD + '*** Error: End Validation ***\n' + color.END
+        print ('i_result[' + str(x) + '] = ' + str(i_result[x]) + ' while expected = ' + str(taps[x]))
         sys.exit(1)
     if abs(abs(int(taps[x])) - abs(int(q_result[x]))) > 1:
-        print color.RED + color.BOLD + 'FAILED' + color.END, x, taps[x], q_result[x]
-        print color.RED + color.BOLD + '*** Error: End Validation ***\n' + color.END
+        print ('q_result[' + str(x) + '] = ' + str(q_result[x]) + ' while expected = ' + str(taps[x]))
         sys.exit(1)
 
-print 'Data matched expected results.'
-print color.GREEN + color.BOLD + 'PASSED' + color.END
-print '*** End Validation ***\n'
+print ('Data matched expected results.')

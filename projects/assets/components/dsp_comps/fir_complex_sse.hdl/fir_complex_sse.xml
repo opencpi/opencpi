@@ -1,9 +1,11 @@
-<HdlWorker Language="vhdl" Spec="fir_complex_sse-spec.xml" FirstRawProperty="taps">
+<HdlWorker Language="vhdl" Spec="fir_complex_sse-spec.xml" Version="2" DataWidth="32">
 
-  <Property Name="DATA_WIDTH_p" Type="ulong" Parameter="true" Readable="true" Default="16"/>
-  <Property Name="COEFF_WIDTH_p" Type="ulong" Parameter="true" Readable="true" Default="16"/>
+  <SpecProperty Name="taps" Raw="true"/>
+  <Property Name="DATA_WIDTH_p" Type="uchar" Parameter="true" Default="16" Description="Data Width of I and Q for internal processing"/>
+  <Property Name="COEFF_WIDTH_p" Type="uchar" Parameter="true" Default="16" Description="Coefficient width in bits"/>
+  <Property Name="PEAK_MONITOR" Type="bool" Parameter="true" Default="true" Description="Enable/Disable build-time inclusion of Peak Monitoring"/>
 
-  <StreamInterface Name="in"  DataWidth="32" ZeroLengthMessages="true"/>
-  <StreamInterface Name="out" DataWidth="32" ZeroLengthMessages="true"/>
+  <StreamInterface Name="in"/>
+  <StreamInterface Name="out" insertEOM='1'/>
 
 </HdlWorker>

@@ -20,7 +20,7 @@
 
 library IEEE, ocpi, i2c;
 use IEEE.std_logic_1164.all, ieee.numeric_std.all;
-use ocpi.all, ocpi.types.all;
+use ocpi.all, ocpi.types.all; use ocpi.util.all;
 use i2c.i2c.all;
 architecture rtl of fmcomms_2_3_i2c_worker is
   constant addr_width_c    : natural := 7;

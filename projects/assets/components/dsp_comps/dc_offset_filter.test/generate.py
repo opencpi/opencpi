@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -36,7 +36,7 @@ if len(sys.argv) != 3:
     print("Invalid arguments:  usage is: generate.py <num-samples> <output-file>")
     sys.exit(1)
 
-print "    GENERATE (Complex 16b binary data file):"
+print ("    GENERATE (Complex 16b binary data file):")
     
 OFILENAME = sys.argv[2]
 NUM_SAMPLES = int(sys.argv[1])
@@ -68,11 +68,11 @@ out_data['imag_idx'] = np.int16(imag * gain)
 
 #Save data file
 f = open(OFILENAME, 'wb')
-for i in xrange(NUM_SAMPLES):
+for i in range(NUM_SAMPLES):
     f.write(out_data[i])
 f.close()
 
 # Summary
-print "    Output filename:", OFILENAME
-print "    Number of samples:", NUM_SAMPLES
-print "    Number of bytes: ", NUM_SAMPLES*4
+print ("    Output filename   : ", OFILENAME)
+print ("    Number of samples : ", NUM_SAMPLES)
+print ("    Number of bytes   : ", NUM_SAMPLES*4)

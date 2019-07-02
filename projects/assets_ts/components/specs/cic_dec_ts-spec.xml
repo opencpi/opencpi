@@ -7,13 +7,10 @@
 	    Description='Differential Delay'/>
 
   <Property Name='R' Type='ushort'
-	    Description='Decimation Factor'/>
+	    Description='Decimation Factor. 1 output for every R inputs.'/>
 
   <Property Name='DATA_WIDTH' Type='uchar'
-	    Description='Data width'/>
-
-  <Property Name='ACC_WIDTH' Type='uchar'
-	    Description='Accumulation Width'/>
+	    Description='Width of I and Q'/>
 
   <Port Name='in'  Protocol='ComplexShortWithMetadata-prot'/>
   <Port Name='out' Protocol='ComplexShortWithMetadata-prot' Producer='true'/>

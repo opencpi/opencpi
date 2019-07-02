@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -22,38 +22,39 @@
 Used for testing real/complex FIR filters
 
 """
+
 import struct
+import numpy as np
 import shutil
 import sys
 import os.path
 
 def impulse_real_ascii(filename): #REAL - ASCII
-    print "\n*** Python: Generate an ASCII impulse file, real ***"
     fo = open(filename, 'w')
     scnt=2*int(os.environ.get("OCPI_TEST_NUM_TAPS_p"))
-    max_tap=pow(2,int(os.environ.get("OCPI_TEST_COEFF_WIDTH_p"))-1)-1
+    # Taps are signed 16 bits so max value is (2^15)-1
+    max_tap=pow(2,15)-1
     fo.write(''.join(str(max_tap))+'\n')
     for i in range(1,scnt):
         fo.write(''.join(str('0'))+'\n')
     fo.close()
 
 def impulse_real_bin(filename): #REAL - BINARY
-    print "\n*** Python: Generate a binary impulse file, real ***"
     #binary, 16b values packed into 32bit word, little-endian
-    scnt=2*int(os.environ.get("OCPI_TEST_NUM_TAPS_p"))
-    max_tap=pow(2,int(os.environ.get("OCPI_TEST_COEFF_WIDTH_p"))-1)-1
+    scnt=int(os.environ.get("OCPI_TEST_NUM_TAPS_p"))
+    data = np.zeros(scnt, dtype=np.int32)
+    # (2^15)-1 is 7fff in hex which is the max tap value
+    data[0] = 0x00007fff
     fo = open(filename, 'wb')
-    for j in range(scnt/2):
-        fo.write(struct.pack('h', max_tap))
-        for i in range(1,scnt):
-            fo.write(struct.pack('h', 0))
+    for i in range(scnt):
+        fo.write(data)
     fo.close()
 
 def impulse_cmplx_ascii(filename): #COMPLEX - ASCII
-    print "\n*** Python: Generate an ASCII impulse file, complex ***"
     fo = open(filename, 'w')
     scnt=2*2*int(os.environ.get("OCPI_TEST_NUM_TAPS_p"))
-    max_tap=pow(2,int(os.environ.get("OCPI_TEST_COEFF_WIDTH_p"))-1)-1
+    # Taps are signed 16 bits so max value is (2^15)-1
+    max_tap=pow(2,15)-1
     fo.write(''.join(str(max_tap))+'\n')
     fo.write(''.join(str(max_tap))+'\n')
     for i in range(2,scnt):
@@ -61,17 +62,17 @@ def impulse_cmplx_ascii(filename): #COMPLEX - ASCII
     fo.close()
 
 def impulse_cmplx_bin(filename): #COMPLEX - BINARY
-    print "\n*** Python: Generate a binary impulse file, complex ***"
     #binary, 16b values packed into 32bit word, little-endian
-    scnt=2*2*int(os.environ.get("OCPI_TEST_NUM_TAPS_p"))
-    max_tap=pow(2,int(os.environ.get("OCPI_TEST_COEFF_WIDTH_p"))-1)-1
+    scnt=2*int(os.environ.get("OCPI_TEST_NUM_TAPS_p"))
+    data = np.zeros(scnt, dtype=np.int32)
+    # (2^15)-1 is 7fff in hex which is the max tap value
+    # Since it is a complex number write max tap twice
+    data[0] = 0x7fff7fff
     fo = open(filename, 'wb')
-    for j in range(scnt/2):
-        fo.write(struct.pack('h', max_tap))
-        fo.write(struct.pack('h', max_tap))
-        for i in range(2,scnt):
-            fo.write(struct.pack('h', 0))
+    for i in range(scnt):
+        fo.write(data)
     fo.close()
+
 
 def main():
     impulse_real_ascii(filename)

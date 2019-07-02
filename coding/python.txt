@@ -21,11 +21,11 @@ Whitespace:
         example_variable = foo(bar[0], arg1=5)
     See PEP 8 for more detail
 
-Line Continuation: 
-    Do not use '\' to specify a line continuation. parens are the prefered method to allow for 
-        multi-line statements.   
-    Example of good line continuation: 
-        var = ("this is a string.  " + 
+Line Continuation:
+    Do not use '\' to specify a line continuation. parens are the prefered method to allow for
+        multi-line statements.
+    Example of good line continuation:
+        var = ("this is a string.  " +
                "this is another string.  ")
 
 Comments:
@@ -43,7 +43,7 @@ Comments:
 
 Naming:
     Files that will be placed in a user's path should be a single word starting with 'ocpi'
-        they should also include #!/usr/bin/env python3 at the top and omit the '.py' extension when 
+        they should also include #!/usr/bin/env python3 at the top and omit the '.py' extension when
         exported, the source for this file should still have the correct extention
     Avoid single-character names under all circumstances
     Avoid two-character names in most circumstances
@@ -71,12 +71,15 @@ Logging:
     Reference other python modules to see how they include and use ocpiutil.py's logging
 
 Pylint Syntax Checker:
+
     It is HIGHLY RECOMMENDED that all OpenCPI developers use a syntax checker such as 'pylint'
     We provide a slightly modified pylint configuration file in this folder named 'pylint.cfg'
     It can be used at the command line
         (or within an editor - see "Editor Configurations/Plugins" section)
     Can be installed via "yum" from the EPEL repo:
         $ sudo yum install python34-pylint
+    To install the spell-check dictionary for spell checking of comments run the following:
+	$ sudo pip3 install pyenchant
     Run pylint and pass it a python file to get feedback, warnings and errors in your code:
         $ pylint34 my_python_module.py --rcfile path/to/pylint.cfg
 

@@ -25,7 +25,6 @@ import logging
 from glob import glob
 import subprocess
 import re
-import copy
 from _opencpi.util import cd, set_vars_from_make, OCPIException
 
 def get_make_vars_rcc_targets():
@@ -280,7 +279,7 @@ def get_project_package(origin_path="."):
             project_vars = set_vars_from_make("Makefile",
                                               "projectpackage ShellProjectVars=1", "verbose")
             if (not project_vars is None and 'ProjectPackage' in project_vars and
-                len(project_vars['ProjectPackage']) > 0):
+                    len(project_vars['ProjectPackage']) > 0):
                 # There is only one value associated with ProjectPackage, so get element 0
                 project_package = project_vars['ProjectPackage'][0]
             else:
@@ -360,7 +359,7 @@ def get_project_registry_dir(directory="."):
     Return the exists boolean and the path to the project registry directory.
     """
     if (is_path_in_project(directory) and
-        os.path.isdir(get_path_to_project_top(directory) + "/imports")):
+            os.path.isdir(get_path_to_project_top(directory) + "/imports")):
         # allow imports to be a link OR a directory (needed for deep copies of exported projects)
         project_registry_dir = os.path.realpath(get_path_to_project_top(directory) + "/imports")
     else:
@@ -403,377 +402,113 @@ def get_all_projects():
 # for use in the code very close to the command-line parsing.
 ###############################################################################
 
-# Directory types that may contain sub-assets
-COLLECTION_DIRTYPES = ["project", "applications", "library", "libraries", "hdl-library",
-                       "hdl-platform", "hdl-platforms", "hdl-assemblies", "hdl-primitives",
-                       "rcc-platforms", "component", "workers", "tests"]
-
-# pylint:disable=too-many-arguments
-# pylint:disable=too-many-branches
-def get_ocpidev_working_dir(origin_path=".", noun="", name=".",
-                            library=None, hdl_library=None, hdl_platform=None):
+VALID_PLURAL_NOUNS = ["tests", "libraries", "workers"]
+def get_ocpidev_working_dir(noun, name, library=None, hdl_library=None, hdl_platform=None):
     """
-    Given an origin path, noun, name  and location/library directives,
-    determine the target assets's directory to work in.
-
-    Basically, the arguments of this function describe the current state/location in a project
-    as well as a description of where to look for an asset of a certain name and type.
-    This function completes that mapping of:
-    'current-state/location + asset-description' -> asset-directory,
-    and returns the working directory of interest.
-
-    First, this function converts the current state/location to location/library directives
-    like library, hdl_library, hdl_platform and collection_type. So basically, convert the
-    current-state + location-directives, to just location-directives. These location-directives
-    along with descriptors like noun and name comprise an asset-description.
-
-    At that point, the _get_asset_dir() function can be called which converts an asset-description
-    to asset-directory. This nested function call does not require any current-state/location
-    information, and will provide the location of the target asset relative to a project top.
-
-    Finally, the path to the project of interest is prepended to this asset-directory and
-    the resulting full-path is returned.
-
-    Args:
-        origin_path: path from which we are operating - this provides runtime context that may
-                     translate to location directives:
-                         (library/hdl_library/hdl_platform/collection_type)
-        noun: noun/asset-type of interest. Defaults to blank
-        name: name of the asset to locate. Basically, what is the name of the asset of type <noun>
-        library: the library in which the asset of interest lives
-        hdl_library: the HDL library in which the asset of interest lives (in the hdl/ subtree)
-        hdl_platform: the HDL platform in which the asset of interest lives.
-                      might itself be the asset
-
-    Return:
-        asset_dir: the full path to asset described via this function's arguments
-
-    Notes:
-        name and noun describe the name and type of asset being described.
-        The library, platform arguments are location-directives or modifiers
-        that dictate where to the asset should be found.
+    TODO
+    notes:
+        - maybe this function shoud return noun and dir based on options does this even help
+        - can only use from outside of a project for global show stuff and when specifying a
+            project or registry
+        - need to validate when you can leave name/noun blank and stuff too
+        - should this be a class on its own instead of a utility function?
+        - should they be static method on all thier respective asset classes ?
+        -
     """
-    logging.debug("Getting ocpidev working dir from options:\n" +
-                  str((origin_path, noun, name, library, hdl_library, hdl_platform)))
-
-    # If the noun is project, append name to origin_path to ensure we operate from within a project
-    # from here forward
-    if not name:
-        name = "."
-    if noun == "project":
-        origin_path = origin_path + "/" + name
-        name = "."
-    if not is_path_in_project(origin_path):
-        # pylint:enable=undefined-variable
-        raise OCPIException("Path \"" + os.path.realpath(origin_path) + "\" is not in a project, " +
+    # what about showing of global things is this function even called in that case? isnt the object
+    # that is created always the current registry?
+    if not is_path_in_project(".") and not is_path_in_project(name):
+        raise OCPIException("Path \"" + os.path.realpath(".") + "\" is not in a project, " +
                             "so this command is invalid.")
-        # pylint:enable=undefined-variable
+    cur_dirtype = get_dirtype() if get_dirtype() != "libraries" else "library"
+    name = "" if name == os.path.basename(os.path.realpath(".")) else name
 
-    # if this is a collection type, we care about the current directory's dirtype,
-    # otherwise we want the current asset's containing collection's dirtype
-    cur_dirtype = get_dirtype(origin_path)
-    col_and_test = copy.deepcopy(COLLECTION_DIRTYPES)
-    col_and_test.append("test")
-    if cur_dirtype is not None and cur_dirtype in col_and_test:
-        # operating on a collection-type, so just proceed as usual
-        working_dir = origin_path
-        dirtype = cur_dirtype
+    cur_dir_not_name = noun == cur_dirtype and not name
+    noun_valid_not_name = noun in VALID_PLURAL_NOUNS and not name
+
+    if (not noun and not name) or cur_dir_not_name or noun_valid_not_name:
+        return "."
+
+    # pylint:disable=no-name-in-module
+    # pylint:disable=import-error
+    import _opencpi.assets.application
+    import _opencpi.assets.test
+    import _opencpi.assets.worker
+    import _opencpi.assets.platform
+    import _opencpi.assets.assembly
+    import _opencpi.assets.library
+    import _opencpi.assets.project
+    import _opencpi.assets.registry
+    import _opencpi.assets.component
+
+    # pylint:enable=no-name-in-module
+    # pylint:enable=import-error
+
+    # pylint:disable=no-member
+    working_dir_dict = {
+        "application"    : _opencpi.assets.application.Application.get_working_dir,
+        "applications"   : _opencpi.assets.application.ApplicationsCollection.get_working_dir,
+        "project"        : _opencpi.assets.project.Project.get_working_dir,
+        "library"        : _opencpi.assets.library.Library.get_working_dir,
+        "test"           : _opencpi.assets.test.Test.get_working_dir,
+        "component"      : _opencpi.assets.component.Component.get_working_dir,
+        "worker"         : _opencpi.assets.worker.Worker.get_working_dir,
+        "hdl-platform"   : _opencpi.assets.platform.HdlPlatformWorker.get_working_dir,
+        "hdl-platforms"  : _opencpi.assets.platform.HdlPlatformsCollection.get_working_dir,
+        "hdl-assembly"   : _opencpi.assets.assembly.HdlApplicationAssembly.get_working_dir,
+        "hdl-assemblies" : _opencpi.assets.assembly.HdlAssembliesCollection.get_working_dir,
+        }
+    # pylint:enable=no-member
+
+    if noun in working_dir_dict:
+        asset_dir = working_dir_dict[noun](name, library, hdl_library, hdl_platform)
     else:
-        # not operating on a collection-type. It is most convenient here
-        # to determine the location/library-directives associated with the
-        # asset's containing collection
-        working_dir = origin_path + "/.."
-        dirtype = get_dirtype(working_dir)
-        # if no name was provided, set name to the origin_path's basename to preserve that
-        # information as we move to the parent collection
-        if (name is None or name == ".") and get_dirtype(origin_path) is not None:
-            name = os.path.basename(os.path.realpath(origin_path))
-            dirtype = get_dirtype(origin_path)
-
-    # error checking
-    if (library is not None or hdl_library is not None) and dirtype in ["library", "hdl-library"]:
-        # pylint:disable=undefined-variable
-        raise OCPIException("[hdl-]library option cannot be provided when operating in a " +
-                            "directory of [hdl-]library type.")
-        # pylint:enable=undefined-variable
-    if (hdl_platform is not None) and dirtype in ["hdl_platform"]:
-        # pylint:disable=undefined-variable
-        raise OCPIException("hdl-platform option cannot be provided when operating in a " +
-                            "directory of hdl-platform type.")
-        # pylint:enable=undefined-variable
-
-    working_basename = os.path.basename(os.path.realpath(working_dir))
-
-    # if origin path is the 'hdl' subdir, and library is set, prepend 'hdl/'
-    if dirtype is None and working_basename == "hdl" and library is not None:
-        library = "hdl/" + library
-
-    elif dirtype == "library":
-        # Determine where this library lives to choose which locatin-directive
-        # to set
-        parent_dt = get_dirtype(working_dir + "/..")
-        parent_basename = os.path.basename(os.path.realpath(working_dir + "/.."))
-        library = working_basename
-        if parent_dt in ["project", "libraries"]:
-            # if the parent directory is type project or libraries, then this is
-            # a component library (e.g. components or a sublibrary of components)
-            library = working_basename
-        elif parent_dt == "hdl-platform":
-            # parent directory is an HDL platform, so set that directive
-            hdl_platform = parent_basename
-        elif parent_dt is None and parent_basename == "hdl":
-            # parent directory has no type and is named 'hdl'. So, this is an hdl library
-            # e.g. devices, cards, adapters
-            library = "hdl/" + working_basename
-
-    elif dirtype == "hdl-platform":
-        hdl_platform = working_basename
-    elif dirtype == "test" and name == "." and not noun:
-        name = os.path.basename(os.path.realpath("."))
-    logging.debug("Getting ocpidev working dir from options (auxiliary function):\n" +
-                  str((noun, name, library, hdl_library, hdl_platform, dirtype)))
-
-    # If no noun was specified, and the dirtype is a collection, set noun to dirtype
-    # For example, if a command was run in hdl/assemblies, but no noun was specified,
-    # then just set the noun to hdl-assemblies
-
-    if not noun:
-        col_and_test = copy.deepcopy(COLLECTION_DIRTYPES)
-        col_and_test.append("test")
-        noun = dirtype if dirtype in col_and_test else ""
-    # Now that the current state/directory has been converted to location directives,
-    # call this helper function to convert or state-less asset-description to an
-    # asset-directory from a project top
-    asset_from_pj_top = _get_asset_dir(noun, name, library, hdl_library, hdl_platform)
-
-    proj_path = get_path_to_project_top(origin_path)
-
-    # prepend the asset-directory with the path to the project top
-    asset_dir = os.path.realpath(proj_path + "/" + asset_from_pj_top)
+        raise OCPIException("Invalid noun \"" + noun + "\" .  Valid nouns are: " +
+                            ' '.join(working_dir_dict.keys()))
 
     # ensure existence and return
     if os.path.exists(asset_dir):
-        return asset_dir
+        return os.path.realpath(asset_dir)
     else:
         # pylint:disable=undefined-variable
         raise OCPIException("Determined working directory of \"" + asset_dir + "\" that does " +
                             "not exist.")
         # pylint:enable=undefined-variable
-# pylint:enable=too-many-arguments
-# pylint:enable=too-many-branches
 
-# pylint:disable=too-many-statements
-# pylint:disable=too-many-branches
-def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platform=None):
+def throw_not_valid_dirtype_e(valid_loc):
     """
-    Given a noun, a name, and library directives
-    determine the target asset's directory from a project top.
-
-    Basically, the arguments of this function specify/describe an asset in a project.
-    This function completes that mapping of asset-description -> asset-directory,
-    and returns the directory of interest relative to the top of the project.
-
-    Args:
-        noun: noun/asset-type of interest. Defaults to blank
-        name: name of the asset to locate. Basically, what is the name of the asset of type <noun>
-        library: the library in which the asset of interest lives
-        hdl_library: the HDL library in which the asset of interest lives (in the hdl/ subtree)
-        hdl_platform: the HDL platform in which the asset of interest lives.
-                      might itself be the asset
-
-    Return:
-        asset: the project subdirectory containing the asset described via this function's arguments
-
-    Notes:
-        name and noun describe the name and type of asset being described.
-        The library and platform arguments are location-directives or modifiers
-        that dictate where to the asset is found.
-
-    Examples (doctest):
-        >>> _get_asset_dir(noun="library", name="components")
-        'components'
-        >>> _get_asset_dir(noun="library", name="dsp_comps")
-        'components/dsp_comps'
-        >>> _get_asset_dir(noun="library", name="components/dsp_comps")
-        'components/dsp_comps'
-        >>> _get_asset_dir(noun="library", name="hdl/devices")
-        'hdl/devices'
-        >>> _get_asset_dir(noun="worker", name="complex_mixer.hdl", library="dsp_comps")
-        'components/dsp_comps/complex_mixer.hdl'
-        >>> _get_asset_dir(noun="test", name="bias.test", library="components")
-        'components/bias.test'
-        >>> _get_asset_dir(noun="test", name="bias", library="components")
-        'components/bias.test'
-        >>> _get_asset_dir(noun="worker", name="ad9361_adc.hdl", hdl_library="devices")
-        'hdl/devices/ad9361_adc.hdl'
-        >>> _get_asset_dir(noun="worker", name="matchstiq_z1_avr.hdl", hdl_platform="matchstiq_z1")
-        'hdl/platforms/matchstiq_z1/devices/matchstiq_z1_avr.hdl'
-        >>> _get_asset_dir(noun="applications")
-        'applications'
-        >>> _get_asset_dir(noun="application", name="rx_app")
-        'applications/rx_app'
-        >>> _get_asset_dir(noun="application", name="rx_app")
-        'applications/rx_app'
-        >>> _get_asset_dir(noun="hdl-assemblies")
-        'hdl/assemblies'
-        >>> _get_asset_dir(noun="hdl-assembly", name="fsk_modem")
-        'hdl/assemblies/fsk_modem'
-        >>> _get_asset_dir(noun="hdl-assembly", name="fsk_modem")
-        'hdl/assemblies/fsk_modem'
-        >>> _get_asset_dir(noun="hdl-primitive", name="zynq")
-        'hdl/primitives/zynq'
-        >>> _get_asset_dir(noun="hdl-primitive", name="zynq")
-        'hdl/primitives/zynq'
-        >>> _get_asset_dir(noun="hdl-library", name="devices")
-        'hdl/devices'
-        >>> _get_asset_dir(noun="hdl-platform", name="matchstiq_z1")
-        'hdl/platforms/matchstiq_z1'
-        >>> _get_asset_dir(noun="project", name="assets")
-        'assets'
-        >>> _get_asset_dir(noun="project")
-        '.'
-        >>> _get_asset_dir(library="components", hdl_library="devices", hdl_platform="matchstiq_z1")
-        Traceback (most recent call last):
-            ...
-        _opencpi.util.OCPIException: library and hdl_library are mutually exclusive.
-        >>> _get_asset_dir(noun="INVALID")
-        Traceback (most recent call last):
-            ...
-        _opencpi.util.OCPIException: Invalid noun provided: INVALID
+    throws an exception and forms a error message if not in a valid directory
     """
-    #TODO if i do show project in a lower level dir it should use find project top to locate the
-    # directory of the project
-    if noun == "test" and not name.endswith((".test", ".test/")):
-        name += ".test"
-    # library-directives are mutually exclusive
-    if library is not None and hdl_library is not None:
-        # pylint:disable=undefined-variable
-        raise OCPIException("library and hdl_library are mutually exclusive.")
-        # pylint:enable=undefined-variable
+    raise OCPIException("The directory of type " + get_dirtype() + " is not a valid directory " +
+                        "type to run this command in. Valid directory types are: " +
+                        ' '.join(valid_loc))
 
-    # asset types that live inside a library
-    library_assets = ["worker", "test"]
+def check_no_libs(dir_type, library, hdl_library, hdl_platform):
+    if library: throw_not_blank_e(dir_type, "--library option", False)
+    if hdl_library: throw_not_blank_e(dir_type, "--hdl-library option", False)
+    if hdl_platform: throw_not_blank_e(dir_type, "-P option", False)
 
-    # For most nouns, there is only a single directory to choose from
-    if noun == "libraries" and library is None:
-        asset = "components"
-    elif noun in ["application", "applications"]:
-        asset = "applications"
-    elif noun in ["hdl-primitive", "hdl-primitives"]:
-        asset = "hdl/primitives"
-    elif noun == "hdl-platforms":
-        asset = "hdl/platforms"
-    elif noun in ["hdl-assembly", "hdl-assemblies"]:
-        asset = "hdl/assemblies"
-    elif noun == "component":
-        if hdl_library:
-            asset = get_component_filename("hdl/" +  hdl_library + "/specs/", name)
-        elif library:
-            asset = get_component_filename(library + "/specs/", name)
-        elif hdl_platform:
-            asset = get_component_filename("hdl/platforms/" +  hdl_platform + "/devices/specs/",
-                                           name)
-        else:
-            asset = get_component_filename("specs/", name)
+def throw_not_blank_e(noun, var, always):
+    """
+    throws an exception and forms a error message if a variable is blank and shouldn't be or
+    if a variable is not bank ans should be blank
+    """
+    always_dict = {True: "not", False : "always"}
+    raise OCPIException(var + " should " +  always_dict[always] + " be blank for " + noun +
+                        " operations.  Command is invalid.")
 
-    elif noun == "hdl-platform" or hdl_platform is not None:
-        # hdl platform is specified in some way
+def throw_invalid_libs_e():
+    """
+    throws an exception and forms a error message if too many library locations are specified
+    """
+    raise OCPIException("only one of hdl_libary, library, and hdl_platform can be used.  Invalid " +
+                        "Command, Choose only one.")
 
-        # cannot have a platform noun AND directive
-        if noun == "hdl-platform" and name is not "." and hdl_platform is not None:
-            # pylint:disable=undefined-variable
-            raise OCPIException("Could not choose between two HDL platform directories: '" +
-                                name + "' and '" + hdl_platform + "'.")
-            # pylint:enable=undefined-variable
-        # default hdl platform if needed
-        hdl_platform = name if hdl_platform is None else hdl_platform
-        # hdl_platform location directive or noun implies directories
-        # like hdl/platforms/<hdl-platform>
-        if noun in library_assets + ["library", "workers", "tests"]:
-            # can only specify library as 'devices' in a platform directory
-            if noun == "library" and name not in [".", "devices", "devices/"]:
-                # pylint:disable=undefined-variable
-                raise OCPIException("Only valid library in an HDL platform is 'devices'")
-                # pylint:enable=undefined-variable
-            # if the hdl_platform location directive is used and a library-asset is being
-            # located, drill down into the platform's devices library
-            asset = "hdl/platforms/" + hdl_platform + "/devices"
-        else:
-            asset = "hdl/platforms/" + hdl_platform
-
-    elif noun == "library" or library is not None:
-        # library is specified in some way
-
-        # cannot have a library noun AND directive
-        if noun == "library" and name is not "." and library is not None:
-            # pylint:disable=undefined-variable
-            raise OCPIException("Could not choose between two library directories: '" +
-                                str(name) + "' and '" + str(library) + "'.")
-            # pylint:enable=undefined-variable
-        # default library if needed
-        library = name if library is None else library
-        if library == "components" or "/" in library:
-            # library is either the components directory or a full path - use it as-is
-            asset = library
-        else:
-            # library is just a name (not a path) - prepend components/ to it
-            asset = "components/" + library
-
-    elif noun == "hdl-library" or hdl_library is not None:
-        # hdl library is specified in some way
-
-        # cannot have a library noun AND directive
-        if noun == "hdl-library" and name is not "." and hdl_library is not None:
-            # pylint:disable=undefined-variable
-            raise OCPIException("Could not choose between two hdl_library directories: '" +
-                                name + "' and '" + hdl_library + "'.")
-            # pylint:enable=undefined-variable
-        # default hdl library if needed
-        hdl_library = name if hdl_library is None else hdl_library
-        # hdl libraries live in the hdl/ subtree
-        asset = "hdl/" + hdl_library
-
-    elif noun in library_assets:
-        if get_dirtype("..") == "library" and get_dirtype("../..") == "libraries":
-            asset =  "components/" + os.path.basename(os.path.realpath("..")) + "/"
-        else:
-            asset = "components/"
-
-    elif noun in ["project", "workers", "tests"]:
-        # If we have gotten this far and a "workers" or "tests" is discovered, the only
-        # remaining asset type that it can be is "project".
-
-        # When locating a project, it is either the current project (name is none), or the
-        # the directory is specified by name
-        use_name = name is not None and os.path.basename(os.path.realpath(".")) != name
-        asset = "." if not use_name else name
-    elif not noun:
-        # when no noun or alocation-directive gives direction regarding where to look for an
-        # asset, assume the top-level of the project
-        asset = "."
-        noun = get_dirtype()
-    else:
-        # pylint:disable=undefined-variable
-        raise OCPIException("Invalid noun provided: " + str(noun))
-        # pylint:enable=undefined-variable
-    if noun == "libraries" and library is None:
-        if name and name != ".":
-            asset = name
-
-
-    # If the asset-type/noun is a collection-type, then we already know its location.
-    #     E.g. If the noun is 'library' (a collection-type) and the name is 'dsp_comps',
-    #          then by now we have obtained asset='components/dsp_comps'. Just return that.
-    # Otherwise append 'name' to the determined collection-type asset.
-    #     E.g. If library directives describe a collection-type/asset named 'components/dsp_comps',
-    #          and the noun is 'worker' with name 'complex_mixer.hdl', then this will result in
-    #          'components/dsp_comps/complex_mixer.hdl
-    if noun in COLLECTION_DIRTYPES or not name:
-        return asset
-    else:
-        return asset + "/" + name
-# pylint:disable=too-many-statements
-# pylint:disable=too-many-branches
+def throw_specify_lib_e():
+    """
+    throws an exception and forms a error message if no library is specified
+    """
+    raise OCPIException("No library specified, Invalid Command.")
 
 def get_component_filename(library, name):
     """
@@ -793,9 +528,28 @@ def get_component_filename(library, name):
     basename = library + "/" + name
     end_list = ["", ".xml", "_spec.xml", "-spec.xml"]
     for ending in end_list:
-      if os.path.exists(basename + ending):
-          return basename + ending
+        if os.path.exists(basename + ending):
+            return basename + ending
     return basename
+
+def get_package_id_from_vars(package_id, package_prefix, package_name, directory="." ):
+    """
+    >>> get_package_id_from_vars("package_id", "package_prefix", "package_name")
+    'package_id'
+    >>> get_package_id_from_vars(None, "package_prefix", "package_name")
+    'package_prefix.package_name'
+    >>> get_package_id_from_vars(None, None, "package_name")
+    'local.package_name'
+    >>> get_package_id_from_vars(None, None, None, "/etc")
+    'local.etc'
+    """
+    if package_id:
+        return package_id
+    if not package_prefix:
+        package_prefix = "local"
+    if not package_name:
+        package_name = os.path.basename(os.path.realpath(directory))
+    return package_prefix + "." + package_name
 
 if __name__ == "__main__":
     import doctest

@@ -1,0 +1,46 @@
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+# Do not execute manually: use "build_docker_main.sh"
+# Update valgrind in CentOS6... (3.12.0 fixes bug)
+
+ARG IMAGE_VER
+ARG NAME
+FROM ${NAME}:v${IMAGE_VER}-C6 AS temp_valgrind_builder
+WORKDIR /tmp
+RUN yum install -y openmpi-devel
+ADD http://vault.centos.org/7.4.1708/os/Source/SPackages/valgrind-3.12.0-8.el7.src.rpm .
+# This define prevents rpmbuild from running the %check section in valgrind.spec, which hangs for us.
+RUN rpmbuild --rebuild --define='__spec_check_template exit 0; ' valgrind-3.12.0-8.el7.src.rpm
+WORKDIR /root/rpmbuild/RPMS/x86_64
+RUN tar cvf /tmp/valgrind-3-12.tar *rpm
+
+ARG IMAGE_VER
+ARG NAME
+FROM ${NAME}:v${IMAGE_VER}-C6 AS final_output
+# LABELS are carried over from base image, no need to redefine here.
+
+# Add self-reap notifier (AV-3550)
+ADD sleeper /bin/
+
+WORKDIR /tmp
+COPY --from=temp_valgrind_builder /tmp/valgrind-3-12.tar .
+RUN tar xf valgrind-3-12.tar && yum localinstall -y valgrind*rpm && rm valgrind*
+
+# Satisfy linter with default cmd, though not used because we DO supply a cmd in build_docker_main.sh
+CMD ["/bin/sleeper", "12h"]

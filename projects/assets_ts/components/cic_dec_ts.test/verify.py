@@ -19,47 +19,59 @@
 
 """
 CIC Decimator: Verify output data
+
+Samples data is verified by modeling the CIC in python and processing the input 
+data and comparing to actual output data. 
+
+Interval data is verified by dividing the input data by R and comparing to 
+actual output data
+
+All other operations are verified by comparing input and output to ensure they
+match
 """
 import sys
 import os.path
 import numpy as np
 import math
-
-import assets_ts_utils as ts
-import cic_utils
+import opencpi.unit_test_utils as utu
+import opencpi.complexshortwithmetadata_utils as iqm
+import opencpi.dsp_utils as dsp
 
 if len(sys.argv) != 3:
     print("Invalid arguments:  usage is: verify.py <output-file> <input-file>")
     sys.exit(1)
 
-# from arguments to verify.py (-test.xml)
+# from OCS or OWD
+N=int(os.environ.get("OCPI_TEST_N"))
+M=int(os.environ.get("OCPI_TEST_M"))
+R=int(os.environ.get("OCPI_TEST_R"))
+DATA_WIDTH=int(os.environ.get("OCPI_TEST_DATA_WIDTH"))
+
 ofilename= sys.argv[1]
 ifilename= sys.argv[2]
-TEST_CASE=int(os.environ.get("OCPI_TEST_TEST_CASE"))
 
-#Parse non-samples messages from input file
-din_non_sample_msg = ts.parse_non_samples_msgs_from_msgs_in_file(ifilename)
+# Parse non-samples messages from input file
+din_non_sample_msg = iqm.parse_non_samples_msgs_from_msgs_in_file(ifilename)
 
-#Parse non-samples messages from output file
-dout_non_sample_msg = ts.parse_non_samples_msgs_from_msgs_in_file(ofilename)
+# Parse non-samples messages from output file
+dout_non_sample_msg = iqm.parse_non_samples_msgs_from_msgs_in_file(ofilename)
 
-#Parse samples data from output file. Returns dt_iq_pair array
-odata = ts.parse_samples_data_from_msgs_in_file(ofilename)
+# Parse samples data from output file. Returns dt_iq_pair array
+odata = iqm.parse_samples_data_from_msgs_in_file(ofilename)
 
-#Parse samples data from output file. Returns dt_iq_pair array
-idata = ts.parse_samples_data_from_msgs_in_file(ifilename)
+# Parse samples data from output file. Returns dt_iq_pair array
+idata = iqm.parse_samples_data_from_msgs_in_file(ifilename)
 
 # Deinterleave dt_iq_pair array into I & Q arrays
 # Append zeros corresponding to flush operation for input data
-in_real = np.append(idata['real_idx'],np.zeros(cic_utils.N*cic_utils.M*cic_utils.R, dtype=np.int16))
-in_imag = np.append(idata['imag_idx'],np.zeros(cic_utils.N*cic_utils.M*cic_utils.R, dtype=np.int16))
+in_real = np.append(idata['real_idx'],np.zeros(N*M*R, dtype=np.int16))
 out_real = odata['real_idx']
 out_imag = odata['imag_idx']
 #print(out_real)
 
 # I and Q should match
 print("    Comparing I and Q data to ensure they match")
-ts.compare_arrays(out_real,out_imag)
+utu.compare_arrays(out_real,out_imag)
 
 # I and Q have been verified to be equal, so verification will only be performed on I
 
@@ -79,58 +91,18 @@ if len(dout_non_sample_msg) != len(din_non_sample_msg):
     sys.exit(1)
 
 for i in range(len(dout_non_sample_msg)):
-  if dout_non_sample_msg[i][0]==ts.INTERVAL_OPCODE:
-    ts.check_interval_division(din_non_sample_msg[i],dout_non_sample_msg[i],cic_utils.R)
-  else:
-    ts.compare_msgs(dout_non_sample_msg[i],din_non_sample_msg[i])
+    if dout_non_sample_msg[i][utu.MESSAGE_OPCODE]==iqm.INTERVAL_OPCODE:
+        if not iqm.check_interval_division(din_non_sample_msg[i],dout_non_sample_msg[i],R):
+            sys.exit(1)
+    else:
+        utu.compare_msgs(dout_non_sample_msg[i],din_non_sample_msg[i])
 
 # Verify Sample Data
 print("    Comparing expected output and actual output")
 # Implement CIC
-# Variable names track cic_dec_gen.vhd
-integ     = np.zeros(cic_utils.N+1,dtype=np.int64)
-out_integ = np.zeros(len(in_real),dtype=np.int64) #Store sequence of integrator output
-
-# Integrator
-for a in range(len(in_real)):
-    integ[0] = in_real[a]
-    for b in range(1,cic_utils.N+1):
-        integ[b] = integ[b] + integ[b-1]
-        if integ[b] > pow(2,cic_utils.ACC_WIDTH): #Overflow
-            integ[b] = integ[b]-pow(2,cic_utils.ACC_WIDTH)
-        #Underflow??
-    out_integ[a] = integ[cic_utils.N]
-#print(out_integ)
-
-# Decimator
-# Starting point of decimation is rate minus prop delay of integrator stage
-out_dec = out_integ[cic_utils.R-cic_utils.N::cic_utils.R]
-#print(out_dec)
-
-# Comb
-comb       = np.zeros(cic_utils.N+1,dtype=np.int64)
-comb_dly   = np.zeros((cic_utils.N+1,cic_utils.M+1),dtype=np.int64)
-comb_r     = np.zeros(cic_utils.N+1,dtype=np.int64)                #copy of comb
-comb_dly_r = np.zeros((cic_utils.N+1,cic_utils.M+1),dtype=np.int64)#copy of comb_r
-out_comb   = np.zeros(len(out_dec),dtype=np.int64)
-
-for a in range(len(out_dec)):
-    comb_r      = comb.copy()
-    comb_dly_r  = comb_dly.copy()
-    comb[0] = out_dec[a]
-    for b in range(1,cic_utils.N+1):
-        for c in range(1,cic_utils.M+1):
-            comb_dly[b][c] = comb_dly_r[b][c-1]
-        comb_dly[b][0] = comb_r[b-1]
-        comb[b] = comb_r[b-1] - comb_dly[b][cic_utils.M]
-    out_comb[a] = comb[cic_utils.N]
-    #print(comb)
-#print(out_comb)
-
-# Compare HDL implementation to Python Implementation
-cic_out = np.int16(out_comb >> (cic_utils.ACC_WIDTH - cic_utils.DATA_WIDTH))
+cic_out = dsp.cic_dec_model(in_real, N, M, R, DATA_WIDTH)
 #print(cic_out)
 # Remove startup samples from output
-cic_out = cic_out[cic_utils.N*cic_utils.M::]
+cic_out = cic_out[N*M::]
 #print(cic_out)
-ts.compare_arrays(cic_out, out_real)
+utu.compare_arrays(cic_out, out_real)

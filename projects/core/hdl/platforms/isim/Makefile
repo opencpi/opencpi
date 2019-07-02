@@ -42,7 +42,7 @@ probe.exe.tgz:
                     -name "*.html" \) -delete && \
 	  rm -f -r probe probe.v */*/work && \
 	  for i in `find . -name "*.exe"`; do ../fixabs.sh $$i || exit 1; done && \
-	  tar czf ../probe.exe.tgz probe.exe isim) > target-isim/probe.out 2>&1 
+	  tar -cz --owner=0 --group=0 -f ../probe.exe.tgz probe.exe isim) > target-isim/probe.out 2>&1
 
 #	  fuse probe.probe -v 2 -L unisims_ver -o probe.exe -lib probe=probe && \
 

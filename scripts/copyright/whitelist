@@ -29,6 +29,10 @@
 ./projects/inactive/hdl/platforms/zed_zipper/devices/zipper_i2c.hdl/timescale.v
 ./projects/inactive/hdl/platforms/zed_zipper/zed_zipper.ut
 ./projects/inactive/hdl/primitives/virtex5/Ethernet_v5.v
+./releng/blacklist/blacklist
+./releng/blacklist/blacklist.override
+./releng/blacklist/whitelist
+./releng/jenkins/docker_support/yum.repos.template
 ./runtime/hdl-support/scripts/donft
 ./scripts/copyright/whitelist
 ./tools/cdk/include/xm/fortran.h

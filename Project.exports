@@ -80,11 +80,13 @@
 +tools/ocpidev/assets/registry.py <target>/lib/_opencpi/assets/
 +tools/ocpidev/assets/test.py <target>/lib/_opencpi/assets/
 +tools/ocpidev/assets/worker.py <target>/lib/_opencpi/assets/
++tools/ocpidev/assets/template.py <target>/lib/_opencpi/assets/
 +tools/ocpidev/assets/component.py <target>/lib/_opencpi/assets/
 +tools/ocpidev/ocpidev.sh <target>/bin/ocpidev
 +tools/ocpidev/ocpidev_run.py scripts/
 +tools/ocpidev/ocpishow.py scripts/
 +tools/ocpidev/ocpidev_utilization.py scripts/
++tools/ocpidev/ocpicreate.py scripts/
 # generic make scripts
 +tools/cdk/include/show.mk include/
 +tools/cdk/include/lib.mk include/
@@ -178,6 +180,10 @@
 =runtime/python/opencpi/__init__.py <target>/lib/opencpi/
 # Colors for verification scripts:
 +tools/cdk/python/opencpi/colors.py <target>/lib/opencpi/
+# Utilities for unit test scripts
++tools/cdk/python/opencpi/unit_test_utils.py <target>/lib/opencpi/
++tools/cdk/python/opencpi/complexshortwithmetadata_utils.py <target>/lib/opencpi/
++tools/cdk/python/opencpi/dsp_utils.py <target>/lib/opencpi/
 ################################################################################
 # RCC related exclusions and additions
 # We don't want everything so we are selective here.  was: +tools/cdk/include/rcc include/rcc

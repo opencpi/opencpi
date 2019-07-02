@@ -29,7 +29,7 @@ from .abstract import ShowableAsset
 
 class ShowableComponent(ShowableAsset):
     """
-    Any OpenCPI Worker or Component.  Intended to hold all the commom functionlity of workers and
+    Any OpenCPI Worker or Component.  Intended to hold all the common functionality of workers and
     components.  Expected to be a virtual class an no real objects will get created of this class
     but nothing prevents it.
     """
@@ -44,25 +44,25 @@ class ShowableComponent(ShowableAsset):
 
     def show(self, details, verbose, **kwargs):
         """
-        Not implemented and not inteded to be implemented
+        Not implemented and not intended to be implemented
         """
         raise NotImplementedError("show() is not implemented")
 
     def get_ocpigen_metadata(self, xml_file):
         """
         Ask ocpigen (the code generator)  to parse the worker(OWD) or component(OCS) xml file and
-        spit out an artifact xml that this fuction parses into class variables.
+        spit out an artifact xml that this function parses into class variables.
           property_list - list of every property, each property in this list will be a dictionary of
-                          all the xml attributes asscoiated with it from the artifact xml
+                          all the xml attributes associated with it from the artifact xml
           port_list     - list of every port each port in this list will be a dictionary of
-                          all the xml attributes asscoiated with it from the artifact xml some of
+                          all the xml attributes associated with it from the artifact xml some of
                           which are unused
           slave_list    - list of every slave worker's name expected to be blank for an OCS
 
-        Function attribtes:
+        Function attributes:
           xml_file - the file to have ocpigen parse
         """
-        #get list of locations to look for include xmls from make
+        #get list of locations to look for include xml files from make
         if ocpiutil.get_dirtype(self.directory + "/../") == "library":
             xml_dirs = ocpiutil.set_vars_from_make(mk_file=self.directory + "/../" + "/Makefile",
                                                    mk_arg="showincludes ShellLibraryVars=1",
@@ -84,7 +84,7 @@ class ShowableComponent(ShowableAsset):
         comp_xml = subprocess.Popen(ocpigen_cmd, stdout=subprocess.PIPE).communicate()[0]
         os.environ["OCPI_LOG_LEVEL"] = old_log_level
 
-        #put xml ouput file into an ElementTree object
+        #put xml output file into an ElementTree object
         ocpiutil.logging.debug("Component Artifact XML from ocpigen: \n" + str(comp_xml))
         try:
             parsed_xml = ET.fromstring(comp_xml)
@@ -117,7 +117,7 @@ class ShowableComponent(ShowableAsset):
 
     def __init_package_id(self):
         """
-        Determine the Package id based on the libary or project that the Worker resides in.  only
+        Determine the Package id based on the library or project that the Worker resides in.  only
         a component will reside at the top level of a project.
         """
         parent_dir = self.directory + "/../"
@@ -189,17 +189,17 @@ class ShowableComponent(ShowableAsset):
 
     def _show_ports_props(self, json_dict, details, verbose, is_worker):
         """
-        Print out the ports and properties of a given componet/worker given the dictionary that is
+        Print out the ports and properties of a given component/worker given the dictionary that is
         passed in with this information in it
 
-        Function attribtes:
-          json_dict  - the consturcted dictionary to output the information for
-          details    - the mode to print out the informoton in table or simple are the only valid
+        Function attributes:
+          json_dict  - the constructed dictionary to output the information for
+          details    - the mode to print out the information in table or simple are the only valid
                        options
           verbose    - integer for verbosity level 0 is default and lowest and anything above 1
                        shows struct internals and hidden properties
           is_ worker - switch for component vs worker is intended for limited use otherwise there
-                       should be 2 seprate functions rather then using this boolen
+                       should be 2 separate functions rather then using this Boolean
         """
         if details == "simple":
             self.__show_simple_ports_props(json_dict)
@@ -209,8 +209,8 @@ class ShowableComponent(ShowableAsset):
 
     def get_struct_dict_from_xml(self, struct):
         """
-        Static and recusive function that will generate the dictonary for Struct of Stuct of
-        Struct ... etc. datatypes.
+        Static and recursive function that will generate the dictionary for Struct of Stuct of
+        Struct ... etc. data-types.
         """
         ret_dict = {}
         for member in struct:
@@ -232,8 +232,8 @@ class ShowableComponent(ShowableAsset):
     @classmethod
     def get_type_from_dict(cls, my_dict):
         """
-        For use with printing in table mode will output a more informational datatype for more
-        complex datatypes like arrays, structs, enums etc.  returns a string of the datatype that
+        For use with printing in table mode will output a more informational data-type for more
+        complex data-types like arrays, structs, enums etc.  returns a string of the data-type that
         caller prints out to the screen
         """
         base_type = my_dict.get("type", "ULong")
@@ -243,7 +243,7 @@ class ShowableComponent(ShowableAsset):
             is_array = my_dict.get("arrayDimensions")
         is_enum = my_dict.get("enums")
         is_string = my_dict.get("stringLength")
-        #change the base tyoe string for enums or strings
+        #change the base-type string for enums or strings
         if is_enum:
             base_type = "Enum " + str(is_enum)
         elif is_string:
@@ -263,9 +263,9 @@ class ShowableComponent(ShowableAsset):
         """
         compose and return the dictionary that the show verb uses to output information about this
         worker/component.
-        Function attribtes:
-          verbose - datatype of interger if number is non zero hidden properties are added to the
-                    dictionary as well as more information about struct datatypes
+        Function attributes:
+          verbose - data-type of integer if number is non zero hidden properties are added to the
+                    dictionary as well as more information about struct data-types
         """
         json_dict = {}
         port_dict = {}
@@ -288,7 +288,7 @@ class ShowableComponent(ShowableAsset):
                                     "padding", "type", "name", "specparameter", "specinitial",
                                     "specwritable", "specreadable", "specvolitile"]
                 if verbose <= 0:
-                    #Adding this here causes struct to not be put into the dictonary
+                    #Adding this here causes struct to not be put into the dictionary
                     required_details.append("Struct")
                 other_details = [detail for detail in prop if detail not in required_details]
                 for prop_attr in other_details:
@@ -321,7 +321,7 @@ class Component(ShowableComponent):
         """
         Determines if a provided xml file contains a component spec.
 
-        TODO do we actually want to open files to make sure and not just rely on the nameing
+        TODO do we actually want to open files to make sure and not just rely on the naming
              convention???
         """
 
@@ -329,11 +329,11 @@ class Component(ShowableComponent):
 
     def show(self, details, verbose, **kwargs):
         """
-        Print out the ports and properties of a given componet in the format that is provided by
+        Print out the ports and properties of a given component in the format that is provided by
         the caller
 
-        Function attribtes:
-          details    - the mode to print out the informoton in table or simple are the only valid
+        Function attributes:
+          details    - the mode to print out the information in table or simple are the only valid
                        options
           verbose    - integer for verbosity level 0 is default and lowest and anything above 1
                        shows struct internals and hidden properties
@@ -348,3 +348,35 @@ class Component(ShowableComponent):
         else:
             json.dump(json_dict, sys.stdout)
             print()
+
+    @staticmethod
+    def get_working_dir(name, library, hdl_library, hdl_platform):
+        """
+        return the directory of a Component given the name (name) and
+        library specifiers (library, hdl_library, hdl_platform)
+        """
+        # if more then one of the library location variable are not None it is an error.
+        # a length of 0 assumes default location of <project>/specs
+
+        if len(list(filter(None, [library, hdl_library, hdl_platform]))) > 1:
+            ocpiutil.throw_invalid_libs_e()
+        cur_dirtype = ocpiutil.get_dirtype()
+        valid_dirtypes = ["project", "libraries", "library", "hdl-platform"]
+        if cur_dirtype not in valid_dirtypes:
+            ocpiutil.throw_not_valid_dirtype_e(valid_dirtypes)
+        if library:
+            if not library.startswith("components"):
+                library = "components/" + library
+            specs_loc = ocpiutil.get_path_to_project_top() + "/" + library + "/specs/"
+        elif hdl_library:
+            specs_loc = ocpiutil.get_path_to_project_top() + "/hdl/" + hdl_library + "/specs/"
+        elif hdl_platform:
+            specs_loc = (ocpiutil.get_path_to_project_top() + "/hdl/platforms/" + hdl_platform +
+                         "/devices/specs/")
+        elif name:
+            if cur_dirtype == "hdl-platform":
+                specs_loc = "devices/specs/"
+            else:
+                specs_loc = "specs/"
+        else: ocpiutil.throw_not_blank_e("component", "name", True)
+        return ocpiutil.get_component_filename(specs_loc, name)

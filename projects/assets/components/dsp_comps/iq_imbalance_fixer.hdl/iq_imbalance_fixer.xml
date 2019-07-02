@@ -1,14 +1,18 @@
-<HdlWorker Language="vhdl" Spec="iq_imbalance_fixer-spec.xml">
+<HdlWorker Language="vhdl" Spec="iq_imbalance_fixer-spec.xml" Version="2" DataWidth="32">
 
-  <Property Name="DATA_WIDTH_p" Type="ulong" Parameter="true" Readable="true" Default="16"/>
+  <Property Name="DATA_WIDTH_p" Type="uchar" Parameter="true" Default="16"
+	    Description="Data Width of I and Q for internal processing" />
 
-  <Property Name="ACC_PREC_p" Type="ulong" Parameter="true" Readable="true" Default="34"/>
+  <Property Name="ACC_PREC_p" Type="uchar" Parameter="true" Default="34"
+	    Description="Number of bits of precision for accumulator" />
 
-  <Property Name="PEAK_MONITOR_p" Type="bool" Parameter="true" Readable="true" Default="true"/>
+  <Property Name="PEAK_MONITOR_p" Type="bool" Parameter="true" Default="true"
+	    Description="Enable/Disable build-time inclusion of Peak Monitoring" />
 
-  <Property Name="peak" Type="short" Volatile="true"/>
+  <Property Name="peak" Type="short" Volatile="true"
+	    Description="Peak value of I or Q output (valid when PEAK_MONITOR_p=true)"/>
 
-  <StreamInterface Name="in"  DataWidth="32" ZeroLengthMessages="true"/>
-  <StreamInterface Name="out" DataWidth="32" ZeroLengthMessages="true"/>
+  <StreamInterface Name="in"/>
+  <StreamInterface Name="out" insertEOM="1"/>
 
 </HdlWorker>

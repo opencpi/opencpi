@@ -4,12 +4,19 @@
      Add port elements for i/o ports -->
 <ComponentSpec>
 
-  <Property Name="DATA_WIDTH" Type="uchar" Readable="True"/>
-  <Property Name="DATA_EXT" Type="uchar" Readable="True"/>
-  <Property Name="STAGES" Type="uchar" Readable="True"/>
-  <Property Name="messageSize" Type="ushort" Readable="true" Writable="true" Default="8192"/>
+  <Property Name="DATA_WIDTH" Type="uchar"
+	    Description="Data Width of real input and complex output"/>
 
- <DataInterfaceSpec Name="in" Producer="false" Protocol="iqstream_protocol.xml"/>
- <DataInterfaceSpec Name="out" Producer="true" Protocol="iqstream_protocol.xml"/>
+  <Property Name="DATA_EXT" Type="uchar"
+	    Description="Number of extension/growth bits"/>
+
+  <Property Name="STAGES" Type="uchar"
+	    Description="Number of CORDIC stages to implement"/>
+
+  <Property Name="messageSize" Type="ushort" Writable="true" Default="8192"
+	    Description="Number of bytes in output message"/>
+
+  <Port Name="in"  Protocol="iqstream_protocol.xml"/>
+  <Port Name="out" Protocol="iqstream_protocol.xml" Producer="true"/>
 
 </ComponentSpec>

@@ -1,0 +1,8 @@
+<HdlAssembly>
+  <instance worker="pattern_v2" name="pattern_v2"/>
+  <instance worker="capture_v2" name="capture_v2"/>
+  <connection>
+    <port instance="pattern_v2" name='out'/>
+    <port instance="capture_v2" name='in'/>
+  </connection>
+</HdlAssembly>

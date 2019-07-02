@@ -49,8 +49,11 @@ private:
     
     symbolsPerInput = in.length()*8/bitsPerSymbol;
     
+    // NOT RECOMMENDED FOR NEW DESIGNS - workers should always be designed to
+    // support whatever input messages the protocol may provide, and it is
+    // intended for this worker to be modified in the future to do so (AV-3797)
     if (symbolsPerInput > 4096){
-      setError("Too many symbols on input. Max is 4096 and value is %u. Symbols = length of input messages in bits / log2(M_p).",symbolsPerInput);
+      setError("Worker's current implementation only supports up to 4096 symbols on its input (even though the protocol may support more), and a message containing %u symbols was received on the input port. Symbols = length of input messages in bits / log2(M_p).",symbolsPerInput);
       return RCC_ERROR;
     }
     

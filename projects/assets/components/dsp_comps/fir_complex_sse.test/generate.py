@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -27,14 +27,11 @@ To test the FIR Complex filter, a binary data file is generated containing an im
 The output of the filter is thus an impulse response, showing the symmetric tap values.
 
 """
+
 import sys
 import os.path
 
-print "\n","*"*80
-print "*** Python: FIR Complex ***"
 
 import gen_impulse
 gen_impulse.impulse_cmplx_ascii(os.path.splitext(sys.argv[1])[0]+'.dat')
 gen_impulse.impulse_cmplx_bin(sys.argv[1])
-
-print "*** End file generation ***\n"

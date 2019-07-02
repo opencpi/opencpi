@@ -1,0 +1,7 @@
+An improvement of the digital radio controller supportingsource code would be as follows.
+
+1. Rip out the constraint satisfaction problem solving functionality from DigRadioCtrlr-related classes.
+2. implement a new CSPSolver class which is purely mathematical (and radio-agnostic)
+3. Use a CSPSolver member in the DigRadioCtrlr-related classes as a helper in determining lock status.
+
+This would help separate the math from the radio functionality and GREATLY clean up the code by removing lots of copy/paste. The code herein is not expected to work at all, but is a snapshot of an idea of how to implement a CSPSolver class. The CSPSolver_examples.cc is the main idea of what the API could/should look like.

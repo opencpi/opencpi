@@ -1,0 +1,11 @@
+<RccWorker>
+
+  <!-- writable is intentionally in the name because eventually this test needs
+       to "inherit" writable from OCS -->
+  <SpecProperty name='prop_writable' volatile='true' writesync='true'/>
+
+  <!-- volatile is intentionally in the name because eventually this test needs
+       to "inherit" volatile from OCS -->
+  <SpecProperty name='prop_volatile' writable='true' readsync='true'/>
+
+</RccWorker>

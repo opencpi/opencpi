@@ -1,5 +1,7 @@
 The tb_bias_file_v2 application utilizes the file_read, bias, and capture_v2 components.
 
+The app uses biascapture_v2 assembly and file_read.rcc.
+
 export OCPI_LIBRARY_PATH=/mnt/ocpi_assets/artifacts:/mnt/ocpi_core/artifacts
 ocpirun -d -v -x tb_bias_file_v2
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -17,690 +17,635 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# TODO: pylint and clean warnings
+# TODO: Handle xinclude properly
 
-from __future__ import print_function
-import sys
-import re
-import textwrap
-#import xml.etree.ElementTree as ET
-from lxml import etree
-from enum import Enum
 import os
+import itertools
+import re
+import shutil
+import sys
+import textwrap
+from xml.etree import ElementTree as etree
+from enum import Enum
+try:
+    import jinja2
+    from jinja2 import Template
+except ImportError:
+    print("ERROR : Could not import jinja2; try 'sudo yum install python34-jinja2'",
+          file=sys.stderr)
+    sys.exit(1)
 
-lcName = ''
-ucName = ''
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/../../../tools/cdk/python/')
+import _opencpi.util  as ocpi
+# Set OCPI_LOG_LEVEL to a desired number to see warnings or debug statements
 
-def getIsPropAccessibilityKey(key):
-   # TODO: re-write and test: return key.lower() in ("volatile", "readback", ...)
-   ret = key == "Volatile"
-   ret |= key == "Readable"
-   ret |= key == "Readback"
-   ret |= key == "Writable"
-   ret |= key == "Initial"
-   return ret
+# User setup:
+USE_SECTION_NUMBERS = False
+NEWLINE_PER_TABLE_CELL = False
 
-def getBoolFromXmlBool(val):
-   # TODO: re-write and test: see rewrite notes for getIsPropAccessibilityKey
-   if val == "0":
-      val == False
-   elif val == "1":
-      val == True
-   elif val == "False":
-      val == False
-   elif val == "True":
-      val == True
-   elif val == "false":
-      val == False
-   elif val == "true":
-      val == True
-   return val
+# End of user-configurable data (if you change these, some code or string constants need fixes)
+LC_NAME = ''
+UC_NAME = ''
+PROP_LIST = ['volatile', 'readable', 'readback', 'writable', 'initial']  # Unused?
+SECTION_HEADER = r"\section"+(('*', '')[USE_SECTION_NUMBERS])+"{{{}}}\n"
+COMPONENT_PROPS_INC_FILENAME = 'component_spec_properties.inc'
+WORKER_PROPS_INC_FILENAME = 'worker_properties.inc'
+COMPONENT_PORTS_INC_FILENAME = 'component_ports.inc'
+WORKER_PORTS_INC_FILENAME = 'worker_interfaces.inc'
+DEVELOPER_DOC_INC_FILENAME = 'developer_doc.inc'
+mywrapper = textwrap.TextWrapper(width=shutil.get_terminal_size()[0])
 
-def getIsPropAttributeWhoseValIsBool(key):
-   return getIsPropAccessibilityKey(key)
 
-def getListFromParsedAttributeKeys(root, keys):
-   ret = []
-   for key in keys:
-      for attr in root.iter(key):
-         ret.append(attr)
-      for attr in root.iter(key.lower()):
-         ret.append(attr)
-   return ret
+# http://eosrei.net/articles/2015/11/latex-templates-python-and-jinja2-generate-pdfs
+LATEX_JINJA_ENV = jinja2.Environment(
+    block_start_string=r'\BLOCK{',
+    block_end_string='}',
+    variable_start_string=r'\VAR{',
+    variable_end_string='}',
+    comment_start_string=r'\#{',
+    comment_end_string='}',
+    line_statement_prefix='%%',
+    line_comment_prefix='%#',
+    trim_blocks=True,
+    autoescape=False,
+    loader=jinja2.FileSystemLoader(os.path.dirname(os.path.realpath(__file__))+"/snippets/jinja2/")
+)
 
-def getDictFromParsedAttributeKeys(attrs, keys):
-   ret = dict()
-   for key in keys:
-      tmp = attrs.get(key)
-      if (type(tmp) is not str):
-         tmp = attrs.get(key.lower())
-      ret[key] = tmp
-   return ret
 
-def getPropDictFromParsedAttributeKey(attrs, key):
-  ret = attrs.get(key)
-  if (type(ret) is not str):
-     ret = attrs.get(key.lower())
-  return ret
+def scramble_case(val):
+    """ Scrambles all permutations of a string's case
+    >>> scramble_case('ab')
+    ['AB', 'Ab', 'aB', 'ab']
+    >>> scramble_case('ab3')
+    ['AB3', 'Ab3', 'aB3', 'ab3']
+    """
+    # https://stackoverflow.com/a/11144539/836748
+    # Want unique, otherwise numbers make repeats because lower = upper
+    temp_set = set(map(''.join, itertools.product(*list(zip(val.upper(), val.lower())))))
+    temp_list = list(temp_set)
+    temp_list.sort()
+    return temp_list
 
-def getPropDictFromParsedAttributeKeys(attrs):
 
-   keys = ["Name", "Type", "SequenceLength",
-           "Volatile", "Readable", "Readback", "Writable",
-           "Initial", "Enums", "Default", "Description"]
+def get_bool_from_xml_val(val, default=False):
+    # TODO: This seems to be unused?
+    """ Converts val to boolean with a default of 'default' if missing
+    >>> get_bool_from_xml_val(None)
+    False
+    >>> get_bool_from_xml_val(None, 'nooope')
+    'nooope'
+    >>> get_bool_from_xml_val('TrUe')
+    True
+    >>> get_bool_from_xml_val('1')
+    True
+    >>> get_bool_from_xml_val('0')
+    False
+    >>> get_bool_from_xml_val('false')
+    False
+    >>> get_bool_from_xml_val('falsssssse')
+    Traceback (most recent call last):
+        ...
+    Exception: get_bool_from_xml_val() cannot handle input: falsssssse
+    """
+    if val is None:
+        return default
+    if val.lower() in ['0', 'false']:
+        return False
+    if val.lower() in ['1', 'true']:
+        return True
+    raise Exception("get_bool_from_xml_val() cannot handle input: " + val)
 
-   ret = dict()
-   for key in keys:
-      ret[key] = getPropDictFromParsedAttributeKey(attrs, key)
 
-   arrayDimensionsKey = "ArrayDimensions"
-   tmp = attrs.get(arrayDimensionsKey)
-   if (type(tmp) is not str):
-      tmp = attrs.get(arrayDimensionsKey.lower())
-      if (type(tmp) is not str):
-         tmp = getPropDictFromParsedAttributeKey(attrs, "ArrayLength")
-   # put either ArrayDimensions or ArrayLength in ArrayDimensions dict entry
-   ret[arrayDimensionsKey] = tmp
+def check_is_property_access_valid(key):
+    # TODO: This seems to be unused?
+    """ Confirms property accessibility is valid option """
+    return key.lower() in PROP_LIST
 
-   return ret
 
-def parsePorts(root):
-   keys = ["DataInterfaceSpec", "Port", "StreamInterface"]
-   return getListFromParsedAttributeKeys(root, keys)
+def get_xml_attributes_as_list(root, keys):
+    """ Extracts XML attributes based on given keys in any case """
+    ret = []
+    for key in [scramble_case(k) for k in keys]:
+        for i in key:
+            for attr in root.iter():
+                if attr.tag == i:
+                    ret.append(attr)
+    return ret
 
-def parseProps(root):
-   return getListFromParsedAttributeKeys(root, ["Property"])
 
-def parseHdlDevice(dev):
-   return parseProps(dev)
+def get_anycase(attrs, key):
+    """ Helper function to call attrs.get() based on given keys in any case permutation.
+        Calls "items" on attrs because lxml element does not act as a pythonic list
+        (it doesn't support "in")
+    """
+    attr_keys = [v[0] for v in list(attrs.items())]
+    valid_keys = [k for k in scramble_case(key) if k in attr_keys]
+    if valid_keys:
+        assert len(valid_keys) == 1  # There should never be more than one permutation
+        return attrs.get(valid_keys[0])
+    return None
 
-def parseRoot(root):
-   isHDL = None
-   isOCS = True
-   cProps = []
-   wProps = []
-   cPorts = []
-   wPorts = []
-   for elem in ["RccWorker", "rccworker"]:
-      for worker in root.iter(elem):
-         isOCS = False
-         isHDL = False
-         #print("DEBUG: found RccWorker")
-         workerProperties = parseProps(worker)
-         wPorts = parsePorts(worker)
-         wProps = parseProps(worker)
-   for elem in ["HdlWorker", "hdlworker"]:
-      for worker in root.iter(elem):
-         isOCS = False
-         isHDL = True
-         #print("DEBUG: found HdlWorker")
-         workerProperties = parseProps(worker)
-         wPorts = parsePorts(worker)
-         wProps = parseProps(worker)
-   for elem in ["HdlDevice", "hdldevice"]:
-      for worker in root.iter(elem):
-         isOCS = False
-         isHDL = True
-         #print("DEBUG: found HdlDevice")
-         workerProperties = parseProps(worker)
-         wPorts = parsePorts(worker)
-         wProps = parseProps(worker)
-   for elem in ["ComponentSpec", "componentspec"]:
-      for comp in root.iter(elem):
-         #print("DEBUG: found ComponentSpec")
-         cPorts = parsePorts(comp)
-         if isOCS:
-            cProps = parseProps(comp)
-         else:
-            wProps.append(parseProps(comp))
-   return [cProps, wProps, cPorts, wPorts, isOCS, isHDL]
 
-def getCompName(ocsFilePath):
-   parsedList = ocsFilePath.split("/")
-   parsedName = parsedList[-1]
-   parsedName = parsedName.split("spec.xml")
-   name = parsedName[0]
-   return name[:-1]
+def get_dict_from_attributes(attrs, keys):
+    """ Creates dict based on given keys in any case permutation
+    >>> test = {'key1': 'A', 'key2': 'B', 'KeY3': 'C'}
+    >>> get_dict_from_attributes(test, ['KEY3']) ==  {'KEY3': 'C'}
+    True
+    >>> get_dict_from_attributes(test, ['kEy1', 'KEY3']) == {'KEY3': 'C', 'kEy1': 'A'}
+    True
+    >>> get_dict_from_attributes(test, [])
+    {}
+    >>> get_dict_from_attributes(test, ['Nope'])
+    {'Nope': None}
 
-def parseCompName(myName):
-   global ucName
-   global lcName
-   lcName = getCompName(myName)
-   lcName = lcName.replace('_','\_')
-   parsedList = re.split('_|-', lcName)
-   ucName = ''
-   for i in parsedList:
-     ucName += i + ' '
-   ucName = ucName.title()
+    """
+    return {key: get_anycase(attrs, key) for key in keys}
 
-def parseWorkerName(myName):
-   global ucName
-   global lcName
-   parsedList = myName.split("/")
-   parsedName = parsedList[-1]
-   parsedName = parsedName.split(".xml")
-   lcName = parsedName[0]
-   lcName = lcName.replace('_','\_')
-   parsedList = re.split('_|-', lcName)
-   ucName = ''
-   for i in parsedList:
-     ucName += i + ' '
-   ucName = ucName.title()
+
+def get_prop_dict_from_attributes(attrs):
+    """ Creates dict based on a property's attributes we care about """
+    keys = ["Name", "Type", "SequenceLength",
+            "Volatile", "Readable", "Readback", "Writable",
+            "Initial", "Parameter", "Enums", "Default", "ReadSync", "WriteSync",
+            "Description", "ArrayDimensions", "Value"]
+    ret = get_dict_from_attributes(attrs, keys)
+
+    # Check for ArrayLength as a fallback if ArrayDimensions missing
+    if not ret["ArrayDimensions"]:
+        ret["ArrayDimensions"] = get_anycase(attrs, "ArrayLength")
+
+    # Enforce defaults
+    if not ret["Type"]:
+        ret["Type"] = "ulong"
+    if not ret["Default"]:
+        ret["Default"] = ret["Value"]
+    if not ret["Value"]:
+        if ((ret["Initial"] == "true") or (ret["Writable"] == "true") or
+                (ret["Parameter"] == "true")):
+            ret["Default"] = 0
+
+    return ret
+
+
+def get_ports_from_xml(root):
+    """ Creates list based on port keywords in XML """
+    keys = ["DataInterfaceSpec", "Port", "StreamInterface"]
+    return get_xml_attributes_as_list(root, keys)
+
+
+def get_properties_from_xml(root, isOCS):
+    """ Creates list based on property keywords in XML """
+    ret = get_xml_attributes_as_list(root, ["Property"])
+    if not isOCS:
+        ret += get_xml_attributes_as_list(root, ["SpecProperty"])
+    return ret
+
+
+def parse_root_xml(root):
+    """ Main XML parsing routine.
+        Creates dict with various flags as well as component/worker ports and properties.
+        Checks any case permutation of various known flags, e.g. RccWorker and HdlWORker.
+    """
+    res = {'isHDL': False,
+           'isOCS': True,
+           'cProps': [],
+           'wProps': [],
+           'cPorts': [],
+           'wPorts': []}
+    for elem in scramble_case("RccWorker"):
+        for worker in root.iter(elem):
+            res['isOCS'] = False
+            res['isHDL'] = False
+            res['wPorts'] = get_ports_from_xml(worker)
+            res['wProps'] = get_properties_from_xml(worker, isOCS=False)
+    for elem in scramble_case("HdlWorker"):
+        for worker in root.iter(elem):
+            res['isOCS'] = False
+            res['isHDL'] = True
+            res['wPorts'] = get_ports_from_xml(worker)
+            res['wProps'] = get_properties_from_xml(worker, isOCS=False)
+    for elem in scramble_case("HdlDevice"):
+        for worker in root.iter(elem):
+            res['isOCS'] = False
+            res['isHDL'] = True
+            res['wPorts'] = get_ports_from_xml(worker)
+            res['wProps'] = get_properties_from_xml(worker, isOCS=False)
+    for elem in scramble_case("ComponentSpec"):
+        for comp in root.iter(elem):
+            res['cPorts'] = get_ports_from_xml(comp)
+            if res['isOCS']:
+                res['cProps'] = get_properties_from_xml(comp, isOCS=True)
+            else:
+                res['wProps'].append(get_properties_from_xml(comp, isOCS=True))
+    return res
+
+
+def component_name_from_path(ocs_file_path):
+    """ Computes base component name from full path
+    >>> component_name_from_path('../../specs/fifo-spec.xml')
+    'fifo'
+    >>> component_name_from_path('../../fifo.hdl/fifo.xml')
+    'fifo'
+    >>> component_name_from_path('fifo-spec.xml')
+    'fifo'
+    >>> component_name_from_path('fifo.xml')
+    'fifo'
+    """
+    file_name = os.path.split(ocs_file_path)[-1]  # Last element of path
+    file_basename = os.path.splitext(file_name)[0]
+    return re.sub('[_-]spec', '', file_basename)  # Strip off -spec or _spec
+
+
+def update_global_names(my_name):
+    """ Updates globals UC_NAME and LC_NAME after normalizing.
+        UC_NAME will convert _ and - to spaces and get Title Case.
+        LC_NAME will be LaTeX-safe.
+        (Cannot get globals to work with doctest)
+    """
+    global UC_NAME
+    global LC_NAME
+    # my_name = "This_is_my_really_long-name-to-test-with"
+    # Convert underscores and hyphens to spaces and then title case:
+    UC_NAME = (" ".join(re.split('[-_]', my_name))).title()
+    LC_NAME = latexify(my_name)
+
+
+def update_global_names_from_path(my_path):
+    """ Updates globals UC_NAME and LC_NAME based on an XML file's path """
+    update_global_names(component_name_from_path(my_path))
+
 
 def latexify(string):
-   string = string.replace('_','\_')
-   string = string.replace('&','\&')
-   string = string.replace('%','\%')
-   string = string.replace('^','\^{}')
-   return string
+    """ Escapes TeX-reserved characters
+    >>> latexify("this is a test")
+    'this is a test'
+    >>> latexify("this is a test & so was this") == r"this is a test \& so was this"
+    True
+    >>> latexify("this_is_a_test") == r"this\_is\_a\_test"
+    True
+    >>> latexify("Please don't % comment ^^this^^ out") == r"Please don't \% comment \^{}\^{}this\^{}\^{} out"
+    True
+    """
+    string = string.replace('_', r'\_')
+    string = string.replace('&', r'\&')
+    string = string.replace('%', r'\%')
+    string = string.replace('^', r'\^{}')
+    return string
+
+
+def get_tex_table_row(data):
+    """ This will generate a table row based on list given to it """
+    return r"""\hline
+{}\\
+""".format(" &{}".format((' ', '\n')[NEWLINE_PER_TABLE_CELL]).join(data))  # Note: The \n gives line per cell vs row
+
 
 class PropertyType(Enum):
-    ULONG=0
-    LONG=1
-    ULONGLONG=2
-    LONGLONG=3
-    USHORT=4
-    SHORT=5
-    UCHAR=6
+    """ Enumerated list that gives us str() methods for output later """
+    ULONG = 0
+    LONG = 1
+    ULONGLONG = 2
+    LONGLONG = 3
+    USHORT = 4
+    SHORT = 5
+    UCHAR = 6
 
-class Property():
 
-   def __init__(self, name, ptype=PropertyType.ULONG,
-                sequenceLength=None, arrayDimensions=None,
-                volatile=None, readable=None, readback=None, writable=None,
-                initial=False, enums=None, default=None, description=None):
-      self.name = name
-      self.ptype = ptype
-      self.sequenceLength = sequenceLength
-      self.arrayDimensions = arrayDimensions
-      self.volatile = False if volatile is None else volatile
-      self.readable = False if readable is None else readable
-      self.readback = False if readback is None else readback
-      self.writable = False if writable is None else writable
-      self.initial = False if initial is None else initial
-      self.enums = enums
-      self.default = 0 if default is None else default
-      self.description = description
+class Property(object):
+    """ Property class that self-generates from XML attributes dict """
+    # TODO: Use the Property class from ocpidev stuff?
+    # NOTE: not using _name because pylint barfs w/ PropertyLatexTableRow
+    def __init__(self, xml_attributes):
+        self.name = xml_attributes["Name"]
+        self.ptype = xml_attributes.get("Type", PropertyType.ULONG)
+        self.sequence_length = xml_attributes.get("SequenceLength")
+        self.array_dimensions = xml_attributes.get("ArrayDimensions")
+        self.volatile = xml_attributes.get("Volatile", False)
+        self.readable = xml_attributes.get("Readable", False)
+        self.readback = xml_attributes.get("Readback", False)
+        self.writable = xml_attributes.get("Writable", False)
+        self.initial = xml_attributes.get("Initial", False)
+        self.parameter = xml_attributes.get("Parameter", False)
+        self.enums = xml_attributes["Enums"]
+        self.default = xml_attributes.get("Default", 0)
+        self.readsync = xml_attributes.get("ReadSync", False)
+        self.writesync = xml_attributes.get("WriteSync", False)
+        self.description = xml_attributes.get("Description", '')
+        # TODO / FIXME - is this really a warning?
+        if not self.description:
+            ocpi.logging.warning("WARN :", self.name, "does not have a description in the XML")
 
-   def __str__(self):
-      ret = "name=" + str(self.name)
-      ret += ", ptype=" + str(self.ptype)
-      ret += ", sequenceLength=" + str(self.sequenceLength)
-      ret += ", arrayDimensions=" + str(self.arrayDimensions)
-      ret += ", volatile=" + str(self.volatile)
-      ret += ", readable=" + str(self.readable)
-      ret += ", readback=" + str(self.readback)
-      ret += ", writable=" + str(self.writable)
-      ret += ", initial=" + str(self.initial)
-      ret += ", enums=" + str(self.enums)
-      ret += ", default=" + str(self.default)
-      ret += ", description=" + str(self.description)
-      return ret
+    def __str__(self):
+        ret = "name=" + str(self.name)
+        ret += ", ptype=" + str(self.ptype)
+        ret += ", sequence_length=" + str(self.sequence_length)
+        ret += ", array_dimensions=" + str(self.array_dimensions)
+        ret += ", volatile=" + str(self.volatile)
+        ret += ", readable=" + str(self.readable)
+        ret += ", readback=" + str(self.readback)
+        ret += ", writable=" + str(self.writable)
+        ret += ", initial=" + str(self.initial)
+        ret += ", parameter=" + str(self.parameter)
+        ret += ", enums=" + str(self.enums)
+        ret += ", default=" + str(self.default)
+        ret += ", readsync=" + str(self.readsync)
+        ret += ", writesync=" + str(self.writesync)
+        ret += ", description=" + str(self.description)
+        return ret
 
-   def getLatexTableRow(self):
-      return str(PropertyLatexTableRow(self))
+    def as_latex_table_row(self):
+        """ Creates a PropertyLatexTableRow and then returns string version """
+        return str(PropertyLatexTableRow(self))
 
-class PropertyLatexTableRow():
 
-   def __init__(self, prop):
-      self.prop = prop
+class PropertyLatexTableRow(object):
+    """ Helper class that creates a LaTeX table row based on a Property """
+    def __init__(self, prop):
+        self.prop = prop
 
-   def __str__(self):
-      # TODO: Re-write with " & ".join()
-      ret = self.getColumnStrName()
-      ret += " & "
-      ret += self.getColumnStrType()
-      ret += " & "
-      ret += self.getColumnStrSequenceLength()
-      ret += " & "
-      ret += self.getColumnStrArrayDimensions()
-      ret += " & "
-      ret += self.getColumnStrAccessibility()
-      ret += " & "
-      ret += self.getColumnStrValidRange()
-      ret += " & "
-      ret += self.getColumnStrDefault()
-      ret += " & "
-      ret += self.getColumnStrDescription()
-      return ret
+    def __str__(self):
+        return get_tex_table_row([
+            latexify(str(self.prop.name)),
+            latexify(str(self.prop.ptype)),
+            latexify(str(self.prop.sequence_length or '-')),
+            latexify(str(self.prop.array_dimensions or '-')),
+            latexify(self.get_accessibility()),
+            latexify(self.get_enums()),
+            self.get_default_str(),
+            self.get_description_str(),
+        ])
 
-   def getColumnStrName(self):
-      return latexify(str(self.prop.name))
+    def get_description_str(self):
+        ret = ""
+        if self.prop.description is None:
+            ret += "-"
+        else:
+            ret += latexify(str(self.prop.description))
+        return ret
 
-   def getColumnStrType(self):
-      return str(self.prop.ptype)
+    def get_default_str(self):
+        ret = ""
+        if self.prop.default is None:
+            ret += "-"
+        else:
+            ret += latexify(str(self.prop.default))
+        return ret
 
-   def getColumnStrSequenceLength(self):
-      ret = ""
-      if self.prop.sequenceLength is None:
-         ret += "-"
-      else:
-         ret += latexify(str(self.prop.sequenceLength))
-      return ret
+    def get_accessibility(self):
+        """ Iterates over accessibility entries and returns single string """
+        ret = []
+        if self.prop.volatile:
+            ret.append("Volatile")
+        if self.prop.readable:
+            ret.append("Readable")
+        if self.prop.readback:
+            ret.append("Readback")
+        if self.prop.writable:
+            ret.append("Writable")
+        if self.prop.initial:
+            ret.append("Initial")
+        if self.prop.parameter:
+            ret.append("Parameter")
+        if self.prop.readsync:
+            ret.append("ReadSync")
+        if self.prop.writesync:
+            ret.append("WriteSync")
+        return ", ".join(ret)
 
-   def getColumnStrArrayDimensions(self):
-      ret = ""
-      if self.prop.arrayDimensions is None:
-         ret += "-"
-      else:
-         ret += latexify(str(self.prop.arrayDimensions))
-      return ret
+    def get_enums(self):
+        """ Returns enums as a string, cleaned up with some extra whitespace """
+        if self.prop.enums is None:
+            return "Standard"
+        # insert spaces after commas to aid in LaTeX table cell wrapping
+        return latexify(self.prop.enums).replace(",", ", ")
 
-   def getColumnStrValidRange(self):
-      ret = ""
-      if self.prop.enums is None:
-         ret += "Standard"
-      else:
-         # insert spaces after commas to aid in LaTeX table cell wrapping
-         ret += latexify(self.prop.enums).replace(",", ", ")
-      return ret
 
-   def getColumnStrAccessibility(self):
-      # TODO: Create array of strings then use join
-      ret = ""
-      insertComma = False
-      if self.prop.volatile:
-         ret += "Volatile"
-         insertComma = True
-      if self.prop.readable:
-         ret += ", Readable" if insertComma else "Readable"
-         insertComma = True
-      if self.prop.readback:
-         ret += ", Readback" if insertComma else "Readback"
-         insertComma = True
-      if self.prop.writable:
-         ret += ", Writable" if insertComma else "Writable"
-         insertComma = True
-      if self.prop.initial:
-         ret += ", Initial" if insertComma else "Initial"
-         insertComma = True
-      return ret
+def append_property_table_row(res, xml_prop):
+    """ LaTeX property table row from a property """
+    props = Property(get_prop_dict_from_attributes(xml_prop))
+    res.append(props.as_latex_table_row())
 
-   def getColumnStrDefault(self):
-      return latexify(str(self.prop.default))
 
-   def getColumnStrDescription(self):
-      ret = ""
-      if self.prop.description is None:
-         ret += "-"
-      else:
-         ret += latexify(self.prop.description)
-      return ret
+def append_port_table_row(res, port):
+    """ LaTeX port table row from a port """
+    res.append(
+        get_tex_table_row(
+            [latexify(get_anycase(port, "Name") or "(unnamed?)"),
+             latexify(get_anycase(port, "Producer") or "false"),
+             latexify(get_anycase(port, "Protocol") or "(none)"),
+             latexify(get_anycase(port, "Optional") or "false")]))
 
-def getPropertyFromXmlProp(xmlProp):
 
-   attributes = getPropDictFromParsedAttributeKeys(xmlProp)
+def append_interface_table_row(res, port, worker_root):
+    """ LaTeX interface table row from a port """
+    attrs = get_dict_from_attributes(port, ["Name", "DataWidth"])
 
-   ret = Property(name            = attributes["Name"],
-                  ptype           = attributes["Type"],
-                  sequenceLength  = attributes["SequenceLength"],
-                  arrayDimensions = attributes["ArrayDimensions"],
-                  volatile        = attributes["Volatile"],
-                  readable        = attributes["Readable"],
-                  readback        = attributes["Readback"],
-                  writable        = attributes["Writable"],
-                  initial         = attributes["Initial"],
-                  enums           = attributes["Enums"],
-                  default         = attributes["Default"],
-                  description     = attributes["Description"])
-   #print("DEBUG:", str(ret))
-   return ret
+    if not attrs["DataWidth"]:
+        tmp = get_dict_from_attributes(worker_root, ["DataWidth"])
+        attrs["DataWidth"] = tmp["DataWidth"]
+    if not attrs["DataWidth"]:
+        # TODO / FIXME ..........................................................
+        attrs["DataWidth"] = "#the width of the smallest element in the message protocol indicated in the OCS"
 
-def emitPropertyLatexTableTitleRow(outFile):
-   # TODO: Move to multi-line string (triple-double-quoted)
-   outFile.write("\\hline\n")
-   outFile.write("\\rowcolor{blue}\n")
-   outFile.write("Name                 & Type   & SequenceLength & ArrayDimensions & Accessibility       & Valid Range & Default & Description\n")
-   outFile.write("\\\\\n")
+    res.append(
+        get_tex_table_row(
+            ["StreamInterface",
+             latexify(attrs["Name"]),
+             latexify(attrs["DataWidth"])]))
 
-def emitPropertyLatexTableRow(outFile, xmlProp):
-   outFile.write("\\hline\n")
-   outFile.write(getPropertyFromXmlProp(xmlProp).getLatexTableRow())
-   outFile.write("\\\\\n")
 
-def emitPropTable(outFile, props, isHDL):
-   outFile.write("\\begin{scriptsize}\n")
-   outFile.write("\\begin{longtable}{|p{\\dimexpr0.2\\linewidth-2\\tabcolsep\\relax}\n")
-   outFile.write("                  |p{\\dimexpr0.05\\linewidth-2\\tabcolsep\\relax}\n")
-   outFile.write("                  |p{\\dimexpr0.125\\linewidth-2\\tabcolsep\\relax}\n")
-   outFile.write("                  |p{\\dimexpr0.125\\linewidth-2\\tabcolsep\\relax}\n")
-   outFile.write("                  |p{\\dimexpr0.1\\linewidth-2\\tabcolsep\\relax}\n")
-   outFile.write("                  |p{\\dimexpr0.1\\linewidth-2\\tabcolsep\\relax}\n")
-   outFile.write("                  |p{\\dimexpr0.1\\linewidth-2\\tabcolsep\\relax}\n")
-   outFile.write("                  |p{\\dimexpr0.2\\linewidth-2\\tabcolsep\\relax}|}\n")
-   emitPropertyLatexTableTitleRow(outFile)
-   for xmlProp in props:
-      emitPropertyLatexTableRow(outFile, xmlProp)
-   outFile.write("\\hline\n")
-   outFile.write("\\end{longtable}\n")
-   outFile.write("\\end{scriptsize}\n")
+def normalize_file_name(filename):
+    """ This function will normalize a filename by returning a matching
+    file if it already exists, e.g. (if the latter already exists)
+    iqstream_max_calculator.tex => IQStream_Max_Calculator.tex
+    * The function name implies more may be done later (e.g. Title Case) """
+    files = [f for f in os.listdir('.') if f.lower() == filename.lower()]
+    if files:
+        return files[0]
+    return filename
 
-def deleteFile(fileName):
-   print("INFO : deleting file", fileName)
-   os.remove(fileName)
 
-def emitPortTable(outFile, ports):
-   # TODO: Move to multi-line string (triple-double-quoted)
-   outFile.write("\\begin{scriptsize}\n")
-   outFile.write("\\begin{longtable}{|p{\\dimexpr0.3\\linewidth-2\\tabcolsep\\relax}\n")
-   outFile.write("                  |p{\\dimexpr0.2\\linewidth-2\\tabcolsep\\relax}\n")
-   outFile.write("                  |p{\\dimexpr0.2\\linewidth-2\\tabcolsep\\relax}\n")
-   outFile.write("                  |p{\\dimexpr0.3\\linewidth-2\\tabcolsep\\relax}|}\n")
-   outFile.write("\\hline\n")
-   outFile.write("\\rowcolor{blue}\n")
-   outFile.write("Name & Producer & Protocol & Optional \n")
-   outFile.write("\\\\\n")
-   for port in ports:
-      nameStr = port.get("Name")
-      protStr = port.get("Protocol")
-      if (type(protStr) is str):
-         protStr = protStr.replace('_','\_')
-      else:
-         protStr = port.get("protocol")
-         if (type(protStr) is str):
-            protStr = protStr.replace('_','\_')
-      if (type(nameStr) is str):
-         aameStr = nameStr.replace('_','\_')
-      else:
-         nameStr = port.get("name")
-         if (type(nameStr) is str):
-            nameStr = nameStr.replace('_','\_')
-      prodStr = port.get("Producer")
-      if (type(prodStr) is not str):
-          prodStr = port.get("producer")
-      if (type(prodStr) is not str):
-          prodStr = "False"
-      optStr = port.get("Optional")
-      if (type(optStr) is not str):
-          optStr = port.get("optional")
-      if (type(optStr) is not str):
-          optStr = "False"
-      outFile.write("\\hline\n")
-      outFile.write(nameStr + " & " + prodStr + " & " + str(protStr) + "& " + optStr)
-      outFile.write("\\\\\n")
-   outFile.write("\\hline\n")
-   outFile.write("\\end{longtable}\n")
-   outFile.write("\\end{scriptsize}\n")
+def emit_latex_header(out_file, user_edits):
+    """ Writes standardized LaTeX header indicating if user is expected to edit file """
+    edit_str = "this file is intended to be edited" if user_edits \
+        else "editing this file is NOT recommended"
+    out_file.write(
+r"""%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% this file was generated by docGen.py
+% {}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+""".format(edit_str))
 
-def emitIntTable(outFile, ports):
-   # TODO: Move to multi-line string (triple-double-quoted)
-   outFile.write("\\begin{longtable}{|p{\\dimexpr0.33\\linewidth-2\\tabcolsep\\relax}\n")
-   outFile.write("                  |p{\\dimexpr0.34\\linewidth-2\\tabcolsep\\relax}\n")
-   outFile.write("                  |p{\\dimexpr0.33\\linewidth-2\\tabcolsep\\relax}|}\n")
-   outFile.write("\\hline\n")
-   outFile.write("\\rowcolor{blue}\n")
-   outFile.write("Type & Name & DataWidth \n")
-   outFile.write("\\\\\n")
 
-   for port in ports:
-      attrs = getDictFromParsedAttributeKeys(port, ["Name", "DataWidth"])
-      outFile.write("\\hline\n")
-      nn = latexify(attrs["Name"])
-      dd = latexify(attrs["DataWidth"])
-      outFile.write("StreamInterface & " + nn + " & " + dd)
-      outFile.write("\\\\\n")
-   outFile.write("\\hline\n")
-   outFile.write("\\end{longtable}\n")
+def prompt_to_overwrite(filename, warn_existing=False):
+    """ Will prompt use to ensure 'filename' shouldn't be overwritten.
+        Will return True if the file should be overwritten.
+        If "warn_existing" set, it will imply they should NOT answer yes.
+        """
+    if not os.path.isfile(filename):
+        return True
+    if warn_existing:
+        ocpi.logging.warning(filename, "exists and you PROBABLY DON'T want to rewrite it!")
+    msg = "WARN : file " + filename + " already exists, overwrite (y or n)? "
+    res = ''
+    while res not in ['y', 'n']:
+        res = input(msg)
+    return res == "y"
 
-def shouldExitBecauseFileOverwriteUnallowed(fileName):
-   res = None
-   if(os.path.isfile(fileName)):
-      msg = "WARN : file " + fileName + " already exists, overwrite (y or n)? "
-      isYesOrNo = False
-      while not isYesOrNo:
-         res = raw_input(msg)
-         isYesOrNo |= (res == "y")
-         isYesOrNo |= (res == "n")
-   return (res != None) and (res != "y")
 
-def emitHeader(fp, editingIntended):
-   # TODO: Move to multi-line string (triple-double-quoted)
-   fp.write("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n")
-   fp.write("% this file was generated by docGen.py\n");
-   if editingIntended:
-      fp.write("% this file is intended to be edited\n")
-   else:
-      fp.write("% editing this file is NOT recommended\n");
-   fp.write("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n")
+def emit_datasheet_tex_file(xml_file):
+    """ Main routine that creates the LaTeX files after parsing the XML.
+        Will replace some keywords (e.g. GEN_COMPLC_NAME).
+    """
+    update_global_names_from_path(xml_file)
 
-def parseOCSOrOWD(filePathToOCSOrOWD):
-   print("INFO : parsing", filePathToOCSOrOWD)
-   tree = etree.parse(filePathToOCSOrOWD)
-   tree.xinclude()
+    datasheet_filename = normalize_file_name(component_name_from_path(xml_file) + ".tex")
 
-   return parseRoot(tree.getroot())
+    if not prompt_to_overwrite(datasheet_filename):
+        print("INFO : skipping", datasheet_filename)
+        return
+    print("INFO : emitting {0} (compile using rubber -d {0})".format(datasheet_filename))
+    j_template = LATEX_JINJA_ENV.get_template("Component_Template.tex")
+    with open(datasheet_filename, 'w') as datasheet_file:
+        emit_latex_header(datasheet_file, user_edits=False)
+        print(j_template.render(LC_NAME=LC_NAME, UC_NAME=UC_NAME), file=datasheet_file)
+    return
 
-def printPreEmitMessage(fileName, append = None):
-   if shouldExitBecauseFileOverwriteUnallowed(fileName):
-      exit(0)#raise Exception('exit_to_prevent_file_overwrite')
 
-   msg = "INFO : emitting " + fileName
-   if append is not None:
-      msg += append
-   print(msg)
+def emit_property_table_file(data, prop_key, filename, title_text):
+    """ Main routine for property tables to a file """
+    if not prompt_to_overwrite(filename):
+        print("INFO : skipping", filename)
+        return
+    print("INFO : emitting", filename)
+    is_OCS = data.get('isOCS', False)
+    is_HDL = data.get('isHDL', False)
+    props = data[prop_key]
+    print("INFO : is_OCS", is_OCS, "is_HDL", is_HDL, "props", props)
 
-def emitDataSheetTexFile(OCSorOWDFileName):
-   parseCompName(OCSorOWDFileName)
+    j_template = LATEX_JINJA_ENV.get_template("Properties.tex")
+    latex_rows = []
+    for xml_prop in props:
+        append_property_table_row(latex_rows, xml_prop)
+    with open(filename, 'w') as outfile:
+        emit_latex_header(outfile, user_edits=False)
+        if not (is_OCS and prop_key == 'wProps'):
+            print(j_template.render(title_text=title_text,
+                                    latex_rows=latex_rows,
+                                    is_OCS=is_OCS,
+                                    is_HDL=is_HDL,
+                                    comp_name=r"\comp.{}".format(('rcc', 'hdl')[is_HDL]),
+                                    sec_star=('*', '')[USE_SECTION_NUMBERS],
+                                   ), file=outfile)
 
-   dataSheetFileName = getCompName(OCSorOWDFileName) + ".tex"
-   dataSheetFile = None
 
-   skeletonFileName = os.path.dirname(os.path.realpath(__file__))
-   skeletonFileName += "/snippets/Component_Template.tex"
-   inFile = None
+def emit_ports_table_file(data, prop_key, filename, title_text, worker_root):
+    """ Main routine for port tables to a file """
+    if not prompt_to_overwrite(filename):
+        print("INFO : skipping", filename)
+        return
+    print("INFO : emitting", filename)
+    is_OCS = data.get('isOCS', False)
+    is_HDL = data.get('isHDL', False)
+    ports = data[prop_key]
 
-   msg = " (compile using rubber -d " + dataSheetFileName + ")"
-   printPreEmitMessage(dataSheetFileName, append=msg)
-   inFile = open(skeletonFileName, 'r')
-   dataSheetFile = open(dataSheetFileName, 'wr')
+    j_template = LATEX_JINJA_ENV.get_template("Ports.tex")
+    latex_rows = []
+    for xml_port in ports:
+        if is_HDL:
+            append_interface_table_row(latex_rows, xml_port, worker_root)
+        else:
+            append_port_table_row(latex_rows, xml_port)
+    with open(filename, 'w') as outfile:
+        emit_latex_header(outfile, user_edits=False)
+        if not (is_OCS and prop_key == 'wPorts'):
+            print(j_template.render(title_text=title_text,
+                                    latex_rows=latex_rows,
+                                    is_OCS=is_OCS,
+                                    is_HDL=is_HDL,
+                                    comp_name=r"\comp.{}".format(('rcc', 'hdl')[is_HDL]),
+                                    sec_star=('*', '')[USE_SECTION_NUMBERS],
+                                   ), file=outfile)
 
-   emitHeader(dataSheetFile, editingIntended=False)
 
-   currentLine = 'a thing'
-   while currentLine != '':
-      currentLine = inFile.readline()
-      if currentLine == '%GEN_COMPLC_NAME\n':
-         dataSheetFile.write("\def\comp{"+ lcName +"}\n")
-         dataSheetFile.write(currentLine)
-      elif currentLine == '%GEN_COMPUC_NAME\n':
-         dataSheetFile.write("\def\Comp{"+ ucName +"}\n")
-         dataSheetFile.write(currentLine)
-      else:
-         dataSheetFile.write (currentLine)
+def emit_latex_inc_files(data, worker_root):
+    """ Creates the various .inc snippet files based on parsed data """
+    if data.get('isOCS', False):
+        emit_property_table_file(data, prop_key='cProps',
+                                 filename=COMPONENT_PROPS_INC_FILENAME,
+                                 title_text="Component Properties")
+        emit_ports_table_file(data, prop_key='cPorts',
+                              filename=COMPONENT_PORTS_INC_FILENAME,
+                              title_text="Component Ports",
+                              worker_root=worker_root)
+    # This is non-intuitive, but for now, *always* emit worker .inc files so
+    # that the emitted <OCS-name>.tex will successfully compile in all cases
+    # (including when the only argument to this script is the OCS)
+    emit_property_table_file(data, prop_key='wProps',
+                             filename=WORKER_PROPS_INC_FILENAME,
+                             title_text="Worker Properties")
+    emit_ports_table_file(data, prop_key='wPorts',
+                          filename=WORKER_PORTS_INC_FILENAME,
+                          title_text="Worker Interfaces",
+                          worker_root=worker_root)
 
-   dataSheetFile.close()
 
-def emitNoComponent(ff, thing):
-   msg = "This component has no " + thing + "."
-   ff.write(msg)
+def emit_developer_doc_file():
+    """ Creates "main" developer doc that they probably DON'T want to edit """
+    if not prompt_to_overwrite(DEVELOPER_DOC_INC_FILENAME, warn_existing=True):
+        print("INFO : skipping", DEVELOPER_DOC_INC_FILENAME)
+        return
+    print("INFO : emitting", DEVELOPER_DOC_INC_FILENAME, "(developers should edit this)")
+    j_template = LATEX_JINJA_ENV.get_template("Developer_Doc.tex")
+    with open(DEVELOPER_DOC_INC_FILENAME, 'w') as out_file:
+        emit_latex_header(out_file, user_edits=True)
+        print(j_template.render(), file=out_file)
 
-def emitPropsTableTexFile(props, doSectionNumbers, isOCS, isHDL, fileName, titleText):
 
-   sectionText = "section*"
-   if doSectionNumbers:
-      sectionText = "section"
+def input_file_contains_xi_include(filename):
+    ret = False
+    with open(filename, "r") as input_file:
+        for line in input_file:
+            for case in scramble_case("xi:include"):
+                if case in line:
+                    ret = True
+                    break
+    return ret
 
-   printPreEmitMessage(fileName)
-
-   ff = open(fileName, 'wr')
-   emitHeader(ff, editingIntended=False)
-
-   if not (isOCS and titleText == "Worker Properties"):
-      if props == []:
-         if isOCS:
-            emitNoComponent(ff, "properties")
-      else:
-         ff.write("\\" + sectionText + "{" + titleText + "}\n")
-         if not isOCS: # i.e. is OWD
-            if isHDL:
-               ff.write("\subsection*{\comp.hdl}\n")
-            else:
-               ff.write("\subsection*{\comp.rcc}\n")
-         emitPropTable(ff, props, isHDL)
-
-   ff.close()
-
-def emitPortsTableTexFile(ports, doSectionNumbers, isOCS, isHDL, fileName, titleText):
-
-   sectionText = "section*"
-   if doSectionNumbers:
-      sectionText = "section"
-
-   printPreEmitMessage(fileName)
-
-   ff = open(fileName, 'wr')
-
-   emitHeader(ff, editingIntended=False)
-
-   if not (isOCS and titleText == "Worker Interfaces"):
-      ff.write("\\" + sectionText + "{" + titleText + "}\n")
-      if ports == []:
-         if isOCS:
-            emitNoComponent(ff, "ports")
-      else:
-         if isOCS:
-            emitPortTable(ff, ports)
-         else:
-            if isHDL:
-               ff.write("\subsection*{\comp.hdl}\n")
-            else:
-               ff.write("\subsection*{\comp.rcc}\n")
-            emitIntTable(ff, ports)
-
-   ff.close()
-
-def emitTablesTexFiles(cProps, wProps, cPorts, wPorts, isOCS, isHDL):
-   compPropsFileName  = 'component_spec_properties.tex'
-   workerPropsFileName = 'worker_properties.tex'
-   compPortsFileName   = 'component_ports.tex'
-   workerPortsFileName = 'worker_interfaces.tex'
-
-   doSectionNumbers = False
-   if isOCS:
-      emitPropsTableTexFile(cProps, doSectionNumbers, isOCS, isHDL,
-                            fileName=compPropsFileName,
-                            titleText="Component Properties")
-      emitPortsTableTexFile(cPorts, doSectionNumbers, isOCS, isHDL,
-                            fileName=compPortsFileName,
-                            titleText="Component Ports")
-   if not (isOCS and os.path.isfile(workerPropsFileName)):
-      emitPropsTableTexFile(wProps, doSectionNumbers, isOCS, isHDL,
-                            fileName=workerPropsFileName,
-                            titleText="Worker Properties")
-   if not (isOCS and os.path.isfile(workerPortsFileName)):
-      emitPortsTableTexFile(wPorts, doSectionNumbers, isOCS, isHDL,
-                            fileName=workerPortsFileName,
-                            titleText="Worker Interfaces")
-
-def emitDeveloperDocTexFileIfDoesNotExist():
-   fileName = 'developer_doc.tex'
-   if(os.path.isfile(fileName)):
-      print("INFO : skipping emission of", fileName, "because it already exists")
-   if(not os.path.isfile(fileName)):
-      ff = None
-      printPreEmitMessage(fileName, append=" (developers should edit this)")
-      # TODO: Move to 'with' syntax to catch file open/close junk
-      # TODO: Move to multi-line string (triple-double-quoted)
-      try:
-         ff = open(fileName, 'wr')
-         emitHeader(ff, editingIntended=True)
-         ff.write("\n")
-         ff.write("\\section*{Summary - \\Comp}\n")
-         ff.write("% Make table whose width is equal to which will be used for text\n")
-         ff.write("% wrapping, split into 2 equal columns\n")
-         ff.write("\\begin{longtable}{|p{\\dimexpr0.5\\textwidth-2\\tabcolsep\\relax}\n")
-         ff.write("                  |p{\\dimexpr0.5\\textwidth-2\\tabcolsep\\relax}|}\n")
-         ff.write("  \\hline\n")
-         ff.write("  \\rowcolor{blue}\n")
-         ff.write("  & \\\\\n")
-         ff.write("  \\hline\n")
-         ff.write("  Name              & \\comp \\\\\n")
-         ff.write("  \\hline\n")
-         ff.write("  Latest Version    &  v1.4 (release date 9/2018) \\\\\n")
-         ff.write("  \\hline\n")
-         ff.write("  Worker Type       &  \\\\\n")
-         ff.write("  \\hline\n")
-         ff.write("  Component Library &  \\\\\n")
-         ff.write("  \\hline\n")
-         ff.write("  Workers           &  \\\\\n")
-         ff.write("  \\hline\n")
-         ff.write("  Tested Platforms  &  \\\\\n")
-         ff.write("  \\hline\n")
-         ff.write("\\end{longtable}\n")
-         ff.write("\n")
-         ff.write("\\section*{Functionality}\n")
-         ff.write("\\begin{flushleft}\n")
-         ff.write("\\end{flushleft}\n")
-         ff.write("\n")
-         ff.write("\\section*{Worker Implementation Details}\n")
-         ff.write("\\begin{flushleft}\n")
-         ff.write("\\end{flushleft}\n")
-         ff.write("\n")
-         ff.write("\\section*{Theory}\n")
-         ff.write("\\begin{flushleft}\n")
-         ff.write("\\end{flushleft}\n")
-         ff.write("\n")
-         ff.write("\\section*{Block Diagrams}\n")
-         ff.write("\\subsection*{Top level}\n")
-         ff.write("\\begin{center}\n")
-         ff.write("\\end{center}\\pagebreak\n")
-         ff.write("\n")
-         ff.write("%\\subsection*{State Machine}\n")
-         ff.write("%\\begin{flushleft}\n")
-         ff.write("%\\end{flushleft}\n")
-         ff.write("\n")
-         ff.write("\\section*{Source Dependencies}\n")
-         ff.write("%\\subsection*{\\comp.rcc}\n")
-         ff.write("%\\subsection*{\\comp.hdl}\n")
-         ff.write("\n")
-         ff.write("\\begin{landscape}\n")
-         ff.write("  \\input{component_spec_properties.tex} % it is recommended to NOT remove this line\n")
-         ff.write("\n")
-         ff.write("  \\input{worker_properties.tex} % it is recommended to NOT remove this line\n")
-         ff.write("\n")
-         ff.write("  \\input{component_ports.tex} % it is recommended to NOT remove this line\n")
-         ff.write("\n")
-         ff.write("  \\input{worker_interfaces.tex} % it is recommended to NOT remove this line\n")
-         ff.write("\\end{landscape}\n")
-         ff.write("\n")
-         ff.write("\\section*{Control Timing and Signals}\n")
-         ff.write("%\\subsection*{\\comp.hdl}\n")
-         ff.write("\\begin{flushleft}\n")
-         ff.write("\\end{flushleft}\n")
-         ff.write("\n")
-         ff.write("\\section*{Performance and Resource Utilization}\n")
-         ff.write("%\\subsubsection*{\\comp.rcc}\n")
-         ff.write("%\\subsubsection*{\\comp.hdl}\n")
-         ff.write("\n")
-         ff.write("\\section*{Test and Verification}\n")
-         ff.write("\\begin{flushleft}\n")
-         ff.write("\\end{flushleft}\n")
-         ff.close()
-      except Exception as err:
-         if ff != None:
-            ff.close()
-         raise err
 
 def usage():
-    print("Usage: docGen.py <path to OCS> # run this first")
+    """ Prints our help """
+    print("Usage: docGen.py <path to OCS> # run this first (expected to compile on its own)")
     print("       docGen.py <path to OWD> # run this second")
-    print(textwrap.fill("""Generates LaTex source files suitable for compiling a Component DataSheet. Recommended to run on both OCS and OWD in the recommended order."""))
+    print(mywrapper.fill("Generates LaTeX source files suitable for compiling a"
+                         " component datasheet. Recommended to run on OCS"
+                         " first, and OWD second (if available)."))
+
 
 def main():
-   if (len(sys.argv) < 2) or (sys.argv[1] == "--help") or (sys.argv[1] == "-help"):
-      usage()
-      sys.exit(1)
+    """ Some day somebody might want to use this as a library... """
+    if len(sys.argv) != 2 or sys.argv[1].lower() in ['--help', '-help', '-h']:
+        usage()
+        sys.exit(1)
 
-   [cProps, wProps, cPorts, wPorts, isOCS, isHDL] = parseOCSOrOWD(sys.argv[1])
+    if input_file_contains_xi_include(sys.argv[1]):
+        print("File contains xi:include, which is not yet supported. Exiting now.")
+        sys.exit(1)
 
-   emitTablesTexFiles(cProps, wProps, cPorts, wPorts, isOCS, isHDL)
-
-   if isOCS:
-      emitDeveloperDocTexFileIfDoesNotExist()
-      emitDataSheetTexFile(OCSorOWDFileName = sys.argv[1])
-   else: # is OWD
-      parseWorkerName(sys.argv[1])
-      print("WARN : because the argument", sys.argv[1], "is an OWD, this script generates table .tex files. An OCS argument must be used in order to generate a compilable component datasheet.")
+    tree = etree.parse(sys.argv[1])
+    # TODO: Figure out how to parse the xi:include statements; Write a custom parser or wait for fix maybe in python 3.8
+    root = tree.getroot()
+    parsed_data = parse_root_xml(root)
+    emit_latex_inc_files(parsed_data, root)
+    if parsed_data['isOCS']:
+        emit_developer_doc_file()
+        emit_datasheet_tex_file(xml_file=sys.argv[1])
+    else:  # is OWD
+        update_global_names_from_path(sys.argv[1])
+        ocpi.logging.warning(
+            mywrapper.fill(" because the argument " + sys.argv[1] + " is an OWD, this script "
+                           "generates table .inc files. An OCS argument must be used in order to "
+                           "generate a compilable component datasheet."))
 
 if __name__ == '__main__':
-   main()
+    main()

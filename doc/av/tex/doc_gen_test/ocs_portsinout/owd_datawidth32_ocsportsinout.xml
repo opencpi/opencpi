@@ -1,0 +1,4 @@
+<HdlWorker datawidth='123455'>
+  <StreamInterface name='in'/>
+  <StreamInterface name='out'/>
+</HdlWorker>

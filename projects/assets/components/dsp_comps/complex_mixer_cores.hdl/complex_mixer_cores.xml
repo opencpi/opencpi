@@ -1,0 +1,18 @@
+<HdlWorker language="vhdl" spec="complex_mixer-spec" DataWidth="32" Version="2">
+
+  <Property Name="PEAK_MONITOR" Type="bool" Parameter="true" Default="true"
+	    Description="Enable/Disable build-time inclusion of Peak Monitoring" />
+
+  <Property Name="peak" Type="short" Volatile="true"
+	    Description="Peak value of I/Q output."/>
+
+  <Property Name="VENDOR_TOOLS" Type="enum" Parameter="true" Enums="vivado,ise,quartus"
+	    Description="Indicate the vendor tool for which the cores are built"/>
+
+  <Property name="data_select" type="bool" writable="true" default="false"
+	    description="When enable=0: 0=BYPASS, 1=Output of NCO"/>
+
+  <StreamInterface Name="in"/>
+  <StreamInterface Name="out" insertEOM='1'/>
+
+</HdlWorker>

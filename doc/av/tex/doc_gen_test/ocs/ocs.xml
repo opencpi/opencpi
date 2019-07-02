@@ -1,0 +1,12 @@
+<ComponentSpec>
+
+  <Property name='prop_readable' readable='true'/>
+  <Property name='prop_readback' readback='true'/>
+  <Property name='prop_writable' writable='true'/>
+  <Property name='prop_initial' initial='true'/>
+  <Property name='prop_parameter' parameter='true'/>
+  <Property name='prop_volatile' volatile='true'/>
+
+  <Property name='prop_valueexpression' parameter='true' value='prop_parameter+1'/>
+
+</ComponentSpec>

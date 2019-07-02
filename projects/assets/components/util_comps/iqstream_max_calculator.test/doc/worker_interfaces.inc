@@ -9,7 +9,7 @@
                   |p{\dimexpr0.33\linewidth-2\tabcolsep\relax}|}
 \hline
 \rowcolor{blue}
-Type & Name & DataWidth 
+Type & Name & DataWidth
 \\
 \hline
 StreamInterface & in & IDATA\_WIDTH\_p\\

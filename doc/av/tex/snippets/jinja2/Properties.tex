@@ -1,0 +1,34 @@
+%# Only want to have a section title if is_OCS or it has something meaningful
+%% if (is_OCS and not is_HDL) or (not is_OCS and latex_rows)
+\section\VAR{sec_star}{\VAR{title_text}}
+%% endif
+%% if latex_rows
+%% if not is_OCS
+\subsection\VAR{sec_star}{\VAR{comp_name}}
+%% endif
+\begin{scriptsize}
+\begin{longtable}{|p{\dimexpr0.2\linewidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.05\linewidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.125\linewidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.125\linewidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.1\linewidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.1\linewidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.1\linewidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.2\linewidth-2\tabcolsep\relax}|}
+\hline
+\rowcolor{blue}
+Name                 & Type   & SequenceLength & ArrayDimensions & Accessibility       & Valid Range & Default & Description
+\\
+%% for row in latex_rows
+\VAR{row}
+%% endfor
+\hline
+\end{longtable}
+\end{scriptsize}
+%% else
+%# We have no rows
+%% if is_OCS
+%# If there are no rows and is_OCS, tell them there are none...
+This component has no properties.
+%% endif
+%% endif

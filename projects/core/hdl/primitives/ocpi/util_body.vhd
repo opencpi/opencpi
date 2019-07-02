@@ -150,5 +150,15 @@ begin
   end if;
   return to_unsigned(r, l'length);
 end max;
+function count_ones(slv : std_logic_vector) return natural is
+  variable n_ones : natural := 0;
+begin
+  for i in slv'range loop
+    if slv(i) = '1' then
+      n_ones := n_ones + 1;
+    end if;
+  end loop;
+  return n_ones;
+end function count_ones;
 end util;
 

@@ -336,6 +336,17 @@ bool did_pass_test_ocpi_app_min_values()
   if(!did_pass_test_ocpi_app_min_value_bb_gain_dB())              { return false; }
   if(!did_pass_test_ocpi_app_min_value_frequency_MHz())           { return false; }
   if(!did_pass_test_ocpi_app_min_value_sample_rate_MHz())         { return false; }
+
+  /// @todo / FIXME - figure out how to handle this...
+  /*// Due to previous known issue with min sampling rate intermittently causing
+  // calibration timeouts, this test is run many times in order to expand test
+  // coverage to catch at least one occurrence of this timeout.
+  for(unsigned ii = 20; ii > 0; ii--) {
+    if(!did_pass_test_ocpi_app_min_value_sample_rate_MHz()) {
+      return false;
+    }
+  }*/
+
   if(!did_pass_test_ocpi_app_min_value_rf_cutoff_frequency_MHz()) { return false; }
   if(!did_pass_test_ocpi_app_min_value_bb_cutoff_frequency_MHz()) { return false; }
 

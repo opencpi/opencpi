@@ -90,7 +90,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.5}
+\def\docVersion{1.6}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -115,15 +115,34 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & 4/2019 \\
+	Release Date      & 11/2019 \\
 	\hline
 	Component Library & ocpi.assets.dsp\_comps                                        \\
 	\hline
 	Workers           & \comp.hdl                                                    \\
 	\hline
-	Tested Platforms  & xsim, isim, modelsim, alst4, ml605, ZedBoard(PL), Matchstiq-Z1(PL) \\
+	Tested Platforms  & xsim, isim, modelsim, alst4, ml605, ZedBoard(PL), Matchstiq-Z1(PL), E310(PL)\\
 	\hline
-\end{tabular}
+\end{tabular}\\ \bigskip
+
+\begin{center}
+	\textit{\textbf{Revision History}}
+	\begin{table}[H]
+	\label{table:revisions} % Add "[H]" to force placement of table
+		\begin{tabularx}{\textwidth}{|c|X|l|}
+		\hline
+		\rowcolor{blue}
+		\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+		\hline
+		v1.4 & & 10/2018 \\
+		\hline
+		v1.5 & & 4/2019 \\
+		\hline
+		v1.6 & Convert Worker to Version 2 HDL API & 11/2019 \\
+		\hline
+		\end{tabularx}
+	\end{table}
+\end{center}
 
 \section*{Functionality}
 \begin{flushleft}
@@ -164,6 +183,7 @@ CORDIC algorithms are iterative algorithms used to calculate various trigonometr
 \begin{equation} \label{eq:highlevelsummary}
 	R,\theta \rightarrow x,y
 \end{equation}
+\newpage
 
 \section*{Block Diagrams}
 \subsection*{Top level}
@@ -178,7 +198,7 @@ CORDIC algorithms are iterative algorithms used to calculate various trigonometr
 		\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
 		\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in'' \\ Signed real magnitude/phase samples};
 		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' \\ Signed complex samples};
-		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+DATA_WIDTH+ \\ \verb+DATA_EXT, STAGES+ \\ \verb+messageSize+};
+		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+DATA_WIDTH+ \\ \verb+DATA_EXT, STAGES, PEAK_MONITOR+ \\ \verb+messageSize+};
 		\path[->]
 		(R3)edge []	node [] {} (R2)
 		(R2)edge []	node [] {} (R4)
@@ -188,15 +208,10 @@ CORDIC algorithms are iterative algorithms used to calculate various trigonometr
 	\end{tikzpicture}
 \end{center}
 
-	\subsection*{State Machine}
-	\begin{flushleft}
-		Only one finite-state machine (FSM) is implemented by this worker. The FSM supports Zero-Length Messages.
-	\end{flushleft}
-	{\centering\captionsetup{type=figure}\includegraphics[scale=0.6]{zlm_fsm}\par\captionof{figure}{Zero-Length Message FSM}\label{fig:zlm_fsm}}
-        \begin{flushleft}
-	        Note: In future releases, this worker will be converted to the HDL version 2 API which will remove the need for this state machine.
-        \end{flushleft}
+\subsection*{State Machine}
+None
 
+\newpage
 
 \section*{Source Dependencies}
 \subsection*{\comp.hdl}
@@ -206,6 +221,10 @@ CORDIC algorithms are iterative algorithms used to calculate various trigonometr
 	      \subitem projects/assets/hdl/primitives/dsp\_prims/cordic/src/cordic\_pr.vhd
 	      \subitem projects/assets/hdl/primitives/dsp\_prims/cordic/src/cordic.vhd
 	      \subitem projects/assets/hdl/primitives/dsp\_prims/cordic/src/cordic\_stage.vhd
+	\item projects/assets/hdl/primitives/misc\_prims/misc\_prims\_pkg.vhd
+	      \subitem projects/assets/hdl/primitives/misc\_prims/round\_conv/src/round\_conv.vhd
+	\item projects/assets/hdl/primitives/util\_prims/util\_prims\_pkg.vhd
+	      \subitem projects/assets/hdl/primitives/util\_prims/pd/src/peakDetect.vhd
 \end{itemize}
 
 \begin{landscape}
@@ -216,13 +235,13 @@ CORDIC algorithms are iterative algorithms used to calculate various trigonometr
 			\rowcolor{blue}
 			Name                & Type   & SequenceLength & ArrayDimensions & Accessibility      & Valid Range & Default & Usage                                    \\
 			\hline
-			\verb+DATA_WIDTH+   & UChar  & -              & -               & Readable           & -           & -       & Real input and complex output data width \\
+			\verb+DATA_WIDTH+   & UChar  & -              & -               & -          & -           & -       & Real input and complex output data width \\
 			\hline
-			\verb+DATA_EXT+     & UChar  & -              & -               & Readable           & -           & -       & CORDIC requirement: \# of extension bits \\
+			\verb+DATA_EXT+     & UChar  & -              & -               & -          & -           & -       & CORDIC requirement: Number of growth bits implemented by CORDIC \\
 			\hline
-			\verb+STAGES+       & UChar  & -              & -               & Readable           & -           & -       & Number of CORDIC stages implemented      \\
+			\verb+STAGES+       & UChar  & -              & -               & -          & -           & -       & Number of CORDIC stages implemented \\
 			\hline
-			\verb+messageSize+ & UShort & -              & -               & Writable, Readable & 8192        & 8192    & Number of bytes in output message        \\
+			\verb+messageSize+ & UShort & -              & -               & Writable & 8192        & 8192    & Number of bytes in output message (Not implemented by Version 2)\\
 			\hline
 		\end{tabular}
 	\end{scriptsize}
@@ -237,9 +256,13 @@ CORDIC algorithms are iterative algorithms used to calculate various trigonometr
 			\hline
 			SpecProperty & \verb+DATA_WIDTH+ & -    & -              & -               & Parameter     & 1-16        & 16      & Real input and complex output data width \\
 			\hline
-			SpecProperty & \verb+DATA_EXT+   & -    & -              & -               & Parameter     & 1-16        & 16      & CORDIC requirement: \# of extension bits \\
+			SpecProperty & \verb+DATA_EXT+   & -    & -              & -               & Parameter     & 1-16        & 6      & CORDIC requirement: \# of extension bits \\
 			\hline
-			SpecProperty & \verb+STAGES+     & -    & -              & -               & Parameter     & 16-32       & 16      & Number of CORDIC stages implemented      \\
+			SpecProperty & \verb+STAGES+     & -    & -              & -               & Parameter     & 16-32       & 18      & Number of CORDIC stages implemented      \\
+			\hline
+			Property & \verb+PEAK_MONITOR+     & Bool     & -              & -               & Parameter     & Standard        & true      & Enable/Disable build-time inclusion of peak monitoring \\
+			\hline
+			Property     & \verb+peak+  & Short & -              & -               & Volatile      & Standard    & -       & Peak value of FM Discriminator output \\
 			\hline
 		\end{tabular}
 	\end{scriptsize}
@@ -251,9 +274,9 @@ CORDIC algorithms are iterative algorithms used to calculate various trigonometr
 			\rowcolor{blue}
 			Name & Producer & Protocol           & Optional & Advanced & Usage                  \\
 			\hline
-			in   & false    & iqstream\_protocol & false    & -        & Signed complex samples \\
+			in   & false    & iqstream\_protocol & false    & -        & Signed complex (Magnitude/Phase) samples \\
 			\hline
-			out  & true     & iqstream\_protocol & false    & -        & Signed complex samples \\
+			out  & true     & iqstream\_protocol & false    & -        & Signed complex (I/Q) samples \\
 			\hline
 		\end{tabular}
 	\end{scriptsize}
@@ -266,18 +289,32 @@ CORDIC algorithms are iterative algorithms used to calculate various trigonometr
 			\rowcolor{blue}
 			Type            & Name & DataWidth & Advanced 					 & Usage                  \\
 			\hline
-			StreamInterface & in   & 32        & ZeroLengthMessages=true   & Signed magnitude samples (31:16), Signed phase samples (15:0) \\
+			StreamInterface & in   & 32        & - & Signed magnitude samples (31:16), Signed phase samples (15:0) \\
 			\hline
-			StreamInterface & out  & 32        & ZeroLengthMessages=true   & Signed complex samples \\
+			StreamInterface & out  & 32        & InsertEOM=1 & Signed complex samples \\
 			\hline
 		\end{tabular}
 	\end{scriptsize}
 \end{landscape}
 
 \section*{Control Timing and Signals}
-\begin{flushleft}
-	The CORDIC Polar-to-Rectangular HDL worker uses the clock from the Control Plane and standard Control Plane signals.
-\end{flushleft}
+The CORDIC Polar-to-Rectangular HDL worker uses the clock from the Control Plane and standard Control Plane signals. This worker has a start-up transient delay of \verb+STAGES++2 valid samples. This means that once the input is ready and valid and the output is ready, it takes that many valid input samples before the first output sample is made available. The delays for this worker are itemized be as follows:
+\begin{itemize}
+	\item 0 : pr\_cordic.vhd
+	\item 1 : pr\_cordic.vhd/cordic\_pr.vhd
+	\item STAGES : pr\_cordic.vhd/cordic\_pr.vhd/cordic.vhd/cordic\_stage.vhd
+	\item 1 : cordic\_pr.vhd/round\_conv.vhd
+\end{itemize}
+
+\begin{tabular}{|M{4.5cm}|M{1cm}|M{1cm}|M{1.5cm}|M{2cm}|M{1cm}|M{1cm}|M{2.5cm}|}
+	\hline
+	\rowcolor{blue}
+	Latency                      \\
+	\hline
+	\verb+STAGES++2 clock cycles \\
+	\hline
+\end{tabular}
+
 
 \begin{landscape}
 \section*{Worker Configuration Parameters}
@@ -289,7 +326,7 @@ CORDIC algorithms are iterative algorithms used to calculate various trigonometr
 \end{landscape}
 \section*{Test and Verification}
 \begin{flushleft}
-	A single test case is implemented to validate the CORDIC Polar-to-Rectangular component. An input file is generated with a constant magnitude of 29760 in bits (31:16) (driven into CORDIC input $x_0$) and two cycles of ramp data centered about zero representing a constant phase in bits (15:0) (driven into CORDIC input $z_0$). The expected outputs are a cosine from $I$ (the CORDIC $x_N$ output) with a magnitude equal to that of $x_0$ and a sine from $Q$ (the CORDIC $y_N$ output) also with a magnitude equal to that of $x_0$. Input magnitude and phase plots may be viewed in Figures \ref{fig:input_magnitude} and \ref{fig:input_phase} below.
+	A single test case is implemented to validate the CORDIC Polar-to-Rectangular component. An input file is generated with a constant magnitude of 29760 in bits (31:16) (driven into CORDIC input $x_0$) and multiple cycles of ramp data centered about zero representing a constant phase in bits (15:0) (driven into CORDIC input $z_0$). The amount of input data was chosen such that, at least two messages were output. The expected outputs are a cosine from $I$ (the CORDIC $x_N$ output) with a magnitude equal to that of $x_0$ and a sine from $Q$ (the CORDIC $y_N$ output) also with a magnitude equal to that of $x_0$. Input magnitude and phase plots may be viewed in Figures \ref{fig:input_magnitude} and \ref{fig:input_phase} below.
 \end{flushleft}
 
 	\begin{figure}[ht]
@@ -307,7 +344,7 @@ CORDIC algorithms are iterative algorithms used to calculate various trigonometr
 	\end{figure}
 
 \begin{flushleft}
-	Verification of output data is performed by creating two cycles of a complex sinusoid in python, and then comparing the worker output sample-by-sample with these expected results. A difference of $\pm1.0$ is tolerated to allow for differences in fixed-point implementation and hardware rounding. Figures \ref{fig:output_time} and \ref{fig:output_freq} depict the output of the Polar to Rectangular CORDIC.
+	Verification of output data is performed by creating cycles of a complex sinusoid in python to match the expected number of output data, and then comparing the worker output sample-by-sample with these expected results. A difference of $\pm1.0$ is tolerated to allow for differences in fixed-point implementation and hardware rounding. Figures \ref{fig:output_time} and \ref{fig:output_freq} depict the output of the Polar to Rectangular CORDIC.
 \end{flushleft}
 
 	\begin{figure}[ht]

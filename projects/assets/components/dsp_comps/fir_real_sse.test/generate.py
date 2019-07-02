@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -27,14 +27,10 @@ To test the FIR Real filter, a binary data file is generated containing an impul
 The output of the filter is thus an impulse response, showing the symmetric tap values.
 
 """
+
 import sys
 import os.path
-
-print "\n","*"*80
-print "*** Python: FIR Real ***"
 
 import gen_impulse
 gen_impulse.impulse_real_ascii(os.path.splitext(sys.argv[1])[0]+'.dat')
 gen_impulse.impulse_real_bin(sys.argv[1])
-
-print "*** End file generation ***\n"

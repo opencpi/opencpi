@@ -1,0 +1,14 @@
+<build>
+  <configuration id='0'>
+    <parameter name='latency' value='8'/>
+  </configuration>
+  <configuration id='1'>
+    <parameter name='latency' value='20'/>
+  </configuration>
+  <configuration id='2'>
+    <parameter name='latency' value='68'/>
+  </configuration>
+  <configuration id='3'>
+    <parameter name='latency' value='1'/>
+  </configuration>
+</build>

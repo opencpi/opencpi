@@ -1,6 +1,6 @@
-<tests timeout='20000' useHDLFileIo='true'>
- <input port='in' stressorMode='full' script='generate.py 32767' messagesize='8192'/>
- <output port='out' script='verify.py 32767' view='view.sh'/>
+<tests useHDLFileIo='true'>
+ <input port='in' stressorMode='full' script='generate.py'/>
+ <output port='out' script='verify.py' view='view.sh'/>
  <property name='R' values='2048,8191,8192' exclude='*sim'/>
- <property name='TARGET_FREQ' test='true' values='0,1'/>
+ <property name='TEST_CASE' test='true' values='0,1'/>
 </tests>

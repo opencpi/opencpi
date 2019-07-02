@@ -89,7 +89,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.5}
+\def\docVersion{1.6}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -115,15 +115,34 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & 4/2019 \\
+	Release Date      & 11/2019 \\
 	\hline
 	Component Library & ocpi.assets.dsp\_comps                              \\
 	\hline
 	Workers           & \comp.hdl                                          \\
 	\hline
-	Tested Platforms  & xsim, isim, modelsim, alst4, ml605, ZedBoard(PL), Matchstiq-Z1(PL) \\
+	Tested Platforms  & xsim, isim, modelsim, alst4, ml605, ZedBoard(PL), Matchstiq-Z1(PL), E310(PL)\\
 	\hline
 \end{tabular}
+
+\begin{center}
+	\textit{\textbf{Revision History}}
+	\begin{table}[H]
+	\label{table:revisions} % Add "[H]" to force placement of table
+		\begin{tabularx}{\textwidth}{|c|X|l|}
+		\hline
+		\rowcolor{blue}
+		\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+		\hline
+		v1.4 & & 10/2018 \\
+		\hline
+		v1.5 & Convert Worker to Version 2 HDL API & 4/2019\\
+		\hline
+		v1.6 & Removed "Readable" attribute and general cleanup & 11/2019\\
+		\hline
+		\end{tabularx}
+	\end{table}
+\end{center}
 
 \section*{Functionality}
 \begin{flushleft}
@@ -161,111 +180,113 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 	Adding a delay element to the output, y, does not change the transfer function. Moving the single delay element following the output adder to two delay elements feeding the output adder also does not change the transfer function.\end{flushleft}
 
-	\section*{Block Diagrams}
-	\subsection*{Top level}
-	\begin{center}
-		\begin{tikzpicture}[% List of styles applied to all, to override specify on a case-by-case
-				every node/.style={
-					align=center,  		% use this so that the "\\" for line break works
-					minimum size=2cm	% creates space above and below text in rectangle
-				},
-				every edge/.style={draw,thick}
-			]
-			\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
-			\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in'' \\ Signed complex samples};
-			\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``Port Name'' \\ Signed complex samples};
-			\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+bypass, update, tc+ \\ \verb+messageSize+};
-			\path[->]
-			(R3)edge []	node [] {} (R2)
-			(R2)edge []	node [] {} (R4)
-			(R2)edge []	node [] {} (R5)
-			(R5)edge []	node [] {} (R2)
-			;
-		\end{tikzpicture}
-	\end{center}
-	\newpage
+\section*{Block Diagrams}
+\subsection*{Top level}
+\begin{center}
+	\begin{tikzpicture}[% List of styles applied to all, to override specify on a case-by-case
+			every node/.style={
+				align=center,  		% use this so that the "\\" for line break works
+				minimum size=2cm	% creates space above and below text in rectangle
+			},
+			every edge/.style={draw,thick}
+		]
+		\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
+		\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in'' \\ Signed complex samples};
+		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``Port Name'' \\ Signed complex samples};
+		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+bypass, update, tc+ \\ \verb+messageSize+};
+		\path[->]
+		(R3)edge []	node [] {} (R2)
+		(R2)edge []	node [] {} (R4)
+		(R2)edge []	node [] {} (R5)
+		(R5)edge []	node [] {} (R2)
+		;
+	\end{tikzpicture}
+\end{center}
 
-	\section*{Source Dependencies}
-	\subsection*{\comp.hdl}
-	\begin{itemize}
-		\item projects/assets/components/dsp\_comps/dc\_offset\_filter/dc\_offset\_filter.vhd
-		\item projects/assets/hdl/primitives/dsp\_prims/dsp\_prims\_pkg.vhd
-		      \subitem projects/assets/hdl/primitives/dsp\_prims/dc\_offset/src/dc\_offset\_cancellation.vhd
-		\item projects/assets/hdl/primitives/util\_prims/util\_prims\_pkg.vhd
-		      \subitem projects/assets/hdl/primitives/util\_prims/pd/src/peakDetect.vhd
-	\end{itemize}
+\newpage
 
-	\begin{landscape}
-		\section*{Component Spec Properties}
-		\begin{scriptsize}
-			\begin{tabular}{|p{3cm}|p{1.5cm}|c|c|c|c|c|p{7cm}|}
-				\hline
-				\rowcolor{blue}
-				Name               & Type   & SequenceLength & ArrayDimensions & Accessibility      & Valid Range & Default & Usage                                                                                                                    \\
-				\hline
-				\verb+bypass+      & Bool   & -              & -               & Readable, Writable & Standard    & false   & Bypass control                                                                                                           \\					\hline
-				\verb+update+      & Bool   & -              & -               & Readable, Writable & Standard    & true    & Update the calculated DC value to be removed, or hold a previously calculated value                                      \\
-				\hline
-				\verb+tc+          & UChar  & -              & -               & Readable, Writable & 1-127       & 121     & The location of the filter pole along the x-axis between 0 (the origin) and 1 (the unit circle), where $\alpha = tc/128$ \\
-				\hline
-				\verb+messageSize+ & UShort & -              & -               & Readable, Writable & 8192        & 8192    & Number of bytes in output message                                                                                        \\
-				\hline
-			\end{tabular}
-		\end{scriptsize}
+\section*{Source Dependencies}
+\subsection*{\comp.hdl}
+\begin{itemize}
+	\item projects/assets/components/dsp\_comps/dc\_offset\_filter/dc\_offset\_filter.vhd
+	\item projects/assets/hdl/primitives/dsp\_prims/dsp\_prims\_pkg.vhd
+	     \subitem projects/assets/hdl/primitives/dsp\_prims/dc\_offset/src/dc\_offset\_cancellation.vhd
+	\item projects/assets/hdl/primitives/util\_prims/util\_prims\_pkg.vhd
+	      \subitem projects/assets/hdl/primitives/util\_prims/pd/src/peakDetect.vhd
+\end{itemize}
 
-		\section*{Worker Properties}
-		\subsection*{\comp.hdl}
-		\begin{scriptsize}
-			\begin{tabular}{|p{3cm}|p{2cm}|p{1cm}|c|c|c|c|c|p{5cm}|}
-				\hline
-				\rowcolor{blue}
-				Type     & Name                  & Type  & SequenceLength & ArrayDimensions & Accessibility      & Valid Range & Default & Usage                                                    \\
-				\hline
-				Property & \verb+DATA_WIDTH_p+   & ULong & -              & -               & Readable,Parameter & 1-16        & 16      & Worker internal non-sign-extended data width             \\
-				\hline
-				Property & \verb+PEAK_MONITOR_p+ & Bool  & -              & -               & Readable,Parameter & Standard    & true    & Include a peak detection circuit                         \\
-				\hline
-				Property & \verb+LATENCY_p+ 	  & Ushort& -              & -               & Readable,Parameter & Standard    & 1       & Number of clock cycles between a valid input and a valid output \\
-				\hline
-				Property & \verb+peak+           & Short & -              & -               & Volatile           & Standard    & 0       & Read-only amplitude which may be useful for gain control \\
-				\hline
-			\end{tabular}
-		\end{scriptsize}
+\begin{landscape}
+\section*{Component Spec Properties}
+\begin{scriptsize}
+	\begin{tabular}{|p{3cm}|p{1.5cm}|c|c|c|c|c|p{7cm}|}
+		\hline
+		\rowcolor{blue}
+	Name               & Type   & SequenceLength & ArrayDimensions & Accessibility      & Valid Range & Default & Usage                                                                                                                    \\
+		\hline
+		\verb+bypass+      & Bool   & -              & -               &  Writable & Standard    & false   & Bypass control \\
+		\hline
+		\verb+update+      & Bool   & -              & -               & Writable & Standard    & true    & Update the calculated DC value to be removed, or hold a previously calculated value                                      \\
+		\hline
+		\verb+tc+          & UChar  & -              & -               & Writable & 1-127       & 121     & The location of the filter pole along the x-axis between 0 (the origin) and 1 (the unit circle), where $\alpha = tc/128$ \\
+		\hline
+		\verb+messageSize+ & UShort & -              & -               & Writable & 8192        & 8192    & Number of bytes in output  message (Not implemented by Version 2) \\
+		\hline
+	\end{tabular}
+\end{scriptsize}
 
-		\section*{Component Ports}
-		\begin{scriptsize}
-			\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|c|M{9cm}|}
-				\hline
-				\rowcolor{blue}
-				Name & Producer & Protocol           & Optional & Advanced & Usage                  \\
-				\hline
-				in   & false    & iqstream\_protocol & false    & -        & Signed complex samples \\
-				\hline
-				out  & true     & iqstream\_protocol & false    & -        & Signed complex samples \\
-				\hline
-			\end{tabular}
-		\end{scriptsize}
+\section*{Worker Properties}
+\subsection*{\comp.hdl}
+\begin{scriptsize}
+	\begin{tabular}{|p{3cm}|p{2cm}|p{1cm}|c|c|c|c|c|p{5cm}|}
+		\hline
+		\rowcolor{blue}
+		Type     & Name                  & Type  & SequenceLength & ArrayDimensions & Accessibility      & Valid Range & Default & Usage                                                    \\
+		\hline
+		Property & \verb+LATENCY_p+ 	  & UChar& -              & -               & Parameter & Standard    & 1       & Number of clock cycles between a valid input and a valid output \\
+		\hline
+		Property & \verb+DATA_WIDTH_p+   & UChar & -              & -               & Parameter & 1-16        & 16      & Data Width of I and Q for internal processing\\
+		\hline
+		Property & \verb+PEAK_MONITOR_p+ & Bool  & -              & -               & Parameter & Standard    & true    & Include a peak detection circuit                         \\
+		\hline
+		Property & \verb+peak+           & Short & -              & -               & Volatile           & Standard    & 0       & Peak value of I/Q output (valid when PEAK\_MONITOR\_p=true)\\
+		\hline
+	\end{tabular}
+\end{scriptsize}
 
-		\section*{Worker Interfaces}
-		\subsection*{\comp.hdl}
-		\begin{scriptsize}
-			\begin{tabular}{|M{2cm}|M{1.5cm}|c|c|M{10cm}|}
-				\hline
-				\rowcolor{blue}
-				Type            & Name & DataWidth & Advanced                & Usage                  \\
-				\hline
-				StreamInterface & in   & 32        & ZeroLengthMessages=true & Signed complex samples \\
-				\hline
-				StreamInterface & out  & 32        & ZeroLengthMessages=true, InsertEOM=1 & Signed complex samples \\
-				\hline
-			\end{tabular}
-		\end{scriptsize}
-	\end{landscape}
+\section*{Component Ports}
+\begin{scriptsize}
+	\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|c|M{9cm}|}
+		\hline
+		\rowcolor{blue}
+		Name & Producer & Protocol           & Optional & Advanced & Usage                  \\
+		\hline
+		in   & false    & iqstream\_protocol & false    & -        & Signed complex samples \\
+		\hline
+		out  & true     & iqstream\_protocol & false    & -        & Signed complex samples \\
+		\hline
+	\end{tabular}
+\end{scriptsize}
 
-	\section*{Control Timing and Signals}
-	\begin{flushleft}
-		The DC Offset Cancellation Filter worker uses the clock from the Control Plane and standard Control Plane signals.
-	\end{flushleft}
+\section*{Worker Interfaces}
+\subsection*{\comp.hdl}
+\begin{scriptsize}
+	\begin{tabular}{|M{2cm}|M{1.5cm}|c|c|M{10cm}|}
+		\hline
+		\rowcolor{blue}
+		Type            & Name & DataWidth & Advanced                & Usage                  \\
+		\hline
+		StreamInterface & in   & 32        & & Signed complex samples \\
+		\hline
+		StreamInterface & out  & 32        & InsertEOM=1 & Signed complex samples \\
+		\hline
+	\end{tabular}
+\end{scriptsize}
+\end{landscape}
+
+\section*{Control Timing and Signals}
+\begin{flushleft}
+The DC Offset Cancellation Filter worker uses the clock from the Control Plane and standard Control Plane signals.
+\end{flushleft}
 
 \begin{landscape}
 \section*{Worker Configuration Parameters}
@@ -275,53 +296,54 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \subsubsection*{\comp.hdl}
 \input{../../\ecomp.hdl/utilization.inc}
 \end{landscape}
-	\section*{Test and Verification}
-	\normalsize
-	Two test cases are implemented to validate the \Comp{} component:
+
+\section*{Test and Verification}
+\normalsize
+Two test cases are implemented to validate the \Comp{} component:
+\begin{itemize}
+	\item[1)] Normal mode
+	\item[2)] Bypass mode
+\end{itemize}
+\noindent For both cases, the input file is a waveform with tones at 5 Hz, 13 Hz, and 27 Hz, and adds a DC bias at 0 Hz. The values are scaled to fixed-point signed 16-bit integers, with a maximum amplitude of 22938 to avoid internal overflow.\par\medskip
+\noindent Time and frequency domain plots may be viewed in Figures \ref{fig:in_time_tone} and \ref{fig:in_freq_tone} below, respectively, where the time domain plot represents the first 128 complex samples in the file.
+
+\begin{figure}[ht]
+	\centering
+	\begin{minipage}{.5\textwidth}
+		\centering\includegraphics[width=1.0\linewidth]{input_time_tones}
+		\captionof{figure}{Time Domain Tones with DC bias}
+		\label{fig:in_time_tone}
+	\end{minipage}%
+	\begin{minipage}{.5\textwidth}
+		\centering\includegraphics[width=1.0\linewidth]{input_freq_tones}
+		\captionof{figure}{Frequency Domain Tones with DC bias}
+		\label{fig:in_freq_tone}
+	\end{minipage}
+\end{figure}
+
+\noindent For verification of case 1, the output file is first checked that the data is not all zero, and is then checked for the expected length of 32,768 complex samples. Additionally, both the input and output data are translated to the frequency domain, where a FFT is performed, and then power measurements are taken at DC (zero Hz), 5 Hz, 13 Hz, and 27 Hz. The input and output power measurements are compared to validate that the DC bias has been attenuated and that the other tones have not been attenuated. Figures \ref{fig:out_time_tone} and \ref{fig:out_freq_tone} depict the filtered results of the three tone input. Again, the time domain figure represents the first 128 complex samples in the output time domain file.
+
+\begin{figure}[ht]
+	\centering
+	\begin{minipage}{.5\textwidth}
+		\centering\includegraphics[width=1.0\linewidth]{output_time_tones}
+		\captionof{figure}{Time Domain Tones with DC removed}
+		\label{fig:out_time_tone}
+	\end{minipage}%
+	\begin{minipage}{.5\textwidth}
+		\centering\includegraphics[width=1.0\linewidth]{output_freq_tones}
+		\captionof{figure}{Frequency Domain Tones with DC removed}
+		\label{fig:out_freq_tone}
+	\end{minipage}
+\end{figure}
+\noindent For case 2, the input data is forwarded to the output port. For verification of this case, the output file is byte-wise compared to the input file.
+
+\newpage
+\section*{References}
+\begin{flushleft}
 	\begin{itemize}
-		\item[1)] Normal mode
-		\item[2)] Bypass mode
+		\item[1)] Richard G. Lyons. \textit{Understanding Digital Signal Processing.} Third Edition. Pearson Education, Inc., Boston. 2001.
+		\item[2)] Richard G. Lyons. (2008, August 11). \textit{DSP Tricks: DC Removal.} Retrieved from http://www.embedded.com/design/configurable-systems/4007653/DSP-Tricks-DC-Removal.
 	\end{itemize}
-	\noindent For both cases, the input file is a waveform with tones at 5 Hz, 13 Hz, and 27 Hz, and adds a DC bias at 0 Hz. The values are scaled to fixed-point signed 16-bit integers, with a maximum amplitude of 22938 to avoid internal overflow.\par\medskip
-	\noindent Time and frequency domain plots may be viewed in Figures \ref{fig:in_time_tone} and \ref{fig:in_freq_tone} below, respectively, where the time domain plot represents the first 128 complex samples in the file.
-
-	\begin{figure}[ht]
-		\centering
-		\begin{minipage}{.5\textwidth}
-			\centering\includegraphics[width=1.0\linewidth]{input_time_tones}
-			\captionof{figure}{Time Domain Tones with DC bias}
-			\label{fig:in_time_tone}
-		\end{minipage}%
-		\begin{minipage}{.5\textwidth}
-			\centering\includegraphics[width=1.0\linewidth]{input_freq_tones}
-			\captionof{figure}{Frequency Domain Tones with DC bias}
-			\label{fig:in_freq_tone}
-		\end{minipage}
-	\end{figure}
-	\noindent For verification of case 1, the output file is first checked that the data is not all zero, and is then checked for the expected length of 32,768 complex samples. Additionally, both the input and output data are translated to the frequency domain, where a FFT is performed, and then power measurements are taken at DC (zero Hz), 5 Hz, 13 Hz, and 27 Hz. The input and output power measurements are compared to validate that the DC bias has been attenuated and that the other tones have not been attenuated. Figures \ref{fig:out_time_tone} and \ref{fig:out_freq_tone} depict the filtered results of the three tone input. Again, the time domain figure represents the first 128 complex samples in the output time domain file.
-
-	\begin{figure}[ht]
-		\centering
-		\begin{minipage}{.5\textwidth}
-			\centering\includegraphics[width=1.0\linewidth]{output_time_tones}
-			\captionof{figure}{Time Domain Tones with DC removed}
-			\label{fig:out_time_tone}
-		\end{minipage}%
-		\begin{minipage}{.5\textwidth}
-			\centering\includegraphics[width=1.0\linewidth]{output_freq_tones}
-			\captionof{figure}{Frequency Domain Tones with DC removed}
-			\label{fig:out_freq_tone}
-		\end{minipage}
-	\end{figure}
-	\newpage
-
-	\noindent For case 2, the input data is forwarded to the output port. For verification of this case, the output file is byte-wise compared to the input file.
-	\section*{References}
-	\begin{flushleft}
-		\begin{itemize}
-			\item[1)] Richard G. Lyons. \textit{Understanding Digital Signal Processing.} Third Edition. Pearson Education, Inc., Boston. 2001.
-			\item[2)] Richard G. Lyons. (2008, August 11). \textit{DSP Tricks: DC Removal.} Retrieved from http://www.embedded.com/
-			      design/configurable-systems/4007653/DSP-Tricks-DC-Removal.
-		\end{itemize}
-	\end{flushleft}
+\end{flushleft}
 \end{document}

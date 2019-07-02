@@ -20,8 +20,6 @@
 
 # this source file MUST be included before out_port_inject_zlm, because this source
 # file's entity is instanced within out_port_inject_zlm
-SourceFiles+=set_clr.vhd
-
 SourceFiles+=out_port_inject_zlm.vhd
 
 include $(OCPI_CDK_DIR)/include/worker.mk

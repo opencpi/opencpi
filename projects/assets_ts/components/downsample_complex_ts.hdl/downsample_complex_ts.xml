@@ -1,0 +1,13 @@
+<HdlWorker Language='vhdl' Spec='downsample_complex_ts-spec.xml' version='2' datawidth='32'>
+
+  <!-- Other included XML -->
+  <xi:include href='peak-detector-properties.xml'/>
+
+  <SpecProperty Name='R' Parameter='true' Default='4'/>
+
+  <SpecProperty Name='DATA_WIDTH' Parameter='true' Default='16'/>
+
+  <StreamInterface Name='in'/>
+  <StreamInterface Name='out' insertEOM='1'/>
+
+</HdlWorker>

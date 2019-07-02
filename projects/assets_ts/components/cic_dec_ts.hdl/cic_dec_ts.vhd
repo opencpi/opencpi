@@ -20,19 +20,17 @@
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 use ieee.math_real.all;
 library ocpi; use ocpi.types.all; use ocpi.util.all;-- remove this to avoid all ocpi name collisions
-library i2c; use i2c.i2c.all;
 
 architecture rtl of worker is
 
   constant c_n                      : positive := to_integer(N);
   constant c_m                      : positive := to_integer(M);
   constant c_r                      : positive := to_integer(R);
-  constant c_group_delay            : positive := to_integer(GROUP_DELAY_p);
+  constant c_group_delay            : positive := to_integer(GROUP_DELAY);
   constant c_count_ones_in_r        : natural  := count_ones(from_ushort(R));
   constant c_data_width             : positive := to_integer(DATA_WIDTH);
-  constant c_acc_width              : positive := to_integer(ACC_WIDTH);
-  constant c_bytes_per_given_output : positive := ocpi_port_in_data_width/8;
-    
+  constant c_acc_width              : positive := integer(ceil(real(c_n)*log2(real(c_r*c_m))))+c_data_width;
+      
   signal s_prim_rst                 : std_logic;
   signal s_idata_vld, s_idata_rdy   : std_logic;
   signal s_odata_vld, s_odata_rdy   : std_logic;
@@ -49,8 +47,6 @@ architecture rtl of worker is
   signal s_interval_data            : std_logic_vector(ocpi_port_in_data_width-1 downto 0);
   signal s_interval_vld             : std_logic;
   signal s_interval_eom             : std_logic;
-  signal s_bytes_given_counter      : unsigned(width_for_max(to_integer(ocpi_max_bytes_out)) downto 0);
-  signal s_max_bytes_out_given      : std_logic;
   signal s_group_delay_max          : std_logic;
   signal s_group_delay_zero         : std_logic;
   signal s_group_delay_counter      : unsigned(width_for_max(c_group_delay) downto 0);
@@ -84,14 +80,14 @@ begin
 
   -- Input data to primitive (zeros when flushing)
   s_i_in <= (others => '0') when its(s_flush_opcode) else in_in.data(c_data_width-1 downto 0);
-  s_q_in <= (others => '0') when its(s_flush_opcode) else in_in.data(c_data_width-1+16 downto 16);
+  s_q_in <= (others => '0') when its(s_flush_opcode) else in_in.data(2*c_data_width-1 downto c_data_width);
 
   -- Reset to primitive
   -- Reset when control plane reset, sync, or taking flush
   s_prim_rst <= ctl_in.reset or s_sync_opcode or s_take_flush;
   
   -- CIC Decimation primitives (I & Q)
-  Dec_I : entity work.cic_dec_gen2
+  Dec_I : dsp_prims.dsp_prims.cic_dec_gen
     generic map(
       g_n          => c_n,
       g_m          => c_m,
@@ -110,7 +106,7 @@ begin
       o_dout_vld => s_odata_vld,
       i_dout_rdy => s_odata_rdy
       );
-  Dec_Q : entity work.cic_dec_gen2
+  Dec_Q : dsp_prims.dsp_prims.cic_dec_gen
     generic map(
       g_n          => c_n,
       g_m          => c_m,
@@ -174,7 +170,7 @@ begin
   
   -- For powers of 2, division is a shift
   r_is_power_of_2 : if c_count_ones_in_R = 1 generate
-    s_interval_data <= std_logic_vector(unsigned(in_in.data) srl integer(log2(real(c_R))));
+    s_interval_data <= std_logic_vector(unsigned(in_in.data) srl integer(ceil(log2(real(c_R)))));
     s_interval_eom  <= in_in.eom;
     s_interval_vld  <= in_in.valid;
   end generate;
@@ -238,8 +234,7 @@ begin
                     in_in.data;
 
   -- To properly assert EOMs for samples opcodes, keep track of messages in
-  -- progress, which resets when non-samples messages appear on input or when
-  -- max_bytes_out have been given
+  -- progress, which resets when non-samples messages appear on input
   msg_in_progress : process(ctl_in.clk)
   begin
     if rising_edge(ctl_in.clk) then
@@ -251,24 +246,7 @@ begin
     end if;
   end process;
 
-  -- Counter to track number of samples bytes given
-  -- Used to insert EOMs; Default for insertEOM will not work because of
-  -- approach used to terminate samples messages when non-samples messages are
-  -- present on input (results in ZLMs)
-  bytes_given_counter_proc : process(ctl_in.clk)
-  begin
-    if rising_edge(ctl_in.clk) then
-      if its(ctl_in.reset) or its(s_samples_eom) then
-        s_bytes_given_counter <= (others => '0');
-      elsif its(s_odata_vld) and its(s_odata_rdy) then
-        s_bytes_given_counter <= s_bytes_given_counter + c_bytes_per_given_output;
-      end if;
-    end if;
-  end process;
-
-  s_samples_eom <= s_max_bytes_out_given or (out_in.ready and s_non_samples_msg_on_input);
-  s_max_bytes_out_given <= s_odata_vld and s_odata_rdy and
-                           to_bool(s_bytes_given_counter = props_in.ocpi_max_bytes_out-c_bytes_per_given_output);
+  s_samples_eom <= out_in.ready and s_non_samples_msg_on_input;
 
   groupDelayCounterProc : process (ctl_in.clk)
   begin
@@ -294,7 +272,7 @@ begin
   s_peak_a_in   <= std_logic_vector(resize(signed(s_i_out),16));
   s_peak_b_in   <= std_logic_vector(resize(signed(s_q_out),16));
 
-  pm_gen : if its(PEAK_MONITOR_p) generate
+  pm_gen : if its(PEAK_MONITOR) generate
     pd : util_prims.util_prims.peakDetect
       port map (
         CLK_IN   => ctl_in.clk,
@@ -306,5 +284,9 @@ begin
 
     props_out.peak <= signed(s_peak_out);
   end generate pm_gen;
+
+  no_pm_gen : if its(not PEAK_MONITOR) generate 
+    props_out.peak <= (others => '0'); 
+  end generate no_pm_gen;
 
 end rtl;

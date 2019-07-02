@@ -4,15 +4,20 @@
      Add port elements for i/o ports -->
 <ComponentSpec>
 
-  <Property Name="bypass" Type="bool" Readable="true" Writable="true" Default="false"/>
+  <Property Name="bypass" Type="bool" Writable="true" Default="false"
+	    Description="Bypass control"/>
 
-  <Property Name="update" Type="bool" Readable="true" Writable="true" Default="true"/>
+  <Property Name="update" Type="bool" Writable="true" Default="true"
+	    Description="Update the calculated DC value to be removed or hold previous"/>
 
-  <Property Name="tc" Type="uchar" Readable="true" Writable="true" Default="121"/>
+  <Property Name="tc" Type="uchar" Writable="true" Default="121"
+	    Description="Filter pole location along the x-axis between 0 (origin)
+			 and 1 (unit circle) where alpha = tc/128"/>
 
-  <Property Name="messageSize" Type="ushort" Readable="true" Writable="true" Default="8192"/>
+  <Property Name="messageSize" Type="ushort" Writable="true" Default="8192"
+	    Description="Unused property. Formerly used to set output message size"/>
 
-  <DataInterfaceSpec Name="in" Producer="false" Protocol="iqstream_protocol.xml"/>
-  <DataInterfaceSpec Name="out" Producer="true" Protocol="iqstream_protocol.xml"/>
+  <Port Name="in"  Protocol="iqstream_protocol.xml"/>
+  <Port Name="out" Protocol="iqstream_protocol.xml" Producer="true"/>
 
 </ComponentSpec>

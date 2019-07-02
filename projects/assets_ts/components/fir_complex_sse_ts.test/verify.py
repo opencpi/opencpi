@@ -18,57 +18,34 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 """
-FIR Complex: Validate output data for Symmetric FIR Complex (NUM_TAPS_p taps)
-using the ComplexShortWithMetadata protocol
+FIR Complex: Verify output data
 
-Validation args:
-- output data filename
-- input data file
+Samples data is verified by comparing the output data to the tap values, which
+is the expected output in response to an impulse.
 
-To test the FIR Complex filter, a binary data file is generated containing all of the
-opcodes of the ComplexShortWithMetadata protocol in the following sequence:
-1. Interval
-2. Sync (this opcode is expected after an Interval opcode)
-3. Time
-4. Samples (impulse with length numtaps*2)
-4. Samples (impulse with length numtaps*2)
-5. Flush
-6. Samples (impulse with length numtaps*2)
-7. Sync
-8. Samples (impulse with length numtaps*2)
-
-The worker will pass through the interval and time opcodes. The samples opcode followed
-by flush or done will output an impulse response, showing the symmetric tap values. The
-samples opcode followed by sync will produce the first numtaps*2-group_delay tap values.
-In addition to the samples data, the worker also passes along the zlms.
+All other operations are verified by comparing input and output to ensure they
+match
 """
 import numpy as np
 import sys
 import os.path
-
-def getmsg(m):
-    length = m[0]
-    opcode = m[1]
-    data   = None
-    if length > 0:
-        data = m[2:length/4+2].tolist()
-    return [opcode, length, data]
+import opencpi.unit_test_utils as utu
+import opencpi.complexshortwithmetadata_utils as iqm
 
 if len(sys.argv) < 2:
     print("Usage expected: output filename, input filename\n")
     sys.exit(1)
 
 #Generate text file of symmetric tap values for comparison
-group_delay=int(os.environ.get("OCPI_TEST_GROUP_DELAY_p"))
-num_taps=int(os.environ.get("OCPI_TEST_NUM_TAPS_p"))
+num_taps=int(os.environ.get("OCPI_TEST_NUM_TAPS"))
 taps=list(map(int, os.environ.get("OCPI_TEST_taps").split(","))) #tap values are comma-separated
 
-output_file=sys.argv[1]
-input_file=sys.argv[2]
+ofilename= sys.argv[1]
+ifilename= sys.argv[2]
 
 #Check to confirm number of taps is as expected
 if num_taps != 2*len(taps):
-    print('  FAILED: Actual number of taps does not match specified NUM_TAPS_p')
+    print('  FAILED: Actual number of taps does not match specified NUM_TAPS')
     sys.exit(1)
 
 #Check to make sure not all taps are zero
@@ -76,94 +53,62 @@ if( sum(map(abs,taps)) == 0):
     print('  FAILED: taps are all zero')
     sys.exit(1)
 
-#Read output data file as uint32
-ofile = open(output_file, 'rb')
-dout = np.fromfile(ofile, dtype=np.uint32, count=-1)
-ofile.close()
+# Parse non-samples messages from input file
+din_non_sample_msg = iqm.parse_non_samples_msgs_from_msgs_in_file(ifilename)
 
-#Read output data file as uint32
-ifile = open(input_file, 'rb')
-din = np.fromfile(ifile, dtype=np.uint32, count=-1)
-ifile.close()
+# Parse non-samples messages from output file
+dout_non_sample_msg = iqm.parse_non_samples_msgs_from_msgs_in_file(ofilename)
 
-#Ensure output data is not all zeros
-if all(dout == 0):
-    print('  FAILED: values are all zero')
+# Parse samples data from input file. Returns dt_iq_pair array
+idata = iqm.parse_samples_data_from_msgs_in_file(ifilename)
+
+# Parse samples data from output file. Returns dt_iq_pair array
+odata = iqm.parse_samples_data_from_msgs_in_file(ofilename)
+
+# Deinterleave dt_iq_pair array into I & Q arrays
+in_real  = idata['real_idx']
+out_real = odata['real_idx']
+out_imag = odata['imag_idx']
+#print(out_real)
+
+# I and Q should match
+print("    Comparing I and Q data to ensure they match")
+utu.compare_arrays(out_real,out_imag)
+
+# I and Q have been verified to be equal, so verification will only be performed on I
+
+# Values should not all be zeros
+print("    Checking output values are not all zeros")
+if np.count_nonzero(out_real) == 0:
+    print("    FAILED: output is all zeros")
     sys.exit(1)
 
-#Parse messages within output data
-index = 0
-msg_count = 0
-msg = []
-samples = []
-dout_non_sample_msg = []
-while index < len(dout):
-    msg.append(getmsg(dout[index:]))
-    if msg[msg_count][2] is None:
-        index = index + 2
-    else:
-        index = index + len(msg[msg_count][2]) + 2
-    msg_count += 1
-for i in range(0,len(msg)):
-    if(msg[i][0]==0):
-        samples.append(msg[i][2])
-    else:
-        dout_non_sample_msg.append(msg[i])
-
-#Parse messages within input data
-index = 0
-msg_count = 0
-msg = []
-din_non_sample_msg = []
-while index < len(din):
-    msg.append(getmsg(din[index:]))
-    if msg[msg_count][2] is None:
-        index = index + 2
-    else:
-        index = index + len(msg[msg_count][2]) + 2
-    msg_count += 1
-for i in range(0,len(msg)):
-    if(msg[i][0]!=0):
-        din_non_sample_msg.append(msg[i])
-
-#All non-sample data should match exactly
-if dout_non_sample_msg != din_non_sample_msg:
+# Verify non-sample data
+print("    Comparing length of non-sample data in input and output")
+if len(dout_non_sample_msg) != len(din_non_sample_msg):
+    print("    FAIL - Input and output files have different number of non-samples messages")
+    print("    Input: ", len(din_non_sample_msg), " Output: ", len(dout_non_sample_msg))
     print(din_non_sample_msg)
     print(dout_non_sample_msg)
-    print('  FAILED: Non-sample data does not match between input and output files')
     sys.exit(1)
 
-#Compare symmetric taps file to output
-first_message_size=num_taps-(group_delay-1)
-flush_message_size=group_delay-1
-tolerance=1
+for i in range(len(dout_non_sample_msg)):
+    utu.compare_msgs(dout_non_sample_msg[i],din_non_sample_msg[i])
+
+# Verify Sample Data
+print("    Comparing length of output data")
+if len(in_real) != len(out_real):
+    print("    FAIL - Unexpected Output Length")
+    print("    Expected: ", len(in_real), " Actual: ", len(out_real))
+    sys.exit(1)
+
+print("    Comparing expected output and actual output")
+# Compare repeated symmetric taps array to output
 taps.extend(reversed(taps)); #extend the taps to be symmetric
-for a in samples:
-    isamples = np.array(([b & 0xffff for b in a])).astype(np.int16)
-    qsamples = np.array(([b >> 16 & 0xffff for b in a])).astype(np.int16)
-    #3 cases
-    #1 initial or post-flush messages are length numtaps-(group delay-1)
-    if len(a) == first_message_size:
-        #Check if tap values are within 1
-        if not (np.isclose(isamples,taps[0:first_message_size],atol=tolerance).all() and 
-                np.isclose(qsamples,taps[0:first_message_size],atol=tolerance).all()):
-            print (taps[0:first_message_size])
-            print (isamples)
-            print ('  FAILED: Initial or post flush sample data does not match expected result')
-            sys.exit(1)
-    #2 in between messages are length numtaps
-    elif len(a) == num_taps:
-        #Rotate taps by group delay and check if tap values are within 1 
-        if not (np.isclose(isamples,np.roll(taps,group_delay-1),atol=tolerance).all() and 
-                np.isclose(qsamples,np.roll(taps,group_delay-1),atol=tolerance).all()):
-            print ('  FAILED: Sample data does not match expected result')
-            sys.exit(1)
-    #3 flush message is length group delay-1
-    elif len(a) == flush_message_size:
-        if not (np.isclose(isamples,taps[first_message_size:first_message_size+flush_message_size],atol=tolerance).all() and
-                np.isclose(qsamples,taps[first_message_size:first_message_size+flush_message_size],atol=tolerance).all()):
-            print ('  FAILED: Flush sample data does not match expected result')
-            sys.exit(1)
-    else:
-        print('  FAILED: Unexpected message length from samples opcode: ' + str(len(a)))
-        sys.exit(1)
+expected_output = np.tile(taps,len(out_real)/len(taps))
+tolerance=1
+if not (np.isclose(out_real,expected_output,atol=tolerance).all()):
+    print(out_real)
+    print(expected_output)
+    print ('  FAILED: Sample data does not match expected result')
+    sys.exit(1)

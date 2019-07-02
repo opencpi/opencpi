@@ -30,7 +30,7 @@ Models=(rcc hdl ocl)
 Language_rcc=c++
 Languages_rcc=(c:c c++:cc)
 Language_hdl=vhdl
-Languages_hdl=(vhdl:vhd verilog:v)
+Languages_hdl=(vhdl:vhd)
 Language_ocl=cl
 
 CheckCDK='$(if $(realpath $(OCPI_CDK_DIR)),,\
@@ -717,7 +717,7 @@ EOF
 
 namespace OA = OCPI::API;
 
-int main(int argc, char **argv) {
+int main(/*int argc, char **argv*/) {
   // Reference https://opencpi.github.io/OpenCPI_Application_Development.pdf for
   // an explanation of the ACI.
 
@@ -2324,7 +2324,6 @@ while [[ "${argv[0]}" != "" ]] ; do
     $OCPI_CDK_DIR/scripts/ocpidev_utilization.py $ocpiutilization_options
     exit $?
   elif [[ "${argv[0]}" == run ]] ; then
-    # This is portable while the below is not
     ocpidev_run_options=`sed -E 's/(^| )run( |$)/ /' <<< "${original_argv[@]}"`
     $OCPI_CDK_DIR/scripts/ocpidev_run.py $ocpidev_run_options
     exit $?
@@ -2502,6 +2501,12 @@ while [[ "${argv[0]}" != "" ]] ; do
   fi
   myshift
 done
+#todo move this up where the other ones are when its not just project creation
+if [ "$verb" == "create" -a "$noun" == "project" ]; then
+  ocpidev_create_options=`sed -E 's/(^| )create( |$)/ /' <<< "${original_argv[@]}"`
+  $OCPI_CDK_DIR/scripts/ocpicreate.py $ocpidev_create_options
+  exit $?
+fi
 if [ -n "$help_screen" ]; then
   help
 fi

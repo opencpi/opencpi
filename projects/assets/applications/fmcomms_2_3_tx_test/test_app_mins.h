@@ -178,7 +178,20 @@ bool did_pass_test_ocpi_app_min_value_sample_rate_MHz()
       //! @todo TODO/FIXME comment back on once bug is fixed where framework doesn't remove precision
       //p.setDoubleValue(2.083334); // assumes FIR is disabled
 
-      p.setDoubleValue(2.08334); // assumes FIR is disabled
+      // p.setDoubleValue(2.08334) will fail with error:
+      // Worker tx produced error during execution: sample_rate_MHz too low ("2.0833399999999989") can only be in the range [ 2.0833399999999993 to 61.439999999999998 ]
+      // due to double floating point rounding
+      //
+      // ... so this value is used instead: 2.0833400000000001917044301080750301480293273925781250
+      // double x = MIN_SAMP_RATE_FIR_DISABLED_MHZ;
+      // std::cout << "x=" << std::hex << *(uint64_t*)&x << "\n";
+      // output:
+      // x=4000aaae297396d1
+      // compare against: https://www.binaryconvert.com/convert_double.html?decimal=050046048056051051052
+      // /r/theydidthemath
+#define MIN_SAMP_RATE_FIR_DISABLED_MHZ 2.0833400000000001917044301080750301480293273925781250
+
+      p.setDoubleValue(MIN_SAMP_RATE_FIR_DISABLED_MHZ);
 
       //! @todo TODO/FIXME comment back on once bug is fixed where framework doesn't remove precision
       //did_pass = did_pass_test_expected_value_sample_rate_MHz(app, 2.083334, (OA::ULong) 2083334); // assumes FIR is disabled
@@ -189,10 +202,8 @@ bool did_pass_test_ocpi_app_min_value_sample_rate_MHz()
       OA::Property pp(app, APP_DEFAULT_XML_INST_NAME_TX, "sample_rate_min_MHz");
       double min = pp.getValue<double>();
 
-      std::ostringstream oss;
-      oss << std::setprecision(17) << min;
-      std::string tmp_str(oss.str());
-      app.setProperty("tx", "sample_rate_MHz", tmp_str.c_str()); // test for exception
+      // test for exception
+      app.setPropertyValue<double>("tx", "sample_rate_MHz", min);
       }
    
       app.stop();
@@ -208,7 +219,7 @@ bool did_pass_test_ocpi_app_min_value_sample_rate_MHz()
       //! @todo TODO/FIXME comment back on once bug is fixed where framework doesn't remove precision
       //p.setDoubleValue(2.083334);
 
-      p.setDoubleValue(2.08334);
+      p.setDoubleValue(MIN_SAMP_RATE_FIR_DISABLED_MHZ);
 
       //! @todo TODO/FIXME comment back on once bug is fixed where framework doesn't remove precision
       //did_pass = did_pass_test_expected_value_sample_rate_MHz(app, 2.083334, (OA::ULong) 2083334);
@@ -219,10 +230,8 @@ bool did_pass_test_ocpi_app_min_value_sample_rate_MHz()
       OA::Property pp(app, APP_DEFAULT_XML_INST_NAME_TX, "sample_rate_min_MHz");
       double min = pp.getValue<double>();
 
-      std::ostringstream oss;
-      oss << std::setprecision(17) << min;
-      std::string tmp_str(oss.str());
-      app.setProperty("tx", "sample_rate_MHz", tmp_str.c_str()); // test for exception
+      // test for exception
+      app.setPropertyValue<double>("tx", "sample_rate_MHz", min);
       }
    
       app.stop();

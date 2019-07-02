@@ -11,12 +11,10 @@
 
   <SpecProperty Name='DATA_WIDTH' Parameter='true' Default='16'/>
 
-  <SpecProperty Name='ACC_WIDTH' Parameter='true' Default='22'/>
-
-  <Property Name='GROUP_DELAY_p' Parameter='true' Default='N*M*R' 
+  <Property Name='GROUP_DELAY' Parameter='true' Default='N*M*R' 
 	    Description='Number of valid inputs before a valid output is given'/>
 
   <StreamInterface Name='in'/>
-  <StreamInterface Name='out'/>
+  <StreamInterface Name='out' insertEOM='1'/>
 
 </HdlWorker>

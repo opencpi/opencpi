@@ -92,7 +92,7 @@ begin
                    & std_logic_vector(resize(signed(mix_i), 16))
                    when (props_in.enable = '1') else in_in.data -- BYPASS: input(ENABLE=0)
                    when (props_in.data_select = '0')            -- BYPASS: NCO output(ENABLE=0, DATA_SELECT=1)
-                   else std_logic_vector(resize(signed(nco_out_i), 16)) & std_logic_vector(resize(signed(nco_out_q), 16));
+                   else std_logic_vector(resize(signed(nco_out_q), 16)) & std_logic_vector(resize(signed(nco_out_i), 16));
 
   -- Since ZeroLengthMessages=true for the output WSI, this signal must be controlled
   -- (revisit once AV-4200 is resolved)

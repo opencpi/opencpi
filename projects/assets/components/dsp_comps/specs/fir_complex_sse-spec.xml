@@ -4,17 +4,17 @@
      Add port elements for i/o ports -->
 <ComponentSpec>
 
-  <Property Name="NUM_TAPS_p" Type="ulong" Parameter="true" Readable="true" Default="16"/>
+  <Property Name="NUM_TAPS_p" Type="uchar" Parameter="true" Default="16" Description="Half the number of coefficients used by each real/imag even symmetric filter"/>
 
   <!-- Peak Detect Value -->
-  <Property Name="peak" Type="short" Volatile="true"/>
+  <Property Name="peak" Type="short" Volatile="true" Description="Peak value of I or Q output (valid when PEAK_MONITOR = true)"/>
 
-  <Property Name="messageSize" Type="ushort" Default="0" Readable="true" Writable="true"/>
+  <Property Name="messageSize" Type="ushort" Default="0" Writable="true" Description="Unused property. Formerly used to set output message size"/>
 
   <!-- tap values  Format: short[NUM_TAPS_p] -->
-  <Property Name="taps" Type="short" ArrayLength="NUM_TAPS_p" Writable="true" Readable='true'/>
+  <Property Name="taps" Type="short" ArrayLength="NUM_TAPS_p" Initial="true" Description="Symmetric filter coefficient values loaded into both real/imag filters"/>
 
-  <DataInterfaceSpec Name="in" Producer="false" Protocol="iqstream_protocol.xml"/>
-  <DataInterfaceSpec Name="out" Producer="true" Protocol="iqstream_protocol.xml"/>
+  <Port Name="in" Protocol="iqstream_protocol.xml"/>
+  <Port Name="out" Protocol="iqstream_protocol.xml" Producer="true"/>
 
 </ComponentSpec>

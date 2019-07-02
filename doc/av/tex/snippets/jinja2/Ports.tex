@@ -1,0 +1,40 @@
+%# Only want to have a section title if is_OCS or it has something meaningful
+%% if not (is_OCS and title_text == "Worker Interfaces") and (is_OCS or latex_rows)
+\section\VAR{sec_star}{\VAR{title_text}}
+%% endif
+%% if latex_rows
+%% if not is_OCS and is_HDL
+\subsection\VAR{sec_star}{\VAR{comp_name}}
+\begin{longtable}{|p{\dimexpr0.33\linewidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.34\linewidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.33\linewidth-2\tabcolsep\relax}|}
+%% else
+\begin{scriptsize}
+\begin{longtable}{|p{\dimexpr0.3\linewidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.2\linewidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.2\linewidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.3\linewidth-2\tabcolsep\relax}|}
+%% endif
+\hline
+\rowcolor{blue}
+%% if is_HDL
+Type & Name & DataWidth
+%% else
+Name & Producer & Protocol & Optional
+%% endif
+\\
+%% for row in latex_rows
+\VAR{row}
+%% endfor
+\hline
+\end{longtable}
+%% if not is_HDL
+\end{scriptsize}
+%% endif
+%% else
+%# We have no rows
+%% if is_OCS
+%# If there are no rows and is_OCS, tell them there are none...
+This component has no ports.
+%% endif
+%% endif

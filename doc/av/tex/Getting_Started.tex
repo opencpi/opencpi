@@ -208,10 +208,18 @@ The benefit here is a flexible and transparent methodology for moving data of di
 This section will walk through building the Core and Assets Project and all the fundamental steps of creating, building, running, and testing a simple application containing HDL workers. In the \textit{OpenCPI Component Development Guide}, the \verb+ocpidev+ command line tool is discussed in detail, but this example will serve as an introduction to using the \verb+ocpidev+ command line tool.
 
 \subsection{Installation of OpenCPI}
-The most direct method for installation of the OpenCPI framework and IDE is through the use of the OpenCPI RPMs. The RPMs allows for a normalized installation process with the inclusion of all dependencies required. A detailed installation process can be found in the \textit{RPM Installation Guide}.
+The most direct method for installation of the OpenCPI framework and IDE is through the use of the OpenCPI RPMs\footnote{
+% AV-5582
+An alternative ``source build'' is also available for advanced usage and is documented in the \githubio[\textit{OpenCPI Installation Guide}]{OpenCPI\_Installation.pdf} -- that style of installation is not supported by this document.
+}.
+The RPMs allows for a normalized installation process with the inclusion of all dependencies required. A detailed installation process can be found in the \textit{RPM Installation Guide}.
 
 \begin{center}
-\framebox{\parbox{0.8\linewidth}{\centering The remainder of this document assumes the RPMs have been installed. The user's environmental variables must also be configured to build with the Xilinx Vivado software.}}
+% AV-5582 TELL THEM AGAIN BECAUSE THEY DON'T LISTEN
+\framebox{\parbox{0.8\linewidth}{\centering
+\textbf{ The remainder of this document assumes the RPMs have been installed.}\\
+The user's environmental variables must also be configured to build with the Xilinx Vivado software.
+For more information on Vivado installation/licensing and OpenCPI environment configuration, see the \textit{FPGA Vendor Tools Installation Guide}.}}
 \end{center}
 
 \subsection{Environmental Variables}
@@ -296,8 +304,9 @@ To confirm which projects are installed and where they live, the command \texttt
 \label{subsubsec:buildworkers}
 In this step, the Project's contents will be built. Before completing the remaining steps, the environment must be set up as described in the \textit{RPM Installation Guide}.\\
 
-To build a project, first pick the desired \textit{Platform} to build for. The available options are listed in Table~\ref{table:hdlworkers}.
+To build a project, first pick the desired \textit{Platform} to build for. The available options are listed in Table~\ref{table:hdlworkers}.\\
 
+The relationships between vendor tools and targets (i.e. platforms) is discussed in the \githubio{FPGA\_Vendor\_Tools\_Installation\_Guide.pdf}
 	\begin{center}
 		\renewcommand*\footnoterule{} % Remove separator line from footnote
 		\renewcommand{\thempfootnote}{\arabic{mpfootnote}} % Use Arabic numbers (or can't reuse)
@@ -349,7 +358,10 @@ To build a project, first pick the desired \textit{Platform} to build for. The a
 	\end{center}
 
 \subsubsection{Build Core Project}
-This section presents a handful of commands that can be used to build for various platforms. To complete this Guide using the \code{xsim} simulator, use the build command in the box at the end of this section. \\
+This section presents a handful of commands that can be used to build for various platforms. To complete this Guide using the \code{xsim} simulator, use the build command in the box at the end of this section.
+\begin{center}
+\framebox{\parbox{0.8\linewidth}{\centering The steps in this section are specific to the \code{xsim} simulator, which is installed as part as the Xilinx Vivado software. For more information on Vivado installation/licensing and OpenCPI environment configuration, see the \textit{FPGA Vendor Tools Installation Guide}.}}
+\end{center}
 
 Note that all build commands in this Guide can optionally be performed using the ANGRYVIPER IDE instead of ``\code{ocpidev build}''.\\
 

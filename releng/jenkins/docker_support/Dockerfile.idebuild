@@ -1,0 +1,73 @@
+# ANGRYVIPER IDE Builder Docker container
+# Do not execute manually: use "build_docker_idebuild.sh"
+# Remember to maximize RUN lines to minimize intermediate layers (AV-1746)
+
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+FROM fedora AS temp_tools
+RUN dnf install -y unzip
+
+FROM temp_tools AS temp_wtp_getter
+ARG WTP_URL
+WORKDIR /tmp
+ADD ${WTP_URL} tempo.zip
+RUN unzip -q tempo.zip
+RUN mkdir output
+RUN mv /tmp/plugins/*jar /tmp/output/
+
+FROM temp_tools AS temp_sapphire_getter
+ARG SAPPHIRE_URL
+WORKDIR /tmp
+ADD ${SAPPHIRE_URL} tempo.zip
+RUN unzip -q tempo.zip
+RUN mkdir output
+RUN mv /tmp/plugins/*jar /tmp/output/
+
+
+FROM fedora AS final
+ARG VERSION
+ARG NAME
+ARG GIT_PORT
+ARG GIT_SERVER
+LABEL maintainer="ANGRYVIPER Team <discuss@lists.opencpi.org>"
+LABEL name="${NAME}"
+LABEL version="${VERSION}"
+
+# Let us see where this came from
+ADD Dockerfile.idebuild /Dockerfile
+
+# Add self-reap notifier (AV-3550)
+ADD sleeper /bin/
+
+# The first line makes the shell "usable" and lets Jenkins do its work.
+# tycho is the plugin we use. It has >400 dependencies.
+RUN dnf install -y \
+  bzip2 cglib git less mlocate openssh-clients sudo \
+  eclipse-gef-sdk \
+  tycho tycho-extras
+
+# Import git repo's keys
+RUN mkdir /root/.ssh && ssh-keyscan -p ${GIT_PORT} ${GIT_SERVER} 2>/dev/null >> /root/.ssh/known_hosts
+
+# Add dependency repositories
+COPY --from=temp_sapphire_getter /tmp/output/* /usr/share/java/sapphire/
+COPY --from=temp_wtp_getter      /tmp/output/* /usr/share/java/wtp/
+
+# Satisfy linter with default cmd, though not used because we DO supply a cmd in build_docker_ide.sh
+CMD ["/bin/sleeper", "12h"]

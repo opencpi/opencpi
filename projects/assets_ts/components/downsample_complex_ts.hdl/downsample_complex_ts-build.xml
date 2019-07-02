@@ -1,0 +1,18 @@
+<!-- Only powers of 2 currently supported -->
+<build>
+  <configuration id='0'>
+    <parameter name='R' value='4'/>
+  </configuration>
+  <configuration id='1'>
+    <parameter name='R' value='8'/>
+  </configuration>
+  <configuration id='2'>
+    <parameter name='R' value='16'/>
+  </configuration>
+  <configuration id='3'>
+    <parameter name='R' value='2048'/>
+  </configuration>
+  <configuration id='4'>
+    <parameter name='R' value='8192'/>
+  </configuration>
+</build>

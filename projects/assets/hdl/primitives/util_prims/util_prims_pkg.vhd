@@ -98,4 +98,14 @@ component divide_by_constant
     i_dout_rdy   : in std_logic);
 end component divide_by_constant;
 
+component set_clr
+  port (
+    clk : in std_logic;
+    rst : in std_logic;
+    set : in std_logic;
+    clr : in std_logic;
+    q   : out std_logic;
+    q_r : out std_logic);
+end component set_clr;
+
 end package util_prims;

@@ -1,0 +1,46 @@
+#!/bin/bash
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+if [ -z "${JENKINS_URL}" ]; then
+  echo "This script should only be run as a Jenkins job!"
+  exit 99
+fi
+
+if [ -z "$(type -p java)" ]; then
+  echo "Could not find java executable to set Jenkins build as unstable!"
+  exit 99
+fi
+
+if [ ! -e /tmp/jenkins-cli.jar ]; then
+  if [ -z "$(type -p wget)" ]; then
+    echo "Could not find wget to download JAR file to set Jenkins build as unstable!"
+    exit 99
+  fi
+  wget -P /tmp ${JENKINS_URL}jnlpJars/jenkins-cli.jar >/tmp/wget.log.$$ 2>&1
+fi
+
+if [ ! -e /tmp/jenkins-cli.jar ]; then
+  echo "Tried to download JAR file to set Jenkins build as unstable and failed!"
+  cat /tmp/wget.log.$$
+  rm -f /tmp/wget.log.$$
+  exit 99
+fi
+
+rm -f /tmp/wget.log.$$
+java -jar /tmp/jenkins-cli.jar set-build-result unstable

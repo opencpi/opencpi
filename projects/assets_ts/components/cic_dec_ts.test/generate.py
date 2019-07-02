@@ -20,32 +20,38 @@
 """
 CIC Decimator: Generate test input data
 
-2 Test Cases implemented: Impulse and Step
+Two Test Cases implemented: 
+1. Impulse - Max value followed by all zeros
+2. Step - All max values
 
+Generate data of sufficient size to produce 2 maximum size output samples
+messages
+
+All other operations from ComplexShortWithMetadata were also included in the
+input file in a format resembling that of an ADC output
 """
 import sys
 import os.path
 import numpy as np
 import array
-
-import assets_ts_utils as ts
-import cic_utils
+import opencpi.unit_test_utils as utu
+import opencpi.complexshortwithmetadata_utils as iqm
 
 if len(sys.argv) != 2:
     print("Invalid arguments:  usage is: generate.py <output-file>")
     sys.exit(1)
 
 #from -test.xml
-TEST_CASE=int(os.environ.get("OCPI_TEST_TEST_CASE"))
-MAX_BYTES_OUT=int(os.environ.get("OCPI_TEST_ocpi_max_bytes_out"))
+TEST_CASE = int(os.environ.get("OCPI_TEST_TEST_CASE"))
 
-# from arguments to generate.py (-test.xml)
-ofilename= sys.argv[1]
+# from OCS or OWD
+R = int(os.environ.get("OCPI_TEST_R"))
+MAX_BYTES_OUT = int(os.environ.get("OCPI_TEST_ocpi_max_bytes_out"))
 
-number_of_samples_messages=1
-bytes_per_sample=4
-#Generate enough samples to generate two max size output messages
-samples_to_generate=number_of_samples_messages*MAX_BYTES_OUT/bytes_per_sample*cic_utils.R
+#Generate enough samples to generate number_of_samples_messages max_bytes_out sized output messages
+number_of_samples_messages = 1
+bytes_per_sample = 4
+samples_to_generate = number_of_samples_messages*MAX_BYTES_OUT/bytes_per_sample*R
 # Select test data to generate: Impulse or Step 
 if TEST_CASE == 0: # Generate Impulse
     out_data = np.zeros(samples_to_generate, dtype=np.int32)
@@ -54,13 +60,13 @@ elif TEST_CASE == 1: #Generate Step
     out_data = 0x7FFF7FFF*np.ones(samples_to_generate, dtype=np.int32)
 
 # Write to file
-message_size=2048 #This is the maximum allowed by current buffer negotiation system
-samples_per_message=message_size/4
-with open(ofilename, 'wb') as f:
-    ts.addmsg(f, ts.INTERVAL_OPCODE, array.array('I',(int('00000000',16), int('00001FFF',16)))) #8191
-    ts.addmsg(f, ts.TIME_OPCODE, array.array('I',(int('0000AAAA',16), int('0000BBBB',16))))
-    ts.addsamples(f, out_data, 1, samples_per_message)
-    ts.addmsg(f, ts.TIME_OPCODE, array.array('I',(int('0000CCCC',16), int('0000DDDD',16))))
-    ts.addsamples(f, out_data, 1, samples_per_message)
-    ts.addmsg(f, ts.FLUSH_OPCODE, [])
-    ts.addmsg(f, ts.SYNC_OPCODE, [])
+message_size = 2048 #This is the maximum allowed by current buffer negotiation system
+samples_per_message = message_size / bytes_per_sample
+with open(sys.argv[1], 'wb') as f:
+    utu.add_msg(f, iqm.INTERVAL_OPCODE, array.array('I',(int('00000000',16), int('00001FFF',16)))) #8191
+    utu.add_msg(f, iqm.TIME_OPCODE, array.array('I',(int('0000AAAA',16), int('0000BBBB',16))))
+    iqm.add_samples(f, out_data, 1, samples_per_message)
+    utu.add_msg(f, iqm.TIME_OPCODE, array.array('I',(int('0000CCCC',16), int('0000DDDD',16))))
+    iqm.add_samples(f, out_data, 1, samples_per_message)
+    utu.add_msg(f, iqm.FLUSH_OPCODE, [])
+    utu.add_msg(f, iqm.SYNC_OPCODE, [])

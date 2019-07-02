@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -20,8 +20,10 @@
 """Generate input idata for RP CORDIC (binary data file).
 
 Generate args:
-- amount to generate (number of complex signed 16-bit samples)
 - target file
+
+Environment Variable args: 
+- amount of input data to generate (number of complex signed 16-bit samples)
 
 To test the RP CORDIC, a binary data file is generated containing complex
 signed 16-bit samples at maximum amplitude with a tone at 27Hz sampled at 10kHz.
@@ -41,8 +43,8 @@ import math
 import sys
 import os.path
 
-filename = sys.argv[2]
-num_samples = int(sys.argv[1])
+filename = sys.argv[1]
+num_samples = (int(os.environ.get("OCPI_TEST_NUM_SAMPLES")))
 
 # Create an input file with one complex tone
 # Tone is at 27 Hz; Fs=10000 Hz
@@ -63,17 +65,17 @@ out_data['imag_idx'] = np.int16(imag * gain)
 
 # convert to complex data type to perform fft and power measurements
 complex_data = np.array(np.zeros(num_samples), dtype=np.complex)
-for i in xrange(0,len(out_data)):
+for i in range(0,len(out_data)):
     complex_data[i] = complex(out_data['real_idx'][i], out_data['imag_idx'][i])
 FFT = 1.0/num_samples * abs(np.fft.fft(complex_data))
 eps = pow(10, -10) #Error factor to avoid divide by zero in log10
 # one tone in range DC to +Fs/2
 PowerT1  = 20*np.log10(FFT[int(round(float(Tone27)/(float(Fs)/2.0)*float(len(FFT)/2.0)))]+eps)
-print 'Input Tone 1 power level = ', PowerT1, ' dBm'
+print ('Input Tone 1 power level = ', PowerT1, ' dBm')
 
 # Save data file
 f = open(filename, 'wb')
-for i in xrange(num_samples):
+for i in range(num_samples):
     f.write(out_data[i])
 f.close()
-print '    Number of samples: ', num_samples
+print ('    Number of samples: ', num_samples)

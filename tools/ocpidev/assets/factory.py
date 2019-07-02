@@ -97,9 +97,9 @@ class AssetFactory():
         (e.g. RccWorker or HdlLibraryWorker)
         """
         import _opencpi.assets.worker
-        if os.path.basename(ocpiutil.rchop(directory, '/')).endswith(".hdl"):
+        if os.path.basename(os.path.realpath(ocpiutil.rchop(directory, '/'))).endswith(".hdl"):
             return _opencpi.assets.worker.HdlLibraryWorker(directory, name, **kwargs)
-        elif os.path.basename(ocpiutil.rchop(directory, '/')).endswith(".rcc"):
+        elif os.path.basename(os.path.realpath(ocpiutil.rchop(directory, '/'))).endswith(".rcc"):
             return _opencpi.assets.worker.RccWorker(directory, name, **kwargs)
         else:
             raise ocpiutil.OCPIException("Unsupported authoring model for worker located at '" +
@@ -107,7 +107,7 @@ class AssetFactory():
     @classmethod
     def remove_all(cls):
         """
-        Removes all instancs from the static class variable __assets
+        Removes all instances from the static class variable __assets
         """
         cls.__assets = {}
 

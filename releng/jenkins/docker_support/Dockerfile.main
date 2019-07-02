@@ -1,0 +1,84 @@
+# OpenCPI building Docker container
+# Do not execute manually: use "build_docker_main.sh"
+# Remember to maximize RUN lines to minimize intermediate layers (AV-1746)
+
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+# Why are we repeatedly declaring the same ARG vars?? Because:
+# -- An ARG instruction goes out of scope at the end of the build stage where it was defined.
+# -- An ARG declared before a FROM is outside of a build stage, so it can’t be used in any instruction after a FROM.
+
+ARG CENTOS_MAJ
+ARG CENTOS_MIN
+FROM centos:${CENTOS_MAJ}.${CENTOS_MIN}
+ARG CENTOS_MAJ
+ARG JENKINSUID
+ARG JENKINSGID
+ARG PACKAGES
+ARG NAME
+ARG VERSION
+ARG JENKINS_SERVER
+ARG GIT_PORT
+ARG GIT_SERVER
+LABEL maintainer="ANGRYVIPER Team <discuss@lists.opencpi.org>"
+LABEL name="${NAME}"
+LABEL version="${VERSION}"
+
+# Add self-reap notifier (AV-3550)
+ADD sleeper /bin/
+
+# Let us see where this came from
+ADD Dockerfile.main /Dockerfile
+
+# Set up local repos (AV-931 and security requirements)
+ADD approved_repos_${CENTOS_MAJ}.repo /etc/yum.repos.approved/
+RUN echo reposdir=/etc/yum.repos.approved >> /etc/yum.conf
+
+# This is all a single command to have the file system layer be as small as we can.
+
+RUN yum install -y \
+  ${PACKAGES} && \
+  yum upgrade -y && \
+  yum clean all && \
+  rm -rf /usr/share/{doc,info,man} && \
+  rm -rf /var/cache/yum
+
+# Turn off "requiretty"
+RUN sed -ie 's/Defaults \+requiretty//g' /etc/sudoers
+
+# Import git repo's keys as well as Jenkins server's
+RUN mkdir /root/.ssh && \
+  ssh-keyscan -p ${GIT_PORT} ${GIT_SERVER} 2>/dev/null >> /root/.ssh/known_hosts && \
+  ssh-keyscan ${JENKINS_SERVER} 2>/dev/null >> /root/.ssh/known_hosts
+
+# Make container look like Jenkins to the outside world
+ADD jenkins_private_keys.tar.bz2 /root/.ssh/
+
+# Add Jenkins user with same ssh keys (or else RPM sometimes doesn't like owner of spec file)
+# RUN adduser -p $(dd if=/dev/random count=8 bs=1 | od -v -tx8 -A none) jenkins
+# Also add installed vendor tools to locate database
+RUN groupadd -g ${JENKINSGID} jenkins && \
+    adduser -p $(hostname) -u ${JENKINSUID} -g ${JENKINSGID} jenkins && \
+    mkdir /home/jenkins/.ssh && \
+    cp --target-directory=/home/jenkins/.ssh /root/.ssh/* && \
+    chown -R jenkins:jenkins /home/jenkins/.ssh && \
+    updatedb -e "/root"
+
+# Satisfy linter with default cmd, though not used because we DO supply a cmd in build_docker_main.sh
+CMD ["/bin/sleeper", "12h"]

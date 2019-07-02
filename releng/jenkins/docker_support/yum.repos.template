@@ -1,0 +1,40 @@
+[CentOS-@VER@-Updates]
+baseurl = @SERVER@/CentOS-@VER@/updates/x86_64/
+enabled = 1
+gpgcheck = 0
+gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-@VER@
+name = CentOS-@VER@-Updates
+retries = 3
+skip_if_unavailable = 1
+timeout = 10
+
+[CentOS-@VER@-Base]
+baseurl = @SERVER@/CentOS-@VER@/os/x86_64
+enabled = 1
+gpgcheck = 0
+gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-@VER@
+name = CentOS-@VER@-Base
+retries = 3
+skip_if_unavailable = 1
+timeout = 10
+
+[CentOS-@VER@-Extras]
+baseurl = @SERVER@/CentOS-@VER@/extras/x86_64
+enabled = 1
+gpgcheck = 0
+gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-@VER@
+name = CentOS-@VER@-Extras
+retries = 3
+skip_if_unavailable = 1
+timeout = 10
+
+[EPEL-@VER@]
+baseurl = @SERVER@/epel-@VER@/x86_64/
+enabled = 1
+gpgcheck = 0
+gpgkey =
+name = EPEL-@VER@
+repo_gpgcheck = 0
+retries = 3
+skip_if_unavailable = 1
+timeout = 10

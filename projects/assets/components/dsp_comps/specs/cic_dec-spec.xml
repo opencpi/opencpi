@@ -4,15 +4,22 @@
      Add port elements for i/o ports -->
 <ComponentSpec>
 
-  <Property Name="N" Type="uchar" Readable="true"/>
-  <Property Name="M" Type="uchar" Readable="true"/>
-  <Property Name="R" Type="ushort" Readable="true"/>
-  <Property Name="DIN_WIDTH" Type="uchar" Readable="true"/>
-  <Property Name="ACC_WIDTH" Type="uchar" Readable="true"/>
-  <Property Name="DOUT_WIDTH" Type="uchar" Readable="true"/>
-  <Property Name="messageSize" Type="ushort" Readable="true" Writable="true" Default="8192"/>
+  <Property Name="N"           Type="uchar"
+	    Description='Number of Stages'/>
+  <Property Name="M"           Type="uchar"
+	    Description='Differential Delay'/>
+  <Property Name="R"           Type="ushort"
+	    Description='Decimation Factor. 1 output for every R inputs.'/>
+  <Property Name="DIN_WIDTH"   Type="uchar"
+	    Description='Width of I and Q as they appear on the input port'/>
+  <Property Name="ACC_WIDTH"   Type="uchar"
+	    Description='Accumulator width used inside CIC primitive'/>
+  <Property Name="DOUT_WIDTH"  Type="uchar"
+	    Description='Width of I and Q as they appear on the output port'/>
+  <Property Name="messageSize" Type="ushort" Writable="true" Default="8192"
+	    Description='Unused property. Formerly used to set output message size'/>
 
-  <DataInterfaceSpec Name="in" Producer="false" Protocol="iqstream_protocol.xml"/>
-  <DataInterfaceSpec Name="out" Producer="true" Protocol="iqstream_protocol.xml"/>
+  <Port Name="in"  Protocol="iqstream_protocol.xml"/>
+  <Port Name="out" Protocol="iqstream_protocol.xml" Producer="true"/>
 
 </ComponentSpec>

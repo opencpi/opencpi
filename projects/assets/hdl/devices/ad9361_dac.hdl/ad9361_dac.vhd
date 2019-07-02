@@ -26,7 +26,7 @@ library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisio
 use ocpi.util.all; -- needed for slv()
 library util; use util.util.all;
 library misc_prims; use misc_prims.misc_prims.all;
-architecture rtl of ad9361_dac_worker is
+architecture rtl of worker is
   constant dac_width : positive := 12;
   -- FIFO parameters
   constant fifo_width : positive := (dac_width*2); -- the fifo is just wide enough to feed AD9361 DAC

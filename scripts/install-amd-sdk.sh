@@ -35,7 +35,7 @@ mkdir -p amd-sdk
 cd amd-sdk
 SUBDIR=amd-sdk-${OCPI_AMD_SDK_VERSION}
 if test -f $TARBALL; then
-  echo The distribution file for the ADM SDK, $TARBALL, exists and is being used.
+  echo The distribution file for the AMD SDK, $TARBALL, exists and is being used.
   echo Remove `pwd`/$TARBALL afterwards if you want save space, and maybe download it again.
 else
   echo You need to downloading the distribution file: $TARBALL

@@ -1,5 +1,7 @@
 The pattern-bias-file_v2 application utilizes the pattern_v2, bias, and file_write components.
 
+The app uses patternbias_v2 assembly and file_write.rcc.
+
 To run the application on an embedded platform, with the assumption you are operating in NFS/Network mode on the
 embedded platform and you have your projects mounted at /mnt/ocpi_core and /mnt/ocpi_assets do:
 

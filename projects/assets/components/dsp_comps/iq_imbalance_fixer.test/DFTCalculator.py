@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -18,7 +18,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from SampledData import SampledData
 
 class DFTResult:
@@ -55,7 +55,7 @@ class DFTResult:
     Amplitude of 23.4375 is -0.10097193371793992 dB relative to unity
     >>> calculator.plot(dft_y_axis_units = "dB_relative_to_unity")
     """
-    def __init__(self, sampled_data, n = None, norm = None):
+    def __init__(self, sampled_data, n = None):
         """
         Parameters
         ----------------
@@ -63,11 +63,8 @@ class DFTResult:
             Sampled data on which DFT will be calculated.
         n
             Length of the transformed axis of the output.
-        norm
-            Normalization mode.
         """
-        self.norm = norm
-        self.amplitudes = np.fft.fft(sampled_data.data, n, norm = norm)
+        self.amplitudes = np.fft.fft(sampled_data.data, n)
         end = sampled_data.fs*(1-(1/n))
         self.freq_bins = np.arange(0., end, sampled_data.fs/n)
 
@@ -93,17 +90,14 @@ class DFTCalculator():
     def __init__(self, sampled_data):
         self.sampled_data = sampled_data
 
-    def calc(self, n = None, norm = None):
+    def calc(self, n = None):
         """
         Parameters
         ----------------
         n
             Length of the transformed axis of the output.
-        norm
-            Normalization mode.
         """
-        self.result = DFTResult(self.sampled_data, n, norm)
-        self.norm = norm
+        self.result = DFTResult(self.sampled_data, n)
         return self.result
 
     def get_idx_of_nearest_freq_in_result(self, f):
@@ -152,72 +146,54 @@ class DFTCalculator():
             sinusoid of amplitude 1, the returned value should be
             close to 0 dB.
         """
-        if self.norm == None:
-            eps = pow(10, -10) # error factor to avoid divide by zero in log10
-            idx = self.get_idx_of_nearest_freq_in_result(f)
-            if unit == None:
-                factor = 1
-            elif unit == "dB_relative_to_unity":
-                factor = self.result.get_unity_magnitude_normalization_factor()
-            else:
-                msg = "unit was was unsupported value of " + unit
-                msg += ", supported values are None and dB_relative_to_unity"
-                raise Exception(msg)
-            abs_amp = abs(self.result.amplitudes[idx] * factor)
-            ret = 20*np.log10(abs_amp + eps)
+        eps = pow(10, -10) # error factor to avoid divide by zero in log10
+        idx = self.get_idx_of_nearest_freq_in_result(f)
+        if unit == None:
+            factor = 1
+        elif unit == "dB_relative_to_unity":
+            factor = self.result.get_unity_magnitude_normalization_factor()
         else:
-            # TODO / FIXME - replace exception with functionality
-            msg = "abandoning amplitude calc because implementation is not yet "
-            msg += "complete for calculation with DFT normalization"
+            msg = "unit was was unsupported value of " + unit
+            msg += ", supported values are None and dB_relative_to_unity"
             raise Exception(msg)
+        abs_amp = abs(self.result.amplitudes[idx] * factor)
+        ret = 20*np.log10(abs_amp + eps)
         return ret
 
     def get_max_magnitude_of_positive_freqs(self,
         unit = "dB_relative_to_unity"):
-        if self.norm == None:
-            eps = pow(10, -10) # error factor to avoid divide by zero in log10
-            if unit == None:
-                factor = 1
-            elif unit == "dB_relative_to_unity":
-                factor = self.result.get_unity_magnitude_normalization_factor()
-            else:
-                msg = "unit was was unsupported value of " + unit
-                msg += ", supported values are None and dB_relative_to_unity"
-                raise Exception(msg)
-            nn = self.result.get_num_dft_points()
-            result_pos_freqs = self.result.amplitudes[0:(nn/2)-1]
-            tmp = 20*np.log10(abs(result_pos_freqs) + eps)
-            ret = tmp[np.argmax(tmp)]
+        eps = pow(10, -10) # error factor to avoid divide by zero in log10
+        if unit == None:
+            factor = 1
+        elif unit == "dB_relative_to_unity":
+            factor = self.result.get_unity_magnitude_normalization_factor()
         else:
-            # TODO / FIXME - replace exception with functionality
-            msg = "abandoning amplitude calc because implementation is not yet "
-            msg += "complete for calculation with DFT normalization"
+            msg = "unit was was unsupported value of " + unit
+            msg += ", supported values are None and dB_relative_to_unity"
             raise Exception(msg)
+        nn = self.result.get_num_dft_points()
+        result_pos_freqs = self.result.amplitudes[0:(nn/2)-1]
+        tmp = 20*np.log10(abs(result_pos_freqs) + eps)
+        ret = tmp[np.argmax(tmp)]
         return ret
 
     def get_max_magnitude_of_negative_freqs(self,
         unit = "dB_relative_to_unity"):
-        if self.norm == None:
-            eps = pow(10, -10) # error factor to avoid divide by zero in log10
-            if unit == None:
-                factor = 1
-            elif unit == "dB_relative_to_unity":
-                factor = self.result.get_unity_magnitude_normalization_factor()
-            else:
-                msg = "unit was was unsupported value of " + unit
-                msg += ", supported values are None and dB_relative_to_unity"
-                raise Exception(msg)
-            nn = self.result.get_num_dft_points()
-            result_neg_freqs = self.result.amplitudes[nn/2:nn-1]
-            tmp = 20*np.log10(abs(result_neg_freqs) + eps)
-            ret = tmp[np.argmax(tmp)]
+        eps = pow(10, -10) # error factor to avoid divide by zero in log10
+        if unit == None:
+            factor = 1
+        elif unit == "dB_relative_to_unity":
+            factor = self.result.get_unity_magnitude_normalization_factor()
         else:
-            # TODO / FIXME - replace exception with functionality
-            msg = "abandoning amplitude calc because implementation is not yet "
-            msg += "complete for calculation with DFT normalization"
+            msg = "unit was was unsupported value of " + unit
+            msg += ", supported values are None and dB_relative_to_unity"
             raise Exception(msg)
+        nn = self.result.get_num_dft_points()
+        result_neg_freqs = self.result.amplitudes[nn/2:nn-1]
+        tmp = 20*np.log10(abs(result_neg_freqs) + eps)
+        ret = tmp[np.argmax(tmp)]
         return ret
-
+"""
     def plot(self, dft_y_axis_units = "dB_relative_to_unity", start_time = 0):
         t = self.sampled_data.get_time_series(start_time)
         fig = plt.figure(1)
@@ -256,7 +232,7 @@ class DFTCalculator():
         btm_subplot.grid()
         plt.suptitle('Sampled Data, fs = '+ str(self.sampled_data.fs) + ' Hz')
         plt.show()
-
+"""
 
 if __name__ == "__main__":
     import doctest

@@ -26,19 +26,21 @@ package dsp_prims is
 
 component cic_dec_gen
   generic (
-    N          : positive;
-    M          : positive;
-    R          : positive;
-    DIN_WIDTH  : positive;
-    ACC_WIDTH  : positive;
-    DOUT_WIDTH : positive);
+    g_n          : positive;
+    g_m          : positive;
+    g_r          : positive;
+    g_din_width  : positive;
+    g_acc_width  : positive;
+    g_dout_width : positive);
   port (
-    CLK        : in  std_logic;
-    RST        : in  std_logic;
-    DIN_VLD    : in  std_logic;
-    DIN        : in  std_logic_vector(DIN_WIDTH-1 downto 0);
-    DOUT_VLD   : out std_logic;
-    DOUT       : out std_logic_vector(DOUT_WIDTH-1 downto 0));
+    i_clk        : in std_logic;
+    i_rst        : in std_logic;
+    i_din        : in std_logic_vector(g_din_width-1 downto 0);
+    i_din_vld    : in std_logic;
+    o_din_rdy    : out std_logic;
+    o_dout       : out std_logic_vector(g_dout_width-1 downto 0);
+    o_dout_vld   : out std_logic;
+    i_dout_rdy   : in std_logic);
 end component;
 
 component cic_int_gen

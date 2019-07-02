@@ -52,243 +52,50 @@ library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 use ieee.math_real.all;
 library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
 
-architecture rtl of fir_complex_sse_worker is
+architecture rtl of worker is
 
-  constant NUM_TAPS_c           : integer := to_integer(unsigned(NUM_TAPS_p));
-  constant DATA_WIDTH_c         : integer := to_integer(unsigned(DATA_WIDTH_p));
-  constant COEFF_WIDTH_c        : integer := to_integer(unsigned(COEFF_WIDTH_p));
-  constant MAX_MESSAGE_VALUES_c : integer := to_integer(ocpi_max_bytes_out)/4;
+  constant c_NUM_TAPS         : integer := to_integer(NUM_TAPS_p);
+  constant c_DATA_WIDTH       : integer := to_integer(DATA_WIDTH_p);
+  constant c_COEFF_WIDTH      : integer := to_integer(COEFF_WIDTH_p);
 
-  signal fir_wdata         : std_logic_vector(COEFF_WIDTH_c-1 downto 0);
-  signal fir_rdata         : std_logic_vector(COEFF_WIDTH_c-1 downto 0);
-  signal i_odata           : std_logic_vector(DATA_WIDTH_c-1 downto 0);
-  signal q_odata           : std_logic_vector(DATA_WIDTH_c-1 downto 0);
-  signal odata_vld         : std_logic;
-  signal missed_odata_vld  : std_logic := '0';
-  signal peak_out          : std_logic_vector(15 downto 0);
-  signal msg_cnt           : unsigned(integer(ceil(log2(real(MAX_MESSAGE_VALUES_c+1))))-1 downto 0);
-  signal max_sample_cnt    : unsigned(integer(ceil(log2(real(MAX_MESSAGE_VALUES_c+1))))-1 downto 0);
-  signal enable            : std_logic;
-  signal take              : std_logic;
-  signal force_som         : std_logic;
-  signal force_eom         : std_logic;
-  type state_t is (INIT_s, WAIT_s, SEND_s, TERM_CURR_MSG_s);
-  signal current_state     : state_t;
+  signal s_fir_wdata          : std_logic_vector(c_COEFF_WIDTH-1 downto 0);
+  signal s_i_o                : std_logic_vector(c_DATA_WIDTH-1 downto 0);
+  signal s_q_o                : std_logic_vector(c_DATA_WIDTH-1 downto 0);
+  signal s_data_vld_o         : std_logic;
+  signal s_missed_data_vld_o  : std_logic := '0';
+  signal s_peak_o             : std_logic_vector(15 downto 0);
+  signal s_data_vld_i         : std_logic;
   -- temp signals for old VHDL
-  signal raw_byte_enable   : std_logic_vector(3 downto 0);
-  signal raw_addr          : std_logic_vector(15 downto 0);
-  signal peak_rst_in       : std_logic;
-  signal peak_a_in         : std_logic_vector(15 downto 0);
-  signal peak_b_in         : std_logic_vector(15 downto 0);
-  signal buffer_size       : ushort_t;
+  signal s_raw_byte_enable    : std_logic_vector(3 downto 0);
+  signal s_raw_addr           : std_logic_vector(15 downto 0);
+  signal s_peak_rst_i         : std_logic;
+  signal s_peak_a_i           : std_logic_vector(15 downto 0);
+  signal s_peak_b_i           : std_logic_vector(15 downto 0);
 begin
 
-  raw_byte_enable     <= props_in.raw.byte_enable;
-  raw_addr            <= '0' & std_logic_vector(props_in.raw.address(15 downto 1));
-  peak_rst_in         <= ctl_in.reset or std_logic(props_in.peak_read);
-  peak_a_in           <= std_logic_vector(resize(signed(i_odata),16));
-  peak_b_in           <= std_logic_vector(resize(signed(q_odata),16));
+  s_raw_byte_enable     <= props_in.raw.byte_enable;
+  s_raw_addr            <= '0' & std_logic_vector(props_in.raw.address(15 downto 1));
+  s_peak_rst_i         <= ctl_in.reset or std_logic(props_in.peak_read);
+  s_peak_a_i           <= std_logic_vector(resize(signed(s_i_o),16));
+  s_peak_b_i           <= std_logic_vector(resize(signed(s_q_o),16));
   props_out.raw.done  <= '1';
   props_out.raw.error <= '0';
 
-  -----------------------------------------------------------------------------
-  -- 'enable' fir (when up/downstream Workers ready, input data valid)
-  -----------------------------------------------------------------------------
 
-  enable <= '1' when (out_in.ready = '1' and in_in.ready = '1' and in_in.valid = '1'
-                and ctl_in.is_operating = '1') else '0';
+  s_data_vld_i <= out_in.ready and in_in.valid;
 
-  -----------------------------------------------------------------------------
-  -- Take (when up/downstream Workers ready and input data valid)
-  -----------------------------------------------------------------------------
+  in_out.take <= s_data_vld_i;
 
-  in_out.take <= '1' when (out_in.ready = '1' and in_in.ready = '1' and take = '1'
-                     and ctl_in.is_operating = '1') else '0';
-
-  -----------------------------------------------------------------------------
-  -- Give (when downstream Worker ready & fir_complex_sse_worker.vhd output valid)
-  -----------------------------------------------------------------------------
-
-  out_out.give <= '1' when (out_in.ready = '1' and ctl_in.is_operating = '1'
-                      and (odata_vld = '1' or missed_odata_vld = '1' or force_eom = '1')) else '0';
-
-  -----------------------------------------------------------------------------
-  -- Valid (when "Give")
-  -----------------------------------------------------------------------------
-
-  out_out.valid <= '1' when (out_in.ready = '1' and (odata_vld = '1' or missed_odata_vld = '1')) else '0';
-
-  -----------------------------------------------------------------------------
-  -- Zero-Length Message FSM
-  -- the zlm_fsm is being depreciated, instead see dc_offset_filter.vhd
-  -- for recommended mechanism for dealing with primitive latency
-  -----------------------------------------------------------------------------
-
-  zlm_fsm : process (ctl_in.clk)
-  begin
-    if rising_edge(ctl_in.clk) then
-      if(ctl_in.reset = '1') then
-        current_state <= INIT_s;
-        take          <= '1';
-        force_som     <= '0';
-        force_eom     <= '0';
-      else
-        -- defaults
-        current_state <= current_state;
-        take          <= '1';
-        force_som     <= '0';
-        force_eom     <= '0';
-
-        case current_state is
-          when INIT_s =>
-            if (in_in.ready and in_in.som = '1' and in_in.eom = '1' and in_in.valid = '0') then
-              current_state <= SEND_s;
-            elsif (in_in.ready and in_in.som = '1' and in_in.valid = '0') then
-              current_state <= WAIT_s;
-            elsif (force_som = '1' and force_eom = '1' and out_in.ready = '0') then
-              current_state <= SEND_s;
-              force_som     <= '1';
-              force_eom     <= '1';
-              take          <= '0';
-            end if;
-          when WAIT_s =>
-            if (in_in.ready and in_in.valid = '1') then
-              current_state <= INIT_s;
-            elsif (in_in.ready and in_in.eom = '1') then
-              current_state <= SEND_s;
-            end if;
-          when SEND_s =>
-            if (out_in.ready = '1') then
-              if (msg_cnt /= 1 and out_in.ready = '1') then
-                current_state <= TERM_CURR_MSG_s;
-                force_eom     <= '1';
-                take <= '1';
-              else
-                take <= '0';
-                current_state <= INIT_s;
-                force_som     <= '1';
-                force_eom     <= '1';
-              end if;
-            else
-              force_som     <= force_som;
-              force_eom     <= force_eom;
-              take          <= take;
-            end if;
-          when TERM_CURR_MSG_s =>
-            force_eom     <= '1';
-            if (out_in.ready = '1') then
-              force_eom     <= '0';
-              current_state <= SEND_s;
-            end if;
-        end case;
-
-      end if;
-    end if;
-  end process zlm_fsm;
-
-  -----------------------------------------------------------------------------
-  -- SOM/EOM - counter set to message size, increment while giving
-  -----------------------------------------------------------------------------
-  -- default the buffer size to system's preferred buffer size, but let the property override it
-  buffer_size    <= props_in.messageSize when props_in.messageSize /= 0
-                    else props_in.ocpi_buffer_size_out;
-  -- limit the max sample count to what this implementation is prepared for
-  max_sample_cnt <= resize(ocpi.util.min(props_in.ocpi_buffer_size_out srl 2,
-                                         to_ushort(MAX_MESSAGE_VALUES_c)),
-                           max_sample_cnt'length);
-
-  messageSize_count : process (ctl_in.clk)
-  begin
-    if rising_edge(ctl_in.clk) then
-      if(ctl_in.reset = '1' or (force_eom = '1' and out_in.ready)) then
-        msg_cnt   <= (0 => '1', others => '0');
-      elsif (out_in.ready = '1' and (odata_vld = '1' or missed_odata_vld = '1')) then
-        if(msg_cnt = max_sample_cnt) then
-          msg_cnt <= (0 => '1', others => '0');
-        else
-          msg_cnt <= msg_cnt + 1;
-        end if;
-      end if;
-    end if;
-  end process messageSize_count;
-
-  out_out.som <= '1' when ((out_in.ready = '1' and (odata_vld = '1' or missed_odata_vld = '1') and
-                           msg_cnt = 1) or force_som = '1') else '0';
-  out_out.eom <= '1' when ((out_in.ready = '1' and (odata_vld = '1' or missed_odata_vld = '1') and
-                           msg_cnt = max_sample_cnt) or
-                           force_eom = '1') else '0';
+  out_out.valid <= out_in.ready and (s_data_vld_o or s_missed_data_vld_o);
 
   -----------------------------------------------------------------------------
   -- handle coefficient resizing and byte enables
   -----------------------------------------------------------------------------
-  be_32_gen : if COEFF_WIDTH_c <= 32 and COEFF_WIDTH_c > 16 generate
+  be_16_gen : if c_COEFF_WIDTH <= 16 generate
     --Input byte enable decode
-    be_input : process (raw_byte_enable, props_in.raw.data)
-    begin
-      case raw_byte_enable is
-        when "1111" => fir_wdata <= std_logic_vector(props_in.raw.data(COEFF_WIDTH_c-1 downto  0));
-        when others => fir_wdata <= (others => '0');
-      end case;
-    end process be_input;
-
-    --Output byte enable encoding
-    be_output : process (raw_byte_enable, fir_rdata)
-    begin
-      case raw_byte_enable is
-         when "1111" => props_out.raw.data <= std_logic_vector(resize(signed(fir_rdata),32));
-         when others => props_out.raw.data <= (others => '0');
-      end case;
-    end process be_output;
-  end generate be_32_gen;
-
-  be_16_gen : if COEFF_WIDTH_c <= 16 and COEFF_WIDTH_c > 8 generate
-    --Input byte enable decode
-    be_input : process (raw_byte_enable, props_in.raw.data)
-    begin
-      case raw_byte_enable is
-        when "0011" => fir_wdata <= std_logic_vector(props_in.raw.data(COEFF_WIDTH_c-1    downto  0));
-        when "0110" => fir_wdata <= std_logic_vector(props_in.raw.data(COEFF_WIDTH_c-1+8  downto  8));
-        when "1100" => fir_wdata <= std_logic_vector(props_in.raw.data(COEFF_WIDTH_c-1+16 downto 16));
-        when others => fir_wdata <= (others => '0');
-      end case;
-    end process be_input;
-
-    be_output : process (raw_byte_enable, fir_rdata)
-    begin
-      case raw_byte_enable is
-        when "0011" => props_out.raw.data <= x"0000" & std_logic_vector(resize(signed(fir_rdata),16));
-        when "0110" => props_out.raw.data <= x"00" & std_logic_vector(resize(signed(fir_rdata),16)) & x"00";
-        when "1100" => props_out.raw.data <= std_logic_vector(resize(signed(fir_rdata),16)) & x"0000";
-        when others => props_out.raw.data <= (others => '0');
-      end case;
-    end process be_output;
+    s_fir_wdata <= props_in.raw.data(c_COEFF_WIDTH-1 downto 0) when (s_raw_byte_enable = "0011") else
+                   props_in.raw.data(c_COEFF_WIDTH-1+16 downto 16) when (s_raw_byte_enable = "1100") else (others => '0');
   end generate be_16_gen;
-
-  be_8_gen : if COEFF_WIDTH_c <= 8 generate
-    --Input byte enable decode
-    be_input : process (raw_byte_enable, props_in.raw.data)
-    begin
-      case raw_byte_enable is
-        when "0001" => fir_wdata <= std_logic_vector(props_in.raw.data(COEFF_WIDTH_c-1    downto  0));
-        when "0010" => fir_wdata <= std_logic_vector(props_in.raw.data(COEFF_WIDTH_c-1+8  downto  8));
-        when "0100" => fir_wdata <= std_logic_vector(props_in.raw.data(COEFF_WIDTH_c-1+16 downto 16));
-        when "1000" => fir_wdata <= std_logic_vector(props_in.raw.data(COEFF_WIDTH_c-1+24 downto 24));
-        when others => fir_wdata <= (others => '0');
-      end case;
-    end process be_input;
-
-    --Output byte enable encoding
-    be_output : process (raw_byte_enable, fir_rdata)
-    begin
-      case raw_byte_enable is
-        when "0001" => props_out.raw.data <= x"000000" & std_logic_vector(resize(signed(fir_rdata),8));
-        when "0010" => props_out.raw.data <= x"0000" & std_logic_vector(resize(signed(fir_rdata),8)) & x"00";
-        when "0100" => props_out.raw.data <= x"00" & std_logic_vector(resize(signed(fir_rdata),8)) & x"0000";
-        when "1000" => props_out.raw.data <= std_logic_vector(resize(signed(fir_rdata),8)) & x"000000";
-        when others => props_out.raw.data <= (others => '0');
-      end case;
-    end process be_output;
-  end generate be_8_gen;
 
   -----------------------------------------------------------------------------
   -- FIR Systolic Symmetrical Even primitive
@@ -296,76 +103,80 @@ begin
 
   i_fir : dsp_prims.dsp_prims.fir_systolic_sym_even
     generic map (
-      NUM_SECTIONS  => NUM_TAPS_c,
-      DATA_WIDTH    => DATA_WIDTH_c,
-      COEFF_WIDTH   => COEFF_WIDTH_c,
-      ACC_PREC      => DATA_WIDTH_c + COEFF_WIDTH_c + 1 + integer(ceil(log2(real(NUM_TAPS_c)))),
+      NUM_SECTIONS  => c_NUM_TAPS,
+      DATA_WIDTH    => c_DATA_WIDTH,
+      COEFF_WIDTH   => c_COEFF_WIDTH,
+      ACC_PREC      => c_DATA_WIDTH + c_COEFF_WIDTH + 1 + integer(ceil(log2(real(c_NUM_TAPS)))),
       DATA_ADDR     => (others => '0'),
       PTR_ADDR      => (others => '0'),
       USE_COEFF_PTR => false)
     port map (
       CLK      => ctl_in.clk,
       RST      => ctl_in.reset,
-      DIN      => in_in.data(DATA_WIDTH_c-1 downto 0),
-      DIN_VLD  => enable,
-      DOUT     => i_odata,
-      DOUT_VLD => odata_vld,
-      ADDR     => raw_addr,
+      DIN      => in_in.data(c_DATA_WIDTH-1 downto 0),
+      DIN_VLD  => s_data_vld_i,
+      DOUT     => s_i_o,
+      DOUT_VLD => s_data_vld_o,
+      ADDR     => s_raw_addr,
       RDEN     => props_in.raw.is_read,
       WREN     => props_in.raw.is_write,
-      RDATA    => fir_rdata,
-      WDATA    => fir_wdata);
+      RDATA    => open,
+      WDATA    => s_fir_wdata);
 
   q_fir : dsp_prims.dsp_prims.fir_systolic_sym_even
     generic map (
-      NUM_SECTIONS  => NUM_TAPS_c,
-      DATA_WIDTH    => DATA_WIDTH_c,
-      COEFF_WIDTH   => COEFF_WIDTH_c,
-      ACC_PREC      => DATA_WIDTH_c + COEFF_WIDTH_c + 1 + integer(ceil(log2(real(NUM_TAPS_c)))),
+      NUM_SECTIONS  => c_NUM_TAPS,
+      DATA_WIDTH    => c_DATA_WIDTH,
+      COEFF_WIDTH   => c_COEFF_WIDTH,
+      ACC_PREC      => c_DATA_WIDTH + c_COEFF_WIDTH + 1 + integer(ceil(log2(real(c_NUM_TAPS)))),
       DATA_ADDR     => (others => '0'),
       PTR_ADDR      => (others => '0'),
       USE_COEFF_PTR => false)
     port map (
       CLK      => ctl_in.clk,
       RST      => ctl_in.reset,
-      DIN      => in_in.data(DATA_WIDTH_c-1+16 downto 16),
-      DIN_VLD  => enable,
-      DOUT     => q_odata,
+      DIN      => in_in.data(c_DATA_WIDTH-1+16 downto 16),
+      DIN_VLD  => s_data_vld_i,
+      DOUT     => s_q_o,
       DOUT_VLD => open,
-      ADDR     => raw_addr,
+      ADDR     => s_raw_addr,
       RDEN     => '0',
       WREN     => props_in.raw.is_write,
       RDATA    => open,
-      WDATA    => fir_wdata);
+      WDATA    => s_fir_wdata);
 
   backPressure : process (ctl_in.clk)
   begin
     if rising_edge(ctl_in.clk) then
       if(ctl_in.reset = '1' or out_in.ready = '1') then
-        missed_odata_vld <= '0';
-      elsif (out_in.ready = '0' and odata_vld = '1') then
-        missed_odata_vld <= '1';
+        s_missed_data_vld_o <= '0';
+      elsif (out_in.ready = '0' and s_data_vld_o = '1') then
+        s_missed_data_vld_o <= '1';
       end if;
     end if;
   end process backPressure;
 
-  out_out.data        <= std_logic_vector(resize(signed(q_odata),16)) &
-                         std_logic_vector(resize(signed(i_odata),16));
-  out_out.byte_enable <= (others => '1');
+  out_out.data        <= std_logic_vector(resize(signed(s_q_o),16)) &
+                         std_logic_vector(resize(signed(s_i_o),16));
 
   -----------------------------------------------------------------------------
   -- Peak Detection primitive. Value is cleared when read
   -----------------------------------------------------------------------------
+  pm_gen : if its(PEAK_MONITOR) generate
+    pd : util_prims.util_prims.peakDetect
+      port map (
+        CLK_IN   => ctl_in.clk,
+        RST_IN   => s_peak_rst_i,
+        EN_IN    => s_data_vld_o,
+        A_IN     => s_peak_a_i,
+        B_IN     => s_peak_b_i,
+        PEAK_OUT => s_peak_o);
 
-  pd : util_prims.util_prims.peakDetect
-    port map (
-      CLK_IN   => ctl_in.clk,
-      RST_IN   => peak_rst_in,
-      EN_IN    => odata_vld,
-      A_IN     => peak_a_in,
-      B_IN     => peak_b_in,
-      PEAK_OUT => peak_out);
+    props_out.peak <= signed(s_peak_o);
+  end generate pm_gen;
 
-  props_out.peak <= signed(peak_out);
+  no_pm_gen : if its(not PEAK_MONITOR) generate
+    props_out.peak <= (others => '0');
+  end generate no_pm_gen;
 
 end rtl;

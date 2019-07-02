@@ -1,0 +1,16 @@
+<!-- The pattern_capture_app application xml file -->
+<Application done='capture_v2'>
+  <instance component="ocpi.assets.util_comps.pattern_v2" connect="capture_v2">
+    <property name='dataRepeat' value='true'/>
+    <property name='numMessagesMax' value='5'/>
+    <property name='messagesToSend' value='5'/>
+    <property name="numDataWords" value='15'/>
+    <property name="messages" value='{4, 251},{8, 252},{12, 253},{16, 254},{20, 255}'/>
+    <property name="data" value='0,1,2,3,4,5,6,7,8,9,10,11,12,13,14'/>
+  </instance>
+  <instance component="ocpi.assets.util_comps.capture_v2">
+    <property name='stopOnFull' value='true'/>
+    <property name='numRecords' value='256'/>
+    <property name='numDataWords' value='1024'/>
+  </instance>
+</Application>

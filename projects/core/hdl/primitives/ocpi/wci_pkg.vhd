@@ -21,7 +21,7 @@ library ieee, ocpi;
 use ieee.std_logic_1164.all, ieee.numeric_std.all, ocpi.types.all, ocpi.util.all, ocpi.ocp;
 package wci is
 type raw_in_t is record
-  address     : ushort_t;
+  address     : ulong_t;
   byte_enable : std_logic_vector(3 downto 0);
   is_read     : bool_t;
   is_write    : bool_t;
@@ -60,7 +60,7 @@ constant raw_prop_in_zero : raw_prop_in_t
 type raw_prop_in_array_t is array(natural range <>) of raw_prop_in_t;
 
 type control_op_t IS (INITIALIZE_e,
-                      START_e,     
+                      START_e,
                       STOP_e,
                       RELEASE_e,
                       BEFORE_QUERY_e,
@@ -144,7 +144,7 @@ function get_state_pos(input: state_t) return natural;
 
   -- pull the value from the data bus, shifted and sized
 --  function get_value(input : in_t; boffset : unsigned; width : natural) return std_logic_vector;
-  
+
   function to_control_op(bits : std_logic_vector(2 downto 0)) return control_op_t;
 
   function resize(bits : std_logic_vector; n : natural) return std_logic_vector;
@@ -189,7 +189,7 @@ type wci_s2m_array_t is array(natural range <>) of wci_s2m_t;
       endian                 : endian_t;
       properties             : properties_t);
     port(
-      ocp_in                 : in  in_t;       
+      ocp_in                 : in  in_t;
       done                   : in  bool_t := btrue;
       error                  : in  bool_t := btrue;
       finished               : in  bool_t := bfalse;
@@ -224,7 +224,7 @@ type wci_s2m_array_t is array(natural range <>) of wci_s2m_t;
       ocpi_debug             : bool_t;
       endian                 : endian_t);
     port (
-      ocp_in                 : in  in_t;       
+      ocp_in                 : in  in_t;
       done                   : in  bool_t := btrue;
       error                  : in  bool_t := bfalse;
       finished               : in  bool_t := bfalse;
@@ -242,7 +242,7 @@ type wci_s2m_array_t is array(natural range <>) of wci_s2m_t;
       rank                   : out UChar_t
       );
   end component;
-         
+
   component readback
     generic(properties : properties_t; ocpi_debug : bool_t);
     port(
@@ -266,7 +266,7 @@ type wci_s2m_array_t is array(natural range <>) of wci_s2m_t;
         is_big_endian : in bool_t;
         write_enable  : out bool_t;                            -- active-high write pulse
         read_enable   : out bool_t;                            -- active-high read pulse
-        offset_out    : out unsigned(width_for_max(property.bytes_1+8)-1 downto 0); -- 
+        offset_out    : out unsigned(width_for_max(property.bytes_1+8)-1 downto 0); --
 --        index_out     : out unsigned(decode_width-1 downto 0); --
         data_out      : out std_logic_vector(31 downto 0)); --
   end component property_decoder;
@@ -281,4 +281,3 @@ type wci_s2m_array_t is array(natural range <>) of wci_s2m_t;
              index       : out integer range 0 to nusers-1);
   end component raw_arb;
 end package wci;
-

@@ -1,0 +1,6 @@
+<HdlWorker Language='vhdl' Spec='downsample_complex-spec.xml' version='2' datawidth='32'>
+
+  <StreamInterface Name='in'/>
+  <StreamInterface Name='out' insertEOM='1'/>
+
+</HdlWorker>

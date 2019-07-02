@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -32,15 +32,12 @@ I and Q rails, which result in a spectral image in the range of -Fs/2 to DC.
 import numpy as np
 import sys
 
-print "\n","*"*80
-print "*** Python: IQ Imbalance Fixer ***"
-
 if len(sys.argv) != 3:
     print("Invalid arguments:  usage is: generate.py <num-samples> <output-file>")
     sys.exit(1)
 
-num_samples = int(sys.argv[1])
-filename = sys.argv[2]
+OFILENAME = sys.argv[2]
+NUM_SAMPLES = int(sys.argv[1])
 
 dt_iq_pair = np.dtype((np.uint32, {'real_idx':(np.int16,0), 'imag_idx':(np.int16,2)}))
 
@@ -51,12 +48,12 @@ Tone13 = 13
 Tone27 = 27
 Fs = 100
 Ts = 1.0/float(Fs)
-t = np.arange(0,num_samples*Ts,Ts,dtype=np.float)
+t = np.arange(0,NUM_SAMPLES*Ts,Ts,dtype=np.float)
 #Define a phase offset of 10 degrees and apply to the Q rail
 phase_offset = 10*np.pi/180
 real = np.cos(Tone05*2*np.pi*t) + np.cos(Tone13*2*np.pi*t) + np.cos(Tone27*2*np.pi*t)
 imag = np.sin(Tone05*2*np.pi*t+phase_offset) + np.sin(Tone13*2*np.pi*t+phase_offset) + np.sin(Tone27*2*np.pi*t+phase_offset)
-out_data = np.array(np.zeros(num_samples), dtype=dt_iq_pair)
+out_data = np.array(np.zeros(NUM_SAMPLES), dtype=dt_iq_pair)
 #pick a gain at something less than 32767 (full scale) - i.e. back off to avoid overflow
 #using a different gain for each rail causes an I/Q spectral image in addition to the phase offset
 gain_i = 31000 / max(abs(real))
@@ -65,13 +62,12 @@ out_data['real_idx'] = np.int16(real * gain_i)
 out_data['imag_idx'] = np.int16(imag * gain_q)
 
 #Save data file
-f = open(filename, 'wb')
-for i in xrange(num_samples):
+f = open(OFILENAME, 'wb')
+for i in range(NUM_SAMPLES):
     f.write(out_data[i])
 f.close()
 
 #Summary
-print 'Output filename: ', filename
-print 'Number of samples: ', num_samples
-print 'Number of bytes: ', num_samples*4
-print '*** End of file generation ***\n'
+print ("    Output filename: ", OFILENAME)
+print ("    Number of samples: ", NUM_SAMPLES)
+print ("    Number of bytes: ", NUM_SAMPLES*4)

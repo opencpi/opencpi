@@ -58,12 +58,13 @@ architecture rtl of complex_mixer_ts_worker is
   signal som                 : std_logic;
   signal eom                 : std_logic;
   signal valid               : std_logic;
+  signal ready               : std_logic;
   signal in_som              : std_logic;
   signal in_eom              : std_logic;
   signal in_valid            : std_logic;
   signal data                : std_logic_vector(ocpi_port_in_data_width-1 downto 0);
   signal samples_opcode      : std_logic;
-  signal eof                 : std_logic_vector(LATENCY_c-1 downto 0);
+  signal eof                 : std_logic;
 
   -- NCO signals
   signal nco_reset           : std_logic;
@@ -132,51 +133,37 @@ begin
   in_valid <= in_in.valid and nco_vld when its(samples_opcode) and its(in_in.valid) and its(in_in.ready) else in_in.valid;
   
   -- Delay line to match the latency of the primitive for non-sample data
-  delay : ocpi.wsi.delayline
+  delay_inst : ocpi.wsi.delayline
   generic map (
-    LATENCY         => LATENCY_c)
+    g_latency     => LATENCY_c)
   port map (
-    CLK             => ctl_in.clk,
-    RESET           => ctl_in.reset,
-    IS_OPERATING    => ctl_in.is_operating,
-    IN_READY        => in_in.ready,
-    IN_SOM          => in_som,
-    IN_EOM          => in_eom,
-    IN_OPCODE       => in_opcode_slv,
-    IN_VALID        => in_valid,
-    IN_BYTE_ENABLE  => in_in.byte_enable,
-    IN_DATA         => in_in.data,
-    OUT_READY       => out_in.ready,
-    OUT_SOM         => som,
-    OUT_EOM         => eom,
-    OUT_OPCODE      => out_opcode_slv,
-    OUT_VALID       => valid,
-    OUT_BYTE_ENABLE => out_out.byte_enable,
-    OUT_DATA        => data);
+    i_clk         => ctl_in.clk,
+    i_reset       => ctl_in.reset,
+    i_enable      => out_in.ready,
+    i_ready       => in_in.ready,
+    i_som         => in_som,
+    i_eom         => in_eom,
+    i_opcode      => in_opcode_slv,
+    i_valid       => in_valid,
+    i_byte_enable => in_in.byte_enable,
+    i_data        => in_in.data,
+    i_eof         => in_in.eof,
+    o_ready       => ready,
+    o_som         => som,
+    o_eom         => eom,
+    o_opcode      => out_opcode_slv,
+    o_valid       => valid,
+    o_byte_enable => out_out.byte_enable,
+    o_data        => data,
+    o_eof         => eof);
 
-  --EOF should be incorporated into the delayline primitive
-  eofDelayLine : process (ctl_in.clk)
-  begin
-    if rising_edge(ctl_in.clk) then
-      if its(ctl_in.reset) then
-        eof <= (others => '0');
-      elsif its(ctl_in.is_operating) and its(out_in.ready) then
-        if its(in_in.ready) then
-          eof <= eof(eof'high-1 downto 0) & in_in.eof;
-        else
-          eof <= eof(eof'high-1 downto 0) & '0';
-        end if;
-      end if;
-    end if;
-  end process;
-
-  out_out.eof <= eof(eof'high);
+  out_out.eof <= eof;
   out_out.som <= som;
   out_out.eom <= eom;
   
   -- Give (when downstream Worker ready & primitive has valid output OR not
   -- valid message flags)
-  out_out.give <= ctl_in.is_operating and out_in.ready and
+  out_out.give <= ctl_in.is_operating and out_in.ready and ready and
                   (valid or ((som or eom) and not valid));
 
   -- Valid (when downstream Worker ready & primitive has valid output)
@@ -258,7 +245,7 @@ begin
   peak_b_in  <= std_logic_vector(resize(signed(mix_q), 16))  -- default output
                 when (props_in.enable = '1') else in_in.data(31 downto 16);  --BYPASS (ENABLE=0)
 
-  pm_gen : if its(PEAK_MONITOR_p) generate
+  pm_gen : if its(PEAK_MONITOR) generate
     pd : util_prims.util_prims.peakDetect
       port map (
         CLK_IN   => ctl_in.clk,

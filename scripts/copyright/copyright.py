@@ -1,5 +1,4 @@
-#!/usr/bin/env python2
-# pylint: skip-file
+#!/usr/bin/env python3
 """Inserts copyright into files, replacing old ones found (AV-2759, AV-2912)"""
 # For copyright information concerning THIS script; see build_copyright below.
 
@@ -31,12 +30,6 @@ except OSError:
 except subprocess.CalledProcessError:
     rows = 40
 
-# Use python3's input name
-try:
-    input = raw_input
-except NameError:
-    pass
-
 # import opencpi.colors as color - don't want dependency here
 class color(object):
     """ Look-up Table for colors """
@@ -45,14 +38,14 @@ class color(object):
         with open(os.devnull, 'w') as devnull:
             dont_care = int(subprocess.check_output(['tput', 'lines'], stderr=devnull))
             if os.getenv('TERM', 'dumb') != "dumb":
-                CLS = subprocess.check_output(['tput', 'clear'], stderr=devnull)
-                BLUE = subprocess.check_output(['tput', 'setaf', '4'], stderr=devnull)
-                GREEN = subprocess.check_output(['tput', 'setaf', '2'], stderr=devnull)
-                YELLOW = subprocess.check_output(['tput', 'setaf', '3'], stderr=devnull)
-                RED = subprocess.check_output(['tput', 'setaf', '1'], stderr=devnull)
-                BOLD = subprocess.check_output(['tput', 'bold'], stderr=devnull)
-                UNDERLINE = subprocess.check_output(['tput', 'smul'], stderr=devnull)
-                END = subprocess.check_output(['tput', 'sgr0'], stderr=devnull)
+                CLS = subprocess.check_output(['tput', 'clear'], stderr=devnull).decode('ascii')
+                BLUE = subprocess.check_output(['tput', 'setaf', '4'], stderr=devnull).decode('ascii')
+                GREEN = subprocess.check_output(['tput', 'setaf', '2'], stderr=devnull).decode('ascii')
+                YELLOW = subprocess.check_output(['tput', 'setaf', '3'], stderr=devnull).decode('ascii')
+                RED = subprocess.check_output(['tput', 'setaf', '1'], stderr=devnull).decode('ascii')
+                BOLD = subprocess.check_output(['tput', 'bold'], stderr=devnull).decode('ascii')
+                UNDERLINE = subprocess.check_output(['tput', 'smul'], stderr=devnull).decode('ascii')
+                END = subprocess.check_output(['tput', 'sgr0'], stderr=devnull).decode('ascii')
     except OSError:
         pass
     except subprocess.CalledProcessError:
@@ -122,7 +115,8 @@ extensions['text'] = ('md', 'txt',)  # Includes Markdown text
 extensions['verilog'] = ('v', 'vh')
 extensions['vhdl'] = ('vhd', 'vhi')
 extensions['xml'] = ('sdef',)
-extensions['skip'] = ('asm',  # Future? Don't think we have any of our own now.
+extensions['skip'] = ('a', 'la', 'lai',  # Static libraries
+                      'asm',  # Future? Don't think we have any of our own now.
                       'aux',
                       'bat',  # Future?
                       'bak',
@@ -134,6 +128,7 @@ extensions['skip'] = ('asm',  # Future? Don't think we have any of our own now.
                       'dat',
                       'doc', 'docx',
                       'edf', 'map', 'ngc', 'par',  # Xilinx files
+                      'fdb_latexmk', 'fls', 'toc',  # LaTeX temporary files
                       'gch',
                       'gif',
                       'git',
@@ -147,7 +142,7 @@ extensions['skip'] = ('asm',  # Future? Don't think we have any of our own now.
                       'json',
                       'log',
                       'md5',
-                      'o', 'obj', 'ko', 'so',
+                      'o', 'obj', 'ko', 'so',  # Shared libraries
                       'odg', 'odp', 'ods', 'odt', 'ott',
                       'out',
                       'patch',
@@ -196,6 +191,9 @@ bad_paths = (
     '/build/autotools/imported-macros/',
     '/chipscope/',
     '/doc/av/internal/',
+    '/doc/av/tex/doc_gen_test/ocs/golden/',  # docGen test golden files
+    '/doc/av/tex/doc_gen_test/ocs2/golden/',  # docGen test golden files
+    '/doc/av/tex/doc_gen_test/ocs_portsinout/golden/',  # docGen test golden files
     '/docs/IDE_Guide_Shots/',  # IDE
     '/fixed_float',
     '/gen/',
@@ -206,11 +204,10 @@ bad_paths = (
     '/projects/assets/components/util_comps/socket_write.rcc/asio/',  # Boost
     '/projects/assets/components/util_comps/socket_write.rcc/ext_src/',  # Boost
     '/release-2013.4/',
-    '/releng/blacklist/',
+    '/releng/blacklist/blacklist_metadata/',
+    '/releng/blacklist/sanitize/',
     '/releng/config_files/',
-    '/releng/jenkins/',
     '/releng/oss_release/',
-    '/releng/prereq/',
     '/runtime/foreign/',
     '/target-',
     '/tests/pytests/utilization_proj/',
@@ -232,10 +229,11 @@ bad_path_globs = (
     '*/odata/*',  # Unit test data destination
     '*/package-name',
     '*/package-id',
-    '*/project-registry/*',  # Don't scan registered projects outside this source tree
+    '*/project-registry',  # Don't scan registered projects outside this source tree
     '*/projects/core/hdl/primitives/sync/xsim/*/xsim/*',  # Non-copyrighted Xilinx cores
     '*/__pycache__/*',
     '*/*.sh.example',
+    '*/*.json_example',
     '*/snippets/*',
     '*.test/test*/description',
     '*.test/test*/portmap',
@@ -407,7 +405,7 @@ def process():
         if ftype not in ('skip', 'text'):
             logging.error('%s: Not skipped and not updated.', filename)
         return False
-    global bailing  # Don't understand why this is needed but filename is not
+    global bailing
     # Check if copyright clause exists already.
     already = any("part of OpenCPI" in x for x in gbuff)
     if already:
@@ -511,16 +509,27 @@ if len(sys.argv) < 2:
         print("No file(s) given on command line. Attempting auto-scan.")
         logging.warning("No file(s) given on command line. Attempting auto-scan.")
     # Use extend to keep first value (the script name)
-    myargv.extend(subprocess.check_output(['find', '-L', '.', '-type', 'f']).rstrip().split('\n'))
+    find_cmd = ['find',
+                '-L',  # follow symlinks
+                '.',  # from here
+                '(',
+                    '-name', 'project-registry', '-prune',  # stop file system loops
+                    '-o',  # or
+                    '-name', 'imports', '-prune',  # more loops
+                    '-o',  # or
+                    '-name', 'exports', '-prune',  # more loops
+                ')', '-false',  # don't want them either
+                '-o',  # or
+                '-xtype', 'f',  # is, or points to, a file
+               ]
+    myargv.extend(subprocess.check_output(find_cmd).decode('ascii').rstrip().split('\n'))
 for filename in sorted(myargv[1:]):
     try:
         gbuff = []
-        # Attempt to look up file type based on file name
-        ftype = file_to_type(filename)
-        # Read in the file and do the manipulations
+        # Read in the file and do the manipulations if file name doesn't skip
         run = False
-        if ftype != 'skip':
-            with open(filename, 'r') as f:
+        if file_to_type(filename) != 'skip':
+            with open(filename, 'r', errors='ignore') as f:
                 gbuff = f.readlines()
             run = process()
         if bailing:

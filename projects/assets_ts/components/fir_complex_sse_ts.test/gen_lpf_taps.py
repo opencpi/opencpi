@@ -37,9 +37,9 @@ def set_taps_lpf():
     if fc <= 0.0 or fc > 1.0:
         print("Exit: cutoff frequency out of range (0,1)")
         sys.exit(1)
-    max_tap = pow(2,int(os.environ.get("OCPI_TEST_COEFF_WIDTH_p"))-1)-1
+    max_tap = pow(2,int(os.environ.get("OCPI_TEST_COEFF_WIDTH"))-1)-1
     #Num taps is different than the assets version, which requires a separate script
-    length = int(os.environ.get("OCPI_TEST_NUM_TAPS_p"))
+    length = int(os.environ.get("OCPI_TEST_NUM_TAPS"))
 
     result = np.array(np.zeros(length), dtype=float)
     ii = 0

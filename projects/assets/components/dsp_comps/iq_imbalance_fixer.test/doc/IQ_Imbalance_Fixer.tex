@@ -89,7 +89,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.5}
+\def\docVersion{1.6}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -115,15 +115,36 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & 4/2019 \\
+	Release Date      & 11/2019 \\
 	\hline
 	Component Library & ocpi.assets.dsp\_comps                                        \\
 	\hline
 	Workers           & \comp.hdl                                                    \\
 	\hline
-	Tested Platforms  & xsim, isim, modelsim, alst4, ml605, ZedBoard(PL), Matchstiq-Z1(PL) \\
+	Tested Platforms  & xsim, isim, modelsim, alst4, ml605, ZedBoard(PL), Matchstiq-Z1(PL), E310(PL) \\
 	\hline
-\end{tabular}\section*{Functionality}
+\end{tabular}
+
+\begin{center}
+	\textit{\textbf{Revision History}}
+	\begin{table}[H]
+	\label{table:revisions} % Add "[H]" to force placement of table
+		\begin{tabularx}{\textwidth}{|c|X|l|}
+		\hline
+		\rowcolor{blue}
+		\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+		\hline
+		v1.4 & & 10/2018 \\
+		\hline
+		v1.5 & & 4/2019\\
+		\hline
+		v1.6 & Convert Worker to Version 2 HDL API & 11/2019\\
+		\hline
+		\end{tabularx}
+	\end{table}
+\end{center}
+
+\section*{Functionality}
 \begin{flushleft}
 	The IQ Imbalance Fixer compensates for amplitude and phase differences between quadrature I and Q input rails caused by differences in quadrature A/D devices. The goal is to drive the corrected output power difference between rails to zero and to also drive the corrected phase difference between rails to zero. This is accomplished via a feedback loop where the power and phase differences are measured and applied to the Q rail. In other words, the I output is a delayed version of the I input while the Q output has been corrected by removing amplitude and phase errors. This results in removal of the input spectral image.\medskip
 
@@ -150,8 +171,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	A mathematical representation of a quadrature signal is given by the formula $cos(2\pi t/T)+jsin(2\pi t/T)$. If we let $\omega=2\pi t/T$, the equation of an imbalanced quadrature signal is $cos(\omega)+j\alpha sin(\omega+\beta)$, where $\alpha$ is the amplitude difference and $\beta$ is the phase difference between I/Q rails. If we take the imbalanced signal and mix it with another frequency, such as upconverting or downconverting the signal, we essentially multiply the input signal by the tone $cos(\omega0)+jsin(\omega0)$. The output signal then becomes a frequency-shifted version of the input signal given by $cos(\omega-\omega0)+j\alpha sin(\omega-\omega0+\beta)$. The result is a spectral image of the original signal at $-(\omega-\omega0)$. In the case of a non- zero linear combination of sine and cosine waves (which we have from a quadrature A/D, where the Q rail is simply a phase shift of $\pi/2$ of the I rail), we may use the trigonometric identity $\alpha sin(x+\beta) = Ccos(x) + Dsin(x)$, where C and D are constants and are the phase and amplitude errors applied to the I and Q input values, respectively. Thus the corrected output rails become I and $CI+DQ$.
 \end{flushleft}
 
-	\section*{Block Diagrams}
-	\subsection*{Top level}
+\section*{Block Diagrams}
+\subsection*{Top level}
 	\begin{center}
 		\begin{tikzpicture}[% List of styles applied to all, to override specify on a case-by-case
 				every node/.style={
@@ -163,7 +184,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 			\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
 			\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in'' \\ Signed complex samples};
 			\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' \\ Signed complex samples};
-			\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+enable, update, log2_averaging_length+\\ \verb+neg_log2_loop_gain, peak, messageSize+};
+			\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+enable, update, log2_averaging_length+\\ \verb+neg_log2_loop_gain, messageSize+};
 			\path[->]
 			(R3)edge []	node [] {} (R2)
 			(R2)edge []	node [] {} (R4)
@@ -173,19 +194,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		\end{tikzpicture}
 	\end{center}
 
-	\subsection*{State Machine}
-	\begin{flushleft}
-		Only one finite-state machine (FSM) is implemented by this worker. The FSM supports Zero-Length Messages.
-	\end{flushleft}
-	{\centering\captionsetup{type=figure}\includegraphics[scale=0.6]{zlm_fsm}\par\captionof{figure}{Zero-Length Message FSM}\label{fig:zlm_fsm}}
-        \begin{flushleft}
-        	Note: In future releases, this worker will be converted to the HDL version 2 API which will remove the need for this state machine.
-        \end{flushleft}
-
-	\newpage
-
-	\section*{Source Dependencies}
-	\subsection*{\comp.hdl}
+\newpage
+\section*{Source Dependencies}
+\subsection*{\comp.hdl}
 	\begin{itemize}
 		\item projects/assets/components/dsp\_comps/iq\_imbalance\_fixer/iq\_imbalance\_fixer.vhd
 		\item projects/assets/hdl/primitives/dsp\_prims/dsp\_prims\_pkg.vhd
@@ -194,81 +205,82 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		      \subitem projects/assets/hdl/primitives/util\_prims/pd/src/peakDetect.vhd
 	\end{itemize}
 
-	\begin{landscape}
-		\section*{Component Spec Properties}
-		\begin{scriptsize}
-			\begin{tabular}{|p{3cm}|p{1.5cm}|c|c|c|c|c|p{7cm}|}
-				\hline
-				\rowcolor{blue}
-				Name                         & Type   & SequenceLength & ArrayDimensions & Accessibility      & Valid Range & Default & Usage                                                                                                      \\
-				\hline
-				\verb+enable+                & Bool   & -              & -               & Writable, Readable & Standard    & true    & Enable/bypass control                                                                                      \\
-				\hline
-				\verb+update+                & Bool   & -              & -               & Writable, Readable & Standard    & true    & Update the calculated amplitude and phase errors, or hold a previously calculated value                    \\
-				\hline
-				\verb+log2_averaging_length+ & UChar  & -              & -               & Writable, Readable & 1-31        & 11      & Controls the update interval to be applied to the input, where $2^n+1$ samples define the averaging length \\
-				\hline
-				\verb+neg_log2_loop_gain+    & UChar  & -              & -               & Writable, Readable & 1-31        & 5       & Controls the loop gain, where the value is $2^{-n}$                                                        \\
-				\hline
-				\verb+messageSize+           & UShort & -              & -               & Writable, Readable & 8192        & 8192    & Number of bytes in output message                                                                          \\
-				\hline
-			\end{tabular}
-		\end{scriptsize}
+\begin{landscape}
+\section*{Component Spec Properties}
+	\begin{scriptsize}
+		\begin{tabular}{|p{3cm}|p{1.5cm}|c|c|c|c|c|p{7cm}|}
+			\hline
+			\rowcolor{blue}
+			Name                         & Type   & SequenceLength & ArrayDimensions & Accessibility      & Valid Range & Default & Usage                                                                                                      \\
+			\hline
+			\verb+enable+                & Bool   & -              & -               & Writable & Standard    & true    & Enable(true) or bypass(false) \\
+			\hline
+			\verb+update+                & Bool   & -              & -               & Writable & Standard    & true    & Update the calculated amplitude and phase errors, or hold a previously calculated value                    \\
+			\hline
+			\verb+log2_averaging_length+ & UChar  & -              & -               & Writable & 1-31        & 11      & Controls the update interval to be applied to the input, where $2^n+1$ samples define the averaging length \\
+			\hline
+			\verb+neg_log2_loop_gain+    & UChar  & -              & -               & Writable & 1-31        & 5       & Controls the loop gain, where the value is $2^{-n}$                                                        \\
+			\hline
+			\verb+messageSize+           & UShort & -              & -               & Writable & 8192        & 8192    & Number of bytes in output message (Not implemented by Version 2)\\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
 
-		\section*{Worker Properties}
-		\subsection*{\comp.hdl}
-		\begin{scriptsize}
-			\begin{tabular}{|p{3cm}|p{2cm}|p{1cm}|c|c|c|c|c|p{5cm}|}
-				\hline
-				\rowcolor{blue}
-				Type     & Name                  & Type  & SequenceLength & ArrayDimensions & Accessibility       & Valid Range & Default & Usage                                        \\
-				\hline
-				Property & \verb+DATA_WIDTH_p+   & ULong & -              & -               & Readable, Parameter & 1-16        & 16      & Worker internal non-sign-extended data width \\
-				\hline
-				Property & \verb+ACC_PREC_p+     & ULong & -              & -               & Readable, Parameter & 3-?         & 34      & Accumulator bit width                        \\
-				\hline
-				Property & \verb+PEAK_MONITOR_p+ & Bool  & -              & -               & Readable, Parameter & Standard    & true    &
-				Include a peak detection circuit\\
-				\hline
-				Property & \verb+peak+           & Short & -              & -               & Volatile            & Standard    & 0       &
-				Read-only amplitude which may be useful for gain control\\
-				\hline
-			\end{tabular}
-		\end{scriptsize}
+\section*{Worker Properties}
+\subsection*{\comp.hdl}
+	\begin{scriptsize}
+		\begin{tabular}{|p{3cm}|p{2cm}|p{1cm}|c|c|c|c|c|p{5cm}|}
+			\hline
+			\rowcolor{blue}
+			Type     & Name                  & Type  & SequenceLength & ArrayDimensions & Accessibility       & Valid Range & Default & Usage                                        \\
+			\hline
+			Property & \verb+DATA_WIDTH_p+   & UChar & -              & -               & Parameter & 1-16        & 16      & Data Width of I and Q for internal processing\\
+			\hline
+			Property & \verb+ACC_PREC_p+     & UChar & -              & -               & Parameter & 3-?         & 34      & Number of bits of precision for accumulator\\
+			\hline
+			Property & \verb+PEAK_MONITOR_p+ & Bool  & -              & -               & Parameter & Standard    & true    &
+			Include a peak detection circuit\\
+			\hline
+			Property & \verb+peak+           & Short & -              & -               & Volatile            & Standard    & 0       &
+			Peak value of I or Q output (valid when PEAK\_MONITOR\_p=true)\\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
 
-		\section*{Component Ports}
-		\begin{scriptsize}
-			\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|c|M{9cm}|}
-				\hline
-				\rowcolor{blue}
-				Name & Producer & Protocol           & Optional & Advanced & Usage                  \\
-				\hline
-				in   & false    & iqstream\_protocol & false    & -        & Signed complex samples \\
-				\hline
-				out  & true     & iqstream\_protocol & false    & -        & Signed complex samples \\
-				\hline
-			\end{tabular}
-		\end{scriptsize}
-		\section*{Worker Interfaces}
-		\subsection*{\comp.hdl}
-		\begin{scriptsize}
-			\begin{tabular}{|M{2cm}|M{1.5cm}|c|c|M{12cm}|}
-				\hline
-				\rowcolor{blue}
-				Type            & Name & DataWidth & Advanced                & Usage                  \\
-				\hline
-				StreamInterface & in   & 32        & ZeroLengthMessages=true & Signed complex samples \\
-				\hline
-				StreamInterface & out  & 32        & ZeroLengthMessages=true & Signed complex samples \\
-				\hline
-			\end{tabular}
-		\end{scriptsize}
-	\end{landscape}
+\section*{Component Ports}
+\begin{scriptsize}
+	\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|c|M{9cm}|}
+		\hline
+		\rowcolor{blue}
+		Name & Producer & Protocol           & Optional & Advanced & Usage                  \\
+		\hline
+		in   & false    & iqstream\_protocol & false    & -        & Signed complex samples \\
+		\hline
+		out  & true     & iqstream\_protocol & false    & -        & Signed complex samples \\
+		\hline
+	\end{tabular}
+\end{scriptsize}
 
-	\section*{Control Timing and Signals}
-	\begin{flushleft}
-		The IQ Imbalance Fixer worker uses the clock from the Control Plane and standard Control Plane signals.
-	\end{flushleft}
+\section*{Worker Interfaces}
+	\subsection*{\comp.hdl}
+	\begin{scriptsize}
+		\begin{tabular}{|M{2cm}|M{1.5cm}|c|c|M{12cm}|}
+			\hline
+			\rowcolor{blue}
+			Type            & Name & DataWidth & Advanced                & Usage                  \\
+			\hline
+			StreamInterface & in   & 32        & & Signed complex samples \\
+			\hline
+			StreamInterface & out  & 32        & InsertEOM=1 & Signed complex samples \\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+\end{landscape}
+
+\section*{Control Timing and Signals}
+\begin{flushleft}
+The IQ Imbalance Fixer worker uses the clock from the Control Plane and standard Control Plane signals.
+\end{flushleft}
 
 \begin{landscape}
 \section*{Worker Configuration Parameters}
@@ -278,42 +290,43 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \subsubsection*{\comp.hdl}
 \input{../../\ecomp.hdl/utilization.inc}
 \end{landscape}
-	\section*{Test and Verification}
-	\begin{flushleft}
-	A single test case is implemented to validate the IQ Imbalance Fixer component. An input file is generated consisting of a waveform with tones at 5 Hz, 13 Hz, and 27 Hz, and creates a spectral image by both adding different gain to I and Q rails and also adding an additional 10 degrees of phase to the sine portion of the complex signal. The result is the addition of spectral image tones at -5 Hz, -13 Hz, and -27 Hz. The complex waveform is then scaled to fixed-point signed 16-bit integers, with a maximum amplitude of 31000 to avoid roll-over.\medskip
+
+\section*{Test and Verification}
+\begin{flushleft}
+A single test case is implemented to validate the IQ Imbalance Fixer component. An input file is generated consisting of a waveform with tones at 5 Hz, 13 Hz, and 27 Hz, and creates a spectral image by both adding different gain to I and Q rails and also adding an additional 10 degrees of phase to the sine portion of the complex signal. The result is the addition of spectral image tones at -5 Hz, -13 Hz, and -27 Hz. The complex waveform is then scaled to fixed-point signed 16-bit integers, with a maximum amplitude of 31000 to avoid roll-over.\medskip
 
 Time and frequency domain plots may be viewed in Figures \ref{fig:in_time_tone} and \ref{fig:in_freq_tone} below, respectively, where the time domain plot represents the first 128 complex samples in the file.
-	\end{flushleft}
+\end{flushleft}
 
-	\begin{figure}[ht]
-		\centering
-		\begin{minipage}{.5\textwidth}
-			\centering\includegraphics[width=1.0\linewidth]{input_time_tones}
-			\captionof{figure}{Time Domain Tones with Spectral Image}
-			\label{fig:in_time_tone}
-		\end{minipage}%
-		\begin{minipage}{.5\textwidth}
-			\centering\includegraphics[width=1.0\linewidth]{input_freq_tones}
-			\captionof{figure}{Frequency Domain Tones with Spectral Image}
-			\label{fig:in_freq_tone}
-		\end{minipage}
-	\end{figure}
+\begin{figure}[ht]
+	\centering
+	\begin{minipage}{.5\textwidth}
+		\centering\includegraphics[width=1.0\linewidth]{input_time_tones}
+		\captionof{figure}{Time Domain Tones with Spectral Image}
+		\label{fig:in_time_tone}
+	\end{minipage}%
+	\begin{minipage}{.5\textwidth}
+		\centering\includegraphics[width=1.0\linewidth]{input_freq_tones}
+		\captionof{figure}{Frequency Domain Tones with Spectral Image}
+		\label{fig:in_freq_tone}
+	\end{minipage}
+\end{figure}
 
-	\begin{flushleft}
-	Verification of output data is performed only on the second half of the output, which represents the steady state of the component. The output is first checked that the data is not all zero, and is then checked for the expected length of 65,536 complex samples. Once these quick checks are made both the input and output data are translated to the frequency domain, where a FFT is performed, and then power measurements are taken at 5 Hz, 13 Hz, 27 Hz, -5 Hz, -13 Hz, and -27 Hz. The input and output power measurements are compared to validate that the IQ spectral image has been attenuated and that the other tones have not been attenuated. In addition, the FFT bin with the maximum power in the range of DC to +Fs/2 is compared to the maximum power bin in the range of -Fs/2 to DC to verify at least 65 dB of suppression has taken place with respect to the spectral image. Figures \ref{fig:out_time_tone} and \ref{fig:out_freq_tone} depict the filtered results of the three tone input, where the time domain plot represents the first 128 complex samples in the file.
-	\end{flushleft}
+\begin{flushleft}
+Verification of output data is performed only on the second half of the output, which represents the steady state of the component. The output is first checked that the data is not all zero, and is then checked for the expected length of 65,536 complex samples. Once these quick checks are made both the input and output data are translated to the frequency domain, where a FFT is performed, and then power measurements are taken at 5 Hz, 13 Hz, 27 Hz, -5 Hz, -13 Hz, and -27 Hz. The input and output power measurements are compared to validate that the IQ spectral image has been attenuated and that the other tones have not been attenuated. In addition, the FFT bin with the maximum power in the range of DC to +Fs/2 is compared to the maximum power bin in the range of -Fs/2 to DC to verify at least 65 dB of suppression has taken place with respect to the spectral image. Figures \ref{fig:out_time_tone} and \ref{fig:out_freq_tone} depict the filtered results of the three tone input, where the time domain plot represents the first 128 complex samples in the file.
+\end{flushleft}
 
-	\begin{figure}[ht]
-		\centering
-		\begin{minipage}{.5\textwidth}
-			\centering\includegraphics[width=1.0\linewidth]{output_time_tones}
-			\captionof{figure}{Time Domain Tones with Spectral Image removed}
-			\label{fig:out_time_tone}
-		\end{minipage}%
-		\begin{minipage}{.5\textwidth}
-			\centering\includegraphics[width=1.0\linewidth]{output_freq_tones}
-			\captionof{figure}{Frequency Domain Tones with Spectral Image removed}
-			\label{fig:out_freq_tone}
-		\end{minipage}
-	\end{figure}
+\begin{figure}[ht]
+	\centering
+	\begin{minipage}{.5\textwidth}
+		\centering\includegraphics[width=1.0\linewidth]{output_time_tones}
+		\captionof{figure}{Time Domain Tones with Spectral Image removed}
+		\label{fig:out_time_tone}
+	\end{minipage}%
+	\begin{minipage}{.5\textwidth}
+		\centering\includegraphics[width=1.0\linewidth]{output_freq_tones}
+		\captionof{figure}{Frequency Domain Tones with Spectral Image removed}
+		\label{fig:out_freq_tone}
+	\end{minipage}
+\end{figure}
 \end{document}
