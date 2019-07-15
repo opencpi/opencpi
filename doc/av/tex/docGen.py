@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# TODO: Handle xinclude properly
+# TODO / FIXME: Handle xinclude properly
 
 import os
 import itertools
@@ -333,7 +333,8 @@ class Property(object):
         self.description = xml_attributes.get("Description", '')
         # TODO / FIXME - is this really a warning?
         if not self.description:
-            ocpi.logging.warning("WARN :", self.name, "does not have a description in the XML")
+            msg = " does not have a description in the XML"
+            ocpi.logging.warning("WARN :" + self.name + msg)
 
     def __str__(self):
         ret = "name=" + str(self.name)
@@ -485,7 +486,8 @@ def prompt_to_overwrite(filename, warn_existing=False):
     if not os.path.isfile(filename):
         return True
     if warn_existing:
-        ocpi.logging.warning(filename, "exists and you PROBABLY DON'T want to rewrite it!")
+        msg = "exists and you PROBABLY DON'T want to rewrite it!"
+        ocpi.logging.warning(filename + msg)
     msg = "WARN : file " + filename + " already exists, overwrite (y or n)? "
     res = ''
     while res not in ['y', 'n']:

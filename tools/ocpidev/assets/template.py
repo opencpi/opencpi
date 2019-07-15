@@ -15,6 +15,11 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
+"""
+This module holds the templates for assset creation.  these in theroy could be moved out to seperate
+files in the future if that makes sence.  This file is intended to be easily editable by people who
+know nothing about ocpidev internals but want to change templates for outputs of ocpidev create
+"""
 
 PROJ_EXPORTS="""
 # This file specifies aspects of this project that are made available to users,

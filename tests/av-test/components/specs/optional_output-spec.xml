@@ -1,0 +1,10 @@
+<!-- This is the spec file (OCS) for: optional_output
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<ComponentSpec>
+   <Property type="short" name="prop" />
+
+    <Port Name="in" Producer="false"/>
+    <Port Name="out" Producer="true"  Optional="true"/>
+</ComponentSpec>

@@ -1010,7 +1010,9 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
     @staticmethod
     def create(name, directory, **kwargs):
         """
-        this is a static method that will create a new Project given a name and directory
+        Static method that will create a new Project given a name and directory kwargs that are
+        handled at this level:
+            register (T/F) - if set to true this project is also registered after it is created
         """
         proj_dir = directory + "/" + name
         if os.path.isdir(proj_dir):
@@ -1019,6 +1021,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         os.mkdir(name)
         template_dict = Project._get_template_dict(name, **kwargs)
 
+        #generate all the project files using templates
         ocpiutil.write_file_from_string( proj_dir + "/Project.exports", ocpitemplate.PROJ_EXPORTS)
         ocpiutil.write_file_from_string( proj_dir + "/.gitignore", ocpitemplate.PROJ_GIT_IGNORE)
         ocpiutil.write_file_from_string( proj_dir + "/.gitattributes", ocpitemplate.PROJ_GIT_ATTR)
@@ -1034,6 +1037,8 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                 "registry",
                 Registry.get_registry_dir(name)).add(name, True)
 
+        #make sure imports and exports are made.  theres gotta be a better way to do this then a
+        #bulky Popen call to make.  might need to wait until ,ore stuff is intergrated in python.
         proc = subprocess.Popen(["make", "-C", name, "imports", "exports"],
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)

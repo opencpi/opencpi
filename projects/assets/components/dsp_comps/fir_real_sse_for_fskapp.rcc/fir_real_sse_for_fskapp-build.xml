@@ -1,0 +1,8 @@
+<build>
+<configuration id='0'>
+    <parameter name='NUM_TAPS_p' value='64'/>
+  </configuration>
+  <configuration id='1'>
+    <parameter name='NUM_TAPS_p' value='128'/>
+  </configuration>
+</build>

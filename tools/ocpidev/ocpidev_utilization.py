@@ -261,7 +261,6 @@ def main():
                                    str(name) + "\n" + "directory: " + str(directory) +
                                    "\nargs: " + str(args))
             my_asset = ocpifactory.AssetFactory.factory(dir_type, directory, name, **args)
-
             my_asset.show_utilization()
 
     except ocpiutil.OCPIException as ex:

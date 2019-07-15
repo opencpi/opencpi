@@ -123,3 +123,19 @@ def check_interval_division(in_int_msg,out_int_msg,divisor):
     input_interval  = (in_int_msg[utu.MESSAGE_DATA][0] << 32) + in_int_msg[utu.MESSAGE_DATA][1]
     output_interval = (out_int_msg[utu.MESSAGE_DATA][0] << 32) + out_int_msg[utu.MESSAGE_DATA][1]
     return output_interval == input_interval // divisor
+
+def check_interval_multiplication(in_int_msg,out_int_msg,multiplier):
+    """
+    Check interval division for worker which perform downsampling. Arguments
+    are in the input and output interval messages in the format (length,opcode,data)
+    and the downsampling factor
+
+    >>> check_interval_multiplication((8,INTERVAL_OPCODE,[0,4]),(8,INTERVAL_OPCODE,[0,32]),8)
+    True
+    >>> check_interval_multiplication((8,INTERVAL_OPCODE,[0,5]),(8,INTERVAL_OPCODE,[0,32]),8)
+    False
+    """
+    #Convert to 64 bit number
+    input_interval  = (in_int_msg[utu.MESSAGE_DATA][0] << 32) + in_int_msg[utu.MESSAGE_DATA][1]
+    output_interval = (out_int_msg[utu.MESSAGE_DATA][0] << 32) + out_int_msg[utu.MESSAGE_DATA][1]
+    return output_interval == input_interval * multiplier

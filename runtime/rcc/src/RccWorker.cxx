@@ -229,6 +229,7 @@ static RCCBoolean
 rccWait(RCCPort* port, size_t max, unsigned usec )
 {
   // Not implemented yet
+  ocpiAssert("Not implemented yet" == false);
   ( void ) port;
   ( void ) max;
   ( void ) usec;
@@ -1041,7 +1042,7 @@ OCPI_CONTROL_OPS
      m_worker.setRunCondition(rc ? *rc : m_worker.m_defaultRunCondition);
    }
    bool RCCUserWorker::isOperating() const {
-       return m_worker.isOperating(); 
+       return m_worker.isOperating();
    }
    OA::Application &RCCUserWorker::getApplication() {
      OA::Application *app = m_worker.parent().getApplication();
@@ -1157,7 +1158,8 @@ OCPI_CONTROL_OPS
    }
    RCCUserPort::
    RCCUserPort()
-     : m_rccPort(((Worker *)pthread_getspecific(Driver::s_threadKey))->portInit()) {
+     : m_rccPort(((Worker *)pthread_getspecific(Driver::s_threadKey))->portInit()),
+       m_isSendMode(false) {
      m_rccBuffer = &m_rccPort.current;
      m_rccPort.userPort = this;
    };
@@ -1203,6 +1205,9 @@ OCPI_CONTROL_OPS
    }
    void RCCUserPort::
    setOpCode(RCCOpCode op) {
+     if (m_isSendMode)
+       throw OU::Error("port \"%s\" setOpCode() after raw buffer manipulations - only one buffer management paradigm is allowed",
+         m_rccPort.containerPort->name().c_str()); // AV-1610
      checkOpCode(*this, op);
    }
    // access an argument, input or output, returning length and capacity for sequences
@@ -1266,6 +1271,7 @@ OCPI_CONTROL_OPS
    }
    void RCCUserPort::
    send(RCCUserBuffer&buf) {
+     m_isSendMode = true;
      rccSend(&m_rccPort, buf.getRccBuffer());
    }
    RCCUserBuffer &RCCUserPort::
@@ -1282,6 +1288,9 @@ OCPI_CONTROL_OPS
    bool RCCUserPort::
    advance(size_t maxlength) {
      assert(m_rccPort.containerPort);
+     if (m_isSendMode)
+       throw OU::Error("port \"%s\" advanced after raw buffer manipulations - only one buffer management paradigm is allowed",
+         m_rccPort.containerPort->name().c_str()); // AV-1610
      if (m_rccPort.containerPort->isOutput()) {
        if (!m_opCodeSet && !m_rccPort.useDefaultOpCode_)
 	 throw
@@ -1345,6 +1354,9 @@ OCPI_CONTROL_OPS
    void RCCUserPort::
    setDefaultLength(size_t a_length) {
      shouldBeOutput();
+     if (m_isSendMode)
+       throw OU::Error("port \"%s\" setDefaultLength() after raw buffer manipulations - only one buffer management paradigm is allowed",
+         m_rccPort.containerPort->name().c_str()); // AV-1610
      m_rccPort.defaultLength_ = a_length;
      m_rccPort.useDefaultLength_ = true;
    }
@@ -1352,6 +1364,9 @@ OCPI_CONTROL_OPS
    void RCCUserPort::
    setDefaultOpCode(RCCOpCode a_opCode) {
      shouldBeOutput();
+     if (m_isSendMode)
+       throw OU::Error("port \"%s\" setDefaultOpCode() after raw buffer manipulations - only one buffer management paradigm is allowed",
+         m_rccPort.containerPort->name().c_str()); // AV-1610
      if (a_opCode >= m_rccPort.metaPort->nOperations() && m_rccPort.metaPort->operations())
        throw OU::Error("Opcode %u is not allowed for port %s: maximum is %zu",
 		       a_opCode, m_rccPort.metaPort->m_name.c_str(),

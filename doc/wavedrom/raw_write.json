@@ -1,0 +1,22 @@
+{   
+  config:{hscale:1.5},
+  signal: [
+  { name: 'clk', wave: 'P...'},
+  [ 'props_in.raw',
+   { name: 'address[31:0]',    wave: 'x=.x', data: ["0000000A"] },
+   { name: 'byte_enable[3:0]', wave: 'x=.x', data: ["C"] },
+   { name: 'is_read',          wave: 'x0.x'},
+   { name: 'is_write',         wave: 'x1.x'},
+   { name: 'data[31:0]',       wave: 'x=.x', data: ["3333xxxx"] }
+  ],
+  {},
+  [ 'props_out.raw',
+   { name: 'done',             wave: 'x01x' },
+   { name: 'error',            wave: 'x0.x' }
+  ],
+  {}
+],
+ head:{
+   tick:0,
+ },
+}

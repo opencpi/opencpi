@@ -101,7 +101,7 @@ class HdlPlatformsCollection(HDLBuildableAsset, ReportableAsset):
                                                      mk_arg="ShellPlatformsVars=1 showplatforms",
                                                      verbose=True)["HdlPlatforms"]
 
-        # Collect list of assembly directories
+        # Collect list of platform directories
         for name in make_platforms:
             platform_list.append(self.directory + "/" + name)
         return platform_list
@@ -113,7 +113,6 @@ class HdlPlatformsCollection(HDLBuildableAsset, ReportableAsset):
         for platform in self.platform_list:
             platform.show_utilization()
 
-    #placeholder function
     def build(self):
         """
         This is a placeholder function will be the function that builds this Asset
@@ -183,7 +182,7 @@ class HdlPlatformWorker(HdlWorker, ReportableAsset):
                                                     mk_arg="ShellHdlPlatformVars=1 showinfo",
                                                     verbose=False)
         except ocpiutil.OCPIException:
-            # if make shoots out an error assume configs are blank
+            # if the make call causes and error assume configs are blank
             plat_vars = {"Configurations" : "", "Package":"N/A"}
         if "Configurations" not in plat_vars:
             raise ocpiutil.OCPIException("Could not get list of HDL Platform Configurations " +
@@ -191,14 +190,12 @@ class HdlPlatformWorker(HdlWorker, ReportableAsset):
         self.package_id = plat_vars["Package"]
         # This should be a list of Configuration NAMES
         config_list = plat_vars["Configurations"]
-
         return config_list
 
     def init_configs(self, config_list):
         """
         Construct an HdlPlatformWorkerConfig for each and add to the self.configs map.
         """
-
         # Directory for each config is <platform-worker-directory>/config-<configuration>
         cfg_prefix = self.directory + "/config-"
         for config_name in config_list:
@@ -535,6 +532,7 @@ class HdlPlatform(Platform):
         """
         return self.target.toolset
 
+    #TODO this can be static its not using cls
     @classmethod
     def get_all_dict(cls):
         """
@@ -554,6 +552,7 @@ class HdlPlatform(Platform):
 
         return plat_dict
 
+    #TODO this can be static its not using cls
     @classmethod
     def get_all_table(cls, plat_dict):
         """
@@ -569,6 +568,7 @@ class HdlPlatform(Platform):
                          plat_dict[plat]["part"], plat_dict[plat]["vendor"],
                          plat_dict[plat]["tool"]])
         return rows
+
     @classmethod
     def show_all(cls, details):
         """
@@ -638,6 +638,7 @@ class HdlTarget(object):
         else:
             return False
 
+    #TODO this can be static its not using cls
     @classmethod
     def get_all_dict(cls):
         """
@@ -653,6 +654,7 @@ class HdlTarget(object):
 
         return target_dict
 
+    #TODO this can be static its not using cls when get_all_dict is static
     @classmethod
     def show_all(cls, details):
         """

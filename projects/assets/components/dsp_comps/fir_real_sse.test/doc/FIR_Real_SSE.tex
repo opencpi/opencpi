@@ -121,7 +121,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Workers           & \comp.hdl                                                    \\
 	\hline
-	Tested Platforms  & xsim, isim, modelsim, alst4, ml605, ZedBoard(PL), Matchstiq-Z1(PL) \\
+	Tested Platforms  & xsim, isim, modelsim, alst4, ml605, ZedBoard(PL), Matchstiq-Z1(PL), centos 7 \\
 	\hline
 \end{tabular}
 
@@ -165,6 +165,12 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	The FIR Real SSE worker utilizes the OCPI \textit{rstream\_protocol} for both input and output ports. The \textit{rstream\_protocol} defines an interface of 16-bit real signed samples. The \verb+DATA_WIDTH_p+ parameter may be used to reduce the FIR Real SSE hdl worker's internal data width to less than 16-bits.
 \end{flushleft}
 {\centering\captionsetup{type=figure}\includegraphics[scale=0.65]{fir_systolic_sym_even}\par\captionof{figure}{FIR Real SSE Block Diagram - 8-tap example}\label{fig:circuit}}
+
+\subsection*{fir\_real\_sse\_for\_fskapp.rcc}
+The RCC implementation for the fir\_real\_sse\_for\_fskapp worker in C++ is to function as a work-alike of the fir\_real\_sse.hdl in the FSK app. 
+Since the RCC worker depends upon even symmetric taps architecture and liquid API used in this worker does not provide symmetric taps,
+the required symmetric taps generation is done in this worker using C++ STD algorithm library. 
+The fir\_real\_sse.hdl has a pipeline latency of \verb+NUM_TAPS_p+ + 4 clock cycles, and outputs \verb+NUM_TAPS_p+ + 3 zeros before the first filter output. This worker was written to function similar to fir\_real\_sse.hdl, and therefore has the same zeros-before-first-output behavior.
 
 \section*{Theory}
 \begin{flushleft}
@@ -211,7 +217,12 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\item assets/hdl/primitives/util\_prims/util\_prims\_pkg.vhd
 	      \subitem assets/hdl/primitives/util\_prims/pd/src/peakDetect.vhd
 \end{itemize}
-
+\subsection*{fir\_real\_sse\_for\_fskapp.rcc}
+\begin{itemize}
+	\item assets/components/dsp\_comps/fir\_real\_sse\_for\_fskapp.rcc/fir\_real\_sse\_for\_fskapp.cc
+	      \subitem /opt/opencpi/prerequisites/liquid/include/liquid/liquid.h
+	       
+\end{itemize}
 \begin{landscape}
 	\section*{Component Spec Properties}
 	\begin{scriptsize}
@@ -248,7 +259,19 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 			\hline
 		\end{tabular}
 	\end{scriptsize}
-
+ 
+ \subsection*{fir\_real\_sse\_for\_fskapp.rcc}
+	\begin{scriptsize}
+		\begin{tabular}{|p{3cm}|p{2cm}|p{1cm}|c|c|c|c|c|p{5cm}|}
+			\hline
+			\rowcolor{blue}
+			Type     & Name                 & Type  & SequenceLength & ArrayDimensions & Accessibility       & Valid Range & Default & Usage                                        \\
+			\hline
+			Property & \verb+HDL_WORKER_DELAY+  & uchar & -              & -               & Parameter &    -   & 4      & The fir\_real\_sse.hdl worker has a 4 register delay.\\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+	
 	\section*{Component Ports}
 	\begin{scriptsize}
 		\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|c|M{9cm}|}
@@ -281,7 +304,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \section*{Control Timing and Signals}
 \begin{flushleft}
-	The FIR Real SSE worker uses the clock from the Control Plane and standard Control Plane signals. The Raw Property interface is used to read/write coefficient values.
+	The FIR Real SSE HDL worker uses the clock from the Control Plane and standard Control Plane signals. The Raw Property interface is used to read/write coefficient values.
 \end{flushleft}
 
 \begin{landscape}

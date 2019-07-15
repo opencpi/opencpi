@@ -1,0 +1,10 @@
+<!-- This is the test xml for testing component "optional_output" -->
+<Tests UseHDLFileIo='true'>
+  <Input Port='in' script='generate.py' />
+  <case>
+    <Output Port='out' disableBackpressure='true' script='verify.py 4'/>
+  </case>
+  <case duration='60' >
+    <Output Port='out' testOptional='true'/>
+  </case>
+</Tests>

@@ -50,7 +50,7 @@ ports=($*)
                    ./run.sh run remote
     exit $?
 }
-# docase <model> <worker> <case> <subcase> <timeout> <duration>
+# docase <model> <worker> <case> <subcase> <timeout> <duration> <ports>
 function docase {
   [ -z "$Cases" ] || {
      local ok
@@ -72,11 +72,21 @@ function docase {
   r=0
   [ -z "$run" ] || {
     local output outputs timearg
-    for o in ${ports[@]}; do
-      output=" -pfile_write"
-      [ ${#ports[@]} != 1 ] && output="$output""_from_$o"
-      outputs="$outputs$output=fileName=$3.$4.$2.$1.$o.out"
-    done
+  # all ports are passed to the script, but to test optional ports they're also passed here
+    if [ "$#" -gt 6 ]; then
+      for o in ${@:7}; do
+        output=" -pfile_write"
+        [ ${#ports[@]} != 1 ] && output="$output""_from_$o"
+        outputs="$outputs$output=fileName=$3.$4.$2.$1.$o.out"
+      done
+    # else
+    #   for o in ${ports[@]}; do
+    #     output=" -pfile_write"
+    #     [ ${#ports[@]} != 1 ] && output="$output""_from_$o"
+    #     outputs="$outputs$output=fileName=$3.$4.$2.$1.$o.out"
+    #   done
+    fi
+
     echo '  'Executing case "$3.$4" using worker $2.$1 on platform $platform... 1>&2
     if [ $5 != 0 ]; then
       timearg=--timeout=$5

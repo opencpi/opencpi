@@ -1,0 +1,19 @@
+{ signal: [
+  { name: 'ctl_in.clk',       wave: 'P........'},
+  { name: 'in_in.valid',      wave: 'x1......x'},
+  { name: 'in_in.som',        wave: 'x1..0...x'},
+  { name: 'time_in.seconds',  wave: '=========', data: ["","Sec"] },
+  { name: 'time_in.fraction', wave: '=========', data: ["","Frac"] },
+  { name: 'time_now',         wave: 'x=.......', data: ["Sec:Frac"] },
+  { name: 'in_in.eom',        wave: 'x.0....1x' },
+  { name: 'in_out.take',      wave: 'x0.1....0' },
+  { name: 'out_out.give',     wave: 'x01.....0' },
+  { name: 'out_out.som',      wave: 'x01010...' },
+  { name: 'out_out.eom',      wave: 'x0.10..10' },
+  { name: 'out_out.opcode',   wave: 'x.=.=...x', data: ["time_op","iq_op"] },
+  { name: 'out_out.data',     wave: 'x.======x', data: ["Sec","Frac","I/Q","I/Q","I/Q","I/Q"] },
+],
+ head:{
+   tick:0,
+ },
+}

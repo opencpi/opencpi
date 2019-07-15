@@ -20,6 +20,7 @@
 
 // Process the tests.xml file.
 #include <strings.h>
+#include <sstream>
 #include <set>
 #include <limits>
 #include <algorithm>
@@ -103,10 +104,12 @@ namespace {
     return ws.end();
   }
   size_t timeout, duration;
+  const char *finishPort;
   const char *argPackage;
   std::string specName, specPackage;
   bool verbose;
   Strings excludeWorkers, excludeWorkersTmp;
+  bool testingOptionalPorts;
   // If the spec in/out arg may be set in advance if it is inline or xi:included
   // FIXME: share this with the one in parse.cxx
   const char *
@@ -307,6 +310,8 @@ namespace {
     delete w;
     return err;
   }
+  typedef std::vector<DataPort *> DataPorts;
+  DataPorts optionals;
   Worker *wFirst;
   enum MsConfig {bypass, metadata, throttle, full};
   static const char *s_stressorMode[] = { MS_CONFIG, NULL };
@@ -314,11 +319,11 @@ namespace {
     std::string m_name, m_file, m_script, m_view;
     const DataPort *m_port;
     size_t m_messageSize;
-    bool m_messagesInFile, m_suppressEOF, m_disableBackpressure, m_stopOnEOF;
+    bool m_messagesInFile, m_suppressEOF, m_disableBackpressure, m_stopOnEOF, m_testOptional;
     MsConfig m_msMode;
     InputOutput()
       : m_port(NULL), m_messageSize(0), m_messagesInFile(false), m_suppressEOF(false),
-        m_disableBackpressure(false), m_stopOnEOF(false), m_msMode(bypass) {}
+        m_disableBackpressure(false), m_stopOnEOF(false), m_testOptional(false), m_msMode(bypass) {}
     const char *parse(ezxml_t x, std::vector<InputOutput> *inouts) {
       const char
         *name = ezxml_cattr(x, "name"),
@@ -328,17 +333,19 @@ namespace {
         *view = ezxml_cattr(x, "view"),
         *err;
       if ((err = OE::checkAttrs(x, "name", "port", "file", "script", "view", "messageSize",
-                                "messagesInFile", "suppressEOF", "stopOnEOF", "disableBackpressure",
+                                "messagesInFile", "suppressEOF", "stopOnEOF", "disableBackpressure", "testOptional",
                                 "stressorMode", (void*)0)))
         return err;
       size_t nn;
-      bool suppress, stop, backpressure;
+      bool suppress, stop, backpressure, testOptional;
       if ((err = OE::getNumber(x, "messageSize", &m_messageSize, 0, true, false)) ||
           (err = OE::getBoolean(x, "messagesInFile", &m_messagesInFile)) ||
           (err = OE::getBoolean(x, "suppressEOF", &m_suppressEOF, false, true, &suppress)) ||
           (err = OE::getBoolean(x, "stopOnEOF", &m_stopOnEOF, false, true, &stop)) ||
           (err = OE::getBoolean(x, "disableBackpressure", &m_disableBackpressure, false, false,
                                 &backpressure)) ||
+          (err = OE::getBoolean(x, "testOptional", &m_testOptional, false, false,
+                                &testOptional)) ||
           (err = OE::getEnum(x, "stressorMode", s_stressorMode, "input stress mode", nn, m_msMode)))
         return err;
       if (!ezxml_cattr(x, "stopOnEOF"))
@@ -385,6 +392,11 @@ namespace {
                            port);
         }
         m_port = static_cast<DataPort *>(p);
+        if (testOptional) {
+          testingOptionalPorts = true;
+          optionals.resize(optionals.size() + 1);
+          optionals.push_back(static_cast<DataPort *>(p));
+        }
       }
       if (name) {
         if (inouts) {
@@ -396,6 +408,7 @@ namespace {
         }
         m_name = name;
       }
+
       return NULL;
     }
   };
@@ -445,7 +458,7 @@ namespace {
   Cases cases;
   OrderedStringSet allPlatforms;
   struct Case {
-    std::string m_name, m_done;
+    std::string m_name;
     Strings m_onlyPlatforms, m_excludePlatforms; // can only apply these at runtime
     Workers m_workers; // the inclusion/exclusion happens at parse time
     WorkerConfigs m_configs;
@@ -956,9 +969,9 @@ namespace {
     }
     void
     generateAppInstance(Worker &w, ParamConfig &pc, unsigned nOut, unsigned nOutputs, unsigned s,
-                        const DataPort *first, bool a_emulator, std::string &app, const char *dut) {
+                        const DataPort *first, bool a_emulator, std::string &app, const char *dut, bool testingOptional) {
       OU::formatAdd(app, "  <instance component='%s' name='%s'", w.m_specName, dut);
-      if (nOut == 1) {
+      if (nOut == 1 && !testingOptional) {
         if (nOutputs == 1)
           OU::formatAdd(app, " connect='bp'");
         else
@@ -1008,6 +1021,7 @@ namespace {
     generateApplications(const std::string &dir, Strings &files) {
       const char *err;
       const char *dut = strrchr(wFirst->m_specName, '.');
+      bool isOptional;
       if (dut)
         dut++;
       else
@@ -1029,86 +1043,95 @@ namespace {
         for (unsigned n = 0; n < m_ports.size(); n++) {
           const DataPort &p = *m_ports[n].m_port;
           if (&p != NULL) {
-          if (p.isDataProducer()) {
-            if (!first)
-              first = &p;
-            nOutputs++;
-            if (&p.worker() == wFirst)
-              nWOut++;
-            else if (&p.worker() == emulator) {
-              if (!firstEm)
-                firstEm = &p;
-              nEmOut++;
-            } else
-              assert("port is neither worker or emulator?" == 0);
-          } else {
-            nInputs++;
-            if (&p.worker() == wFirst)
-              nWIn++;
-            else if (&p.worker() == emulator)
-              nEmIn++;
-            else
-              assert("port is neither worker or emulator?" == 0);
+            if (p.isDataProducer()) {
+              if (!first)
+                first = &p;
+              nOutputs++;
+              if (&p.worker() == wFirst)
+                nWOut++;
+              else if (&p.worker() == emulator) {
+                if (!firstEm)
+                  firstEm = &p;
+                nEmOut++;
+              } else
+                assert("port is neither worker or emulator?" == 0);
+            } else {
+              nInputs++;
+              if (&p.worker() == wFirst)
+                nWIn++;
+              else if (&p.worker() == emulator)
+                nEmIn++;
+              else
+                assert("port is neither worker or emulator?" == 0);
+            }
+            isOptional = m_ports[n].m_testOptional;
           }
         }
-        }
         std::string app("<application");
-        if (m_done.size())
-          OU::formatAdd(app, " done='%s'", m_done.c_str());
         // the testrun.sh script has the name "file_write_from..." or "file_write" hardcoded, so
         // the name of the file_write is limited to those options
+        if ((optionals.size() >= nOutputs) && isOptional && !finishPort)
+          OU::formatAdd(app, " done='%s'", dut);
         else if (nOutputs == 1)
           OU::formatAdd(app, " done='file_write'");
-        else if (nOutputs > 1)
-          OU::formatAdd(app, " done='file_write_from_%s'", (firstEm ? firstEm : first)->pname());
+        else if (nOutputs > 1) {
+          if (finishPort) {
+            OU::formatAdd(app, " done='file_write_from_%s'", finishPort);
+          } else {
+            OU::formatAdd(app, " done='file_write_from_%s'", (firstEm ? firstEm : first)->pname());
+          }
+        }
         app += ">\n";
         if (nInputs)
           for (unsigned n = 0; n < m_ports.size(); n++)
             if (!m_ports[n].m_port->isDataProducer()) {
               InputOutput &io = m_ports[n];
-              OU::formatAdd(app, "  <instance component='ocpi.core.file_read' connect='%s_ms_%s'",
-                            dut, io.m_port->pname());
-              if (io.m_messageSize)
-                OU::formatAdd(app, " buffersize='%zu'", io.m_messageSize);
-	      app += ">\n";
-              std::string l_file;
-              if (io.m_file.size())
-                OU::formatAdd(l_file, "%s%s", io.m_file[0] == '/' ? "" : "../../", io.m_file.c_str());
-              else
-                OU::formatAdd(l_file, "../../gen/inputs/%s.%02u.%s", m_name.c_str(), s, io.m_port->pname());
-              OU::formatAdd(app, "    <property name='filename' value='%s'/>\n", l_file.c_str());
-              if (io.m_messageSize)
-                OU::formatAdd(app, "    <property name='messageSize' value='%zu'/>\n", io.m_messageSize);
-              if (io.m_messagesInFile)
-                OU::formatAdd(app, "    <property name='messagesInFile' value='true'/>\n");
-              if (io.m_suppressEOF)
-                OU::formatAdd(app, "    <property name='suppressEOF' value='true'/>\n");
-              app += "  </instance>\n";
-              OU::formatAdd(app, "  <instance component='ocpi.core.metadata_stressor' name='%s_ms_%s' connect='%s'", dut, io.m_port->pname(), dut);
-              if (nInputs > 1)
-                OU::formatAdd(app, " to='%s'",  io.m_port->pname());
-              app += ">\n";
-              if (io.m_msMode == full)
-                app += "    <property name='mode' value='full'/>\n"
-                       "    <property name='enable_give_lsfr' value='true'/>\n"
-                       "    <property name='enable_take_lsfr' value='true'/>\n"
-                       "    <property name='insert_nop' value='true'/>\n";
-              else if (io.m_msMode == throttle)
-                app += "    <property name='mode' value='data'/>\n"
-                       "    <property name='enable_give_lsfr' value='true'/>\n"
-                       "    <property name='enable_take_lsfr' value='true'/>\n";
-              else if (io.m_msMode == metadata)
-                app += "    <property name='mode' value='metadata'/>\n";
-              app += "  </instance>\n";
+              if (!io.m_testOptional) {
+                OU::formatAdd(app, "  <instance component='ocpi.core.file_read' connect='%s_ms_%s'",
+                              dut, io.m_port->pname());
+                if (io.m_messageSize)
+                  OU::formatAdd(app, " buffersize='%zu'", io.m_messageSize);
+  	      app += ">\n";
+                std::string l_file;
+                if (io.m_file.size())
+                  OU::formatAdd(l_file, "%s%s", io.m_file[0] == '/' ? "" : "../../", io.m_file.c_str());
+                else
+                  OU::formatAdd(l_file, "../../gen/inputs/%s.%02u.%s", m_name.c_str(), s, io.m_port->pname());
+                OU::formatAdd(app, "    <property name='filename' value='%s'/>\n", l_file.c_str());
+                if (io.m_messageSize)
+                  OU::formatAdd(app, "    <property name='messageSize' value='%zu'/>\n", io.m_messageSize);
+                if (io.m_messagesInFile)
+                  OU::formatAdd(app, "    <property name='messagesInFile' value='true'/>\n");
+                if (io.m_suppressEOF)
+                  OU::formatAdd(app, "    <property name='suppressEOF' value='true'/>\n");
+                app += "  </instance>\n";
+                OU::formatAdd(app, "  <instance component='ocpi.core.metadata_stressor' name='%s_ms_%s' connect='%s'", dut, io.m_port->pname(), dut);
+                if (nInputs > 1)
+                  OU::formatAdd(app, " to='%s'",  io.m_port->pname());
+                app += ">\n";
+                if (io.m_msMode == full)
+                  app += "    <property name='mode' value='full'/>\n"
+                         "    <property name='enable_give_lsfr' value='true'/>\n"
+                         "    <property name='enable_take_lsfr' value='true'/>\n"
+                         "    <property name='insert_nop' value='true'/>\n";
+                else if (io.m_msMode == throttle)
+                  app += "    <property name='mode' value='data'/>\n"
+                         "    <property name='enable_give_lsfr' value='true'/>\n"
+                         "    <property name='enable_take_lsfr' value='true'/>\n";
+                else if (io.m_msMode == metadata)
+                  app += "    <property name='mode' value='metadata'/>\n";
+                app += "  </instance>\n";
+              }
             }
-        generateAppInstance(*wFirst, pc, nWOut, nOutputs, s, first, false, app, dut);
+        generateAppInstance(*wFirst, pc, nWOut, nOutputs, s, first, false, app, dut, isOptional);
         if (emulator)
-          generateAppInstance(*emulator, pc, nEmOut, nOutputs, s, firstEm, true, app, em);
+          generateAppInstance(*emulator, pc, nEmOut, nOutputs, s, firstEm, true, app, em, false);
         if (nOutputs)
           for (unsigned n = 0; n < m_ports.size(); n++) {
             InputOutput &io = m_ports[n];
             const DataPort &p = *m_ports[n].m_port;
             if (io.m_port->isDataProducer()) {
+              if (!io.m_testOptional) {
               OU::formatAdd(app, "  <instance component='ocpi.core.backpressure'");
               if (nOutputs > 1) {
                 if (&p.worker() == emulator)
@@ -1158,6 +1181,7 @@ namespace {
                               "  </connection>\n",
                               em, io.m_port->pname(),
                               em, io.m_port->pname());
+              }
             }
           }
         app += "</application>\n";
@@ -1462,7 +1486,7 @@ namespace {
             std::string ports;
             bool first = true;
             for (unsigned n = 0; n < m_ports.size(); n++)
-              if (m_ports[n].m_port->isDataProducer()) {
+              if (m_ports[n].m_port->isDataProducer() & !m_ports[n].m_testOptional) { //have to delete optional ports being tested
                 OU::formatAdd(ports, "%s%s", first ? "" : " ", m_ports[n].m_port->pname());
                 first = false;
               }
@@ -1535,28 +1559,37 @@ namespace {
     return NULL;
   }
 
-  void connectHdlFileIO(const Worker &w, std::string &assy) {
+  void connectHdlFileIO(const Worker &w, std::string &assy, InputOutputs &ports) {
     for (PortsIter pi = w.m_ports.begin(); pi != w.m_ports.end(); ++pi) {
       Port &p = **pi;
-      if (p.isData())
-        OU::formatAdd(assy,
-                      "  <Instance name='%s_%s' Worker='file_%s'/>\n"
-                      "  <Connection>\n"
-                      "    <port instance='%s_%s' %s='%s'/>\n"
-                      "    <port instance='%s%s%s' %s='%s'/>\n"
-                      "  </Connection>\n",
-                      w.m_implName, p.pname(), p.isDataProducer() ? "write" : "read",
-                      w.m_implName, p.pname(), p.isDataProducer() ? "to" : "from",
-                      p.isDataProducer() ? "in" : "out", w.m_implName,
-                      p.isDataProducer() ? "_backpressure_" : "_ms_", p.pname(),
-		      p.isDataProducer() ? "from" : "to", p.isDataProducer() ? "out" : "in");
+      bool optional = false;
+      InputOutput *ios = findIO(p, ports);
+      if (ios)
+        optional = ios->m_testOptional;
+      if (p.isData() && !optional) {
+          OU::formatAdd(assy,
+                        "  <Instance name='%s_%s' Worker='file_%s'/>\n"
+                        "  <Connection>\n"
+                        "    <port instance='%s_%s' %s='%s'/>\n"
+                        "    <port instance='%s%s%s' %s='%s'/>\n"
+                        "  </Connection>\n",
+                        w.m_implName, p.pname(), p.isDataProducer() ? "write" : "read",
+                        w.m_implName, p.pname(), p.isDataProducer() ? "to" : "from",
+                        p.isDataProducer() ? "in" : "out", w.m_implName,
+                        p.isDataProducer() ? "_backpressure_" : "_ms_", p.pname(),
+  		      p.isDataProducer() ? "from" : "to", p.isDataProducer() ? "out" : "in");
       }
+    }
   }
 
-  void connectHdlStressWorkers(const Worker &w, std::string &assy, bool hdlFileIO) {
+  void connectHdlStressWorkers(const Worker &w, std::string &assy, bool hdlFileIO, InputOutputs &ports) {
     for (PortsIter pi = w.m_ports.begin(); pi != w.m_ports.end(); ++pi) {
       Port &p = **pi;
-      if (p.isData()) {
+      bool optional = false;
+      InputOutput *ios = findIO(p, ports);
+      if (ios)
+        optional = ios->m_testOptional;
+      if (p.isData() && !optional) {
         if (p.isDataProducer()) {
           OU::formatAdd(assy,
                         "  <Instance Name='%s_backpressure_%s' Worker='backpressure'/>\n",
@@ -1593,47 +1626,47 @@ namespace {
   }
 
   const char *generateHdlAssembly(const Worker &w, unsigned c, const std::string &dir, const
-                                  std::string &name, bool hdlFileIO, Strings &assyDirs) {
+                                    std::string &name, bool hdlFileIO, Strings &assyDirs, InputOutputs &ports) {
     OS::FileSystem::mkdir(dir, true);
     assyDirs.insert(name);
     const char *err;
     if ((err = OU::string2File(hdlFileIO ?
-                               "override HdlPlatform:=$(filter %sim,$(HdlPlatform))\n"
-                               "override HdlPlatforms:=$(filter %sim,$(HdlPlatforms))\n"
-                               "include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk\n" :
-                               "include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk\n",
-                               dir + "/Makefile", false, true)))
-      return err;
+                     "override HdlPlatform:=$(filter %sim,$(HdlPlatform))\n"
+                     "override HdlPlatforms:=$(filter %sim,$(HdlPlatforms))\n"
+                     "include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk\n" :
+                     "include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk\n",
+                     dir + "/Makefile", false, true)))
+        return err;
     std::string assy;
     OU::format(assy,
                "<HdlAssembly%s>\n"
                "  <Instance Worker='%s' Name='uut_%s' ParamConfig='%u'/>\n",
                emulator ? " language='vhdl'" : "", w.m_implName, w.m_implName, c);
-    if (emulator) {
-      OU::formatAdd(assy, "  <Instance Worker='%s' Name='uut_%s' ParamConfig='%u'/>\n",
+      if (emulator) {
+        OU::formatAdd(assy, "  <Instance Worker='%s' Name='uut_%s' ParamConfig='%u'/>\n",
                     emulator->m_implName, emulator->m_implName, c);
-      for (unsigned n = 0; n < w.m_ports.size(); n++) {
-        Port &p = *w.m_ports[n];
-        if (p.m_type == DevSigPort || p.m_type == PropPort)
-          OU::formatAdd(assy,
+        for (unsigned n = 0; n < w.m_ports.size(); n++) {
+          Port &p = *w.m_ports[n];
+          if (p.m_type == DevSigPort || p.m_type == PropPort)
+            OU::formatAdd(assy,
                         "  <Connection>\n"
                         "    <port instance='uut_%s' name='%s'/>\n"
                         "    <port instance='uut_%s' name='%s'/>\n"
                         "  </Connection>\n",
                         w.m_implName, p.pname(), emulator->m_implName, p.pname());
+        }
       }
+      connectHdlStressWorkers(w, assy, hdlFileIO, ports);
+      if(emulator)
+        connectHdlStressWorkers(*emulator, assy, hdlFileIO, ports);
+      if (hdlFileIO) {
+        connectHdlFileIO(w, assy, ports);
+        if (emulator)
+          connectHdlFileIO(*emulator, assy, ports);
+      }
+      assy += "</HdlAssembly>\n";
+      return OU::string2File(assy, dir + "/" + name + ".xml", false, true);
     }
-    connectHdlStressWorkers(w, assy, hdlFileIO);
-    if(emulator)
-      connectHdlStressWorkers(*emulator, assy, hdlFileIO);
-    if (hdlFileIO) {
-      connectHdlFileIO(w, assy);
-      if (emulator)
-        connectHdlFileIO(*emulator, assy);
-    }
-    assy += "</HdlAssembly>\n";
-    return OU::string2File(assy, dir + "/" + name + ".xml", false, true);
-  }
 } // end of anonymous namespace
 
 // Called for all workers globally acceptable workers and the one emulator if present
@@ -1679,7 +1712,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   } else if ((err = parseFile(file, parent, "tests", &xml, testFile, false, false, false)) ||
              (err = OE::checkAttrs(xml, "spec", "timeout", "duration", "onlyWorkers",
                                    "excludeWorkers", "useHDLFileIo", "mode", "onlyPlatforms",
-                                   "excludePlatforms", NULL)) ||
+                                   "excludePlatforms", "finishPort", NULL)) ||
              (err = OE::checkElements(xml, "property", "case", "input", "output", NULL)))
     return err;
   // ================= 1. Get the spec
@@ -1908,6 +1941,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
               p.cname(), param.m_uValues.size(), param.m_uValue.size());
   }
   // ================= 6. Parse and collect global platform values
+  finishPort = ezxml_cattr(xml, "finishPort");
   // Parse global platforms
   const char
     *excludes = ezxml_cattr(xml, "excludePlatforms"),
@@ -2045,13 +2079,30 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
         OU::formatAdd(name, "_%u", c);
         std::string dir(assemblies + "/" + name);
         ocpiInfo("Generating assembly: %s", dir.c_str());
-        if ((err = generateHdlAssembly(w, c, dir, name, false, assyDirs)))
+        //there's always at least one case if there's a -test.xml
+        if ((err = generateHdlAssembly(w, c, dir, name, false, assyDirs, cases[0]->m_ports)))
           return err;
+        if (testingOptionalPorts) {
+          for (unsigned n = 0; n < cases.size(); n++) {
+            std::ostringstream temp; //can't use to_string
+            temp << n;
+            if ((err = generateHdlAssembly(w, c, dir + "_op_" + temp.str(), name + "_op_" + temp.str(), false, assyDirs, cases[n]->m_ports)))
+              return err;
+          }
+        }
         if (hdlFileIO) {
           name += "_frw";
           dir += "_frw";
-          if ((err = generateHdlAssembly(w, c, dir, name, true, assyDirs)))
+          if ((err = generateHdlAssembly(w, c, dir, name, true, assyDirs, cases[0]->m_ports)))
             return err;
+          if (testingOptionalPorts) {
+            for (unsigned n = 0; n < cases.size(); n++) {
+              std::ostringstream temp; //can't use to_string
+              temp << n;
+              if ((err = generateHdlAssembly(w, c, dir + "_op_" + temp.str(), name + "_op_" + temp.str(), true, assyDirs, cases[n]->m_ports)))
+                return err;
+            }
+          }
         }
       }
     }
@@ -2219,10 +2270,11 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
                   const char
                     *to = ezxml_cattr(sx, "timeout"),
                     *du = ezxml_cattr(sx, "duration"),
-                    *w = ezxml_cattr(wx, "name");
+                    *w = ezxml_cattr(wx, "name"),
+                    *o = ezxml_cattr(wx, "outputs");
                   std::string doit;
-                  OU::format(doit, "docase %s %s %s %02u %s %s\n", m_model.c_str(), w, name, n,
-                             to ? to : "0", du ? du : "0");
+                  OU::format(doit, "docase %s %s %s %02u %s %s %s\n", m_model.c_str(), w, name, n,
+                             to ? to : "0", du ? du : "0", o);
                   std::string key;
                   OU::format(key, "%08u %s", sn, w);
                   m_runs.insert(RunsPair(key, doit));

@@ -30,8 +30,8 @@ ignores[develop_oss_merge]=1
 ignores[open_source_pristine]=1
 
 # This file has a bunch of aliases defined like
-# aliases["billy.bob"]="Billy Bob"
-# aliases["bbob"]="Billy Bob"
+# aliases["billy.boy"]="Billy Boy"
+# aliases["bboy"]="Billy Boy"
 declare -A aliases
 if [ -f ../../../config_files/git_aliases.sh ]; then
   source ../../../config_files/git_aliases.sh

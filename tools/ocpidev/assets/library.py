@@ -37,9 +37,9 @@ class Library(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ReportableAss
         Initializes Library member data  and calls the super class __init__.  Throws an
         exception if the directory passed in is not a valid library directory.
         valid kwargs handled at this level are:
-            init_tests   (T/F) - Instructs the method weather to construct all test objects
+            init_tests   (T/F) - Instructs the method whether to construct all test objects
                                  contained in the library
-            init_workers (T/F) - Instructs the method weather to construct all worker objects
+            init_workers (T/F) - Instructs the method whether to construct all worker objects
                                  contained in the library
         """
         self.check_dirtype("library", directory)
@@ -172,7 +172,7 @@ class Library(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ReportableAss
         return the directory of a Library given the name (name) and
         library specifiers (library, hdl_library, hdl_platform)
         """
-        # if more then one of the library location variable are not None it is an error.
+        # if more then one of the library location variables are not None it is an error.
         # a length of 0 means that a name is required and a default location of components/
         if len(list(filter(None, [library, hdl_library, hdl_platform]))) > 1:
             ocpiutil.throw_invalid_libs_e()

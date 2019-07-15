@@ -3,6 +3,7 @@
 # For copyright information concerning THIS script; see build_copyright below.
 
 from __future__ import print_function
+import argparse
 import fnmatch
 import os.path
 import re
@@ -19,7 +20,7 @@ logging.basicConfig(filename='copyright.log',
 bailing = False
 filename = 'unknown'
 gbuff = []
-scan_mode = os.getenv('OCPI_SCAN_COPYRIGHTS') is not None  # Debug mode to scan the repo
+scan_mode = os.getenv('OCPI_SCAN_COPYRIGHTS') is not None  # Hidden mode to scan the repo
 
 # Query rows
 try:
@@ -500,15 +501,10 @@ def process():
         return False
     return True
 
-# "main"
-myargv = sys.argv
-if len(sys.argv) < 2:
-    if scan_mode:
-        print("OCPI_SCAN_COPYRIGHTS detected; running in verification-only mode.")
-    else:
-        print("No file(s) given on command line. Attempting auto-scan.")
-        logging.warning("No file(s) given on command line. Attempting auto-scan.")
-    # Use extend to keep first value (the script name)
+
+def create_default_filelist():
+    """ Runs "find" to create default file list """
+    logging.debug("Creating default file list using find.")
     find_cmd = ['find',
                 '-L',  # follow symlinks
                 '.',  # from here
@@ -522,8 +518,50 @@ if len(sys.argv) < 2:
                 '-o',  # or
                 '-xtype', 'f',  # is, or points to, a file
                ]
-    myargv.extend(subprocess.check_output(find_cmd).decode('ascii').rstrip().split('\n'))
-for filename in sorted(myargv[1:]):
+    ret_list = subprocess.check_output(find_cmd).decode('ascii').rstrip().split('\n')
+    logging.debug("create_default_filelist returning: " + str(ret_list))
+    return ret_list
+
+
+def recurse_directories_in_list(file_list):
+    """ Recurses directories from a file list """
+    ret_list = []
+    for name in file_list:
+        if os.path.isdir(name):
+            logging.debug(name + " is a directory")
+            for root, _, files in os.walk(name):
+                ret_list.extend([os.path.join(root, fname) for fname in files])
+        elif os.path.isfile(name):
+            logging.debug(name + " is a file")
+            ret_list.append(name)
+        else:
+            logging.error(name + " is neither file nor directory!")
+            raise FileNotFoundError(name)
+    logging.debug("recurse_directories_in_list returning: " + str(ret_list))
+    return ret_list
+
+
+# "main"
+my_parser = argparse.ArgumentParser(description="""
+Inserts copyright into files, replacing old ones found.
+
+To scan for copyright violations, see the accompanying check_copyright.sh script.
+""", formatter_class=argparse.RawTextHelpFormatter)
+my_parser.add_argument('-v', '--verify',
+                       help="silently verifies files; see copyright.log output for results",
+                       action='store_true')
+my_parser.add_argument('file_or_dir', nargs='*', default=create_default_filelist())
+parsed_args = my_parser.parse_args()
+if parsed_args.verify:
+    logging.info("Verify given on command line")
+    scan_mode = True
+if len(sys.argv) < 2:
+    if scan_mode:
+        print("OCPI_SCAN_COPYRIGHTS detected; running in verification-only mode.")
+    else:
+        print("No file(s) given on command line. Using auto-scan.")
+        logging.warning("No file(s) given on command line. Using auto-scan.")
+for filename in sorted(recurse_directories_in_list(parsed_args.file_or_dir)):
     try:
         gbuff = []
         # Read in the file and do the manipulations if file name doesn't skip

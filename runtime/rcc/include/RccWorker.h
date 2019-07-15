@@ -17,20 +17,14 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+/**
+  @file
 
-/*
- * Abstract:
- *   This file contains the interface and data structures for the JTRS DSP Worker.
- *
- * Revision History:
- *
- *    06/23/09  John Miller
- *    Added code to handle RCC_ERROR and RCC_FATAL return codes.
- *
- *    06/01/05  John Miller
- *    Initial revision
- *
- */
+  @brief
+    This file contains the interface and data structures for RCC Worker
+      classes (OCPI::RCC::Worker, etc.)
+
+************************************************************************** */
 
 #ifndef RCC_WORKER_H_
 #define RCC_WORKER_H_
@@ -72,7 +66,7 @@ namespace OCPI {
       // If workereof is set on the first input, then all handling is by the worker
       // Otherwise it is per-output-port
       inline bool checkEOF() const {
-	return m_version >= 2 && m_firstInput && !m_firstInput->metaPort->m_workerEOF && 
+	return m_version >= 2 && m_firstInput && !m_firstInput->metaPort->m_workerEOF &&
 	  m_firstInput->current.data && m_firstInput->current.eof_;
       }
     public:

@@ -51,10 +51,12 @@ class Test(RunnableAsset, HDLBuildableAsset, RCCBuildableAsset):
         self.mode = kwargs.get("mode", "all")
         self.remote_test_sys = kwargs.get("remote_test_sys", None)
 
-        # using all instead of build so that old style unit tests wont blow up
-        # all and build will evaluate to the same make target
+        # using the make target "all" instead of "build" so that old style unit tests wont blow up
+        # "all" and "build" will evaluate to the functionality
         self.mode_dict = {}
         # pylint:disable=bad-whitespace
+        #TODO this should probably be a single statement to create the dictionary
+        #     in place (this is slightly faster)
         self.mode_dict['gen_build']       = ["all"]
         self.mode_dict['prep_run_verify'] = ["run"]
         self.mode_dict['clean_all']       = ["clean"]

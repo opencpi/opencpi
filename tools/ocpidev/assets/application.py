@@ -45,7 +45,6 @@ class Application(RunnableAsset, RCCBuildableAsset):
         """
         return ocpiutil.execute_cmd(self.get_settings(),
                                     self.directory, ["run"])
-    #placeholder function
     def build(self):
         """
         This is a placeholder function will be the function that builds this Asset
@@ -110,7 +109,6 @@ class ApplicationsCollection(RunnableAsset, RCCBuildableAsset):
         return ocpiutil.execute_cmd(self.get_settings(),
                                     self.directory, ["run"])
 
-    #placeholder function
     def build(self):
         """
         This is a placeholder function will be the function that builds this Asset

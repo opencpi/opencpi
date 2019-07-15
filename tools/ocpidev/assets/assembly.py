@@ -27,7 +27,6 @@ from .factory import AssetFactory
 from .abstract import HDLBuildableAsset, ReportableAsset
 from .worker import HdlCore
 
-
 class HdlAssembly(HdlCore):
     """
     HDL Assembly: any collection/integration of multiple HDL Cores/Workers

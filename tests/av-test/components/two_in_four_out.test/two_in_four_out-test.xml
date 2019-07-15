@@ -1,0 +1,26 @@
+<!-- This is the test xml for testing component "two_in_four_out" -->
+<Tests finishPort='out2' UseHDLFileIo='true'>
+  <Input Port='in1' script='generate.py' />
+  <Input Port='in2' script='generate.py' />
+
+  <Output Port='out1' disableBackpressure='true' script='verify.py 4'/>
+  <Output Port='out2' disableBackpressure='true' script='verify.py 4'/>
+  
+  <case>
+    <Output Port='out3' disableBackpressure='true' script='verify.py 4'/>
+    <Output Port='out4' disableBackpressure='true' script='verify.py 4'/>
+  </case>
+
+  <case>
+    <Output Port='out3' testOptional='true'/>
+    <Output Port='out4' disableBackpressure='true' script='verify.py 4'/>
+  </case>
+  <case>
+    <Output Port='out3' testOptional='true'/>
+    <Output Port='out4' testOptional='true'/>
+  </case>
+  <case>
+    <Output Port='out3' disableBackpressure='true' script='verify.py 4'/>
+    <Output Port='out4' testOptional='true'/>
+  </case>
+</Tests>

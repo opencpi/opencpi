@@ -1046,6 +1046,7 @@ void app_post_stop() {
 }
 
 /*! @todo / FIXME - implement --tolerance-*x_baud_rate parameters?
+ *  @todo / FIXME - warn if multiple e.g. --rx-baud --rx-baud
  *  @return Return value indicates success (0 indicates success, 1
  *          indicates failure).
  ******************************************************************************/

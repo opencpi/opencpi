@@ -1,0 +1,7 @@
+<HdlWorker language='vhdl' spec='optional_output-spec' version='2'>
+
+  <SpecProperty Name="prop" Parameter="true" Default="1"/>
+  <StreamInterface Name="in" ZeroLengthMessages="true"/>
+  <StreamInterface Name="out" ZeroLengthMessages="true"/>
+
+</HdlWorker>

@@ -1,0 +1,10 @@
+<HdlWorker language='vhdl' spec='two_in_four_out-spec'>
+ <SpecProperty Name="prop" Parameter="true" Default="1"/>
+ <StreamInterface Name="in1" ZeroLengthMessages="true"/>
+ <StreamInterface Name="in2" ZeroLengthMessages="true"/>
+
+ <StreamInterface Name="out1" ZeroLengthMessages="true"/>
+ <StreamInterface Name="out2" ZeroLengthMessages="true"/>
+ <StreamInterface Name="out3" ZeroLengthMessages="true"/>
+ <StreamInterface Name="out4" ZeroLengthMessages="true"/>
+</HdlWorker>

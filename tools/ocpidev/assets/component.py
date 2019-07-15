@@ -138,6 +138,9 @@ class ShowableComponent(ShowableAsset):
         return ret_val
 
     def __show_table_ports_props(self, json_dict, verbose, is_worker):
+        """
+        print out the ports and properties of the component in table format
+        """
         if json_dict.get("properties"):
             rows = ([["Property Name", "Spec Property", "Type", "Accessability"]] if is_worker else
                     [["Property Name", "Type", "Accessability"]])
@@ -176,6 +179,9 @@ class ShowableComponent(ShowableAsset):
 
     @staticmethod
     def __show_simple_ports_props(json_dict):
+        """
+        print out the ports and properties of the component in simple format 
+        """
         if json_dict.get("properties"):
             print("Properties:")
             for prop in json_dict["properties"]:

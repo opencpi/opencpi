@@ -19,8 +19,6 @@
 """
 Main program that processes the show verb for ocpidev
 """
-# TODO: integrate more inline with ocpirun -A to get information instead of metadata file
-
 import argparse
 import os
 import sys
@@ -186,8 +184,6 @@ def check_scope_options(scope, noun):
         "hdlplatforms":["global"],
         "hdltargets":["global"],
     }
-
-
     if scope not in valid_scope_dict[noun]:
         raise ocpiutil.OCPIException("Invalid scope option '" + scope + "' for " + noun +
                                      ".  Valid options are: " + " ,".join(valid_scope_dict[noun]))

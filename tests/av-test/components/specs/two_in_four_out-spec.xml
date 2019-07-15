@@ -1,0 +1,15 @@
+<!-- This is the spec file (OCS) for: two_in_four_out
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<ComponentSpec>
+  <Property type="short" name="prop" />
+
+  <Port Name="in1" Producer="false"/>
+  <Port Name="in2" Producer="false" Optional="true"/>
+
+  <Port Name="out1" Producer="true"/>
+  <Port Name="out2" Producer="true"/>
+  <Port Name="out3" Producer="true" Optional="true"/>
+  <Port Name="out4" Producer="true" Optional="true"/>
+</ComponentSpec>

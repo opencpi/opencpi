@@ -34,6 +34,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \usepackage{graphicx}
 \graphicspath{ {figures/} }
 \usepackage{textcomp}
+\usepackage{amsmath}
 
 \begin{document}
 \maketitle
@@ -121,30 +122,67 @@ It can be computed using the following equation:
 	      \begin{equation} \label{eq:cic_gain}
 	      	Baud\ Rate = S\ /\ R\ /\ (Z +1)
 	      \end{equation}
-Using the default settings for the Ettus E310 platform, the resulting baud rate is approximately 6.4K baud.
+Using the default settings for the Matchstiq Z1 platform, the resulting baud rate is 64 kbaud.
 	      \begin{equation} \label{eq:cic_gain}
-	      	Baud\ Rate = S\ /\ R\ /\ (Z+1) = 4e6 \ /\ 16\ /\ (38+1) \ =\ 6410
+	      	Baud\ Rate = S\ /\ R\ /\ (Z+1) = 39,936,000 \ /\ 16\ /\ (38+1) \ =\ 64000
 	      \end{equation}
 \subsubsection{Frequency Deviation}
-The frequency deviation for the application is based on the following characteristics of the application:
-	\begin{itemize}
-		\item Pulse shaping FIR output amplitude (fir\_output)
-		\item Width of data (DATA\_WIDTH)
-		\item CIC Decimation/Interpolation Factor (R)
-		\item ADC/DAC Sample Rate (S)
-	\end{itemize}
-After the bits of the input file are mapped to symbols, zeros are inserted in between symbols. After zero padding, the output is pulse shaped by a root raised cosine FIR filter. The taps of the filter are configurable and should be based on the expected baud rate of the application. See \texttt{applications/FSK/scripts/gen\_rrcos\_taps.py} for more information. Using the default tap values, the output of the filter ranges from approximately +3300 to -3300. These output values from the FIR determine the min and max frequencies produced by the phase\_to\_amp\_cordic according to the following equation.
-	\begin{equation} \label{eq:output_freq}
-		cordic\_freq = \frac{fir\_output}{2^{DATA\_WIDTH}} = \frac{+/-3300}{2^{16}} = +/- 0.0504\ cycles\ per\ sample
+The theoretical FSK frequency deviation is calculated as follows. The bits of the input file are converted to Q0.15 symbols by the mfsk\_mapper worker, where the symbol values are determined by the value of the worker's symbols property, which is an array. The following equation corresponds to the values mapped from bits, with $s$ representing the bit value. Note that division by $2^{15}$ accounts for the Q0.15 value interpretation. The mfsk\_mapper worker's symbols array property value is fixed to the values $symbols[0]=-32768$ and $symbols[1]=32767$ in all OASs used by the ACI.
+	\begin{equation} \label{eq:map_out_val}
+		x_{mfsk\_mapper,out,s}=\frac{symbols[s]}{2^{15}},
+    s \in [0..1] % https://en.wikipedia.org/wiki/Interval_(mathematics)#Integer_intervals
 	\end{equation}
-The output of the CORDIC is upsampled by a interpolating CIC filter. The output data of the CIC is passed to the DAC, which has a configurable sample rate. The resulting output frequency of the DAC is defined by:
-	\begin{equation} \label{eq:output_freq}
-		output\_freq = cordic\_freq\ /\ R\ *\ S
+The value of these symbols is unmodified as they pass through the zero\_pad worker. 
+	\begin{equation} \label{eq:zp_out_val}
+		x_{zero\_pad\_mapper,out,s}=x_{mfsk\_mapper,out,s}
 	\end{equation}
-Using the default settings for the Ettus E310 platform, the resulting frequency deviation is approximately 12588 Hz with mark and space frequencies at 2400012588 Hz and 2399987411 Hz.
-	\begin{equation} \label{eq:output_freq}
-		output\_freq = cordic\_freq\ /\ R\ *\ S = 0.717\ /\ 16\ *\ 4e6 \ =\ 12588\ Hz
+The zero-padded symbols then pass through the fir\_real\_see worker whose taps are read from a file at runtime. The gen\_rrcos\_taps.py script runs at application buildtime to generate the tap file for a root-raised-cosine filter. The application Makefile passes an argument to the script that forces the filter taps to be scaled such that the maximum tap value amplitude $maxTap$ is 4096, which corresponds to the Q0.15 value $4096/2^{15}=0.125$. Because root-raised-cosine filters do not obey the Nyquist ISI criterion, the incoming symbol values will undergo an amplitude adjustment that will vary per symbol, as shown in Figure \ref{fig:tx_fir_data}. In order to to proceed with frequency deviation calculation, the nominal symbol values are approximated as being multiplied by the maximum Q0.15 tap value while passing through the fir\_real\_sse worker. 
+	\begin{figure}[ht]
+	 	\centering
+	 	\begin{minipage}{0.7\textwidth}
+			\centering\includegraphics[trim=0.5cm 1cm 1cm 1.5cm,clip,width=1.0\linewidth]{fir_real_sse_data}
+			\caption{Data processed by TX fir\_real\_sse worker.}
+			\label{fig:tx_fir_data}
+		\end{minipage}
+	\end{figure}
+
+	\begin{equation} \label{eq:fir_out_val}
+		x_{fir\_real\_sse,out,s,nom} = \frac{maxTap}{2^{15}} * x_{zero\_pad\_mapper,out,s}
 	\end{equation}
+The frequency modulation performed by the phase\_to\_amp\_cordic worker assigns frequency according to the following formula. Note that $x_{fir\_real\_sse,out}$ is in the Q0.15 format.
+
+	\begin{equation} \label{eq:freq_mod}
+		f_{phase\_to\_amp\_cordic,out} = \pi * x_{fir\_real\_sse,out} \ \frac{\text{radians}}{\text{sample}}
+	\end{equation}
+The nominal space/mark frequencies at the output of the phase\_to\_amp\_cordic worker is given as:
+	\begin{equation} \label{eq:freq_mod}
+		f_{phase\_to\_amp\_cordic,out,s,nom} = \pi * \frac{maxTap}{2^{15}} * \frac{symbols[s]}{2^{15}} \ \frac{\text{radians}}{\text{sample}}
+	\end{equation}
+Figure \ref{fig:mark_space_freq} displays the nominal space and mark frequencies versus that actual instantaneous frequency of the output of the phase\_to\_amp\_cordic worker that will occur at runtime.
+	\begin{figure}[ht]
+	 	\centering
+	 	\begin{minipage}{0.7\textwidth}
+			\centering\includegraphics[trim=0.2cm 0.6cm 0.1cm 2.8cm,clip,width=1.0\linewidth]{mark_space_freq}
+			\caption{Instantaneous frequency of phase\_to\_amp\_cordic output.}
+			\label{fig:mark_space_freq}
+		\end{minipage}
+	\end{figure}
+The output of phase\_to\_amp\_cordic is upsampled by an interpolating CIC filter, which has the effect of dividing the space/mark frequencies. The interpolation factor is fixed via the parameter property/value of $R=16$ within all assemblies used by the ACI and all its OASs.
+	\begin{equation} \label{eq:cic}
+		f_{cic\_int,out,s,nom} = \frac{f_{phase\_to\_amp\_cordic,out,s,nom}}{R}
+	\end{equation}
+The output data of the CIC is passed to the DAC, which has a configurable sample rate $f_s$. The resulting space/mark frequencies at the output of the DAC is given as:
+	\begin{equation} \label{eq:output_freq_0}
+		f_{DAC,out,s,nominal} = \Bigg[ f_{cic\_int,out,s,nom} \frac{radians}{sample} \Bigg] * \Bigg[ fs \frac{samples}{second} \Bigg] * \Bigg[ \frac{1}{2\pi \ radians} \Bigg] = \frac{maxTap}{2^{15}} * \frac{symbols[s]}{2^{16}} * \frac{f_s}{R} \ \text{Hz}
+	\end{equation}
+This results in a final frequency deviation calculation:
+	\begin{align*} \label{eq:freq_deviation}
+		f_{\Delta,nominal} &= f_{DAC,out,1,nominal} - f_{DAC,out,0,nominal}
+		= \frac{maxTap}{2^{15}} * \frac{symbols[1]-symbols[0]}{2^{16}} * \frac{f_s}{R} \\
+		&= 0.125 * \frac{32767 - (-32768)}{2^{16}} * \frac{f_s}{16}
+		= \frac{65535}{2^{23}} f_s \ \text{Hz}
+	\end{align*}
+Using the ACI's default prompted setting of $f_s=4,000,000$ Hz for the FMCOMMS2/3 transceivers, the resulting nominal frequency deviation would be approximately 31,249.5 Hz.
 
 \newpage
 \section{Building the Application}

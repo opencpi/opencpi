@@ -23,7 +23,9 @@
 
   @brief
     Contains the declarations of the RCC Worker interface as specified in
-    the CP289U specification.
+      the CP289U specification.
+    This file is included by user-defined RCC Workers to communicate with
+      the framework.
 
 ************************************************************************** */
 
@@ -314,6 +316,9 @@ typedef struct {
  private:
    void checkOpCode(RCCUserBuffer &buf, unsigned op, bool setting = true) const;
    void shouldBeOutput() const;
+   bool m_isSendMode; // Port-level flag determining if user has done a direct send of a message
+                      // that was received. Once they've done that, it affects output port buffers
+                      // and you cannot use certain functions, e.g. setOpCode (AV-1610)
  public:
    // Test whether a buffer is available, and if not request one
    // There is no buffer is there is no container port for the rcc port (not connected).

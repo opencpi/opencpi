@@ -136,13 +136,12 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\noindent Timestamps are provided as an input to the component on the time interface. The timestamp is a 64 bit number with the first 32 bits corresponding to seconds and the last 32 bits corresponding to fractional seconds. When a valid message is detected on the input, the timestamp is registered by the component and given on the output interface. Timestamps and data are given on the output interface using different opcodes.\par\bigskip
 	The time interface from which the timestamps are generated originates from the OpenCPI time server, which is instanced as part of the platform worker. Furthermore, an additional component (time client) is dynamically instanced by the framework for all components which declare time interfaces. The time client communicates with the time server and produces the time interface seen by the component.
 \end{flushleft}
-\begin{figure}[p]
+\begin{figure}[h]
 	\centering
 	\includegraphics[scale=0.6]{timestamper_timing_diagram}
 	\caption{Timestamper Output Timing Diagram}
 	\label{fig:timestamper_timing_diagram}
 \end{figure}
-\pagebreak
 
 \section*{Block Diagrams}
 \subsection*{Top level}

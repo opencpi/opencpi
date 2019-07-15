@@ -28,7 +28,6 @@ import _opencpi.hdltargets as hdltargets
 import _opencpi.util as ocpiutil
 
 class Asset(metaclass=ABCMeta):
-    #TODO add project top and package id as a variable here, maybe this becomes a method instead
     """
     Parent Class for all Asset objects.  Contains a factory to create each of the asset types.
     Not officially a virtual class but objects of this class are not intended to be directly
@@ -99,7 +98,6 @@ class Asset(metaclass=ABCMeta):
             raise ocpiutil.OCPIException("Expected directory of type \"" + dirtype + "\", but " +
                                          "found type \"" + str(ocpiutil.get_dirtype(directory)) +
                                          "\" for directory \"" + directory + "\"")
-    #@abstractmethod
     def delete(self, force=False):
         """
         Remove the Asset from disk.  Any additional cleanup on a per asset basis can be done in
@@ -341,6 +339,7 @@ class ReportableAsset(Asset):
                     util_file.write(latex_table)
                     logging.info("  LaTeX Utilization Table was written to: " + util_file_path +
                                  "\n")
+# TODO is this required ?
 # pylint:disable=wrong-import-position
 from .component import Component
 # pylint:disable=wrong-import-position

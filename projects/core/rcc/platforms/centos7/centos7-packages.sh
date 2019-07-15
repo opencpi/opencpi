@@ -61,8 +61,6 @@ PKGS_D+=(time)
 #    -- (AV-1261, AV-1299): still python 2 or just for users?
 #    -- note that we also need python3 but that is from epel - below in $#4
 PKGS_D+=(python-matplotlib scipy numpy)
-#    for building init root file systems for embedded systems (enabled in devel?)
-PKGS_D+=(fakeroot)
 #    enable other packages in the epel repo, some required for devel (e.g. python34)
 PKGS_D+=(epel-release)
 #    for various 32-bit software tools we end up supporting (e.g. modelsim) in devel (AV-567)
@@ -99,8 +97,6 @@ PKGS_S+=(rpm-build)
 PKGS_S+=(swig python-devel)
 #    for general configuration/installation flexibility
 PKGS_S+=(nfs-utils)
-#    for OpenCL support (the switch for different actual drivers that are not installed here)
-PKGS_S+=(ocl-icd)
 #    for the inode64 prerequisite build (from source)
 PKGS_S+=(glibc-devel.i686)
 ##########################################################################################
@@ -112,6 +108,10 @@ PKGS_E+=(python34 python34-jinja2)
 #    for various testing scripts
 #    AV-5478: If the minor version changes here, fix script below
 PKGS_E+=(python34-numpy)
+#    for building init root file systems for embedded systems (enabled in devel?)
+PKGS_E+=(fakeroot)
+#    for OpenCL support (the switch for different actual drivers that are not installed here)
+PKGS_E+=(ocl-icd)
 
 # functions to deal with arrays with <pkg>=<file> syntax
 function rpkgs {
