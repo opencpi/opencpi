@@ -50,12 +50,17 @@ namespace OCPI {
       m_library(l), m_downloading(false), m_downloaded(false), m_rx(NULL),
       m_lx(NULL), m_local(NULL), m_discoveryInfo(discoveryInfo), m_needsBridging(needsBridging) {
     }
-    Server::
-    ~Server() {
+    // Used both in the destructor and in appShutDown
+    void Server::
+    clear() {
       ezxml_free(m_rx);
       ezxml_free(m_lx);
       for (unsigned n = 0; n < m_containerApps.size(); n++)
 	delete m_containerApps[n];
+    }
+    Server::
+    ~Server() {
+      clear();
     }
 
     bool Server::
@@ -77,6 +82,8 @@ namespace OCPI {
 	return control(error);
       else if (!strcasecmp(tag, "discover"))
 	return discover(error);
+      else if (!strcasecmp(tag, "appshutdown"))
+	return appShutDown(error);
       return OU::eformat(error, "bad request tag: \"%s\"", tag);
     }
     const char *Server::
@@ -87,10 +94,10 @@ namespace OCPI {
 			    m_downloadBuf.size() : OCPI_UTRUNCATE(size_t, length));
 	if (nr <= 0)
 	  return "reading from socket";
-	length -= nr;
+	length -= (size_t)nr;
 	ssize_t nw;
 	for (char *cp = &m_downloadBuf[0]; nr; nr -= nw, cp += nw)
-	  if ((nw = ::write(wfd, cp, nr)) <= 0)
+	  if ((nw = ::write(wfd, cp, (size_t)nr)) <= 0)
 	    return "writing to file";
       } while (length);
       return NULL;
@@ -127,10 +134,10 @@ namespace OCPI {
 	    try {
 	      OS::FileSystem::mkdir(m_library.libName());
 	    } catch (...) {
-	      return OU::eformat(error, "Cannot create artifact directoryL \"%s\"", 
+	      return OU::eformat(error, "Cannot create artifact directoryL \"%s\"",
 				 m_library.libName().c_str());
 	    }
-	  OU::format(fileName, "%s/%s:%s",
+	  OU::format(fileName, "%s/%s=%s",
 		     m_library.libName().c_str(), uuid.c_str(), artName);
 	  ocpiInfo("Downloading artifact \"%s\" to \"%s\".  Length is %" PRIu64 ".",
 		   name.c_str(), fileName.c_str(), length);
@@ -204,7 +211,7 @@ namespace OCPI {
 	p.m_transportBridged = true;
 	if (other.m_scale == 0)
 	  other.m_scale = 1; // force bridging even if its 1-to-1
-      }	
+      }
       return NULL;
     }
 
@@ -230,7 +237,7 @@ namespace OCPI {
       c.m_transport.id = ezxml_cattr(cx, "id");
       const char *err;
       size_t roleIn, roleOut, optionsIn, optionsOut;
-      
+
       if ((err = OX::getNumber(cx, "roleIn", &roleIn, NULL, 0)) ||
 	  (err = OX::getNumber(cx, "roleOut", &roleOut, NULL, 0)) ||
 	  (err = OX::getNumber(cx, "optionsIn", &optionsIn, NULL, 0)) ||
@@ -269,7 +276,7 @@ namespace OCPI {
 	const char *name = ezxml_cattr(cx, "name");
 	assert(name);
 	assert(!m_containers[n]);
-	ocpiDebug("Server using container %s for client", name);
+	ocpiInfo("Server using container %s for client", name);
 	m_containers[n] = OC::Manager::find(name);
 	assert(m_containers[n]);
 	assert(!m_containerApps[n]);
@@ -325,7 +332,8 @@ namespace OCPI {
 	}
 	if (slaves.length()) {
 	  for (OU::TokenIter li(slaves.c_str()); li.token(); li.next()) {
-	    unsigned slave = atoi(li.token());
+	    size_t slave;
+	    ocpiCheck(sscanf(li.token(), "%zu", &slave) == 1);
 	    assert(slave < m_members.size());
 	    i->m_slaves.push_back(&m_members[n]);
 	    i->m_slaves.back()->m_hasMaster = true;
@@ -389,7 +397,7 @@ namespace OCPI {
       m_rx = NULL;
       m_launchBuf.swap(m_buf);
       m_response = "<launching>\n";
-      m_artifacts.resize(OX::countChildren(m_lx, "artifact"), NULL); 
+      m_artifacts.resize(OX::countChildren(m_lx, "artifact"), NULL);
       size_t n = 0;
       for (ezxml_t ax = ezxml_cchild(m_lx, "artifact"); ax; ax = ezxml_cnext(ax), n++) {
 	const char *uuid = ezxml_cattr(ax, "uuid");
@@ -465,7 +473,7 @@ namespace OCPI {
     control(std::string &error) {
       const char *err;
       size_t inst, n;
-      bool get, set, op, wait, hex, getState = ezxml_cattr(m_rx, "getstate") != NULL;
+      bool get, set, op, wait, hex, unreadableOK, getState = ezxml_cattr(m_rx, "getstate") != NULL;
 
       if ((err = OX::getNumber(m_rx, "id",   &inst, NULL, 0, false, true)) ||
 	  (err = OX::getNumber(m_rx, "get",  &n,    &get, 0, false)) ||
@@ -473,19 +481,42 @@ namespace OCPI {
 	  (err = OX::getNumber(m_rx, "op",   &n,    &op,  0, false)) ||
 	  (err = OX::getNumber(m_rx, "wait", &n,    &wait,  0, false)) ||
 	  (err = OX::getBoolean(m_rx, "hex", &hex)) ||
+	  (err = OX::getBoolean(m_rx, "unreadable_ok", &unreadableOK)) ||
 	  inst >= m_members.size() || !m_members[inst].m_worker ||
 	  ((get || set) && n >= m_members[inst].m_worker->nProperties()))
 	return OU::eformat(error, "Control message error: %s", err);
       m_response = "<control>";
       OC::Worker &w = *m_members[inst].m_worker;
-
       try {
 	if (get || set) {
 	  OU::Property &p = w.properties()[n];
-	  if (get)
-	    w.getPropertyValue(p, m_response, hex, true);
-	  else
-	    w.setPropertyValue(p, m_response.c_str());
+	  size_t offset, dimension;
+	  if ((err = OX::getNumber(m_rx, "offset", &offset)) ||
+	      (err = OX::getNumber(m_rx, "dimension", &dimension)))
+	    return OU::eformat(error, "Get/set property control message error: %s", err);
+	  OU::Member *m = &p;
+	  for (const char *path = ezxml_cattr(m_rx, "path");
+	       path && path[0] && path[1]; path += 2) {
+	    size_t ordinal;
+	    ocpiCheck(sscanf(path, "%2zx", &ordinal) == 1);
+	    if (m->m_baseType == OA::OCPI_Struct) {
+	      if (ordinal >= m->m_nMembers)
+		return OU::eformat(error, "Get/set struct member index error");
+	      m = &m->m_members[ordinal];
+	    } else if (m->m_baseType == OA::OCPI_Type) {
+	      if (ordinal != 0)
+		return OU::eformat(error, "Get/set typedef index error");
+	      m = m->m_type;
+	    }
+	  }
+	  if (get) {
+	    OA::PropertyAttributes a;
+
+	    w.getProperty(p, m_response, *m, offset, dimension,
+			  OA::PropertyOptionList({ hex ? OA::HEX : OA::NONE, OA::APPEND,
+				                   unreadableOK ? OA::UNREADABLE_OK : OA::NONE}), &a);
+	  } else
+	    w.setProperty(p, ezxml_txt(m_rx), *m, offset, dimension);
 	} else if (op)
 	  w.controlOp((OU::Worker::ControlOperation)n);
 	else if (wait)
@@ -507,6 +538,24 @@ namespace OCPI {
 	return true;
       }
       return OX::sendXml(fd(), m_response, "responding from server", error);
+    }
+    // Clear out all the state and resources so that this server can be (serially) reused for another app.
+    bool Server::
+    appShutDown(std::string &error) {
+      // Release resources like/in-common-with the destructor
+      clear();
+      // Clear state not relevant to destruction
+      m_downloading = m_downloaded = false;
+      m_rx = m_lx = NULL;
+      m_launchBuf.clear();
+      m_artifacts.clear();
+      m_containers.clear();
+      m_containerApps.clear();
+      m_crews.clear();
+      m_members.clear();
+      m_connections.clear();
+      OU::format(m_response, "<appshutdown>\n");
+      return OX::sendXml(fd(), m_response, "responding with discovery from server", error);
     }
     bool Server::
     discover(std::string &error) {

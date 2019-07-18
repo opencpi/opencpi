@@ -114,7 +114,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion  \\
 	\hline
-	Release Date      & September 2018  \\
+	Release Date      & 9/2018  \\
 	\hline
 	Component Library & ocpi.core  \\
 	\hline
@@ -204,9 +204,9 @@ The RCC version of this component is just a placeholder to fulfill the requireme
 			\hline
 			\rowcolor{blue}
 			Name                 & Type   & SequenceLength & ArrayDimensions & Accessibility       & Valid Range & Default & Usage                                                 \\
-			\verb+enable_select+     & bool & -              & -               & Readable, Writable  & Standard    & False       & Select back pressure scheme to control 'take' from upstream worker. True=lfsr-15 or False=configurable duty cycle \\
+			\verb+enable_select+     & bool & -              & -               & Readable, Writable  & Standard    & False       & Select back pressure scheme to control 'take' from upstream worker. True = uses lfsr-15 or False = uses configurable duty cycle \\
 			\hline
-			\verb+enable_duty_cycle+   & ushort & -              & -               & Readable, Writable  & Standard    & 1    & Set 'take' duty cycle: 1=constant, 2=toggle, 3=1/on,2/off, 4=1/on,3/off \\
+			\verb+enable_duty_cycle+   & ushort & -              & -               & Readable, Writable  & Standard    & 1    & Set 'take' duty cycle: 1 = constant, 2 = toggle, 3 = 1/on 2/off, 4 = 1/on 3/off, etc. \\
 			\hline
 		\end{tabular}
 	\end{scriptsize}

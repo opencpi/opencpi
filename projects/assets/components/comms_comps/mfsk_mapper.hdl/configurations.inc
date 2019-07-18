@@ -1,4 +1,4 @@
-% Generated on Fri Sep 28 16:14:02 2018
+% Generated on Tue Apr 30 11:24:21 2019
 
 % It is best to wrap this table in \begin{landscape} and \end{landscape} in its including doc
 \begin{tiny}
@@ -7,9 +7,11 @@
     \caption{Table of Worker Configurations for worker: mfsk\_mapper}\\
         \hline
         \rowcolor{blue}
-            Configuration & M\_p & ocpi\_endian & DIN\_WIDTH\_p & ocpi\_debug \\
+            Configuration & ocpi\_debug & ocpi\_endian & DIN\_WIDTH\_p & M\_p \\
             \hline
-            0             & 2    & little       & 16            & false \\
+            0             & false       & little       & 16            & 2 \\
+            \hline
+            1             & false       & little       & 16            & 4 \\
             \hline
         \end{longtable}
 \end{tiny}

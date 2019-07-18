@@ -170,7 +170,7 @@ namespace OCPI {
        * \pre The server socket is bound.
        */
 
-      bool wait (unsigned long timeout = -1)
+      bool wait(long timeout = -1)
         throw (std::string);
 
       /**
@@ -191,7 +191,7 @@ namespace OCPI {
 
       int fd()
 	throw();
-      size_t sendmsg (const void * iovect, unsigned int flags ) throw (std::string);
+      size_t sendmsg (const void * iovect, int flags ) throw (std::string);
       size_t sendto (const char * data, size_t amount, int flags,  char * src_addr,
 		     size_t addrlen) throw (std::string);
       size_t recvfrom(char  *buf, size_t amount, int flags, char *  src_addr,

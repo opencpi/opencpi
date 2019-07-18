@@ -1,0 +1,5 @@
+Add a <tool-name>.py script in this directory, and add the tool name to
+__all__ in __init__.py to support utilization reports for a new tool.
+
+Mimic existing <tool-name>.py scripts to create reportable items to grep
+for and lists of files to consider when searching for utilization information.

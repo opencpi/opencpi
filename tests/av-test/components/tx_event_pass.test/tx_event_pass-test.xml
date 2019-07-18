@@ -1,0 +1,12 @@
+<!-- This is the test xml for testing component "tx_event" -->
+<Tests UseHDLFileIo='false'>
+  <!-- Here are typical examples of generating for an input port and verifying results
+       at an output port
+  <Input Port='in' Script='generate.py'/>
+  <Output Port='out' Script='verify.py' View='view.sh'/>
+  -->
+  <!-- Set properties here.
+       Use Test='true' to create a test-exclusive property. -->
+  <Input Port='in' Script='generate.py' messagesInFile='1'/>
+  <Output Port='out' Script='sh -c "cmp \$0 \$1"' messagesInFile='1'/>
+</Tests>

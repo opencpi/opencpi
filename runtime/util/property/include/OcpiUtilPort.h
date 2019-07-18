@@ -131,15 +131,12 @@ namespace OCPI {
       bool        m_isInternal;
       size_t      m_minBufferCount;  // implementation-defined value
       size_t      m_defaultBufferCount; // specify default when none is specified.
-      size_t      m_bufferSize;      // metadata protocol override, if non-zero
+      size_t      m_bufferSize;      // metadata protocol override, if not SIZE_MAX
+      bool        m_workerEOF;       // this port handles all input EOFs by itself.  No auto-propagation
     private:
       ezxml_t     m_xml;
     public:
-      ssize_t     m_bufferSizePort;  // The ordinal of port we copy our buffer size from or -1
-      size_t      m_nOpcodes;
-      bool        m_clone;
-      bool        m_parsed;          // for assertions
-      bool        m_seenSummary;     // ugly - for inheritors, but must be here for construction
+      size_t     m_bufferSizePort;  // The ordinal of port we copy our buffer size from or SIZE_MAX
       // Scalability
       bool                    m_isScalable;
       std::string             m_scaleExpr;
@@ -172,12 +169,12 @@ namespace OCPI {
       void emitScalingAttrs(std::string &out) const;
       void emitScaling(std::string &out) const;
       // Get the buffer size to use on this port given meta info and params and defaults
-      size_t getBufferSize(const PValue *portParams, const PValue *connParams) const;
+      size_t getBufferSize(const PValue *portParams, const PValue *connParams, size_t otherSize) const;
       Distribution getDistribution(unsigned op) const;
       // Determine the buffer size for a connection, where "in" or "out" could be NULL when
       // they are "external" and not specified by any port metadata.
-      static size_t determineBufferSize(const Port *in, const PValue *paramsIn,
-					const Port *out, const PValue *paramsOut,
+      static size_t determineBufferSize(const Port *in, const PValue *paramsIn, size_t otherIn,
+					const Port *out, const PValue *paramsOut, size_t otherOut,
 					const PValue *connParams);
     };
 

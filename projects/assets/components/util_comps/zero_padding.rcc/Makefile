@@ -18,4 +18,6 @@
 
 # Put Makefile customizations for worker zero_padding.rcc here:
 
+# DEPRECATION NOTICE: This worker is deprecated and will be removed in OpenCPI 2.0. Use the Zero Pad component for new designs.
+
 include $(OCPI_CDK_DIR)/include/worker.mk

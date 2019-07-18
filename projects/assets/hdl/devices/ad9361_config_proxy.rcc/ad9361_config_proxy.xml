@@ -11,7 +11,11 @@
 <!-- | ad9361_config.hdl       |                                             -->
 <!-- +_________________________+                                             -->
 <!--                                                                         -->
-<rccworker language="c++" slave='ad9361_config.hdl' spec='ad9361_config_proxy-spec' controloperations='initialize'>
+<rccworker language="c++" slave='ad9361_config.hdl' spec='ad9361_config_proxy-spec'
+	   controloperations='initialize'
+	   staticprereqlibs='ad9361'
+	   sourcefiles='ad9361_platform.cc'
+	   >
 
   <!--**** PROPERTIES CORRESPONDING TO libad9361 "STANDARD" API (ad9361_api.h)****-->
   <specproperty name='ad9361_init'                           writesync='true'/>
@@ -111,6 +115,18 @@
   <specproperty name='BIST_Mask_Channel_2_I_data' readsync='true' writesync='true'/>
   <specproperty name='BIST_Mask_Channel_1_Q_data' readsync='true' writesync='true'/>
   <specproperty name='BIST_Mask_Channel_1_I_data' readsync='true' writesync='true'/>
+
+  <!-- This property would ideally exist in the OCS, but was added to this OWD
+       instead in order to maintain backwards compatibility of workers based on
+       the OCS. -->
+  <property name='digital_rx_block_delay_sec' type='struct'
+                                              sequencelength='2'
+                                              volatile='true'
+                                              readsync='true'
+                                              description='See UG-570 equation 14.'>
+    <member name='rf_port' type='enum' enums='RX1,RX2'/>
+    <member name='delay_sec' type='double'/>
+  </property>
 
 </rccworker>
 

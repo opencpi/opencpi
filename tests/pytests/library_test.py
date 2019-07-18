@@ -18,10 +18,9 @@
 import unittest
 import sys
 import os
-sys.path.insert(0, os.path.realpath(os.getenv('OCPI_CDK_DIR') + '/scripts/'))
-import ocpiutil
-import ocpiassets
-
+sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
+import _opencpi.util as ocpiutil
+from  _opencpi.assets import factory
 """
 This file contains the unit tests for the Library object
 """
@@ -32,7 +31,7 @@ class LibraryTest(unittest.TestCase):
         create a library in an invalid directory and an exception should be thrown
         """
         self.assertRaises(ocpiutil.OCPIException,
-                          ocpiassets.AssetFactory.factory,
+                          factory.AssetFactory.factory,
                           self.asset_type,
                           "/dev")
 
@@ -40,7 +39,7 @@ class LibraryTest(unittest.TestCase):
         """
         create a library using the default name
         """
-        my_asset = ocpiassets.AssetFactory.factory(self.asset_type,
+        my_asset = factory.AssetFactory.factory(self.asset_type,
                                                   "../av-test/components",
                                                   init_tests=True)
         assert my_asset.run() == 0
@@ -49,7 +48,7 @@ class LibraryTest(unittest.TestCase):
         """
         create a library and forget to initialize the test objects and a exception is thrown
         """
-        my_asset = ocpiassets.AssetFactory.factory(self.asset_type,
+        my_asset = factory.AssetFactory.factory(self.asset_type,
                                                    "../av-test/components",
                                                    "components")
 
@@ -59,7 +58,7 @@ class LibraryTest(unittest.TestCase):
         """
         create a library in the normal way and run it
         """
-        my_asset = ocpiassets.AssetFactory.factory(self.asset_type,
+        my_asset = factory.AssetFactory.factory(self.asset_type,
                                                   "../av-test/components",
                                                   "components",
                                                   init_tests=True)

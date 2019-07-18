@@ -1,6 +1,5 @@
 This primitive library is for code that is specific to stratix4, but that does not get
-IMPLICITLY used for workers built for stratix4 targets. Modules that get IMPLICITLY
-used in workers built for stratix4 belong in the util_stratix4 or vendor_altera libraries.
+IMPLICITLY used for workers built for stratix4 targets.
 
 Code goes here that is shared by different stratix4-based platforms, and those
 platforms will EXPLICITLY reference this library.

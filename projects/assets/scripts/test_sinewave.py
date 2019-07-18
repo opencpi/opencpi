@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python2
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -41,24 +41,15 @@ signed 16-bit samples with a tone at a configurable center frequency and sample
 frequency. The data should pass through the worker unchanged.
 
 """
-import struct
-import shutil
-import numpy as np
+# import struct
+# import shutil
 import sys
+import os
 import os.path
-import random
+# import random
+import opencpi.colors as color
+import numpy as np
 
-class color:
-    PURPLE = '\033[95m'
-    CYAN = '\033[96m'
-    DARKCYAN = '\033[36m'
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    END = '\033[0m'
 
 def generate(argv):
     """

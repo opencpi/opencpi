@@ -1,0 +1,45 @@
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+Unit testing of CDC Synchronizers employs the use of "Golden" verification files.
+The construction of the input and check vectors (Golden) involves interating over
+the following steps to attain the desired test coverage:
+
+1) Design input test vectors:
+Create input data to stress the functionality of the UUT. For many of the
+CDC modules, an enable and data are the only signals for which input test
+vectors must be designed.
+
+din.txt:
+ - Input test vector file: data format is 16 bit, hexadecimal
+ - For testing sync_bit.vhd: D15=sEN and D0=sD_IN
+ - The developer is expected to modify this file, in a way that tests
+   all of the UUT's functionality.
+
+2) Inspect the simulation waveforms to confirm that all of the UUT's
+functionality is covered.
+
+3) Creating the check vectors file (i.e. "Golden" file):
+Once din.txt has been proven to test all of the UUT's funcationality
+via #2, the contents of the *_ack.txt file are used to create the
+check data file. Simply copy its contents to the appropriate din_chk*.txt
+file.
+Note: Due to way sim_verify.vhd operates and produces DONE, it may be
+necessary to manually append data to the end of din_chk*.txt, so that
+the DONE signal is active after all data has been verified. This only
+seems to be necessary when source clock is SLOWER than destination clock.

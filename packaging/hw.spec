@@ -23,11 +23,13 @@
 # We do not need error out to arch packages and we also do not need
 # to generate dependices on the so files we have
 %define _binaries_in_noarch_packages_terminate_build   0
+%define __strip %{RPM_CROSS_COMPILE}strip
 AutoReqProv: no
 Name:           %{RPM_NAME}
-Requires(pre):  opencpi
-Requires:       opencpi opencpi-devel
-Requires(pre,postun): opencpi
+Requires(pre,postun):  opencpi = %{RPM_VERSION}
+Requires:               opencpi = %{RPM_VERSION}
+Requires:         opencpi-devel = %{RPM_VERSION} 
+Requires(post): hardlink
 BuildArch:      noarch
 Version:        %{RPM_VERSION}
 Release:        %{RPM_RELEASE}%{?dist}
@@ -59,8 +61,8 @@ Release ID: %{RPM_HASH}
 hardlink ${prefix0}/%{deploy_dir}/ || :
 shopt -s nullglob
 [ "$RPM_INSTALL_PREFIX0" != "%{prefix0}" ] \
-  && path0=$RPM_INSTALL_PREFIX0/%{RPM_PLATFORM}/host-udev-rules/ \
-  || path0=%{prefix0}/%{deploy_dir}/%{RPM_PLATFORM}/host-udev-rules/
+  && path0=$RPM_INSTALL_PREFIX0/%{RPM_PLATFORM}/host-udev-rules \
+  || path0=%{prefix0}/%{deploy_dir}/%{RPM_PLATFORM}/host-udev-rules
 [ "$RPM_INSTALL_PREFIX1" != "%{prefix1}" ] \
   && path1=$RPM_INSTALL_PREFIX1 \
   || path1=%{prefix1}
@@ -68,16 +70,19 @@ for link in $path0/*; do
   mkdir -p $path1/udev/rules.d
   ln -s -f $link $path1/udev/rules.d/$(basename $link)
 done
+# CentOS7 doesn't use inotify any more with systemd's udev, and this is harmless on C6:
+udevadm control --reload-rules || :
 
 %postun
-# Uninstall any broken links left in udev rules (e.g. ones installed in %post but now deleted)
+# Uninstall any broken links left in udev rules (e.g. ones installed in %%post but now deleted)
 shopt -s nullglob
 [ "$RPM_INSTALL_PREFIX1" != "%{prefix1}" ] \
   && path1=$RPM_INSTALL_PREFIX1 \
   || path1=%{prefix1}
 for link in $path1/udev/rules.d/*; do
-  [ ! -e "$link" ] && rm $link
+  [ ! -e "$link" ] && rm $link || :
 done
+udevadm control --reload-rules || :
 # Always exit with a good status
 :
 

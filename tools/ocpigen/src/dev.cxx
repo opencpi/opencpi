@@ -129,7 +129,7 @@ emitRecordInterface(FILE *f, const char *implName) {
 }
 
 void DevSignalsPort::
-emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
+emitConnectionSignal(FILE *f, bool output, Language /*lang*/, bool /*clock*/, std::string &signal) {
   if ((output && !haveOutputs()) || (!output && !haveInputs()))
     return;
   std::string tname, suff, stype;
@@ -181,10 +181,10 @@ emitPortSignalsDir(FILE *f, bool output, const char *indent, bool &any, std::str
 // These signal bundles are defined on both sides independently, so they must
 // be assigned individually...
 void DevSignalsPort::
-emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *indent,
+emitPortSignals(FILE *f, const InstancePort &ip, Language /*lang*/, const char *indent,
 		bool &any, std::string &comment, std::string &last, const char */*myComment*/,
-		OcpAdapt */*adapt*/, std::string */*hasExprs*/, std::string &/*exprs*/) {
-  Attachment *at = atts.front();
+		std::string &/*exprs*/) {
+  Attachment *at = ip.m_attachments.front();
   Attachment *otherAt = NULL;
   if (at) {
     Connection &c = at->m_connection;

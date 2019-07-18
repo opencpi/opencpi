@@ -143,7 +143,7 @@ $(foreach v,$(filter ExtraCompilerOptionsCC_%,$(.VARIABLES)),\
 # Prepare the parameters for compile-command-line injection into the worker compilation
 RccParams=\
   $(foreach n,$(WorkerParamNames),\
-	     '-DPARAM_$n()=$(Param_$(ParamConfig)_$n)')
+	     '-DOCPI_PARAM_$n()=$(Param_$(ParamConfig)_$n)')
 
 # Given flag name, target and language and flag name, prioritize the flags, as defined:
 # target and language
@@ -232,13 +232,13 @@ $(call RccAssemblyFile,$1,$2): | $(call WkrTargetDir,$1,$2)
 # FIXME: it is theoretically better to generate the XML as part of the final link phase.
 $(call ArtifactXmlFile,$1,$2): $(call RccAssemblyFile,$1,$2) $$(ObjectFiles_$1_$2)
 	$(AT)echo Generating artifact/runtime xml file $$@ for all workers in one binary
-	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen $(call OcpiFixPathArgs,-M $(call WkrTargetDir,$1,$2)/$$(@F).deps \
+	$(AT)$$(call OcpiGen) \
 	     -O $(call RccOs,$1) \
              -V $(call RccOsVersion,$1) \
              -H $(call RccArch,$1) \
 	     -P $(call RccRealPlatforms,$3) \
 	     -Z $(call OcpiIsDynamic,$3) \
-	     -D $(call WkrTargetDir,$1,$2) $(XmlIncludeDirsInternal:%=-I%) -A $(RccAssemblyFile))
+	     -D $(call WkrTargetDir,$1,$2) -A $(RccAssemblyFile)
 
 endef
 

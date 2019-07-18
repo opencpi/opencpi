@@ -32,8 +32,8 @@
 #include "file_write_demux-worker.hh"
 
 #ifdef __APPLE__
-// On MacOS this exists but is missing from the header
-extern int fdatasync(int);
+// On MacOS this does not exist, although it is in the header
+#define fdatasync fsync
 #endif
 
 #ifndef likely

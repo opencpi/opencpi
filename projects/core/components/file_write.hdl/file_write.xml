@@ -1,9 +1,8 @@
-<HdlWorker Language="vhdl" datawidth='32' controlOperations='stop,release'>
+<HdlWorker Language="vhdl" datawidth='32' controlOperations='stop,release' version='2' onlytargets='xsim isim modelsim'>
   <xi:include href="file_write_spec.xml"/>
 
   <!-- Current working directory string - CWD_MAX_LENGTH usually should match file_read -->
-  <property name="CWD_MAX_LENGTH" type="ULong" default="256" parameter="true"/>
+  <property name="CWD_MAX_LENGTH" type="ULong" default="512" parameter="true"/>
   <property name="cwd" type='string' stringlength='CWD_MAX_LENGTH' volatile='true'/>
-  
-  <specproperty name='fileName' readable='true'/>
+  <specproperty name='fileName' readback='true'/>
 </HdlWorker>

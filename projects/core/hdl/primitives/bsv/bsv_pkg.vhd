@@ -26,7 +26,8 @@ component FIFO2X
            RST     : in  std_logic;
            D_IN    : in  std_logic_vector(width - 1 downto 0);
            ENQ     : in  std_logic;
-           FULL_N  : out std_logic;
+           FULL_N  : out std_logic; -- is full
+           FULL1_N : out std_logic; -- will be full
            D_OUT   : out std_logic_vector(width - 1 downto 0);
            DEQ     : in  std_logic;
            EMPTY_N : out std_logic;

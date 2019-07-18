@@ -64,7 +64,7 @@ namespace OCPI {
     const char *BaseCommandOptions::
     doValue(Member &m, const char *argValue, const char **&a_argv) {
       Value &v = *m.m_default;
-      size_t ordinal = &m - m_options;
+      size_t ordinal = OCPI_SIZE_T_DIFF(&m, m_options);
       bool seen = m_seen[ordinal];
       if (!m.m_isSequence && seen)
 	return setError(esprintf("Multiple '%s' options are present, which is not allowed",
@@ -114,7 +114,7 @@ namespace OCPI {
 	    goto cont2;
 	  }
 	  const char *eq = strchr(arg, '=');
-	  size_t len = eq ? eq - arg : strlen(arg);
+	  size_t len = eq ? OCPI_SIZE_T_DIFF(eq, arg) : strlen(arg);
 	  Member *m = m_options;
 	  for (unsigned n = 0; n < m_nOptions; n++, m++)
 	    if (len == m_names[n].size() && !strncasecmp(arg, m_names[n].c_str(), len)) {
@@ -137,7 +137,7 @@ namespace OCPI {
       }
       m_argv = ap;
       while (*ap) ap++;
-      m_argvCount = ap - m_argv;
+      m_argvCount = OCPI_SIZE_T_DIFF(ap, m_argv); // always positive
       if (debug) {
 	Member *m = m_options;
 	for (unsigned n = 0; n < m_nOptions; n++, m++)
@@ -177,7 +177,7 @@ namespace OCPI {
 	size_t nlwidth = 1000;
 	const char *nl = strchr(m->m_description.c_str(), '\n');
 	if (nl)
-	  nlwidth = nl - m->m_description.c_str();
+	  nlwidth = OCPI_SIZE_T_DIFF(nl, m->m_description.c_str());
 	fprintf(stderr, "  %-*s   %-6s  %-8s   %s   %-.*s.", (int)width, m_names[n].c_str(),
 		m->m_abbrev.size() ? m->m_abbrev.c_str() : "<none>",
 		baseTypeNames[m->m_baseType],
@@ -185,7 +185,7 @@ namespace OCPI {
 	while (nl) {
 	  const char *start = ++nl;
 	  nl = strchr(start, '\n');
-	  nlwidth = nl ? nl - start : 1000;
+	  nlwidth = nl ? OCPI_SIZE_T_DIFF(nl, start) : 1000;
 	  fprintf(stderr, "\n%*s%-.*s", (int)width + 30, "", (int)nlwidth, start);
 	}
 	if (m_defaults[n])

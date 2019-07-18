@@ -1,0 +1,20 @@
+<application package='ocpi.core' done='file_write'>
+  <instance component="ocpi.assets.util_comps.pattern_v2">
+    <property name='dataRepeat' value='true'/>
+    <property name='numMessagesMax' value='5'/>
+    <property name='messagesToSend' value='5'/>
+    <property name="numDataWords" value='15'/>
+    <property name="messages" value='{4, 251},{8, 252},{12, 253},{16, 254},{20, 255}'/>
+    <property name="data" value='0,1,2,3,4,5,6,7,8,9,10,11,12,13,14'/>
+  </instance>
+  <connection>
+    <port from='out' instance='pattern_v2'/>
+    <port to='in' instance='bias'/>
+  </connection>
+  <instance component='bias' connect='file_write'/>
+
+  <instance component="file_write">
+    <property name="messagesInFile" value='true' />
+    <property name="fileName" value='test.output' />
+  </instance>
+</application>

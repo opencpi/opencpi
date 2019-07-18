@@ -1,6 +1,5 @@
-<RccImplementation Name="ConsumerWorker">
+<RccWorker Name="ConsumerWorker" spec="cons_spec.xml">
   <ControlInterface ControlOperations="initialize,start,stop,release,test,afterConfigure,beforeQuery"/>
-  <xi:include href="cons_spec.xml"/>
-</RccImplementation>
+</RccWorker>
 
 

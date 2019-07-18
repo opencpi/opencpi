@@ -16,4 +16,7 @@
     <Connect Port='dev_txen' To='dev_txen_dac'/>
     <Connect Port='dev_tx_event' To='dev_tx_event'/>
   </Supports>
+
+  <Devsignal Name='dev_gp' Signals='gp-out-signals.xml' Master='true'/>
+
 </HdlDevice>

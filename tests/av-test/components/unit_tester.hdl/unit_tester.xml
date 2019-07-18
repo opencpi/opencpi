@@ -1,0 +1,3 @@
+<HdlWorker language='vhdl' spec='unit_tester-spec'>
+ <SpecProperty Name="prop" Parameter="true" Default="1"/>
+</HdlWorker>

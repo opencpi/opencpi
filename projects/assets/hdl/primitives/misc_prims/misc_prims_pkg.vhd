@@ -71,4 +71,13 @@ component event_in_to_txen
     IS_OPERATING           : out std_logic);
 end component;
 
+component edge_detector
+  port(
+    clk               : in  std_logic;
+    reset             : in  std_logic;
+    din               : in  std_logic;
+    rising_pulse      : out std_logic;
+    falling_pulse     : out std_logic);
+end component;
+
 end package misc_prims;

@@ -37,7 +37,7 @@ WmiPort(Worker &w, ezxml_t x, DataPort *sp, int ordinal, const char *&err)
         (err = OE::getBoolean(x, "Bidirectional", &m_isBidirectional)) ||
         (err = OE::getNumber(x, "MFlagWidth", &m_mflagWidth, 0, 0)))
     return;
-  finalize();
+    //  finalize();
 }
 // Our special copy constructor
 WmiPort::
@@ -240,4 +240,7 @@ emitRecordOutputs(FILE *f) {
     fprintf(f,
 	    "    som, eom, valid  : Bool_t;            -- one or more must be true when 'give' is asserted\n");
       }
+}
+void WmiPort::
+emitImplSignals(FILE *) {
 }

@@ -330,9 +330,12 @@ ToolsDir=$(eval $(OcpiEnsureToolPlatform))$(OCPI_CDK_DIR)/$(OCPI_TOOL_DIR)/bin
 # Here are the environment variables that might be set in the "make" environment,
 # that must be propagated to ocpigen.
 OcpiGenEnv=\
+    OCPI_PROJECT_DIR="$(OCPI_PROJECT_DIR)" \
     OCPI_PREREQUISITES_DIR="$(OCPI_PREREQUISITES_DIR)" \
+    OCPI_PROJECT_DEPENDENCIES="$(OcpiGetProjectDependencies)" \
     OCPI_HDL_PLATFORM_PATH="$(subst $(Space),:,$(strip \
                               $(call OcpiRelativePathsInsideProjectOrImports,.,$(subst :, ,$(OCPI_HDL_PLATFORM_PATH)))))" \
+    OCPI_ALL_PLATFORMS="$(strip $(HdlAllPlatforms:%=%.hdl) $(RccAllPlatforms:%=%.rcc) $(OclAllPlatforms:%=%.ocl))"\
     OCPI_ALL_HDL_TARGETS="$(OCPI_ALL_HDL_TARGETS)" \
     OCPI_ALL_RCC_TARGETS="$(OCPI_ALL_RCC_TARGETS)" \
     OCPI_ALL_OCL_TARGETS="$(OCPI_ALL_OCL_TARGETS)"
@@ -383,9 +386,9 @@ OcpiCallPythonFunc=\
 # Import the ocpiutil module and run the python code in $1
 # Usage: $(call OcpiCallPythonUtil,ocpiutil.utility_function(arg1, arg2))
 OcpiCallPythonUtil=$(infox OPYTHON:$1)\
-  $(shell python3 -c 'import sys; \
-sys.path.append("$(OCPI_CDK_DIR)/scripts/"); \
-import ocpiutil; \
+  $(shell python3 -c 'import sys;\
+sys.path.append("$(OCPI_CDK_DIR)/$(OCPI_TOOL_PLATFORM)/lib/");\
+import _opencpi.util as ocpiutil;\
 $1')
 
 # Like the builtin "dir", but without the trailing slash
@@ -523,13 +526,15 @@ OcpiGetProjectPath=$(strip \
 # For example, available platforms can be determined based on all known projects.
 # Warning is suppressed during RPM builds
 # This may be called from outside of a project
+# This function returns project directories, NOT their export subdirectories
 OcpiGetExtendedProjectPath=$(strip\
   $(if $(OCPI_PROJECT_DIR),\
-    $(OcpiGetProjectPath) \
+    $(foreach p,$(OcpiGetProjectPath),\
+      $(if $(filter $(notdir $p),exports),$(patsubst %/,%,$(dir $p)),$p)) \
     $(foreach p,$(OcpiGetImportsNotInDependencies),\
-      $(or $(call OcpiExists,$p/exports),$(call OcpiExists,$p),$(RPM_BUILD_ROOT),\
+      $(or $(call OcpiExists,$p),$(RPM_BUILD_ROOT),\
            $(info Warning: The path $p in Project Path does not exist.))),\
-    $(subst :, ,$(OCPI_PROJECT_PATH)) $(wildcard $(OcpiGlobalDefaultProjectRegistryDir)/*/exports)))
+    $(subst :, ,$(OCPI_PROJECT_PATH)) $(wildcard $(OcpiGlobalDefaultProjectRegistryDir)/*)))
 
 # Loop through all imported projects and check for 'exports' and then try to find
 # rcc/platforms. Return a list of paths to 'rcc/platforms' directories found in each
@@ -539,16 +544,13 @@ OcpiGetExtendedProjectPath=$(strip\
 # Note: the path 'platforms' without a leading 'rcc/' is searched as well for legacy
 #       compatibilty before rcc platforms were supported outside of the CDK
 OcpiGetRccPlatformPaths=$(strip \
-                          $(foreach p,$(or $(OCPI_PROJECT_DIR),\
-                                        $(wildcard $(OcpiProjectRegistryDir)/*)),\
+                          $(foreach p,$(OCPI_PROJECT_DIR),\
                             $(call OcpiExists,$p/rcc/platforms))\
                           $(foreach p,$(OcpiGetExtendedProjectPath),\
-                          $(if $(filter-out $(realpath $(OCPI_PROJECT_DIR)),\
-                                            $(realpath $(call OcpiAbsPathToContainingProject,$p))),\
-                            $(or $(if $(filter $(notdir $p),exports),\
-                                $(call OcpiExists,$p/lib/rcc/platforms),\
-                                $(call OcpiExists,$p/rcc/platforms)),\
-                                  $(info Warning: The path $p/rcc/platforms does not exist.)))))
+                            $(if $(filter-out $(realpath $(OCPI_PROJECT_DIR)),\
+                                              $(realpath $(call OcpiAbsPathToContainingProject,$p))),\
+                              $(or $(call OcpiExists,$p/exports/lib/rcc/platforms),\
+                                   $(call OcpiExists,$p/rcc/platforms)))))
 
 # Search for a given platform ($1) in the list of 'rcc/platform' directories found
 # by OcpiGetRccPlatformPaths.
@@ -772,6 +774,8 @@ OcpiPrependEnvPath=\
 # Set the given directory as the project directory, include the Project.mk file that is there
 # and setting an environment variable OCPI_PROJECT_DIR to that place.
 # This allows any path-related settings to be relative to the project dir
+#TODO all the cooments within this define should probably be moved out for perfromance reasons
+#     because this function is used by $(call ...)
 define OcpiSetProject
   # This might already be set
   $$(call OcpiDbg,Setting project to $1)
@@ -914,11 +918,13 @@ OcpiIncludeProject=$(call OcpiIncludeProjectX,$(or $(OCPI_PROJECT_DIR),.),$1,$(c
 #
 # For OcpiIncludeParentAsset_* functions, arguments are as follows:
 #   Arg1 = reference directory
-#   Arg2 = error/warning/info mode
+#   Arg2 = authoring model prefix (optional) - <parent>.<auth>.<package-name>
+#   Arg3 = error/warning/info mode
 
 # So, for library, first check if this is a platform's devices library.
 # If so, include the parent (../) with type Platform so it can
 # find Platform.mk if it exists. Otherwise, the parent is just the project
+# TODO: should hdl/devices library should have an hdl prefix?
 OcpiIncludeParentAsset_library=\
   $(if $(filter %-platform,$(call OcpiGetDirType,$1/../)),\
     $(call OcpiIncludeAssetAndParentX,$1/../,$2,$3),\
@@ -987,7 +993,7 @@ OcpiIncludeAssetAndParentX=$(infox OIAAPX:$1:$2:$3)$(strip \
 # none is provided. Finally, it determines the shortened and capitalized
 # directory type to be used for finding *.mk files.
 #   Arg1 = reference directory (optional) - defaults to '.' in subcalls
-#   Arg2 = authoring model prefix (optional) - <parent>.<auth>.<package-name>
+#   Arg2 = authoring model prefix for package-ID (optional) - <parent>.<auth>.<package-name>
 #   Arg3 = error/warning/info mode (optional)
 OcpiIncludeAssetAndParent=$(strip \
   $(eval include $(OCPI_CDK_DIR)/include/package.mk)\
@@ -1039,7 +1045,6 @@ OcpiShellWithEnv=$(shell $(foreach e,$1,\
 $(call OcpiDbg,End of util.mk)
 
 # Set up the standard set of places to look for xml files.
-define OcpiSetXmlIncludes
 # Here we add access to:
 # 0. The current directory
 # 1. The generated directory
@@ -1050,6 +1055,7 @@ define OcpiSetXmlIncludes
 # 6. Any other component library's XML dirs
 # 6. The standard component library for specs
 # 7. The standard component library's exports for proxy slaves
+define OcpiSetXmlIncludes
 $(eval override XmlIncludeDirsInternal:=\
   $(call Unique,\
     . $(GeneratedDir) \
@@ -1131,6 +1137,14 @@ OcpiPrepareArtifact=\
    )
 
 # What to do early in each top level Makefile to process build files.
+# Process the build file one of two ways:
+# 1. If there is a build file, process it.
+# 2. If there is no build file, create one in gen/, based on what is found in the Makefile
+#    which uses MakeRawParams to feed the parameter in the Makefile into ocpigen -r
+# Either option generates gen/<wkr>.mk
+# Note:  RCC worker directories that build multiple workers in a common source file
+# are not supported to have non-default build parameters, nor any parameter values
+# specified in the Makefile itself.
 ParamShell=\
   if [ -n "$(OcpiBuildFile)" -a -r "$(OcpiBuildFile)" ] ; then \
     (mkdir -p $(GeneratedDir) &&\
@@ -1142,14 +1156,15 @@ ParamShell=\
       $(and $(Assembly),-S $(Assembly)) \
       -b $(Worker_$(Worker)_xml))) || echo 1;\
   else \
-    (mkdir -p $(GeneratedDir) &&\
-    $(MakeRawParams) |\
-    $(call OcpiGenTool, -D $(GeneratedDir) $(and $(Package),-p $(Package))\
-      $(and $(Platform),-P $(Platform)) \
-      $(and $(PlatformDir), -F $(PlatformDir)) \
-      $(HdlVhdlLibraries) \
-      $(and $(Assembly),-S $(Assembly)) \
-      -r $(Worker_$(Worker)_xml))) || echo 1;\
+    mkdir -p $(GeneratedDir);\
+    $(foreach w,$(Workers),\
+      $(MakeRawParams) |\
+      $(call OcpiGenTool, -D $(GeneratedDir) $(and $(Package),-p $(Package))\
+        $(and $(Platform),-P $(Platform)) \
+        $(and $(PlatformDir), -F $(PlatformDir)) \
+        $(HdlVhdlLibraries) \
+        $(and $(Assembly),-S $(Assembly)) \
+        -r $(Worker_$w_xml) || (echo 1 && exit 1));)\
   fi
 
 # Create the internal, transient XML document to convey property values in the Makefile
@@ -1179,6 +1194,7 @@ MakeRawParams= \
    echo "</parameters>")
 
 # A single quote ' to balance the one above when some editors/colorizers get confused.
+
 # This must be done early to allow the make file fragment that is generated from the -build.xml
 # file to be processed as if it was a user-written Makefile, before most other processing
 define OcpiProcessBuildFiles
@@ -1195,7 +1211,6 @@ endif
 
 # These are included to know the universe of possible platforms, which is required when
 # the build files are processed
-# FIXME: make a narrower rcc-targets.mk
 # FIXME: make this generated by the list of known models
 include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
 include $(OCPI_CDK_DIR)/include/rcc/rcc-targets.mk
@@ -1207,20 +1222,20 @@ $$(call OcpiDbgVar,XmlIncludeDirsInternal)
 $$(call OcpiSetXmlIncludes)
 $$(call OcpiDbgVar,XmlIncludeDirsInternal)
 
-# Process the build file one of two ways:
-# 1. If there is no build file, create one in gen/, based on what is found in the Makefile
+# Process the build file using ParamShell one of two ways:
+# 1. If there is a build file, process it.
+# 2. If there is no build file, create one in gen/, based on what is found in the Makefile
 #    which uses MakeRawParams to feed the parameter in the Makefile into ocpigen -r
-# 2. If there is a build file, process it.
 # In both cases, a gen/<wkr>.mk file is created and then included
 
 $$(call OcpiDbgVar,ParamShell)
 X:=$$(shell $$(ParamShell))
 $$(and $$X,$$(error Failed to process initial parameters for this worker: $$X))
-include $(GeneratedDir)/$(Worker).mk
+$$(foreach w,$$(Workers),$$(eval include $$(GeneratedDir)/$$w.mk))
 WorkerParamNames:=\
-    $$(foreach p, \
-      $$(filter ParamMsg_$$(firstword $$(ParamConfigurations))_%,$$(.VARIABLES)),\
-      $$(p:ParamMsg_$$(firstword $$(ParamConfigurations))_%=%))
+    $$(foreach w,$$(Workers),\
+        $$(foreach p,$$(filter ParamMsg_$$(firstword $$(ParamConfigurations))_$$(WorkerName_$$w)_%,$$(.VARIABLES)),\
+          $$(p:ParamMsg_$$(firstword $$(ParamConfigurations))_$$(WorkerName_$$w)_%=$$(WorkerName_$$w)_%)))
 $$(call OcpiDbgVar,WorkerParamNames)
 $$(call OcpiDbgVar,ParamConfigurations)
 
@@ -1228,7 +1243,7 @@ endif # if not cleaning
 
 endef # OcpiProcessBuildFiles
 
-# This function reads the platform's target definition file <platform>.mk, against the defaults,
+# This function reads the RCC platform's target definition file <platform>.mk, against the defaults,
 # and assigns the platform-specific variables
 define OcpiSetPlatformVariables
   ifndef OcpiPlatformDir_$1 # avoid all the work if its already done

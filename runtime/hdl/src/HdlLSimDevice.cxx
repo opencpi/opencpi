@@ -229,9 +229,9 @@ protected:
     m_endpointSpecific = "ocpi-socket-rdma";
     m_endpointSize = OH::SDP::Header::max_addressable_bytes * OH::SDP::Header::max_nodes;
     cAccess().setAccess(NULL, this, OCPI_UTRUNCATE(RegisterOffset, 0));
-    // data offset is after the first node
-    dAccess().setAccess(NULL, this, OCPI_UTRUNCATE(RegisterOffset,
-						   OH::SDP::Header::max_addressable_bytes));
+    // data offset overlays the control plane since it is SDP node 0.
+    dAccess().setAccess(NULL, this, OCPI_UTRUNCATE(RegisterOffset, 0));
+    //						   OH::SDP::Header::max_addressable_bytes));
     init(error);
     // Note we are emulating here, still not creating any file system dirs or fifos
   }
@@ -240,7 +240,7 @@ protected:
     // We do not clean this up - it is created on demand.
     const char *slash = strrchr(m_simDir.c_str(), '/');
     assert(slash);
-    size_t len = slash - m_simDir.c_str();
+    size_t len = OCPI_SIZE_T_DIFF(slash, m_simDir.c_str());
     std::string parent;
     parent.assign(m_simDir.c_str(), len);
     // This is created on demand and not removed.
@@ -420,6 +420,8 @@ protected:
   void
   flush() {
     ocpiDebug("Flushing all session state");
+    if (m_verbose)
+      fprintf(stderr, "Simulator device flushing all session state\n");
     m_req.flush();  // FIXME: could this steal partial requests and get things out of sync?
     m_resp.flush(); // FIXME: should we wait for the request fifo to clear?
     m_exec.clear();
@@ -457,6 +459,7 @@ protected:
     }
     m_exited = false;
     flush();
+    m_isAlive = false;
   }
   bool
   spin(std::string &error) {
@@ -592,7 +595,7 @@ protected:
     ocpiDebug("When %s time since spin is: %" PRIu32 ".%03" PRIu32 " s ago", msg,
 	      et.seconds(), (et.nanoseconds() + 500000) / 1000000);
   }
-#define myassert(cond) do if (!(cond)) { terminate(); assert(cond); } while (0)
+#define myassert(cond) do if (!(cond)) { OS::dumpStack(); terminate(); assert(cond); } while (0)
   // This is the way control plane responses come back.
   // It is also the way data plane output request (writes) come out of the sim
   bool
@@ -625,12 +628,16 @@ protected:
 	  send2sdp(h, data, true, "DMA read response", error);
 	}
       } else {
-	myassert(!m_respQueue.empty());
-	Request &r = *m_respQueue.front();
-	if (r.header.endRequest(h, m_resp.m_rfd, r.data, error))
+	Request *r;
+	{
+	  OU::AutoMutex m(m_sdpSendMutex);
+	  myassert(!m_respQueue.empty());
+	  r = m_respQueue.front();
+	  m_respQueue.pop();
+	}
+	if (r->header.endRequest(h, m_resp.m_rfd, r->data, error))
 	  return true;
-	r.sem.post();
-	m_respQueue.pop();
+	r->sem.post();
       }
       return false;
     }
@@ -677,7 +684,7 @@ protected:
   }
 public:
   ~Device() {
-    lock(); // unlocked by SeftMutex destructor
+    lock(); // unlocked by SelfMutex destructor
     shutdown();
     OH::Driver::getSingleton().m_devices.erase(this);
     ocpiDebug("Simulation server %s destruction", m_name.c_str());
@@ -715,7 +722,9 @@ public:
       m_firstRun = false;
     }
     std::string error;
-    if (!m_exited && !m_stopped && m_cumTicks < m_simTicks) {
+    if (m_state == EMULATING)
+      error = "simulator is no longer running";
+    else if (!m_exited && !m_stopped && m_cumTicks < m_simTicks) {
       if (m_cumTicks - m_lastTicks > 1000) {
 	ocpiDebug("Spin credit at: %20" PRIu64, m_cumTicks);
 	m_lastTicks = m_cumTicks;
@@ -739,9 +748,13 @@ public:
 		m_name.c_str(), m_cumTicks, m_simTicks);
       ocpiInfo("Simulator \"%s\" credits at %" PRIu64 " exceeded %u, stopping simulation",
 	       m_name.c_str(), m_cumTicks, m_simTicks);
-    } else
+    } else {
+      if (m_verbose)
+	fprintf(stderr, "Simulator \"%s\" shutting down. Error: %s\n",
+		m_name.c_str(), error.empty() ? "none" : error.c_str());
       ocpiInfo("Simulator \"%s\" shutting down. Error: %s",
 	       m_name.c_str(), error.empty() ? "none" : error.c_str());
+    }
     shutdown();
     return true;
   }
@@ -820,8 +833,8 @@ public:
       const char *dot = strchr(suff + 1, '.');
       if (!dot)
 	return OU::eformat(error, "simulator file name %s is not formatted properly", file);
-      m_file.assign(slash, dot - slash);
-      m_app.assign(slash, suff - slash);
+      m_file.assign(slash, OCPI_SIZE_T_DIFF(dot, slash));
+      m_app.assign(slash, OCPI_SIZE_T_DIFF(suff, slash));
     } else
       m_file = m_app = slash;
     char date[100];
@@ -958,8 +971,10 @@ public:
       return;
     }
     Request r(read, offset, length, data);
-    if (read)
+    if (read) {
+      OU::AutoMutex m(m_sdpSendMutex);
       m_respQueue.push(&r);
+    }
     send2sdp(r.header, data, false, "control", r.error);
     if (read) {
       r.sem.wait();
@@ -1214,7 +1229,7 @@ open(const char *name, const OA::PValue *params, std::string &err) {
   for (cp = name; *cp && !isdigit(*cp); cp++)
     ;
   std::string platform;
-  platform.assign(name, cp - name);
+  platform.assign(name, OCPI_SIZE_T_DIFF(cp, name));
   bool verbose = false;
   OU::findBool(params, "verbose", verbose);
   const char *dir = "simulations";

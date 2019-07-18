@@ -74,7 +74,7 @@ namespace OCPI {
       // Port Set id
       int32_t        portSetId;
 
-      inline PortMetaData* getPortInfo(int32_t idx )
+      inline PortMetaData* getPortInfo(uint32_t idx )
       {return static_cast<PortMetaData*>(m_portMd[idx]);}
 
       // User data

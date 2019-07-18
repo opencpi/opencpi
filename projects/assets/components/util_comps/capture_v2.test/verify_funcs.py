@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -22,23 +22,12 @@ This script defines the functions used to validate the data captured by the Capt
 by the verify.py script.
 """
 
+# import os.path
+# import struct
 import sys
-import os.path
-import struct
+import opencpi.colors as color
 import numpy as np
 
-
-class color:
-    PURPLE = '\033[95m'
-    CYAN = '\033[96m'
-    DARKCYAN = '\033[36m'
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    END = '\033[0m'
 
 # For testScenario 1
 def verify_metadataCount1(metadataCount):
@@ -207,6 +196,7 @@ def verify_metadata1(metadata, numRecords):
 def verify_metadata2(metadata, metadataCount, stopOnFull, numRecords):
     eom_frac_prev = 0
     som_frac_prev = 0
+    som_seconds_prev = 0
     if stopOnFull == "true":
         # Multiplying metadataCount by 4 because there are 4 metadata words
         stop = 4*metadataCount
@@ -217,6 +207,7 @@ def verify_metadata2(metadata, metadataCount, stopOnFull, numRecords):
         messageSize = (metadata[x] & 0x00FFFFFF)
         eom_fraction = metadata[x+1]
         som_fraction = metadata[x+2]
+        som_seconds = metadata[x+3]
         # Check that timestamps are non-zero
         if eom_fraction == 0:
                 print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", eom fraction time stamp is 0"  + color.END
@@ -247,14 +238,23 @@ def verify_metadata2(metadata, metadataCount, stopOnFull, numRecords):
                     print "    " + "For metadata record " + str((x/4)+1) +  ", message size is", messageSize, "while expected value is" + color.END, "0"
                     sys.exit(1)
                 # When stopOnFull is false,  there would have been a wrap around when the ZLM of opcode 0 was received.
-                # So the first metadata records's timestamps should be greater than the last metadata record's timestamp
+                # If the final metadata record's seconds timestamp incremented then the first metadata word fractional timestamp should be smaller than the final metdata record's
+                # timestamp. Otherwise the first metadata records's fractional timestamps should be greater than the final metadata record's timestamp
                 if numRecords >= 2:
-                    if eom_fraction <= metadata[(numRecords*4)-3]:
-                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, eom fraction time stamp is not incrementing"  + color.END
-                        sys.exit(1)
-                    elif som_fraction <= metadata[(numRecords*4)-2]:
-                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, som fraction time stamp is not incrementing" + color.END
-                        sys.exit(1)
+                    if som_seconds > metadata[(numRecords*4)-1]:
+                        if metadata[(numRecords*4)-3] <= eom_fraction:
+                            print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, eom fraction time stamp is did not roll over"  + color.END
+                            sys.exit(1)
+                        elif metadata[(numRecords*4)-2] <= som_fraction:
+                            print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, som fraction time stamp is did not roll over" + color.END
+                            sys.exit(1)
+                    else:
+                        if eom_fraction <= metadata[(numRecords*4)-3]:
+                            print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, eom fraction time stamp is not incrementing"  + color.END
+                            sys.exit(1)
+                        elif som_fraction <= metadata[(numRecords*4)-2]:
+                            print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, som fraction time stamp is not incrementing" + color.END
+                            sys.exit(1)
         else:
             # All the messages sent were ZLMs of opcode 32, so message size should be 0 and opcode should be 32
             if opcode != 32:
@@ -266,21 +266,32 @@ def verify_metadata2(metadata, metadataCount, stopOnFull, numRecords):
                 print "    " + "For metadata record " + str((x/4)+1) +  ", message size is", messageSize, "while expected value is" + color.END, "0"
                 sys.exit(1)
             if ((stopOnFull == "true") or (stopOnFull == "false" and x > 4)):
+                # If seconds time stamp incremented, check for roll over
+                if som_seconds > som_seconds_prev:
+                    if eom_frac_prev <= eom_fraction:
+                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", eom fraction time stamp did not roll over" + color.END
+                        sys.exit(1)
+                    elif som_frac_prev <= som_fraction:
+                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", som fraction time stamp did not roll over" + color.END
+                        sys.exit(1)
                 # Check that eom fraction and som fraction timestamps are incrementing
-                if eom_fraction <= eom_frac_prev:
-                    print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", eom fraction time stamp is not incrementing" + color.END
-                    sys.exit(1)
-                elif som_fraction <= som_frac_prev:
-                    print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", som fraction time stamp is not incrementing" + color.END
-                    sys.exit(1)
+                else:
+                    if eom_fraction <= eom_frac_prev:
+                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", eom fraction time stamp is not incrementing" + color.END
+                        sys.exit(1)
+                    elif som_fraction <= som_frac_prev:
+                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", som fraction time stamp is not incrementing" + color.END
+                        sys.exit(1)
         eom_frac_prev = eom_fraction
         som_frac_prev = som_fraction
+        som_seconds_prev = som_seconds
     print   "    PASS: metadata is correct"
 
 # For testScenario 3
 def verify_metadata3(metadata, numRecords, numDataWords, stopOnFull):
     eom_frac_prev = 0
     som_frac_prev = 0
+    som_seconds_prev = 0
     if numRecords >= 3:
         stop = 4*3
     elif numRecords == 2:
@@ -292,6 +303,7 @@ def verify_metadata3(metadata, numRecords, numDataWords, stopOnFull):
         messageSize = (metadata[x] & 0x00FFFFFF)
         eom_fraction = metadata[x+1]
         som_fraction = metadata[x+2]
+        som_seconds = metadata[x+3]
         # Check that timestamps are non-zero
         if eom_fraction == 0:
                 print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", eom fraction time stamp is 0"  + color.END
@@ -332,13 +344,22 @@ def verify_metadata3(metadata, numRecords, numDataWords, stopOnFull):
                         print "    " + color.RED + color.BOLD + "FAIL, message size is not correct"
                         print "    " + "For metadata record " + str((x/4)+1) +  ", message size is", messageSize, "while expected value is" + color.END, "0"
                         sys.exit(1)
+                # If seconds time stamp incremented, check for roll over
+                if som_seconds > som_seconds_prev:
+                    if eom_frac_prev <= eom_fraction:
+                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", eom fraction time stamp did not roll over" + color.END
+                        sys.exit(1)
+                    elif som_frac_prev <= som_fraction:
+                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", som fraction time stamp did not roll over" + color.END
+                        sys.exit(1)
                 # Check that eom fraction and som fraction timestamps are incrementing
-                if eom_fraction <= eom_frac_prev:
-                    print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", eom fraction time stamp is not incrementing" + color.END
-                    sys.exit(1)
-                elif som_fraction <= som_frac_prev:
-                    print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", som fraction time stamp is not incrementing" + color.END
-                    sys.exit(1)
+                else:
+                    if eom_fraction <= eom_frac_prev:
+                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", eom fraction time stamp is not incrementing" + color.END
+                        sys.exit(1)
+                    elif som_fraction <= som_frac_prev:
+                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", som fraction time stamp is not incrementing" + color.END
+                        sys.exit(1)
         elif stopOnFull == "false":
             if numRecords == 1:
                 # For this scenario when stopOnFull is false, there would have been a wrap around when the ZLM of opcode 0 was received
@@ -364,13 +385,22 @@ def verify_metadata3(metadata, numRecords, numDataWords, stopOnFull):
                         print "    " + "For metadata record " + str((x/4)+1) +  ", message size is", messageSize, "while expected value is" + color.END, "0"
                         sys.exit(1)
                     # When stopOnFull is false,  there would have been a wrap around when the ZLM of opcode 0 was received.
-                    # So the first metadata records's timestamps should be greater than the second metadata record's timestamp
-                    elif eom_fraction <= metadata[5]:
-                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, eom fraction time stamp is not incrementing"  + color.END
-                        sys.exit(1)
-                    elif som_fraction <= metadata[6]:
-                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, som fraction time stamp is not incrementing" + color.END
-                        sys.exit(1)
+                    # If the 2nd metadata record's seconds timestamp incremented then the first metadata word fractional timestamp should be smaller than the 2nd metdata record's
+                    # timestamp. Otherwise the first metadata records's fractional timestamps should be greater than the 2nd metadata record's timestamp
+                    if som_seconds > metadata[7]:
+                        if metadata[5] <= eom_fraction:
+                            print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, eom fraction time stamp is did not roll over"  + color.END
+                            sys.exit(1)
+                        elif metadata[6] <= som_fraction:
+                            print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, som fraction time stamp is did not roll over" + color.END
+                            sys.exit(1)
+                    else:
+                        if eom_fraction <= metadata[5]:
+                            print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, eom fraction time stamp is not incrementing"  + color.END
+                            sys.exit(1)
+                        if som_fraction <= metadata[6]:
+                            print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, som fraction time stamp is not incrementing" + color.END
+                            sys.exit(1)
                 else:
                     # The second metadata record's message size should be 4 bytes, because 4 bytes were sent, and opcode should be 255
                     # Also check that eom fraction and som fraction timestamps are incrementing
@@ -384,18 +414,21 @@ def verify_metadata3(metadata, numRecords, numDataWords, stopOnFull):
                         sys.exit(1)
         eom_frac_prev = eom_fraction
         som_frac_prev = som_fraction
+        som_seconds_prev = som_seconds
     print   "    PASS: metadata is correct"
 
 # For testScenario 4
 def verify_metadata4(metadata, metadataCount, numRecords, stopOnFull, numDataWords):
     eom_frac_prev = 0
     som_frac_prev = 0
+    som_seconds_prev = 0
     stop = 4*(metadataCount-1)
     for x in range(0, stop, 4):
         opcode = (metadata[x] & 0xFF000000) >> 24
         messageSize = (metadata[x] & 0x00FFFFFF)
         eom_fraction = metadata[x+1]
         som_fraction = metadata[x+2]
+        som_seconds = metadata[x+3]
         # Check that timestamps are non-zero
         if eom_fraction == 0:
                 print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", eom fraction time stamp is 0"  + color.END
@@ -427,13 +460,22 @@ def verify_metadata4(metadata, metadataCount, numRecords, stopOnFull, numDataWor
                     print "    " + "For metadata record " + str((x/4)+1) +  ", message size is", messageSize, "while expected value is" + color.END, "0"
                     sys.exit(1)
                 # When stopOnFull is false,  there would have been a wrap around when the ZLM of opcode 0 was received.
-                # So the first metadata records's timestamps should be greater than the last metadata record's timestamp
-                elif eom_fraction <= metadata[(numRecords*4)-3]:
-                    print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, eom fraction time stamp is not incrementing"  + color.END
-                    sys.exit(1)
-                elif som_fraction <= metadata[(numRecords*4)-2]:
-                    print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, som fraction time stamp is not incrementing" + color.END
-                    sys.exit(1)
+                # If the final metadata record's seconds timestamp incremented then the first metadata word fractional timestamp should be smaller than the final metdata record's
+                # timestamp. Otherwise the first metadata records's fractional timestamps should be greater than the final metadata record's timestamp
+                if som_seconds > metadata[(numRecords*4)-1]:
+                    if metadata[(numRecords*4)-3] <= eom_fraction:
+                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, eom fraction time stamp is did not roll over"  + color.END
+                        sys.exit(1)
+                    elif metadata[(numRecords*4)-2] <= som_fraction:
+                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, som fraction time stamp is did not roll over" + color.END
+                        sys.exit(1)
+                else:
+                    if eom_fraction <= metadata[(numRecords*4)-3]:
+                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, eom fraction time stamp is not incrementing"  + color.END
+                        sys.exit(1)
+                    if som_fraction <= metadata[(numRecords*4)-2]:
+                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, som fraction time stamp is not incrementing" + color.END
+                        sys.exit(1)
         else:
             if x == 4:
                 # The second metadata record should contain opcode of 2 and messageSize of 0 bytes
@@ -486,15 +528,25 @@ def verify_metadata4(metadata, metadataCount, numRecords, stopOnFull, numDataWor
                     print "    " + "For metadata record " + str((x/4)+1) +  ", message size is", messageSize, "while expected value is" + color.END, "4"
                     sys.exit(1)
             if ((stopOnFull == "true") or (stopOnFull == "false" and x > 4)):
+                # If seconds time stamp incremented, check for roll over
+                if som_seconds > som_seconds_prev:
+                    if eom_frac_prev <= eom_fraction:
+                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", eom fraction time stamp did not roll over" + color.END
+                        sys.exit(1)
+                    elif som_frac_prev <= som_fraction:
+                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", som fraction time stamp did not roll over" + color.END
+                        sys.exit(1)
                 # Check that eom fraction and som fraction timestamps are incrementing
-                if eom_fraction <= eom_frac_prev:
-                    print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", eom fraction time stamp is not incrementing" + color.END
-                    sys.exit(1)
-                elif som_fraction <= som_frac_prev:
-                    print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", som fraction time stamp is not incrementing" + color.END
-                    sys.exit(1)
+                else:
+                    if eom_fraction <= eom_frac_prev:
+                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", eom fraction time stamp is not incrementing" + color.END
+                        sys.exit(1)
+                    elif som_fraction <= som_frac_prev:
+                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", som fraction time stamp is not incrementing" + color.END
+                        sys.exit(1)
         eom_frac_prev = eom_fraction
         som_frac_prev = som_fraction
+        som_seconds_prev = som_seconds
     print   "    PASS: metadata is correct"
 
 

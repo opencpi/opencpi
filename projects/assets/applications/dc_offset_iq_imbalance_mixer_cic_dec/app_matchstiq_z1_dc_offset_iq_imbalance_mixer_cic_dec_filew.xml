@@ -20,7 +20,6 @@
     <property Name="NCO_DATA_WIDTH_p" Value="12"/>
     <property Name="INPUT_DATA_WIDTH_p" Value="12"/>
     <property Name="mag" Value="2048"/>
-    <property Name="messageSize" Value="16352"/>
     <property Name="phs_inc" Value="0x10AA"/>
   </Instance>
   <Instance Component="ocpi.assets.dsp_comps.cic_dec" Connect="file_write">

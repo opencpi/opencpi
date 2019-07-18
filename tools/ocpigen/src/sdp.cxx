@@ -120,7 +120,7 @@ emitRecordTypes(FILE */*f*/) {
 }
 
 void SdpPort::
-emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
+emitConnectionSignal(FILE *f, bool output, Language /*lang*/, bool /*clock*/, std::string &signal) {
   std::string in, out;
   OU::format(in, typeNameIn.c_str(), "");
   OU::format(out, typeNameOut.c_str(), "");
@@ -170,7 +170,7 @@ emitRecordSignal(FILE *f, std::string &last, const char *aprefix, bool inRecord,
       OU::format(scount, "%zu", m_count);
     OU::format(last,
 	       "  %-*s : in  %s_array_t;\n"
-	       "  %-*s : out %s_array_t;\n",
+	       "  %-*s : out %s_array_t%%s",
 	       (int)m_worker->m_maxPortTypeName, in.c_str(), in.c_str(),
 	       (int)m_worker->m_maxPortTypeName, out.c_str(), out.c_str());
   } else

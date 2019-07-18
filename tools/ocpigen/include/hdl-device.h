@@ -65,7 +65,6 @@ public:
 	    Worker::WType type, OU::Assembly::Properties *instancePVs, const char *&err);
   virtual ~HdlDevice() {}
   const char *cname() const;
-  const Ports &ports() const { return m_ports; }
   const char *parseDeviceProperties(ezxml_t x, OU::Assembly::Properties &iPVs);
   const char *resolveExpressions(OCPI::Util::IdentResolver &ir);
 };

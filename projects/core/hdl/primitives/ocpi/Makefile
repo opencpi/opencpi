@@ -33,7 +33,7 @@ SourceFiles=ocp_pkg.vhd types_pkg.vhd util_pkg.vhd wci_pkg.vhd wsi_pkg.vhd ocpi_
 	    master.vhd slave.vhd  \
 	    part_master.vhd part_slave.vhd  \
 	    message_bounds.vhd clock_limiter.vhd \
-	    raw_arb.vhd \
+	    raw_arb.vhd delayline.vhd\
 	    $(TypeFiles)
 
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a primitive library

@@ -42,11 +42,14 @@ class Port;
 class Worker;
 typedef std::vector<Port*> Ports;
 typedef Ports::const_iterator PortsIter;
+typedef std::list<Worker *> Workers;
+typedef Workers::iterator WorkersIter;
 struct Clock {
   std::string m_name, m_signal, m_reset;
-  Port *port;
-  bool assembly; // This clock is at the assembly level
-  size_t ordinal; // within the worker
+  Port *port;      // If not NULL, the port of the worker that this clock is owned by.
+  size_t ordinal;  // within the worker
+  bool m_output;   // This clock is an output of its worker on its owned port or globally
+  bool m_internal; // This clock is internal to an assembly and not externalized. 
   Clock();
   const char *cname() const { return m_name.c_str(); }
   const char *signal() const { return m_signal.c_str(); }

@@ -24,7 +24,7 @@ namespace OCPI {
   namespace Remote {
     // These function are called without knowing whether the driver is available.
     // Thus they are not in the driver.
-    bool useServer(const char *server, bool verbose, const char **exclude, std::string &error);
+    // bool useServer(const char *server, bool verbose, const char **exclude, std::string &error);
   }
 }
 #endif

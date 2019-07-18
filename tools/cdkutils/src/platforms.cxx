@@ -50,7 +50,7 @@ const char *
 addPlaces(const char *envname, const char *suffix, bool check, StringArray &list) {
   const char *env = getenv(envname);
   ocpiInfo("Path %s is: %s", envname, env ? env : "<not set>");
-  for (OU::TokenIter ti(env, ":"); ti.token(); ti.next()) {
+  for (OU::TokenIter ti(env, ": "); ti.token(); ti.next()) {
     bool isDir;
     if (OF::exists(ti.token(), &isDir) && isDir)
       list.push_back(std::string(ti.token()) + suffix);
@@ -210,13 +210,15 @@ getHdlPrimitive(const char *prim, const char *type, OrderedStringSet &prims) {
   if (hdlPrimitivePath.empty()) {
     if ((err = getCdkDir(cdk)) ||
 	(err = addPlaces("OCPI_HDL_PRIMITIVE_PATH", "", true, hdlPrimitivePath)) ||
-	(err = addPlaces("OCPI_PROJECT_PATH", "/lib/hdl", false, hdlPrimitivePath)))
+	(err = addPlaces("OCPI_PROJECT_DIR", "/exports/lib/hdl", false, hdlPrimitivePath)) ||
+	(err = addPlaces("OCPI_PROJECT_PATH", "/lib/hdl", false, hdlPrimitivePath)) ||
+	(err = addPlaces("OCPI_PROJECT_DEPENDENCIES", "/exports/lib/hdl", false, hdlPrimitivePath)))
       return err;
-    hdlPrimitivePath.push_back(cdk + "/lib/hdl");
   }
   std::string path;
   for (unsigned n = 0; n < hdlPrimitivePath.size(); n++) {
     OU::format(path, "%s/%s", hdlPrimitivePath[n].c_str(), prim);
+    ocpiDebug("Looking for primitive \"%s\" at \"%s\"", prim, path.c_str());
     if (OS::FileSystem::exists(path)) {
       prims.push_back(path);
       return NULL;
@@ -224,9 +226,16 @@ getHdlPrimitive(const char *prim, const char *type, OrderedStringSet &prims) {
   }
   path.clear();
   for (unsigned n = 0; n < hdlPrimitivePath.size(); n++)
-    OU::formatAdd(path, "%s\"%s\"", n ? "" : ", ", hdlPrimitivePath[n].c_str());
-  return OU::esprintf("Could not find primitive %s \"%s\"; looked in:  %s", 
+    OU::formatAdd(path, "%s\"%s\"", n ? ", " : "", hdlPrimitivePath[n].c_str());
+#if 0 // we can't make this an error due to the fact that we might be looking too early.
+  return OU::esprintf("Could not find primitive %s \"%s\"; looked in:  %s",
 		      type, prim, path.c_str());
+#else
+  fprintf(stderr,"WARNING: Could not find HDL primitive %s \"%s\"; looked in:  %s\n",
+	  type, prim, path.c_str());
+  prims.push_back(prim);
+  return NULL;
+#endif
 }
 
 const char *
@@ -297,7 +306,7 @@ getOclPlatforms(const StringSet *&platforms) {
     if (!eq)
       return OU::esprintf("Invalid output from the \"ocpiocl targets\" command:  \"%s\"",
 			  targets.c_str());
-    std::string platform(ti.token(), eq - ti.token());
+    std::string platform(ti.token(), OCPI_SIZE_T_DIFF(eq, ti.token()));
     oclPlatforms.insert(platform);
   }
   oclPlatformsDone = true;
@@ -318,7 +327,7 @@ getAllPlatforms(const StringSet *&platforms, Model m) {
 	  return OU::esprintf("the environment variable OCPI_ALL_PLATFORMS (\"%s\") is invalid",
 			      env);
 	std::string p;
-	p.assign(env, (ep - 4) - env);
+	p.assign(env, OCPI_SIZE_T_DIFF((ep - 4), env));
 	if (!strncmp(ep - 4, ".rcc", 4))
 	  addPlatform(p.c_str(), rccPlatforms);
 	else if (!strncmp(ep - 4, ".hdl", 4))
@@ -426,7 +435,7 @@ getTargets(const char *attr, OrderedStringSet &targets, Model m) {
   }
   return NULL;
 }
-std::list<std::string>::const_iterator OrderedStringSet::
+std::list<std::string>::iterator OrderedStringSet::
 find(const std::string &s) {
   for (auto si = begin(); si != end(); ++si)
     if (s == *si)

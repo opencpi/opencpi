@@ -104,7 +104,7 @@ begin
       if(ctl_in.reset = '1') then
         scnt     <= 0;
         hold_off <= '0';
-      elsif (scnt = STAGES_c+1) then
+      elsif (scnt = STAGES_c+1 and idata_vld = '1') then
         hold_off <= '1';
       elsif (idata_vld = '1') then
         scnt <= scnt + 1;
@@ -213,19 +213,19 @@ begin
           when INIT_s =>
             zlm_take <= '1';
             -- 'Full' ZLM present, send a ZLM
-            if (in_in.som = '1' and in_in.eom = '1' and in_in.valid = '0' and zlm_force_eom_l = '0') then
+            if (in_in.ready = '1' and in_in.som = '1' and in_in.eom = '1' and in_in.valid = '0' and zlm_force_eom_l = '0') then
               zlm_current_state <= SEND_s;
             -- 'Partial' ZLM present, wait for remaining portion of ZLM
-            elsif (in_in.som = '1' and in_in.valid = '0') then
+            elsif (in_in.ready = '1' and in_in.som = '1' and in_in.valid = '0') then
               zlm_current_state <= WAIT_s;
             end if;
           when WAIT_s =>
             zlm_take <= '1';
             -- Valid message from upstream, return to ZLM detection
-            if (in_in.valid = '1') then
+            if (in_in.ready = '1' and in_in.valid = '1') then
               zlm_current_state <= INIT_s;
             -- Remainder of 'partial' ZLM present, send a ZLM
-            elsif (in_in.eom = '1') then
+            elsif (in_in.ready = '1' and in_in.eom = '1') then
               zlm_current_state <= SEND_s;
             end if;
           when SEND_s =>

@@ -4,15 +4,40 @@
      Add port elements for i/o ports -->
 <ComponentSpec>
   <!-- Add property and port elements here -->
-    <Property name="test_double" type="double" readable="true" volatile="true" writable="true"></Property>
-    <Property name="test_ulong" readable="true" volatile="true" writable="true" ></Property>
-    <Property name="test_bool" type="bool"readable="true" volatile="true" writable="true" ></Property>
-    <Property type="char" name="test_char"readable="true" volatile="true" writable="true" ></Property>
-    <Property type="float" name="test_float"readable="true" volatile="true" writable="true" ></Property>
-    <Property type="long" name="test_long"readable="true" volatile="true" writable="true" ></Property>
-    <Property type="longLong" name="test_longlong"readable="true" volatile="true" writable="true" ></Property>
-    <Property type="short" name="test_short"readable="true" volatile="true" writable="true" ></Property>
-    <Property type="uChar" name="test_uchar"readable="true" volatile="true" writable="true" ></Property>
-    <Property type="uLongLong" name="test_ulonglong"readable="true" volatile="true" writable="true" ></Property>
-    <Property type="uShort" name="test_ushort"readable="true" volatile="true" writable="true" ></Property>
+    <Property name="test_double" type="double" volatile="true" writable="true"></Property>
+    <Property name="test_ulong" volatile="true" writable="true" ></Property>
+    <Property name="test_bool" type="bool"volatile="true" writable="true" ></Property>
+    <Property type="char" name="test_char"volatile="true" writable="true" ></Property>
+    <Property type="float" name="test_float"volatile="true" writable="true" ></Property>
+    <Property type="long" name="test_long"volatile="true" writable="true" ></Property>
+    <Property type="longLong" name="test_longlong"volatile="true" writable="true" ></Property>
+    <Property type="short" name="test_short"volatile="true" writable="true" ></Property>
+    <Property type="uChar" name="test_uchar"volatile="true" writable="true" ></Property>
+    <Property type="uLongLong" name="test_ulonglong"volatile="true" writable="true" ></Property>
+    <Property type="uShort" name="test_ushort"volatile="true" writable="true" ></Property>
+    <Property Type="struct" Name="test_struct" Volatile="true" Writable="true">
+        <Member Name="struct_bool" Type="bool"></Member>
+        <Member Name="struct_ulong"></Member>
+        <Member Name="struct_char" Type="char"></Member>
+    </Property>
+    <Property Name="test_seq_ulong" SequenceLength="10" Volatile="true" Writable="true"></Property>
+    <Property Name="test_seq_of_structs" SequenceLength="10" Type="struct" Volatile="true" Writable="true">
+        <Member Name="struct_bool" Type="bool"></Member>
+        <Member Name="struct_ulong"></Member>
+        <Member Name="struct_char" Type="char"></Member>
+    </Property>
+    <Property Name="test_struct_of_seq" Type="struct" Volatile="true" Writable="true">
+        <Member Type="char" Name="struct_char"></Member>
+        <Member Name="struct_ulong_seq" SequenceLength="10"></Member>
+    </Property>
+    <Property Name="test_array_of_str" Type="string"ArrayLength="10" StringLength="20" Volatile="true" Writable="true"></Property>
+    <Property ArrayDimensions="10" Name="test_array_ulong" Volatile="true" Writable="true"></Property>
+    <Property Name="test_seq_str" Type="string" StringLength="20" SequenceLength="10" Volatile="true" Writable="true"></Property>
+    <Property ArrayDimensions="10" Type="struct" Name="test_array_of_struct" Volatile="true" Writable="true">
+        <Member Name="test_ulong"></Member>
+        <Member Type="bool" Name="test_bool"></Member>
+        <Member Name="test_char" Type="char"></Member>
+    </Property>
+    <Property Name="test_seq_of_ulong_arrays" ArrayDimensions="10" SequenceLength="10" Volatile="true" Writable="true"></Property>
+    <Property Parameter="true" Name="test_ulong_param" Default="15"></Property>
 </ComponentSpec>

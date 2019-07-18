@@ -17,7 +17,9 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # Udev rules
-=<platform_dir>/98-zedboard.rules <target>/udev-rules/
+=<platform_dir>/98-zedboard.rules <target>/udev-rules/98-zedboard-<rcc_platform>.rules
 # Use the default zynq system.xml
 =platforms/zynq/zynq_system.xml <target>/system.xml
 @<rcc_platform_dir>/release/zed/devicetree.dtb <target>/
+@<rcc_platform_dir>/release/zed/boot.bin <target>/
+

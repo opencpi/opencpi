@@ -1,4 +1,3 @@
-<RccImplementation>
-  <xi:include href="morph_mean_spec.xml"/>
+<RccWorker spec="morph_mean_spec.xml">
   <ControlInterface SizeOfConfigSpace="1m" ControlOperations="initialize,start,stop"/>
-</RccImplementation>
+</RccWorker>

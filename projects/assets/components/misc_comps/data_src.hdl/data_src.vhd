@@ -185,8 +185,9 @@ begin
 
   -- message size in samples = message size in bytes divided by (4 bytes in a
   -- 32-bit output bus)
-  message_size_samples <= (props_in.messageSize_bytes srl 2);
-
+  message_size_samples <=
+    props_in.messageSize_bytes srl 2 when props_in.messageSize_bytes /= 0 else
+    resize(props_in.ocpi_buffer_size_out srl 2, message_size_samples'length);
   msg_counter : process(ctl_in.clk)
   begin
     if rising_edge(ctl_in.clk) then

@@ -103,13 +103,15 @@ namespace OCPI {
     }
 
     Member::
-    Member() : m_offset(0), m_isIn(false), m_isOut(false), m_isKey(false), m_default(NULL)
+    Member() : m_offset(0), m_isIn(false), m_isOut(false), m_isKey(false), m_default(NULL), m_ordinal(0)
     {
     }
     Member::
-    Member(const Member &other) 
-      : ValueType(other), m_offset(0), m_isIn(false), m_isOut(false), m_isKey(false), 
-	m_default(NULL) {
+    Member(const Member &other)
+      : ValueType(other), m_name(other.m_name), m_abbrev(other.m_abbrev), m_pretty(other.m_pretty),
+	m_description(other.m_description), m_offset(other.m_offset), m_isIn(other.m_isIn),
+	m_isOut(other.m_isOut), m_isKey(other.m_isKey), m_default(NULL),
+        m_defaultExpr(other.m_defaultExpr), m_ordinal(other.m_ordinal) {
       if (other.m_default)
 	m_default = new Value(*other.m_default);
     }
@@ -128,16 +130,22 @@ namespace OCPI {
     Member &Member::
     operator=(Member other){
       swap(*this, other);
-      return *this;           
+      return *this;
     }
     void swap(Member& f, Member& s){
       using std::swap;
       swap<ValueType>(f, s);
+      swap(f.m_name, s.m_name);
+      swap(f.m_abbrev, s.m_abbrev);
+      swap(f.m_pretty, s.m_pretty);
+      swap(f.m_description, s.m_description);
       swap(f.m_offset, s.m_offset);
       swap(f.m_isIn, s.m_isIn);
       swap(f.m_isOut, s.m_isOut);
       swap(f.m_isKey, s.m_isKey);
       swap(f.m_default, s.m_default);
+      swap(f.m_defaultExpr, s.m_defaultExpr);
+      swap(f.m_ordinal, s.m_ordinal);
     }
     Member::~Member() {
       if (m_default)
@@ -208,7 +216,7 @@ namespace OCPI {
 	m_baseType = OA::OCPI_Struct;
 	if ((err = OE::checkElements(xm, OCPI_UTIL_MEMBER_ELEMENTS, "member", (void*)0)) ||
 	    (err = parseMembers(xm, m_nMembers, m_members, a_isFixed, "member", hasDefault,
-				resolver)))
+				&m_path, resolver)))
 	  return err;
 	if (m_nMembers == 0)
 	  return "No struct members under type == \"struct\"";
@@ -228,6 +236,8 @@ namespace OCPI {
 	  return err;
 	if (!m_type->m_isSequence)
 	  return "recursive \"type\" element must be a sequence";
+	m_type->m_path = m_path;
+	m_type->m_path.push_back(0);
       } else {
 	if ((err = OE::checkElements(xm, OCPI_UTIL_MEMBER_ELEMENTS, (void*)0)))
 	  return err;
@@ -281,7 +291,7 @@ namespace OCPI {
       }
       if (ezxml_cattr(xm, "StringLength") && m_baseType != OA::OCPI_String)
 	return "StringLength attribute only valid for string types";
-      
+
       // Deal with arrays now that we have the "basic" type dealt with
 
       bool isArray = false;
@@ -460,7 +470,7 @@ namespace OCPI {
     }
     inline void align(const uint8_t *&p, size_t n, size_t &length) {
       uint8_t *tmp = (uint8_t *)(((uintptr_t)p + (n - 1)) & ~((uintptr_t)(n)-1));
-      advance(p, tmp - p, length);
+      advance(p, OCPI_SIZE_T_DIFF(tmp, p), length);
     }
     // We clear bytes we skip
     inline void ralign(uint8_t *&p, size_t n, size_t &length) {
@@ -468,13 +478,13 @@ namespace OCPI {
     }
     // Push the data in the linear buffer into a writer object
     void Member::
-    write(Writer &writer, const uint8_t *&data, size_t &length, bool topSeq) {
+    write(Writer &writer, const uint8_t *&data, size_t &length, bool topSeq) const {
       size_t nElements = 1;
       const uint8_t *startData = NULL; // quiet warning
       size_t startLength = 0; // quiet warning
       if (m_isSequence) {
 	if (topSeq && !m_fixedLayout) {
-	  ocpiAssert(((intptr_t)data & ~(m_align - 1)) == 0);
+	  ocpiAssert(((uintptr_t)data & ~(m_align - 1u)) == 0);
 	  ocpiAssert(length % m_nBytes == 0);
 	  nElements = length / m_nBytes;
 	} else {
@@ -484,7 +494,7 @@ namespace OCPI {
 	startData = data;
 	startLength = length;
 	if (m_sequenceLength != 0 && nElements > m_sequenceLength)
-	  throw Error("Sequence in buffer (%zu) exceeds max length (%zu)", nElements,
+	  throw Error("Sequence in buffer (%zu) exceeds maximum length (%zu)", nElements,
 		      m_sequenceLength);
 	writer.beginSequence(*this, nElements);
 	if (!nElements) {
@@ -495,14 +505,16 @@ namespace OCPI {
       }
       nElements *= m_nItems;
       if (m_arrayRank)
-	writer.beginArray(*this, m_nItems);			  
+	writer.beginArray(*this, m_nItems);
       align(data, m_dataAlign, length);
       switch (m_baseType) {
       case OA::OCPI_Struct:
 	writer.beginStruct(*this);
-	for (unsigned n = 0; n < nElements; n++)
+	for (unsigned n = 0; n < nElements; n++) {
+	  align(data, m_dataAlign, length);
 	  for (unsigned nn = 0; nn < m_nMembers; nn++)
 	    m_members[nn].write(writer, data, length);
+        }
 	writer.endStruct(*this);
 	break;
       case OA::OCPI_Type:
@@ -516,7 +528,7 @@ namespace OCPI {
 	  align(data, 4, length);
 	  WriteDataPtr p = {data};
 	  size_t nBytes = strlen((const char *)data) + 1;
-	  advance(data, m_fixedLayout ?  (m_stringLength + 4) & ~3 : nBytes, length);
+	  advance(data, m_fixedLayout ?  (m_stringLength + 4) & ~3u : nBytes, length);
 	  writer.writeString(*this, p, nBytes - 1, n == 0, topSeq);
 	}
 	break;
@@ -538,7 +550,7 @@ namespace OCPI {
       if (m_isSequence) {
 	writer.endSequence(*this);
 	if (m_fixedLayout && !topSeq) {
-	  // If fixed layout override the incremental data/length advance and 
+	  // If fixed layout override the incremental data/length advance and
 	  // advance over the whole thing, including the length prefix
 	  advance(startData, m_nBytes, startLength);
 	  assert(startData >= data && startLength <= length);
@@ -572,15 +584,17 @@ namespace OCPI {
 	radvance(data, m_align, length);
       }
       if (m_arrayRank)
-	reader.beginArray(*this, m_nItems);			  
+	reader.beginArray(*this, m_nItems);
       nElements *= m_nItems;
       ralign(data, m_dataAlign, length);
       switch (m_baseType) {
       case OA::OCPI_Struct:
 	reader.beginStruct(*this);
-	for (unsigned n = 0; n < nElements; n++)
+	for (unsigned n = 0; n < nElements; n++) {
+	  ralign(data, m_dataAlign, length);
 	  for (unsigned nn = 0; nn < m_nMembers; nn++)
 	    m_members[nn].read(reader, data, length, fake);
+        }
 	reader.endStruct(*this);
 	break;
       case OA::OCPI_Type:
@@ -598,7 +612,7 @@ namespace OCPI {
 	    throw Error("String being read is larger than max length");
 	  uint8_t *start = data;
 	  // Error check before copy
-	  radvance(data, m_fixedLayout ? (m_stringLength + 4) & ~3 : strLength + 1, length);
+	  radvance(data, m_fixedLayout ? (m_stringLength + 4) & ~3u : strLength + 1, length);
 	  if (!fake) {
 	    memcpy(start, chars, strLength);
 	    start[strLength] = 0;
@@ -623,7 +637,7 @@ namespace OCPI {
       if (m_isSequence) {
 	reader.endSequence(*this);
 	if (m_fixedLayout && !top) {
-	  // If fixed layout override the incremental data/length advance and 
+	  // If fixed layout override the incremental data/length advance and
 	  // advance over the whole thing, including the length prefix
           // ocpiDebug("radvance(<ptr>, %zu, %zu)", m_nBytes, startLength);
 	  radvance(startData, m_nBytes, startLength);
@@ -637,34 +651,34 @@ namespace OCPI {
     generate(const char *name, unsigned ordinal, unsigned depth) {
       m_name = name;
       m_ordinal = ordinal;
-      m_baseType = (OA::BaseType)((random() >> 24) % (OA::OCPI_scalar_type_limit - 1) + 1);
+      m_baseType = (OA::BaseType)(((size_t)random() >> 24) % (OA::OCPI_scalar_type_limit - 1) + 1);
       // printf(" %d", m_baseType);
       if (++depth == 4 && (m_baseType == OA::OCPI_Type || m_baseType == OA::OCPI_Struct))
 	m_baseType = OA::OCPI_ULong;
       if (m_baseType == OA::OCPI_Type)
 	m_fixedLayout = false;
-      m_isSequence = random() % 3 == 0;
+      m_isSequence = (size_t)random() % 3 == 0;
       if (m_isSequence) {
-	m_sequenceLength = random() & 1 ? 0 : random() % 10;
-	if (m_sequenceLength == 0 || random() & 1)
+	m_sequenceLength = (size_t)random() & 1 ? 0 : (size_t)random() % 10u;
+	if (m_sequenceLength == 0 || (size_t)random() & 1)
 	  m_fixedLayout = false;
       }
       if (random() & 1) {
-	m_arrayRank = random() % 3 + 1;
+	m_arrayRank = (size_t)random() % 3 + 1;
 	m_arrayDimensions = new size_t[m_arrayRank];
 	for (unsigned n = 0; n < m_arrayRank; n++) {
-	  m_arrayDimensions[n] = random() % 3 + 1;
+	  m_arrayDimensions[n] = (size_t)random() % 3 + 1;
 	  m_nItems *= m_arrayDimensions[n];
 	}
       }
       switch (m_baseType) {
       case OA::OCPI_String:
-	m_stringLength = random() & 1 ? 0 : random() % testMaxStringLength;
+	m_stringLength = (size_t)random() & 1 ? 0 : (size_t)random() % testMaxStringLength;
 	if (m_stringLength == 0 || random() & 1)
 	  m_fixedLayout = false;
 	break;
       case OA::OCPI_Enum:
-	m_nEnums = random() % 5 + 1;
+	m_nEnums = (size_t)random() % 5 + 1;
 	m_enums = new const char *[m_nEnums + 1];
 	for (unsigned n = 0; n < m_nEnums; n++) {
 	  char *e;
@@ -687,7 +701,7 @@ namespace OCPI {
 	m_baseType = OA::OCPI_Float;
 	break;
       case OA::OCPI_Struct:
-	m_nMembers = random() % 6 + 1;
+	m_nMembers = (size_t)random() % 6 + 1;
 	m_members = new Member[m_nMembers];
 	for (unsigned n = 0; n < m_nMembers; n++) {
 	  char *e;
@@ -707,7 +721,8 @@ namespace OCPI {
     const char *
     Member::
     parseMembers(ezxml_t mems, size_t &nMembers, Member *&members, bool a_isFixed,
-		 const char *tag, const char *hasDefault, const IdentResolver *resolver) {
+		 const char *tag, const char *hasDefault, const std::vector<uint8_t> *pathp,
+		 const IdentResolver *resolver) {
       for (ezxml_t m = ezxml_cchild(mems, tag); m ; m = ezxml_cnext(m))
 	nMembers++;
       if (nMembers) {
@@ -715,18 +730,91 @@ namespace OCPI {
 	Member *m = new Member[nMembers];
 	members = m;
 	const char *err = NULL;
-	for (ezxml_t mx = ezxml_cchild(mems, tag); mx ; mx = ezxml_cnext(mx), m++) {
+	unsigned ordinal = 0;
+	for (ezxml_t mx = ezxml_cchild(mems, tag); mx ; mx = ezxml_cnext(mx), ++m, ++ordinal) {
 	  if ((err = OE::checkAttrs(mx, OCPI_UTIL_MEMBER_ATTRS,
 				    hasDefault ? hasDefault : NULL, NULL)) ||
-	      (err = m->parse(mx, a_isFixed, true, hasDefault, "member", (unsigned)(m - members),
-			      resolver)))
+	      (err = m->parse(mx, a_isFixed, true, hasDefault, "member", ordinal, resolver)))
 	    return err;
 	  if (!names.insert(m->m_name.c_str()).second)
 	    return esprintf("Duplicate member name: %s", m->m_name.c_str());
 	  if (m->m_abbrev.size() && !abbrevs.insert(m->m_abbrev.c_str()).second)
 	    return esprintf("Duplicate member abbreviation: %s", m->m_name.c_str());
+	  if (pathp)
+	    m->m_path = *pathp, m->m_path.push_back(OCPI_UTRUNCATE(uint8_t, ordinal));
 	}
       }
+      return NULL;
+    }
+    // Determine the member and offset for the actual access, given the access list.
+    // We are descending down the (root on top) tree describing the data type.
+    // The member where the access list stops is returned as a reference.
+    // If dimensionp != NULL, then we are descending for a value that is potentially
+    // not scalar.  This means that accessing an aggregate value will not be an error.
+    // The value of *dimensionp will be set to the dimension of the accessed member where
+    // the indexing stopped.  I.e. a zero will mean the whole member value (whole sequence
+    // and/or array).  A sequence is considered the most major/outer dimension
+    // when the member is both a sequence and an array, for the *dimensionp value.
+    const char *Member::
+    descend(OA::AccessList &list, const Member *&m, size_t &a_offset, size_t *dimensionp) const {
+      size_t dimension = 0;
+      a_offset = 0;
+      m = this;
+      for (const OA::Access *a = list.begin(); a != list.end(); ++a) {
+	dimension = 0;
+	if (m->m_isSequence) {
+	  if (!a->m_number)
+	    return "sequence property not indexed with a number";
+	  if (a->m_index >= m->m_sequenceLength)
+	    return "sequence index >= than maximum sequence length";
+	  a_offset += m->m_dataAlign + a->m_index * m->m_elementBytes * m->m_nItems;
+	  dimension = 1;
+	  if (++a == list.end())
+	    break;
+	}
+	if (m->m_arrayRank) {
+	  for (unsigned n = 0; n < m->m_arrayRank && a != list.end(); ++a, ++dimension) {
+	    if (!a->m_number)
+	      return "array not indexed with a number";
+	    if (a->m_index >= m->m_arrayDimensions[n])
+	      return "array index out of range";
+	    ++n;
+	    a_offset += a->m_index * m->m_elementBytes *
+	      (n == m->m_arrayRank ? 1 : m->m_arrayDimensions[n]);
+	  }
+	  if (a == list.end())
+	    break;
+	}
+	if (m->m_nMembers) {
+	  if (a->m_number)
+	    return "index found where structure member should be specified";
+	  Member *mm = NULL;
+	  for (unsigned n = 0; n < m->m_nMembers; n++)
+	    if (!strcasecmp(a->m_member, m->m_members[n].m_name.c_str())) {
+	      m = mm = &m->m_members[n];
+	      break;
+	    }
+	  if (!mm)
+	    return "member name not found in structure";
+	  a_offset += m->m_offset;
+	  dimension = 0;
+	} else if (m->m_type) {
+	  assert(m->m_isSequence || m->m_arrayRank);
+	  m = m->m_type;
+	  --a;
+	  dimension = 0;
+	} else
+	  return "invalid accessor for scalar data type";
+      }
+      // Return indexed dimension, or check that we have indexed a scalar
+      if (dimensionp)
+	*dimensionp = dimension;
+      else if (m->m_isSequence && !dimension)
+	return "sequence property not indexed";
+      else if (m->m_arrayRank && dimension != m->m_arrayRank + (m->m_isSequence ? 1 : 0))
+	return "array property not fully indexed";
+      else if (m->m_nMembers)
+	return "structure member not specified";
       return NULL;
     }
     const char *Member::
@@ -759,7 +847,7 @@ namespace OCPI {
 	  // Make strings whole 32 bit words
 	  // Since this is not CDR anyway, this is best for hardware
 	  // And meets the rule: nothing both spans and shares words.
-	  nBytes = (m_stringLength + 4) & ~3;
+	  nBytes = (m_stringLength + 4) & ~3u;
 	  scalarBits = CHAR_BIT;
 	  if (!m_stringLength)
 	    unBounded = true;
@@ -873,14 +961,14 @@ namespace OCPI {
     void Reader::end() {}
     Writer::Writer() {}
     Writer::~Writer() {}
-    void Writer::endSequence(Member &) {}
+    void Writer::endSequence(const Member &) {}
     void Writer::writeOpcode(const char *, uint8_t) {}
-    void Writer::beginStruct(Member &) {}
-    void Writer::beginArray(Member &, size_t) {}
-    void Writer::endArray(Member &) {}
-    void Writer::endStruct(Member &) {}
-    void Writer::beginType(Member &) {}
-    void Writer::endType(Member &) {}
+    void Writer::beginStruct(const Member &) {}
+    void Writer::beginArray(const Member &, size_t) {}
+    void Writer::endArray(const Member &) {}
+    void Writer::endStruct(const Member &) {}
+    void Writer::beginType(const Member &) {}
+    void Writer::endType(const Member &) {}
     void Writer::end() {}
   }
 }

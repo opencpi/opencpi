@@ -16,16 +16,10 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# This file is used to build the Application Control Interface api testbench
-
 $(if $(realpath $(OCPI_CDK_DIR)),,\
   $(error The OCPI_CDK_DIR environment variable is not set correctly.))
 
-# The RunArgs variable can be set to a standard set of arguments to use when executing either.
-
-export OCPI_LIBRARY_PATH=lib
-RccOnlyPlatforms+=centos7 xilinx13_3
-APP=lime_rx_proxy_test
+RccOnlyPlatforms+=centos6 centos7 xilinx13_3
 
 include $(OCPI_CDK_DIR)/include/application.mk
 
@@ -65,13 +59,13 @@ NOTE: Reminder to setup the run-time OCPI environment on remote system.
 NOTE: Convenience cmd to quickly switch to application directory.
 cd /mnt/ocpi_assets/applications/lime_rx_proxy_test
 
-REQUIRED - Reconfigure to default.
+a) REQUIRED - Reconfigure to default.
 Copy/paste string to terminal of remote system:
-export OCPI_LIBRARY_PATH=$$OCPI_CDK_DIR/$$OCPI_TOOL_PLATFORM/artifacts
+export OCPI_LIBRARY_PATH=/mnt/ocpi_assets/hdl/assemblies/empty/container-empty_matchstiq_z1_matchstiq_z1_rx_cnt_1rx_0tx_bypassasm_matchstiq_z1
 
-REQUIRED - Configure for operation.
+b) REQUIRED - Configure for operation.
 Copy/paste string to terminal of remote system:
-export OCPI_LIBRARY_PATH+=:$$(pwd):$$(pwd)/../../artifacts
+export OCPI_LIBRARY_PATH+=:$$OCPI_CDK_DIR/$$OCPI_TOOL_PLATFORM/artifacts:/mnt/ocpi_assets/artifacts
 NOTE: When copy/paste of the above 'export' from the Makefile source file, the redundant '$' must be manually removed.
 ----------------------------------------------------------------------------
 3) Execution of application is specific to platform: (remote system)
@@ -79,9 +73,9 @@ NOTE: When copy/paste of the above 'export' from the Makefile source file, the r
 ----------------------------------------------------------------------------
 4) Verification of output data: (development system)
 (Matchstiq-Z1): 
-python ./scripts/plotAndFft.py odata/lime_rx_proxy_test.out complex 300000 0.1 &
+python ./scripts/plotAndFft.py odata/lime_rx_proxy_test_app.out complex 300000 0.1 &
 (Zedboard): 
-python ./scripts/plotAndFft.py odata/lime_rx_proxy_test.out complex 1500000 0.5 &
+python ./scripts/plotAndFft.py odata/lime_rx_proxy_test_app.out complex 1500000 0.5 &
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 endef

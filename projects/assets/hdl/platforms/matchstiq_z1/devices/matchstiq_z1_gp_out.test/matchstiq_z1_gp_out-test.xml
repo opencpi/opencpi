@@ -1,0 +1,73 @@
+<tests useHDLFileIo='true' spec='gp_out'>
+
+  <!-- The Matchstiq GP Out device worker is tested by controlling the GPIO pins via the mask_data property, data port, and the devsignal.
+  They are all tested invidually in their own test case and the data port is the only test case that has input data generated.
+
+  For the mask_data property and the data port, the tests that are done are: setting data bits high but not setting masks,
+  setting data bits high and setting the appropriate mask bits high, clear data by setting data to 0x0000 and mask to 0x0007,
+  and then set data bits high but only set some of the appropriate masks high.
+
+  For the devsignal the mask is held high but the data is toggled on and off.  -->
+
+
+  <property name='testCase' test='true'/>
+  <property name='simulation_p' values='true'/>
+
+  <!-- Backpressure is disabled for all cases as backpressure is never applied to the "signal" interface. -->
+
+  <!-- Testing controlling GPIO pins via property -->
+  <!-- Has the following set of data and masks values: data = 1:7 and mask = 0,
+  data = 1:7 and mask = 1:7, data = 0 and mask = 7, and data = 7 and mask = 1:6 -->
+  <case>
+    <input port='in' script='generate.py'/>
+    <output port='out' script='verify.py ../../case00.00.golden.dat' disableBackpressure='true'/>
+    <property name='testCase' value='1'/>
+    <property Name='numOutputSamples' value='21'/>
+    <property name='input_mask' value='0x01'/>
+    <property name='mask_data'>
+      <set delay='0' value='0x00000001'/>
+      <set delay='0.0001' value='0x00000002'/>
+      <set delay='0.0002' value='0x00000003'/>
+      <set delay='0.0003' value='0x00000004'/>
+      <set delay='0.0004' value='0x00000005'/>
+      <set delay='0.0005' value='0x00000006'/>
+      <set delay='0.0006' value='0x00000007'/>
+      <set delay='0.0007' value='0x00010001'/>
+      <set delay='0.0008' value='0x00020002'/>
+      <set delay='0.0009' value='0x00030003'/>
+      <set delay='0.0010' value='0x00040004'/>
+      <set delay='0.0011' value='0x00050005'/>
+      <set delay='0.0012' value='0x00060006'/>
+      <set delay='0.0013' value='0x00070007'/>
+      <set delay='0.0014' value='0x00070000'/>
+      <set delay='0.0015' value='0x00010007'/>
+      <set delay='0.0016' value='0x00020007'/>
+      <set delay='0.0017' value='0x00030007'/>
+      <set delay='0.0018' value='0x00040007'/>
+      <set delay='0.0019' value='0x00050007'/>
+      <set delay='0.0020' value='0x00060007'/>
+    </property>
+  </case>
+
+  <!-- Testing controlling GPIO pins via port -->
+  <!-- Has the following set of data and masks values: data = 1:7 and mask = 0,
+  data = 1:7 and mask = 1:7, data = 0 and mask = 7, and data = 7 and mask = 1:6 -->
+  <case>
+    <input port='in' script='generate.py'/>
+    <output port='out' script='verify.py ../../case01.00.golden.dat' disableBackpressure='true'/>
+    <property name='testCase' value='2'/>
+    <property Name='numOutputSamples' value='21'/>
+    <property name='input_mask' value='0x02'/>
+  </case>
+
+<!-- Testing controlling GPIO pins via devsignal -->
+<!-- Has the following data and masks values: data = 0:1 and mask = 1 -->
+<case>
+  <input port='in' script='generate.py'/>
+  <output port='out' script='verify.py ../../case02.00.golden.dat' disableBackpressure='true'/>
+  <property name='testCase' value='3'/>
+  <property Name='numOutputSamples' value='2'/>
+  <property name='input_mask' value='0x04'/>
+</case>
+
+</tests>

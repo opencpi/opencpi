@@ -94,7 +94,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Platform Data Sheet}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -119,7 +119,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & February 2018 \\
+	Release Date      & 4/2019 \\
 	\hline
 	Component Library & ocpi.assets.platforms \\
 	\hline
@@ -131,7 +131,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \section*{Functionality}
 \begin{flushleft}
-The Matchstiq-Z1 Platform Worker is the interface between the Processing System and the FPGA on the Matchstiq-Z1 Platform. It makes the connections between the AXI buses on the ARM and the OpenCPI Control and Data Planes. Optionally, it can also be used to interface with the SPI, I2C, and UART buses with device workers.
+The Matchstiq-Z1 Platform Worker is the interface between the Processing System and the FPGA on the Matchstiq-Z1 Platform. It makes the connections between the AXI buses on the ARM and the OpenCPI Control and Data Planes. Optionally, it can also be used to interface with the SPI, I2C, and UART buses with device workers. \newline
+
+There is also a GPO device worker called matchstiq\_z1\_gp\_out that can control the three GPIO pins present on the Matchstiq-Z1. By default it is not included in the platform configuration files but can be utilized by adding it to an assembly container. If the device worker is not added to an assembly container, the unused pins will be driven low.
+
 \end{flushleft}
 
 \section*{Worker Implementation Details}
@@ -226,21 +229,21 @@ assets/hdl/primitives/zynq/zynq\_pkg.vhd
 	\item
 assets/hdl/primitives/zynq/zynq\_ps.vhd
 	\item
-assets/hdl/primitives/axi/axi\_pkg.vhd
+core/hdl/primitives/axi/axi\_pkg.vhd
 	\item
-assets/hdl/primitives/axi/axi2cp.vhd
+core/hdl/primitives/axi/axi2cp.vhd
 	\item
-assets/hdl/primitives/sdp/sdp2axi\_rd.vhd
+core/hdl/primitives/sdp/sdp2axi\_rd.vhd
 	\item
-assets/hdl/primitives/sdp/sdp2axi.vhd
+core/hdl/primitives/sdp/sdp2axi.vhd
 	\item
-assets/hdl/primitives/sdp/sdp2axi\_wd.vhd
+core/hdl/primitives/sdp/sdp2axi\_wd.vhd
 	\item
-assets/hdl/primitives/sdp/sdp\_axi\_pkg.vhd
+core/hdl/primitives/sdp/sdp\_axi\_pkg.vhd
 	\item
-assets/hdl/primitives/sdp/sdp\_pkg.vhd
+core/hdl/primitives/sdp/sdp\_pkg.vhd
 	\item
-assets/hdl/primitives/sdp/sdp\_body.vhd
+core/hdl/primitives/sdp/sdp\_body.vhd
 \end{itemize}
 
 \begin{landscape}
@@ -383,6 +386,8 @@ assets/hdl/primitives/sdp/sdp\_body.vhd
 			\hline
 			matchstiq\_z1\_i2c         &CLK\_FREQ\_p & 100*10\textsuperscript{6}                            & SCL               & -                         \\
 			\hline
+			matchstiq\_z1\_gp\_out         &simulation\_p &  false  &       & -                         \\
+			\hline
 		\end{tabular}
 
 \section*{Signals}
@@ -397,8 +402,6 @@ Note that this signal table does not include signals that may be provided by slo
 	SI5338\_CLK0B  & Input  & false        & 1     & Differential clock input from Si5338 Clock Generator \\
 	\hline
 	LIME\_RX\_CLK  & Output & false        & 1     & Single ended clock output to Lime RX\_CLK pin        \\
-	\hline
-	clocktest      & Output & false        & 1     & Copy of LIME\_RX\_CLK. Pin 3 of rear debug connector \\
 	\hline
 	GPS\_1PPS\_IN  & Input  & false        & 1     & 1 PPS output from GPS module                         \\
 	\hline
@@ -436,8 +439,8 @@ No slots exist in this platform.
 All control clocking in the Matchstiq-Z1 platform originates from the PS7 processing clock 1 (FCLK1), which is set to 100 MHz.
 
 \subsection*{Sampling Domain}
-The sampling clock domain originates from  the CLK0 output of a SI5338 clock generator, which is connected directly to the Zynq FPGA. The platform worker converts this clock from differential to single ended and outputs this converted clock to the Lime transceiver.\par\medskip
-\noindent This clock returns as an input to the Zynq FPGA aligned with the ADC data. This clock is connected as an input signal to the lime\_adc and lime\_dac device workers. See the diagram below for more details.\par\medskip
+The sampling clock domain originates from  the CLK0 output of a SI5338 clock generator, which is connected directly to the Zynq-7000 FPGA. The platform worker converts this clock from differential to single ended and outputs this converted clock to the Lime transceiver.\par\medskip
+\noindent This clock returns as an input to the Zynq-7000 FPGA aligned with the ADC data. This clock is connected as an input signal to the lime\_adc and lime\_dac device workers. See the diagram below for more details.\par\medskip
 \begin{figure}[ht]
 	\centerline{\includegraphics[scale=0.5]{matchstiq_sample_clock_diagram}}
 	\caption{Clock Diagram showing default configuration}
@@ -454,11 +457,6 @@ The sampling clock domain originates from  the CLK0 output of a SI5338 clock gen
 \begin{flushleft}
  To be detailed in a future release.
 \end{flushleft}
-\section*{Example Design}
-This example design provides the infrastructure necessary to stream samples to/from the DAC/ADC interfaces to file.\par\medskip
-
-\noindent To build the example design, enter the example\_design directory and type `make'.\par\medskip
-
-\noindent To run the example design, NFS mount the example\_design directory on the Matchstiq-Z1 and run the executable in the xilinx13\_3 directory.\par\bigskip
-
+\section*{Reference Applications}
+The FSK and Rx reference applications are both supported by the OpenCPI enabled Matchstiq-Z1 BSP. 
 \end{document}

@@ -1,10 +1,9 @@
-<HdlWorker language='vhdl' spec='agc_real-spec.xml'>
+<HdlWorker language='vhdl' version='2' spec='agc_real-spec.xml' datawidth='16'>
     <Property name="DATA_WIDTH_p" type="UShort" parameter="true" readable="true" default="16"></Property>
     <Property name="AVG_WINDOW_p" type="UShort" parameter="true" readable="true" default="16"></Property>
     <Property name="hold" type="Bool" readable="true" writable="true" default="false"></Property>
     <Property name="ref" type="UShort" readable="true" writable="true" default="0x3FFF"></Property>
     <Property name="mu" type="UShort" readable="true" writable="true"></Property>
-    <Property name="messageSize" type="UShort" readable="true" writable="true" default="8192"></Property>
-    <StreamInterface name="in" dataWidth="16" ZeroLengthMessages="true"></StreamInterface>
-    <StreamInterface name="out" dataWidth="16" ZeroLengthMessages="true"></StreamInterface>
+    <StreamInterface name="in"/>
+    <StreamInterface name="out" buffersize='in' insertEOM='1'/>
 </HdlWorker>

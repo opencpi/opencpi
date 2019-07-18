@@ -47,6 +47,7 @@
   CMD_OPTION(dump,       d, Bool,   0, "dump properties after execution")\
   CMD_OPTION(verbose,    v, Bool,   0, "be verbose in describing what is happening")\
   CMD_OPTION(hex,        x, Bool,   0, "print numeric property values in hex, not decimal")\
+  CMD_OPTION(hidden,     H, Bool,   0, "print hidden property values") \
   CMD_OPTION_S(selection,s, String, 0, "<instance-name>=<expression>\n" \
                                        "provide selection expression for worker instance")\
   CMD_OPTION_S(model,    m, String, 0, "[<instance-name>]=<model>\n" \
@@ -72,10 +73,10 @@
 	                               "set log level, overriding OCPI_LOG_LEVEL")\
   CMD_OPTION(duration,   t, Long,   0, "<seconds>\n" \
 	                               "duration (seconds) to run the application if not done\n" \
-                                       "first; exit status is zero in eithercases")\
+                                       "first; exit status is zero in either case")\
   CMD_OPTION(timeout,    O, ULong,  0, "<seconds>\n"			\
 	                               "time limit (seconds) to run the application; if not\n" \
-                                       "done/finished before that time; an error occurs\n")\
+                                       "done/finished before that time; an error occurs")\
   CMD_OPTION(list,       C, Bool,   0, "show available containers\n" \
 	                               "can be used with no xml file argument - no execution") \
   CMD_OPTION_S(server,   S, String, 0, "a server to explicitly contact, without UDP discovery") \
@@ -108,7 +109,7 @@
   CMD_OPTION(dump_file,   , String, 0, "dump properties in raw parsable format to this file") \
   CMD_OPTION(component,   , Bool,   0, "first non-option argument is a component name,\n" \
 	                               "not an application XML file") \
-  CMD_OPTION(seconds,     , Long,   0, "<seconds> -- legacy, use \"duration\" now\n") \
+  CMD_OPTION(seconds,     , Long,   0, "<seconds> -- legacy, use \"duration\" now") \
   CMD_OPTION(version,     , Bool,   0, "print the OpenCPI release version") \
   /**/
 
@@ -295,6 +296,8 @@ static int mymain(const char **ap) {
     params.addBool("uncached", true);
   if (options.hex())
     params.addBool("hex", true);
+  if (options.hidden())
+    params.addBool("hidden", true);
   if (options.dump())
     params.addBool("dump", true);
   if (options.dump_file())
@@ -317,8 +320,8 @@ static int mymain(const char **ap) {
   addParams("url", options.url(n), params);
   addParams("transport", options.transport(n), params);
   addParams("transferRole", options.transfer_role(n), params);
-  addParams("bufferCount", options.buffer_count(n), params);
-  addParams("bufferSize", options.buffer_size(n), params);
+  addParams("portBufferCount", options.buffer_count(n), params);
+  addParams("portBufferSize", options.buffer_size(n), params);
   addParams("scale", options.scale(n), params);
   addParams("server", options.server(n), params);
   if (options.deployment())
@@ -350,7 +353,7 @@ static int mymain(const char **ap) {
 	app.initialize();
 	app.start();
 
-	unsigned timeout =
+	unsigned long timeout =
 	  options.timeout() ? options.timeout() :
 	  options.duration() < 0 ? -options.duration() : // legacy negative
 	  options.duration() ? options.duration() :

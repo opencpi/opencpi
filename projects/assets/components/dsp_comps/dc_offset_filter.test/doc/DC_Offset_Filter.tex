@@ -89,7 +89,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -115,7 +115,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & September 2018 \\
+	Release Date      & 4/2019 \\
 	\hline
 	Component Library & ocpi.assets.dsp\_comps                              \\
 	\hline
@@ -225,6 +225,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 				\hline
 				Property & \verb+PEAK_MONITOR_p+ & Bool  & -              & -               & Readable,Parameter & Standard    & true    & Include a peak detection circuit                         \\
 				\hline
+				Property & \verb+LATENCY_p+ 	  & Ushort& -              & -               & Readable,Parameter & Standard    & 1       & Number of clock cycles between a valid input and a valid output \\
+				\hline
 				Property & \verb+peak+           & Short & -              & -               & Volatile           & Standard    & 0       & Read-only amplitude which may be useful for gain control \\
 				\hline
 			\end{tabular}
@@ -247,14 +249,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		\section*{Worker Interfaces}
 		\subsection*{\comp.hdl}
 		\begin{scriptsize}
-			\begin{tabular}{|M{2cm}|M{1.5cm}|c|c|M{12cm}|}
+			\begin{tabular}{|M{2cm}|M{1.5cm}|c|c|M{10cm}|}
 				\hline
 				\rowcolor{blue}
 				Type            & Name & DataWidth & Advanced                & Usage                  \\
 				\hline
 				StreamInterface & in   & 32        & ZeroLengthMessages=true & Signed complex samples \\
 				\hline
-				StreamInterface & out  & 32        & ZeroLengthMessages=true & Signed complex samples \\
+				StreamInterface & out  & 32        & ZeroLengthMessages=true, InsertEOM=1 & Signed complex samples \\
 				\hline
 			\end{tabular}
 		\end{scriptsize}

@@ -115,8 +115,11 @@ case $func in
      (*)
        tempfile=$temp.sof
        temps+=$tempfile
-       echo Creating link with the quartus suffix '".sof"': $bitfile '->' $tempfile.
+       echo Creating link with the quartus suffix '".sof"': $tempfile '->' $bitfile
        ln -s $bitfile $tempfile
+       if test $? != 0; then
+         bad
+       fi
        bitfile=$tempfile
        ;;
     esac

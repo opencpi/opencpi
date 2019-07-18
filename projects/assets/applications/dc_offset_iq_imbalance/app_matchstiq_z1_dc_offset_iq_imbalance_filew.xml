@@ -7,16 +7,13 @@
   <Instance Component="ocpi.assets.devices.pca9535"/>
   <Instance Component="ocpi.core.devices.time_server"/>
   <Instance Component="ocpi.assets.devices.qadc" model="hdl">
-    <Property Name="messageSize" Value="16352"/>
   </Instance>
   <Instance Component="ocpi.assets.dsp_comps.dc_offset_filter">
-    <Property Name="messageSize" Value="16352"/>
     <Property Name="bypass" Value="true"/>
     <Property Name="update" Value="true"/>
     <Property Name="tc" Value="1"/>
   </Instance>
   <Instance Component="ocpi.assets.dsp_comps.iq_imbalance_fixer">
-    <Property Name="messageSize" Value="16352"/>
     <Property Name="enable" Value="true"/>
     <Property Name="log2_averaging_length" Value="11"/>
   </Instance>

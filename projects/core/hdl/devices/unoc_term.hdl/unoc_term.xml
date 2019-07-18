@@ -1,4 +1,4 @@
-<HdlDevice language='vhdl' outer='1'>
+<HdlDevice language='vhdl' outer='1' Libraries='sdp platform axi'>
   <ComponentSpec nocontrol='1'/>
   <unoc name="up"/>
 </HdlDevice>

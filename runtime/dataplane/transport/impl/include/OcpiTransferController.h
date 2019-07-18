@@ -411,7 +411,7 @@ namespace OCPI {
        * This method gets the next available buffer from the specified output port
        *********************************/
       virtual Buffer* getNextEmptyOutputBuffer( OCPI::DataTransport::Port* src_port );
-
+#endif
       /**********************************
        * This method gets the next available buffer from the specified input port
        *********************************/
@@ -426,7 +426,6 @@ namespace OCPI {
                                 OCPI::DataTransport::Port* port,               
                                 InputBuffer**
                                 )const;
-#endif
   
       /**********************************
        * This method determines if we can produce from the indicated buffer

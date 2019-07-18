@@ -1,5 +1,4 @@
-<RccImplementation >
-  <xi:include href="capture_spec.xml"/>
+<RccWorker spec="capture_spec.xml">
   <property name="nextMeta" volatile='true'/>
   <property name="nextData" volatile='true'/>
-</RccImplementation>
+</RccWorker>

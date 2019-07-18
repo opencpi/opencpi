@@ -28,7 +28,7 @@
   <Property Name="messageSize_bytes" Type="ulong"
                                      Readable="true"
                                      Initial="true"
-                                     Default="4096"
+                                     Default="0"
                                      Description="Message size in bytes. When the value of (num_samples * num bytes per sample) is less than this property's value, the value of (num_samples * num bytes per sample) is used as the message size."/>
 
   <!-- Runtime Properties -->

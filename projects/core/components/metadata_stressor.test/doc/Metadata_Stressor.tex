@@ -113,7 +113,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           &  v\docVersion  \\
 	\hline
-	Release Date      &  September 2018  \\
+	Release Date      &  9/2018  \\
 	\hline
 	Component Library &  ocpi.core  \\
 	\hline
@@ -132,7 +132,7 @@ The \textit{\comp} component tests an HDL worker's robustness during development
 \section*{Worker Implementation Details}
 \subsection*{\comp.hdl}
 \begin{flushleft}
-The \textit{\comp} test worker has four modes controlling its primary operation: bypass, data, metadata, and full. In bypass mode, this worker passes through the data and metadata is receives without change. In data mode, the worker passes through the metadata associated with a message unchanged, but the data will be held based on the duty cycle or lfsr, imitating data starvation for the unit under test. (If enable\_take\_lsfr is not set to true or take\_duty is not set to greater than 1, then the worker will set the duty cycle to 5.) In metadata mode, the worker passes through the data (not intentionally withholding any data) but manipulates the metadata in the following ways:
+The \textit{\comp} test worker has four modes controlling its primary operation: bypass, data, metadata, and full. In bypass mode, this worker passes through the data and metadata it receives without change. In data mode, the worker passes through the metadata associated with a message unchanged, but the data will be withheld based on the duty cycle or lfsr, imitating data starvation for the unit under test. (If enable\_take\_lsfr is not set to true or take\_duty is not set to greater than 1, then the worker will set the duty cycle to 5.) In metadata mode, the worker passes through the data (not intentionally withholding any data) but manipulates the metadata in the following ways:
 \begin{itemize}
  \item early start of message (SOM), data, late end of message (EOM)
  \item early SOM, data, EOM with data
@@ -152,7 +152,7 @@ The RCC version of this component is just a placeholder to fulfill the requireme
 
 \section*{Theory}
 \begin{flushleft}
-There are some combinations of metadata that are valid but not often encountered that a worker should be designed to handle.   \medskip
+There are some combinations of metadata that are valid but not often encountered that a worker should be able to handle without failure.   \medskip
 \end{flushleft}
 
 \section*{Block Diagrams}
@@ -299,35 +299,49 @@ This component is tested via the unit test automation feature of the framework. 
 The test cases exercise changes in every property across three cases, though not every property in every case, as that would take a prohibitively long time.
 
 \begin{itemize}
-% these tests need to be included again when AV-4720 is resolved
-%\item Case 0 - Tests the component with crafted ZLMs and SWMs, backpressure on, duration set to 100 seconds
-%\begin{enumerate}
-%	\item mode = data: only vary data
-%	\item mode = metadata: only vary metadata
-%	\item mode = full: vary data and metadata
-%	\item insert\_nop = True: insert delay between messages
-%	\item enable\_give\_lsfr = True: use lsfr to vary give
-%	\item enable\_take\_lsfr = True: use lsfr to vary take
-%\end{enumerate}
-%\item Case 1 - Tests the component with crafted ZLMs and SWMs, backpressure off, duration set to 100 seconds
-%\begin{enumerate}
-%	\item mode = data: only vary data
-%	\item mode = metadata: only vary metadata
-%	\item mode = full: vary data and metadata
-%\end{enumerate}
-\item Case 1 - Message size set to 4, tests component with single word messages, duration set to 60 seconds
+
+\item Case 1 - Tests the component with crafted ZLMs and SWMs, backpressure on, timeout set to 120 seconds
 \begin{enumerate}
-	\item give\_duty = 1: constant
-	\item give\_duty = 4: 1 on 4 off
-	\item take\_duty = 1: constant
-	\item take\_duty = 5: 1 on 5 off
+	\item enable\_give\_lsfr = True: use lsfr to vary give
+	\item enable\_take\_lsfr = True: use lsfr to vary take
 	\item insert\_nop = True: insert delay between messages
-	\item insert\_nop = False: no delay between messages
-	\item mode = data: only vary data
+	\item mode = full: vary data and metadata
+\end{enumerate}
+
+\item Case 2 - Tests the component with eight byte messages, backpressure on, timeout set to 120 seconds
+\begin{enumerate}
+	\item enable\_give\_lsfr = True: use lsfr to vary give
+	\item enable\_take\_lsfr = True: use lsfr to vary take
+	\item insert\_nop = True: insert delay between messages
+	\item mode = full: vary data and metadata
+\end{enumerate}
+
+\item Case 3 - Tests the component with a single zlm, backpressure on, timeout set to 120 seconds
+\begin{enumerate}
+	\item enable\_give\_lsfr = True: use lsfr to vary give
+	\item enable\_take\_lsfr = True: use lsfr to vary take
+	\item insert\_nop = True: insert delay between messages
+	\item mode = full: vary data and metadata
+\end{enumerate}
+
+\item Case 4 - Tests the component with crafted ZLMs and SWMs, backpressure on, timeout set to 120 seconds
+\begin{enumerate}
+	\item enable\_give\_lsfr = True: use lsfr to vary give
+	\item enable\_take\_lsfr = True: use lsfr to vary take
+	\item insert\_nop = True: insert delay between messages
+  \item mode = data: only vary data
 	\item mode = metadata: only vary metadata
 	\item mode = full: vary data and metadata
 \end{enumerate}
-\item Case 2 - Message size set to 128, this tests most of the functionality, duration set to 100 seconds
+
+\item Cases 5-11 - Tests ending on different message types, message size set to 4, stressormode set to full, backpressure on, timeout set to 120 seconds
+\begin{enumerate}
+	\item mode = full: vary data and metadata
+	\item insert\_nop = True: insert delay between messages
+	\item insert\_nop = False: no delay between messages
+\end{enumerate}
+
+\item Case 12 -  Tests most of the functionality, message size set to 128, backpressure on, stressormode set to full, timeout set to 240 seconds
 \begin{enumerate}
 	\item enable\_give\_lsfr = True: use lsfr to vary give
 	\item enable\_give\_lsfr = False: use duty cycle to vary give
@@ -344,15 +358,8 @@ The test cases exercise changes in every property across three cases, though not
 	\item insert\_nop = False: no delay between messages
 	\item seed = 35: seed for lsfr
 \end{enumerate}
-\item Case 3 - Tests using the component to generate zero length messages, duration set to 60 seconds
-\begin{enumerate}
-	\item allow\_zlms = True: zero length messages inserted between some messages
-	\item mode = metadata: only vary metadata
-	\item mode = full: vary data and metadata
-	\item insert\_nop = True: insert delay between messages
-	\item insert\_nop = False: no delay between messages
-\end{enumerate}
-\item Case 4 - Tests the RCC version of this component, which is nothing but a placeholder, duration set to 60 seconds
+
+\item Case 13 - Tests the RCC version of this component, which is nothing but a placeholder, timeout set to 120 seconds
 \end{itemize}
 
 In all test cases, the data is simply passed through the component and the tests are determined to be successful by comparing the input and output files.

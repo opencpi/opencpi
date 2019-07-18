@@ -57,7 +57,7 @@ architecture rtl of fir_real_sse_worker is
   constant NUM_TAPS_c           : integer := to_integer(unsigned(NUM_TAPS_p));
   constant DATA_WIDTH_c         : integer := to_integer(unsigned(DATA_WIDTH_p));
   constant COEFF_WIDTH_c        : integer := to_integer(unsigned(COEFF_WIDTH_p));
-  constant MAX_MESSAGE_VALUES_c : integer := 4096;  -- from iqstream_protocol
+  constant MAX_MESSAGE_VALUES_c : integer := to_integer(ocpi_max_bytes_out)/2;
 
   signal fir_wdata         : std_logic_vector(COEFF_WIDTH_c-1 downto 0);
   signal fir_rdata         : std_logic_vector(COEFF_WIDTH_c-1 downto 0);
@@ -65,8 +65,8 @@ architecture rtl of fir_real_sse_worker is
   signal odata_vld         : std_logic;
   signal missed_odata_vld  : std_logic := '0';
   signal peak_out          : std_logic_vector(15 downto 0);
-  signal msg_cnt           : unsigned(integer(ceil(log2(real(MAX_MESSAGE_VALUES_c))))-1 downto 0);
-  signal max_sample_cnt    : unsigned(integer(ceil(log2(real(MAX_MESSAGE_VALUES_c))))-1 downto 0);
+  signal msg_cnt           : unsigned(integer(ceil(log2(real(MAX_MESSAGE_VALUES_c+1))))-1 downto 0);
+  signal max_sample_cnt    : unsigned(integer(ceil(log2(real(MAX_MESSAGE_VALUES_c+1))))-1 downto 0);
   signal enable            : std_logic;
   signal take              : std_logic;
   signal force_som         : std_logic;
@@ -78,7 +78,7 @@ architecture rtl of fir_real_sse_worker is
   signal raw_addr          : std_logic_vector(15 downto 0);
   signal peak_rst_in       : std_logic;
   signal peak_a_in         : std_logic_vector(15 downto 0);
-
+  signal buffer_size       : ushort_t;
 begin
 
   raw_byte_enable     <= props_in.raw.byte_enable;
@@ -138,9 +138,9 @@ begin
 
         case current_state is
           when INIT_s =>
-            if (in_in.som = '1' and in_in.eom = '1' and in_in.valid = '0') then
+            if (in_in.ready = '1' and in_in.som = '1' and in_in.eom = '1' and in_in.valid = '0') then
               current_state <= TERM_CURR_MSG_s;
-            elsif (in_in.som = '1' and in_in.valid = '0') then
+            elsif (in_in.ready = '1' and in_in.som = '1' and in_in.valid = '0') then
               current_state <= WAIT_s;
             elsif (force_som = '1' and force_eom = '1' and out_in.ready = '0') then
               current_state <= SEND_s;
@@ -149,9 +149,9 @@ begin
               take          <= '0';
             end if;
           when WAIT_s =>
-            if (in_in.valid = '1') then
+            if (in_in.ready and in_in.valid = '1') then
               current_state <= INIT_s;
-            elsif (in_in.eom = '1') then
+            elsif (in_in.ready and in_in.eom = '1') then
               current_state <= SEND_s;
             end if;
           when SEND_s =>
@@ -186,15 +186,19 @@ begin
   -----------------------------------------------------------------------------
   -- SOM/EOM - counter set to message size, increment while giving
   -----------------------------------------------------------------------------
-
-  max_sample_cnt <= resize(props_in.messageSize srl 1, max_sample_cnt'length);
-
+  -- default the buffer size to system's preferred buffer size, but let the property override it
+  buffer_size    <= props_in.messageSize when props_in.messageSize /= 0
+                    else props_in.ocpi_buffer_size_out;
+  -- limit the max sample count to what this implementation is prepared for
+  max_sample_cnt <= resize(ocpi.util.min(props_in.ocpi_buffer_size_out srl 1,
+                                         to_ushort(MAX_MESSAGE_VALUES_c)),
+                           max_sample_cnt'length);
   messageSize_count : process (ctl_in.clk)
   begin
     if rising_edge(ctl_in.clk) then
-      if(ctl_in.reset = '1' or force_eom = '1') then
+      if(ctl_in.reset = '1' or (force_eom = '1' and out_in.ready)) then
         msg_cnt   <= (0 => '1', others => '0');
-      elsif (out_in.ready = '1' and odata_vld = '1') then
+      elsif (out_in.ready = '1' and (odata_vld = '1' or missed_odata_vld = '1')) then
         if(msg_cnt = max_sample_cnt) then
           msg_cnt <= (0 => '1', others => '0');
         else
@@ -204,9 +208,9 @@ begin
     end if;
   end process messageSize_count;
 
-  out_out.som <= '1' when ((out_in.ready = '1' and odata_vld = '1' and
+  out_out.som <= '1' when ((out_in.ready = '1' and (odata_vld = '1' or missed_odata_vld = '1') and
                            msg_cnt = 1) or force_som = '1') else '0';
-  out_out.eom <= '1' when ((out_in.ready = '1' and odata_vld = '1' and
+  out_out.eom <= '1' when ((out_in.ready = '1' and (odata_vld = '1' or missed_odata_vld = '1') and
                            msg_cnt = max_sample_cnt) or
                            force_eom = '1') else '0';
 

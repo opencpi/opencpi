@@ -33,76 +33,22 @@
 
 #include <stdio.h>
 #include <stddef.h>
-#include "OcpiContainerRunConditionApi.h"
-#ifdef __cplusplus
-
-#include "OcpiContainerApi.h" // For proxy slaves
-#endif
-#if defined (WIN32)
-    /**
-     * 8 bit signed integer data type.
-     */
-
-    typedef signed char int8_t;
-
-    /**
-     * 8 bit unsigned integer data type.
-     */
-
-    typedef unsigned char uint8_t;
-
-    /**
-     * 16 bit signed integer data type.
-     */
-
-    typedef short int16_t;
-
-    /**
-     * 16 bit unsigned integer data type.
-     */
-
-    typedef unsigned short uint16_t;
-
-    /**
-     * 32 bit signed integer data type.
-     */
-
-    typedef int int32_t;
-
-    /**
-     * 32 bit unsigned integer data type.
-     */
-
-    typedef unsigned int uint32_t;
-
-    /**
-     * 64 bit signed integer data type.
-     */
-
-    typedef long long int64_t;
-
-    /**
-     * 64 bit unsigned integer data type.
-     */
-
-    typedef unsigned long long uint64_t;
-#else
-#ifndef _WRS_KERNEL
+#include <stdbool.h>
 #include <stdint.h>
-#endif
-#endif
+#include "OcpiContainerRunConditionApi.h"
 
+#define RCC_CONST const // this definition applies to worker code
+#ifdef __cplusplus
+#include "OcpiContainerApi.h" // For proxy slaves
 #ifdef WORKER_INTERNAL
 namespace OCPI {
   namespace RCC { class Port; }
   namespace DataTransport { class BufferUserFacet; }
   namespace Util { class Member; class Port;}
 }
-#define RCC_CONST
-#else
-#define RCC_CONST const
+#undef RCC_CONST
+#define RCC_CONST // for (C++) framework code these things are not const
 #endif
-#ifdef __cplusplus
 namespace OCPI {
   namespace API {
     class Application;
@@ -115,7 +61,7 @@ namespace OCPI {
   }
   namespace RCC {
     class Worker;
-#endif
+#endif // end of __cplusplus
 
 typedef uint16_t  RCCOrdinal;
 typedef uint8_t   RCCOpCode;
@@ -125,17 +71,18 @@ typedef enum {
   RCC_DYNAMIC
 } RCCEndian;
 #ifdef __cplusplus
-class RCCUserPort;
-typedef OCPI::API::OcpiBoolean RCCBoolean;
-typedef OCPI::API::OcpiPortMask RCCPortMask;
-typedef OCPI::API::RunCondition RunCondition;
-const OCPI::API::OcpiPortMask RCC_ALL_PORTS = OCPI::API::OCPI_ALL_PORTS;
-const OCPI::API::OcpiPortMask RCC_NO_PORTS = OCPI::API::OCPI_NO_PORTS;
+  class RCCUserPort;
+  typedef OCPI::API::OcpiBoolean RCCBoolean;
+  typedef OCPI::API::OcpiPortMask RCCPortMask; // not documented
+  typedef OCPI::API::OcpiPortMask PortMask;
+  typedef OCPI::API::RunCondition RunCondition;
+  const OCPI::API::OcpiPortMask RCC_ALL_PORTS = OCPI::API::OCPI_ALL_PORTS;
+  const OCPI::API::OcpiPortMask RCC_NO_PORTS = OCPI::API::OCPI_NO_PORTS;
 #else
-typedef OcpiBoolean  RCCBoolean;
-typedef OcpiPortMask RCCPortMask;
-#define RCC_ALL_PORTS OCPI_ALL_PORTS
-#define RCC_NO_PORTS OCPI_NO_PORTS
+  typedef OcpiBoolean  RCCBoolean;
+  typedef OcpiPortMask RCCPortMask;
+  #define RCC_ALL_PORTS OCPI_ALL_PORTS
+  #define RCC_NO_PORTS OCPI_NO_PORTS
 #endif
 typedef void      *RCCBufferId;
 typedef float     RCCFloat;
@@ -169,11 +116,11 @@ typedef struct {
 
 typedef RCCResult RCCMethod(RCCWorker *_this);
 typedef RCCResult RCCRunMethod(RCCWorker *_this,
-			       RCCBoolean timedout,
-			       RCCBoolean *newRunCondition);
+                               RCCBoolean timedout,
+                               RCCBoolean *newRunCondition);
 typedef RCCResult RCCPortMethod(RCCWorker *_this,
-				RCCPort *port,
-				RCCResult reason);
+                                RCCPort *port,
+                                RCCResult reason);
  typedef struct {
    size_t length;
    size_t offset;
@@ -190,7 +137,8 @@ typedef struct {
   size_t length_;
   RCCOpCode opCode_;
   size_t direct_;
-  RCCBoolean isNew_; // hook for upper level initializations
+  bool eof_;
+  bool isNew_; // hook for upper level initializations
 #ifdef WORKER_INTERNAL
   OCPI::RCC::Port *containerPort;
   OCPI::API::ExternalBuffer *portBuffer;
@@ -208,6 +156,7 @@ struct RCCPort {
       RCCOpCode operation;
       RCCOpCode exception;
     } u;
+    RCCBoolean eof;
   } input;
   struct {
     size_t length;
@@ -215,6 +164,7 @@ struct RCCPort {
       RCCOpCode operation;
       RCCOpCode exception;
     } u;
+    RCCBoolean eof;
   } output;
   RCCPortMethod *callBack;
   size_t connectedCrewSize;
@@ -331,6 +281,8 @@ typedef struct {
    inline size_t getLength() const { return m_rccBuffer->length_; } // same as STL-style length() but complements setLength
    inline RCCOpCode opCode() const { return m_rccBuffer->opCode_; }
    inline RCCOpCode getOpCode() const { return m_rccBuffer->opCode_; } // same as opCode() but complements setOpCode
+   inline bool eof() const { return m_rccBuffer->eof_; }
+   inline bool getEOF() const { return eof(); }
    // For output buffers
    void setLength(size_t a_length) {
      if (m_rccBuffer->isNew_)
@@ -340,6 +292,7 @@ typedef struct {
    }
    void setOpCode(RCCOpCode op);
    void setDirect(size_t direct) {m_rccBuffer->direct_ = direct; }
+   void setEOF() { m_rccBuffer->eof_ = true; }
    void setInfo(RCCOpCode op, size_t len) {
      setOpCode(op);
      setLength(len);
@@ -356,7 +309,7 @@ typedef struct {
    RCCUserPort();
    // Note length is capacity for output buffers.
    void *getArgAddress(RCCUserBuffer &buf, unsigned op, unsigned arg, size_t *length,
-		       size_t *capacity) const;
+                       size_t *capacity) const;
    void setArgSize(RCCUserBuffer &buf, unsigned op, unsigned arg, size_t length) const;
  private:
    void checkOpCode(RCCUserBuffer &buf, unsigned op, bool setting = true) const;
@@ -441,11 +394,9 @@ typedef struct {
  class Worker;
  class RCCUserWorker;
  class RCCUserTask {
-   //   bool m_done;
  public:
    RCCUserTask();
    virtual void run() = 0;
-   //   void done() const { return m_done; }
    void spawn();
  private:
    Worker & m_worker;
@@ -454,6 +405,7 @@ typedef struct {
  class RCCUserWorker {
    friend class Worker;
    friend class RCCUserTask;
+   friend class RCCUserSlave;
    Worker &m_worker;
    RCCUserPort *m_ports; // array of C++ port objects
  public:
@@ -467,7 +419,7 @@ typedef struct {
    // for given a total, and a limit on message sizes.  Return is total for member,
    // optional output arg is max per message for this member.
    size_t memberItemTotal(uint64_t totalItems, size_t maxPerMessage = 0,
-			  size_t *perMessage = NULL);
+                          size_t *perMessage = NULL);
  protected:
    bool m_first;
    RCCWorker &m_rcc;
@@ -480,14 +432,14 @@ typedef struct {
    RCCUserPort &getPort(unsigned n) const { return m_ports[n]; }
    inline bool firstRun() const { return m_first; };
    bool isInitialized() const;
-   bool isOperating() const;
    bool isSuspended() const;
    bool isFinished() const;
    bool isUnusable() const;
+   bool isOperating() const;
    // access the current run condition
    const RunCondition *getRunCondition() const;
    // Change the current run condition - if NULL, revert to the default run condition
-   void setRunCondition(RunCondition *rc);
+   void setRunCondition(const RunCondition *rc);
    virtual uint8_t *rawProperties(size_t &size) const;
    RCCResult setError(const char *fmt, ...);
    bool willLog(unsigned level) const;
@@ -510,15 +462,22 @@ typedef struct {
  protected:
    OCPI::API::Worker &m_worker;
    RCCUserSlave(unsigned n = 0);
-   //   virtual ~RCCUserSlave();
  public:
+   inline bool isOperating() const { return m_worker.isOperating(); }
    inline void start() { m_worker.start(); }
    inline void stop() { m_worker.stop(); }
    inline void beforeQuery() { m_worker.beforeQuery(); }
    inline void afterConfigure() { m_worker.afterConfigure(); }
    // Untyped property setting - slowest but convenient
-   inline void setProperty(const char *name, const char *value) {
-     m_worker.setProperty(name, value);
+   inline void setProperty(const char *name, const char *value,
+			   OCPI::API::AccessList &list = OCPI::API::emptyList) {
+     m_worker.setProperty(name, value, list);
+   }
+   inline const char *getProperty(unsigned ordinal, std::string &value,
+				  OCPI::API::AccessList &list,
+				  OCPI::API::PropertyOptionList &options,
+				  OCPI::API::PropertyAttributes *attributes) const {
+     return m_worker.getProperty(ordinal, value, list, options, attributes);
    }
    // Untyped property list setting - slow but convenient
    inline void setProperties(const char *props[][2]) {
@@ -527,7 +486,7 @@ typedef struct {
    // Typed property list setting - slightly safer, still slow
    inline void setProperties(const OCPI::API::PValue *props) { m_worker.setProperties(props); }
    inline bool getProperty(unsigned ordinal, std::string &name, std::string &value,
-			   bool *unreadablep = NULL, bool hex = false) {
+                           bool *unreadablep = NULL, bool hex = false) {
      return m_worker.getProperty(ordinal, name, value, unreadablep, hex);
    }
    inline void getRawPropertyBytes(size_t offset, uint8_t *buf, size_t count) {

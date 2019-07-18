@@ -120,7 +120,7 @@ namespace OCPI {
 	  }
       } else
 	return OU::esprintf("Parameter assignment for \"%s\", \"%s\" is invalid.  Format is:"
-			    "<instance>=<port>=<filename> of <external-port>=<filename>", 
+			    "<instance>=<port>=<filename> of <external-port>=<filename>",
 			    pName, assign);
       unsigned nPorts;
       const OU::Port *p = m_instances[instn]->m_candidates[0].impl->m_metadataImpl.ports(nPorts);
@@ -216,7 +216,7 @@ namespace OCPI {
       OU::Port *p;
 
       // build the map from implementation port ordinals to util::assembly::ports
-      for (std::list<OU::Assembly::Port*>::const_iterator pi = inst.m_ports.begin(); 
+      for (std::list<OU::Assembly::Port*>::const_iterator pi = inst.m_ports.begin();
 	   pi != inst.m_ports.end(); pi++) {
 	bool found = false;
 	OU::Assembly::Port &asp = **pi;
@@ -297,9 +297,9 @@ namespace OCPI {
 	    }
 	  // FIXME: should this externalization only apply to spec ports?
 	  if (!found) // Not mentioned in the assembly. Add an external.
-	    utilAssy.addExternalConnection(inst.m_ordinal, p->m_name.c_str(), NULL,
+	    utilAssy.addExternalConnection(NULL, inst.m_ordinal, p->m_name.c_str(), NULL,
 					   p->m_provider, false, true);
-	}	  
+	}
       }
       p = ports;
       for (unsigned n = 0; n < m_nPorts; n++, p++)
@@ -313,6 +313,21 @@ namespace OCPI {
       return false;
     }
 
+    static bool reject(const Assembly::Instance &inst, const Implementation &impl, const char *fmt, ...) {
+      if (OS::logWillLog(OCPI_LOG_INFO)) {
+	std::string reason;
+	va_list ap;
+	va_start(ap, fmt);
+	OU::formatAddV(reason, fmt, ap);
+	va_end(ap);
+	ocpiInfo("For application instance \"%s\" (spec %s), rejected implementation \"%s%s%s\" in "
+		 "\"%s\" due to %s", inst.name().c_str(), impl.m_metadataImpl.specName().c_str(),
+		 impl.m_metadataImpl.cname(), impl.m_staticInstance ? "/" : "",
+		 impl.m_staticInstance ? ezxml_cattr(impl.m_staticInstance, "name") : "",
+		 impl.m_artifact.name().c_str(), reason.c_str());
+      }
+      return false;
+    }
     // Perform connectivity checks for a candidate implementation for this instance
     // Return true if the implementation is still acceptable
     bool Assembly::Instance::
@@ -343,19 +358,17 @@ namespace OCPI {
 	unsigned bump = 0;
 	for (unsigned n = 0; n < nPorts; n++, m <<= 1, c++, p++)
 	  if (m & i.m_internals) {
-	    // Find the assembly connection port for this instance and this 
+	    // Find the assembly connection port for this instance and this
 	    // internally/statically connected port
 	    OU::Assembly::Port *ap = m_assyPorts[n];
 	    if (ap) {
 	      // We found the assembly connection port
 	      // Now check that the port connected in the assembly has the same
 	      // name as the port connected in the artifact
-	      if (!ap->m_connectedPort) {
-		ocpiInfo("Rejected \"%s\" because artifact has port '%s' connected while "
-			 "application doesn't.", i.m_artifact.name().c_str(),
-			 p->m_name.c_str());
-		return false;
-	      }
+	      if (!ap->m_connectedPort)
+		return reject(*this, i,
+			      "artifact having port \"%s\" connected while application doesn't.",
+			      p->m_name.c_str());
 	      // This check can only be made for the port of the internal connection that is
 	      // for a later instance, since null-named ports are resolved as each
 	      // instance is processed
@@ -364,10 +377,9 @@ namespace OCPI {
 			      c->port->m_name.c_str()) || // port name different
 		   assy.utilInstance(ap->m_connectedPort->m_instance).m_specName !=
 		   c->impl->m_metadataImpl.specName())) {             // or spec name different
-		ocpiInfo("Rejected \"%s\" due to incompatible connection on port \"%s\"",
-			 i.m_artifact.name().c_str(), p->m_name.c_str());
+		reject(*this, i, "incompatible connection on port \"%s\"", p->m_name.c_str());
 		ocpiInfo("Artifact connects it to port '%s' of spec '%s', "
-			 "but application wants port '%s' of spec '%s'",
+			 "but application connects it to port '%s' of spec '%s'",
 			 c->port->m_name.c_str(), c->impl->m_metadataImpl.specName().c_str(),
 			 ap->m_connectedPort->m_name.c_str(),
 			 assy.utilInstance(ap->m_connectedPort->m_instance).m_specName.c_str());
@@ -448,8 +460,9 @@ namespace OCPI {
 	return false;
       }
       strip_pf(platform);
+
       // To this point all the checking has applied to the worker we are looking at.
-      // From this point some of the checking may actually apply to the slave if there is one
+      // From this point some of the checking may actually apply to the slave if there is one.
       // The aspects that could apply to the slave are:
       // 1. Platform choices
       // 2. Property-based selection
@@ -467,7 +480,7 @@ namespace OCPI {
 	const char
 	  *apName = aProps[ap].m_name.c_str(),
 	  *apValue = aProps[ap].m_value.c_str();
-	
+
 	OU::Property *up = impl.m_metadataImpl.getProperty(apName);
 	if (!up) {
 	  ocpiInfo("Rejected: initial property \"%s\" not found", apName);
@@ -534,12 +547,15 @@ namespace OCPI {
       OU::Assembly::Instance &inst = m_tempInstance->m_utilInstance;
       // need to deal with params that can filter impls: model and platform
       ezxml_t x = inst.xml();
-      if (!OU::findAssign(params, "model", inst.m_name.c_str(), m_model))
+      if (!OU::findAssign(params, "model", inst.m_name.c_str(), m_model) &&
+	  !OU::findAssign(params, "model", inst.m_specName.c_str(), m_model))
 	OE::getOptionalString(x, m_model, "model");
-      if (!OU::findAssign(params, "platform", inst.m_name.c_str(), m_platform))
+      if (!OU::findAssign(params, "platform", inst.m_name.c_str(), m_platform) &&
+	  !OU::findAssign(params, "platform", inst.m_specName.c_str(), m_platform))
 	OE::getOptionalString(x, m_platform, "platform");
       const char *scale;
-      if (!OU::findAssign(params, "scale", inst.m_name.c_str(), scale))
+      if (!OU::findAssign(params, "scale", inst.m_name.c_str(), scale) &&
+	  !OU::findAssign(params, "scale", inst.m_specName.c_str(), scale))
 	scale = ezxml_cattr(inst.xml(), "scale");
       m_tempInstance->m_scale = 1;
       if (scale && OE::getUNum(scale, &m_tempInstance->m_scale))
@@ -636,9 +652,9 @@ namespace OCPI {
 			    ap1->m_name.c_str(),
 			    utilInstance(c.m_ports.back().m_instance).m_name.c_str(),
 			    p1.m_name.c_str());
-	  
+
 	  // FIXME:  more robust naming, namespacing, UUIDs, hash etc.
-	    
+
 	}
       }
     }
@@ -674,7 +690,7 @@ namespace OCPI {
       return false;
     }
     Assembly::Instance::
-    Instance(OU::Assembly::Instance &utilInstance, Instance *master) 
+    Instance(OU::Assembly::Instance &utilInstance, Instance *master)
       : m_utilInstance(utilInstance), m_assyPorts(NULL), m_nPorts(0), m_master(master) {
       // m_assyPorts will be initialized based on first impl found
     }

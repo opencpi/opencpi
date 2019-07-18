@@ -42,9 +42,9 @@ endif
 # so anything like that is stripped.
 # The BitBucket prefix of something like "bugfix--" is also stripped if present.
 GIT_BRANCH:=$(notdir $(shell git name-rev --name-only HEAD | perl -pe 's/([~^]\d+)*$$//' | perl -pe 's/^.*?--//'))
-GIT_VERSION:=$(shell echo $(GIT_BRANCH) | perl -ne '/^v[\.\d]+$$/ && print')
-# For testing:
-# GIT_VERSION:=$(shell echo v1.4.0 | perl -ne '/^v[\.\d]+$$/ && print')
+# GIT_VERSION only matches vXX.XX.XX or vXX.XX.XXgh (for GitHub export)
+GIT_VERSION:=$(shell echo $(GIT_BRANCH) | perl -ne '/^v[\.\d]+(?:gh)?$$/ && print')
+# Fix broken highlights on some editors: '
 RPM_RELEASE?=snapshot
 # If there is a tag saying it was exported to github, e.g. "1.3.0_github_1414ef3" use that instead
 # Note: This command fails on CentOS6 but no worries
@@ -69,9 +69,9 @@ ifeq "$(GIT_VERSION)" ''
   endif
   # Generate an increasing number for version comparisons (since git hashes aren't)
   # Number of 6-minute increments since release in 5 digits (rolls over >1/yr)
-  RELEASE_TAG=_$(shell printf %05d $(shell expr `date -u +"%s"` / 360 - 4231562))
+  RELEASE_TAG=_$(shell printf %05d $(shell expr `date -u +"%s"` / 360 - 4273900))
   # When bumping this, don't miss configure.ac as well (AV-3433)
-  RPM_VERSION:=1.4.0
+  RPM_VERSION:=1.5.0
 else
   # This is a specific version branch
   RELEASE_TAG=%{nil}
@@ -93,7 +93,7 @@ help:
 	printf "This is the Makefile to build RPMs for OpenCPI\n\n"
 	echo "The valid targets are:"
 	echo ""
-	echo " doc                   - The documentation RPM"
+	echo " doc_rpm               - The documentation RPM"
 	echo ""
 	echo " bsp-XXX               - Bundle BSP XXX for distribution"
 	echo ""
@@ -117,9 +117,9 @@ cleanrpmbuild:
 
 # AV-4267
 # The _topdir was because the jenkins user didn't have a home in Docker containers, but that might not be the case any more
-.PHONY: doc
-.SILENT: doc
-doc: libmyhostname cleanrpmbuild
+.PHONY: doc_rpm
+.SILENT: doc_rpm
+doc_rpm: libmyhostname cleanrpmbuild
 	$(SPOOF_HOSTNAME) rpmbuild -ba opencpi-doc.spec \
 	--define="COMMIT_HASH $(COMMIT_HASH)" \
 	--define="COMMIT_TAG $(shell echo "$(COMMIT_TAG)" | tr -d ' ')" \

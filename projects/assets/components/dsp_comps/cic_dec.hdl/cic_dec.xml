@@ -1,4 +1,4 @@
-<HdlWorker Language="vhdl" Spec="cic_dec-spec.xml">
+<HdlWorker Language="vhdl" Spec="cic_dec-spec.xml" version='2' datawidth='32'>
 
   <SpecProperty Name="N" Parameter="true" Default="3"/>
 
@@ -12,7 +12,7 @@
 
   <SpecProperty Name="DOUT_WIDTH" Parameter="true" Default="16"/>
 
-  <StreamInterface Name="in"  DataWidth="32" ZeroLengthMessages="true"/>
-  <StreamInterface Name="out" DataWidth="32" ZeroLengthMessages="true"/>
+  <StreamInterface Name="in"/>
+  <StreamInterface Name="out" insertEOM='1'/>
 
 </HdlWorker>

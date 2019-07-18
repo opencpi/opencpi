@@ -1,6 +1,5 @@
-<RccImplementation>
-  <xi:include href="erode_spec.xml"/>
+<RccWorker spec="erode_spec.xml">
   <Port Name="in" MinBuffers="3"/>
-</RccImplementation>
+</RccWorker>
 
 

@@ -1,3 +1,5 @@
+<!-- DEPRECATION NOTICE: This worker is deprecated and will be removed in OpenCPI 2.0. Use the Zero Pad component for new designs.-->
+
 <!-- This is the spec file (OCS) for: zero_padding
      Add component spec attributes, like "protocol".
      Add property elements for spec properties.
@@ -8,7 +10,8 @@
   <Property Name="ODATA_WIDTH_p" Type="ulong" Default="32" Readable="true" Parameter="true"/>
 
   <Property Name="num_zeros" Type="ushort" Readable="true" Writable="true"/>
-  <Property Name="messageSize" Type="ushort" Default="8192" Readable="true" Writable="true"/>
+  <!-- the default size is zero so that the default case is to use the system's buffer size -->
+  <Property Name="messageSize" Type="ushort" Default="0" Readable="true" Writable="true"/>
 
   <DataInterfaceSpec Name="in" Producer="false"/>
   <DataInterfaceSpec Name="out" Producer="true"/>

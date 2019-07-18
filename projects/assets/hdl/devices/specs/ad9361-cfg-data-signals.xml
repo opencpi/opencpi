@@ -1,18 +1,21 @@
-<signals>
+<Signals>
   <!-- The AD9361 register set determines which channel mode is used (1R1T,
        1R2T, 2R1T, or 1R2T). This mode is part of what eventually determines
        which timing diagram the AD9361 is expecting for the RX/TX data path
        pins. -->
-  <signal input='config_is_two_r'/>
+  <Signal Name="config_is_two_r" Direction="in"/>
 
-  <!-- these dev signals are used to (eventually) tell higher level proxy(ies) about the data port configuration that was enforced when this worker was compiled, so that said proxy(ies) can set the AD9361 registers accordingly -->
-  <signal output='ch0_handler_is_present'/>
-  <signal output='ch1_handler_is_present'/>
-  <signal output='data_bus_index_direction'/>
-  <signal output='data_clk_is_inverted'/>
-  <signal output='islvds'/>
-  <signal output='isdualport'/>
-  <signal output='isfullduplex'/>
-  <signal output='isDDR'/>
-  <signal output='present'/>
-</signals>
+  <!-- these dev signals are used to (eventually) tell higher level proxy(ies)
+       about the data port configuration that was enforced when this worker was
+       compiled, so that said proxy(ies) can set the AD9361 registers
+       accordingly -->
+  <Signal Name="ch0_handler_is_present" Direction="out"/>
+  <Signal Name="ch1_handler_is_present" Direction="out"/>
+  <Signal Name="data_bus_index_direction" Direction="out"/>
+  <Signal Name="data_clk_is_inverted" Direction="out"/>
+  <Signal Name="islvds" Direction="out"/>
+  <Signal Name="isdualport" Direction="out"/>
+  <Signal Name="isfullduplex" Direction="out"/>
+  <Signal Name="isDDR" Direction="out"/>
+  <Signal Name="present" Direction="out"/>
+</Signals>

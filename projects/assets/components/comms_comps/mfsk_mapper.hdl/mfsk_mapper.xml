@@ -1,6 +1,6 @@
-<HdlWorker Language="vhdl" Spec="mfsk_mapper-spec">
+<HdlWorker Language="vhdl" Spec="mfsk_mapper-spec" version='2'>
   <Property Name="DIN_WIDTH_p" Type="ulong" Default="16" Readable="true" Parameter="true"/>
 
   <StreamInterface Name="in" DataWidth="DIN_WIDTH_p"/>
-  <StreamInterface Name="out" DataWidth="16"/>
+  <StreamInterface Name="out" DataWidth="16" inserteom='1'/>
 </HdlWorker>

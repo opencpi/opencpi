@@ -89,7 +89,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -114,13 +114,13 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & September 2018 \\
+	Release Date      & 4/2019 \\
 	\hline
 	Component Library & ocpi.assets.dsp\_comps                    \\
 	\hline
 	Workers           & \comp.rcc                                \\
 	\hline
-	Tested Platforms  & centos7, xilinx13\_3 \\
+	Tested Platforms  & centos7, xilinx13\_3, xilinx13\_4 \\
 	\hline
 \end{tabular}
 \section*{Worker Implementation Details}
@@ -190,7 +190,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 			\rowcolor{blue}
 			Type     & Name       & Type   & SequenceLength & ArrayDimensions & Accessibility     & Valid Range & Default & Usage                                                                                                                                                                             \\
 			\hline
-			Property & \verb+SPB+ & UShort & -              & -               & Readable,Writable & 3-100       & -       & The expected number of samples per baud.  This number can be slightly off and the algorithm will work correctly. As long as it is close, the averaging mechanism will compensate. \\
+			Property & \verb+SPB+ & UShort & -              & -               & Readable,Writable & 3-100       & 5       & The expected number of samples per baud.  This number can be slightly off and the algorithm will work correctly. As long as it is close, the averaging mechanism will compensate. \\
 			\hline
 		\end{tabular}
 	\end{scriptsize}
@@ -214,7 +214,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \section*{Performance and Resource Utilization}
 \subsubsection*{\comp.rcc}
 \begin{scriptsize}
-\end{landscape}
 	\begin{tabular}{|c|c|c|}
 		\hline
 		\rowcolor{blue}
@@ -224,6 +223,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		\hline
 	\end{tabular}
 \end{scriptsize}
+\end{landscape}
 
 \section*{Test and Verification}
 \begin{flushleft}

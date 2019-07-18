@@ -1,0 +1,8 @@
+This is a library of device workers and, when necessary, their supporting proxies.
+
+The specs subdirectory is for when there is a separate spec file 
+for a device worker (when more than one implementation exists for 
+the same high level interface).
+
+Similar to other OpenCPI libraries, the built workers and proxies are make available
+to the framework via the "lib" subdirectory and the contents within.

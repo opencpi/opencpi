@@ -35,7 +35,6 @@ namespace OCPI {
     typedef DataTransfer::RegisterOffset RegisterOffset;
     class WciControl : public Access, virtual public OCPI::Container::Controllable,
       virtual public OCPI::API::PropertyAccess, virtual OCPI::Container::WorkerControl {
-      
       friend class Port;
       friend class Device;
       friend class Container;
@@ -56,7 +55,7 @@ namespace OCPI {
       virtual ~WciControl();
       inline size_t index() const { return m_occpIndex; }
     protected:
-      // This is shadowed by real application workers, but is used when this is 
+      // This is shadowed by real application workers, but is used when this is
       // standalone.
       //      const std::string &name() const { return m_wName; }
       void init(bool redo, bool doInit);
@@ -66,12 +65,12 @@ namespace OCPI {
       // Add the hardware considerations to the property object that supports
       // fast memory-mapped property access directly to users
       // the key members are "readVaddr" and "writeVaddr"
-      virtual void prepareProperty(OCPI::Util::Property &md, 
+      virtual void prepareProperty(OCPI::Util::Property &md,
 				   volatile uint8_t *&writeVaddr,
-				   const volatile uint8_t *&readVaddr);
+				   const volatile uint8_t *&readVaddr) const;
       // Map the control op numbers to structure members
       static const unsigned controlOffsets[];
-      void checkControlState();
+      void checkControlState() const;
       void controlOperation(OCPI::Util::Worker::ControlOperation op);
       bool controlOperation(OCPI::Util::Worker::ControlOperation op, std::string &err);
       inline uint32_t checkWindow(size_t offset, size_t nBytes) const {
@@ -115,6 +114,7 @@ namespace OCPI {
 	      /* the status register to be sure */			          \
 	      status = get32Register(status, OccpWorkerRegisters) &	          \
 		       OCCP_STATUS_READ_ERRORS;				          \
+	      /* falls thru */						          \
 	    default:							          \
 	      val = (uint##n##_t)val##wb;                                         \
             }								          \
@@ -148,44 +148,44 @@ namespace OCPI {
 			       const uint8_t *val,
 			       size_t nItems, size_t nBytes) const;
       unsigned getPropertySequence(const OCPI::API::PropertyInfo &p, uint8_t *buf, size_t n) const;
-      
+
 #undef OCPI_DATA_TYPE_S
       // Set a scalar property value
 
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
       void								\
-      set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *, \
+      set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member &, \
 			    size_t off, const run val, unsigned idx) const { \
 	setProperty##bits(info, off, *(uint##bits##_t *)&val, idx);	\
       }									\
       void								\
-      set##pretty##SequenceProperty(const OCPI::API::Property &p,       \
+      set##pretty##SequenceProperty(const OCPI::API::PropertyInfo &info,       \
 				    const run *vals,			\
 				    size_t length) const {		\
-	setPropertySequence(p.m_info, (const uint8_t *)vals,			\
+	setPropertySequence(info, (const uint8_t *)vals,			\
 			    length, length * (bits/8));			\
       }									\
       run								\
-      get##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *, \
+      get##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member &, \
 			    size_t offset, unsigned idx) const {	\
 	return (run)getProperty##bits(info, offset, idx);		\
       }									\
       unsigned								\
-      get##pretty##SequenceProperty(const OCPI::API::Property &p, run *vals, \
+      get##pretty##SequenceProperty(const OCPI::API::PropertyInfo &info, run *vals, \
 				    size_t length) const {		\
 	return								     \
-	  getPropertySequence(p.m_info, (uint8_t *)vals, length * (bits/8));	     \
+	  getPropertySequence(info, (uint8_t *)vals, length * (bits/8));	     \
       }
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)
 OCPI_DATA_TYPES
 #undef OCPI_DATA_TYPE
-      void setStringProperty(const OCPI::API::PropertyInfo &info, const Util::Member *,
+      void setStringProperty(const OCPI::API::PropertyInfo &info, const Util::Member &,
 			     size_t offset, const char* val, unsigned idx) const;
-      void setStringSequenceProperty(const OCPI::API::Property &, const char * const *,
+      void setStringSequenceProperty(const OCPI::API::PropertyInfo &, const char * const *,
 				     size_t ) const;
-      void getStringProperty(const OCPI::API::PropertyInfo &info, const Util::Member *,
+      void getStringProperty(const OCPI::API::PropertyInfo &info, const Util::Member &,
 			     size_t offset, char *val, size_t length, unsigned idx) const;
-      unsigned getStringSequenceProperty(const OCPI::API::Property &, char * *,
+      unsigned getStringSequenceProperty(const OCPI::API::PropertyInfo &, char * *,
 					 size_t ,char*, size_t) const;
     };
     // This is a dummy worker for accesssing workers outside the purview of executing
@@ -203,7 +203,7 @@ OCPI_DATA_TYPES
       OCPI::Container::Port *findPort(const char *);
       const std::string &name() const;
       void
-      prepareProperty(OCPI::Util::Property &, volatile uint8_t *&, const volatile uint8_t *&);
+      prepareProperty(OCPI::Util::Property &, volatile uint8_t *&, const volatile uint8_t *&) const;
       OCPI::Container::Port &
       createPort(const OCPI::Util::Port &, const OCPI::Util::PValue *);
       OCPI::Container::Port &

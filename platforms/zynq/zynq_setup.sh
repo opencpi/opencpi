@@ -19,6 +19,38 @@
 # If there is a "mysetup.sh" script in this directory it will run it after the
 # other setup items, and arrange for it to be run in any login scripts later
 # e.g. ssh logins
+
+# Set time using ntpd
+# If ntpd fails because it could not find ntp.conf fall back on time server
+# passed in as the first parameter
+set_time() {
+  if test "$1" != -; then
+    echo Attempting to set time from the time server
+    if test -f /etc/opencpi-release; then
+      read OCPI_TOOL_PLATFORM x < /etc/opencpi-release
+    else
+      echo No /etc/opencpi-release - assuming ZedBoard hardware
+      OCPI_TOOL_PLATFORM=zed
+    fi
+
+    # Calling ntpd without any options will run it as a dameon
+    OPTS=""
+    BUSYBOX_PATH="/mnt/card/opencpi/$OCPI_TOOL_PLATFORM/bin"
+    TIMEOUT=20
+    MSG="Succeeded in setting the time from /mnt/card/opencpi/ntp.conf"
+    if [ ! -e /mnt/card/opencpi/ntp.conf ]; then
+      OPTS="-p $1"
+      MSG="Succeeded in setting the time from $1"
+    fi
+    # AV-5422 Timeout ntpd command after $TIMEOUT in seconds
+    if $BUSYBOX_PATH/busybox timeout -t $TIMEOUT $BUSYBOX_PATH/ntpd -nq $OPTS; then
+      echo $MSG
+    else
+      echo ====YOU HAVE NO NETWORK CONNECTION and NO HARDWARE CLOCK====
+      echo Set the time using the '"date YYYY.MM.DD-HH:MM[:SS]"' command.
+    fi
+  fi
+}
 if test $# != 2; then
   echo You must supply 2 arguments to this script.
   echo Usage is: zynq_setup.sh '<ntp-server> <timezone>'
@@ -27,15 +59,7 @@ if test $# != 2; then
 else
   export OCPI_CDK_DIR=/mnt/card/opencpi
   # In case dhcp failed on eth0, try it on eth1
-  if test "$1" != -; then
-    echo Attempting to set the time from time server: $1
-    if rdate $1; then
-      echo Succeeded in setting the time from time server: $1
-    else
-      echo ====YOU HAVE NO NETWORK CONNECTION and NO HARDWARE CLOCK====
-      echo Set the time using the '"date YYYY.MM.DD-HH:MM[:SS]"' command.
-    fi
-  fi
+  set_time $1
   # Make sure the hostname is in the host table
   myhostname=`hostname`
   if ! grep -q $myhostname /etc/hosts; then echo 127.0.0.1 $myhostname >> /etc/hosts; fi
@@ -48,8 +72,8 @@ else
     if test -f /etc/opencpi-release; then
       read OCPI_TOOL_PLATFORM x < /etc/opencpi-release
     else
-      echo No /etc/opencpi-release - assuming ZedBoard hardware
-      OCPI_TOOL_PLATFORM=zed
+      echo No /etc/opencpi-release - assuming xilinx13_3 software platform
+      OCPI_TOOL_PLATFORM=xilinx13_3
     fi
     export OCPI_TOOL_PLATFORM
     export OCPI_TOOL_OS=linux

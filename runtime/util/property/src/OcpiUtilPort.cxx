@@ -43,11 +43,8 @@ namespace OCPI {
       m_bufferSize = SIZE_MAX;
       m_xml = NULL;
       m_worker = NULL;
-      m_bufferSizePort = -1;
+      m_bufferSizePort = SIZE_MAX;
       m_nOpcodes = 0;
-      m_clone = false;
-      m_parsed = false;
-      m_seenSummary = false;
       m_isScalable = false;
       m_isPartitioned = false;
       m_defaultDistribution = Cyclic;
@@ -82,7 +79,6 @@ namespace OCPI {
 	m_isProducer = p->m_isProducer;
 	m_isOptional = p->m_isOptional;
 	m_nOpcodes = p->m_nOpcodes; // in case the spec does not mention protocol etc.
-	m_seenSummary = p->m_seenSummary;
 	// Set the new xml
 	m_xml = x ? x : p->m_xml;
 	m_bufferSizePort = p->m_bufferSizePort;
@@ -111,7 +107,6 @@ namespace OCPI {
       m_worker = &w;
       m_ordinal = w.m_nPorts++;
       m_name = a_name;
-      m_clone = true;
       // everything else copied.
       m_provider = other.m_provider;
       m_isProducer = other.m_isProducer;
@@ -122,7 +117,6 @@ namespace OCPI {
       m_bufferSize = other.m_bufferSize;
       m_bufferSizePort = other.m_bufferSizePort;
       m_nOpcodes = other.m_nOpcodes;
-      m_seenSummary = other.m_seenSummary;
       m_isScalable = other.m_isScalable;
       m_scaleExpr = other.m_scaleExpr;
       m_isPartitioned = other.m_isPartitioned;
@@ -142,7 +136,6 @@ namespace OCPI {
 	l_name = defaultName;
       if (!l_name)
 	return "Missing \"name\" attribute for port";
-      
       if (w.findMetaPort(l_name, this))
 	return esprintf("Can't create port named \"%s\" since it already exists",
 			    m_name.c_str());
@@ -150,6 +143,7 @@ namespace OCPI {
       m_worker = &w;
       m_ordinal = OCPI_UTRUNCATE(PortOrdinal, ord);
       m_xml = x;
+      m_workerEOF = w.m_workerEOF;
       return NULL;
     }
 
@@ -165,7 +159,7 @@ namespace OCPI {
 	  return err;
 	m_nOpcodes = nOperations();
       } else
-	m_nOpcodes = 256;
+	initNoProtocol();
       return NULL;
     }
 
@@ -174,7 +168,6 @@ namespace OCPI {
     // an impl port.
     const char *Port::
     parse() {
-      m_parsed = true;
       const char *err;
       bool providerFound = false;
       // Initialize everything from the protocol, then other attributes can override the protocol
@@ -188,6 +181,7 @@ namespace OCPI {
 	  // Be sure we don't clobber a spec that has set optional,
 	  // but impls can have optional ports in devices...
 	  (err = OE::getBoolean(m_xml, "optional", &m_isOptional, true)) ||
+	  (err = OE::getBoolean(m_xml, "workerEOF", &m_workerEOF, true)) ||
 	  (err = OE::getNumber(m_xml, "minBufferCount", &m_minBufferCount, 0, 1)) ||
 	  (err = OE::getNumber(m_xml, "bufferCount", &m_defaultBufferCount, NULL, 0, false)) ||
 	  (err = OE::getNumber(m_xml, "minBuffers", &m_minBufferCount, 0, m_minBufferCount)) ||
@@ -221,7 +215,7 @@ namespace OCPI {
     }
     const char *Port::
     postParse() {
-      if (m_bufferSizePort != -1)
+      if (m_bufferSizePort != SIZE_MAX)
 	m_bufferSize = m_worker->metaPort(m_bufferSizePort).m_bufferSize;
       return parseScaling();
     }
@@ -230,15 +224,14 @@ namespace OCPI {
     // or overrided the default from the protocol.  If it is SIZE_MAX, then there is
     // no protocol and no default at all.
     size_t Port::
-    getBufferSize(const PValue *portParams, const PValue *connParams) const {
+    getBufferSize(const PValue *portParams, const PValue *connParams, size_t otherSize) const {
       size_t size = m_bufferSize;
       const char *type = "default";
       do {
-	if (size == SIZE_MAX) {
+	if (m_bufferSizePort != SIZE_MAX)
+	  size = otherSize;
+	if (size == SIZE_MAX)
 	  size = DEFAULT_BUFFER_SIZE;
-	  if (size < m_minBufferSize)
-	    break;
-	}
 	type = "port";
 	OA::ULong ul;
 	if (findULong(portParams, "bufferSize", ul) && (size = ul) < m_minBufferSize)
@@ -246,6 +239,9 @@ namespace OCPI {
 	type = "connection";
 	if (findULong(connParams, "bufferSize", ul) && (size = ul) < m_minBufferSize)
 	  break;
+	type = m_bufferSize == SIZE_MAX ? "default" : "port-specified";
+	if (size < m_minBufferSize)
+	    break;
 	return size;
       } while (0);
       throw Error("%s bufferSize %zu is below minimum for worker %s port %s of: %zu",
@@ -268,13 +264,14 @@ namespace OCPI {
     //    buffer sizes may legitimately be zero (for ZLM-only protocols)
     //    external ports have no inherent buffer size, but may override
     //    external-to-external MUST specify a buffer size somehow.
+    //    ports may depend on other ports for their buffer sizes
     size_t Port::
-    determineBufferSize(const Port *in, const PValue *paramsIn,
-			const Port *out, const PValue *paramsOut,
+    determineBufferSize(const Port *in, const PValue *paramsIn, size_t otherIn,
+			const Port *out, const PValue *paramsOut, size_t otherOut,
 			const PValue *connParams) {
       size_t
-	sizeIn = in ? in->getBufferSize(paramsIn, connParams) : SIZE_MAX,
-	sizeOut = out ? out->getBufferSize(paramsOut, connParams) : SIZE_MAX;
+	sizeIn = in ? in->getBufferSize(paramsIn, connParams, otherIn) : SIZE_MAX,
+	sizeOut = out ? out->getBufferSize(paramsOut, connParams, otherOut) : SIZE_MAX;
       size_t size =
 	sizeIn == SIZE_MAX ? sizeOut :
 	sizeOut == SIZE_MAX ? sizeIn :
@@ -433,7 +430,7 @@ namespace OCPI {
 	Operation *op = findOperation(oName.c_str());
 	if (!op)
 	  return esprintf("There is no operation named \"%s\" in the protocol", oName.c_str());
-	size_t ord = op - m_operations;
+	size_t ord = OCPI_SIZE_T_DIFF(op, m_operations);
 	if (m_opScaling[ord])
 	  return esprintf("Duplicate operation element with name \"%s\" for port \"%s\"",
 			  oName.c_str(), m_name.c_str());
@@ -513,15 +510,13 @@ namespace OCPI {
 	formatAdd(out, " bidirectional='1'");
       else if (m_isProducer)
 	formatAdd(out, " producer='1'");
-      if (!m_operations || m_nOpcodes != m_nOperations)
-	formatAdd(out, " numberOfOpcodes=\"%zu\"", m_nOpcodes);
       if (m_minBufferCount != 1)
 	formatAdd(out, " minBufferCount=\"%zu\"", m_minBufferCount);
       if (m_defaultBufferCount != SIZE_MAX)
 	formatAdd(out, " BufferCount=\"%zu\"", m_defaultBufferCount);
       if (bufferSize != SIZE_MAX)
 	formatAdd(out, " bufferSize='%zu'", bufferSize);
-      else if (m_bufferSizePort != -1)
+      else if (m_bufferSizePort != SIZE_MAX)
 	formatAdd(out, " buffersize='%s'", m_worker->metaPort(m_bufferSizePort).cname());
       else if (m_bufferSize != SIZE_MAX && m_bufferSize != m_defaultBufferSize)
 	formatAdd(out, " bufferSize='%zu'", m_bufferSize);
@@ -529,6 +524,8 @@ namespace OCPI {
 	formatAdd(out, " optional=\"%u\"", m_isOptional);
       if (m_isInternal)
 	formatAdd(out, " internal='1'");
+      if (m_workerEOF && !m_worker->m_workerEOF)
+	formatAdd(out, " workerEOF='1'");
       emitScalingAttrs(out);
       formatAdd(out, ">\n");
       printXML(out, 2);
@@ -575,7 +572,7 @@ namespace OCPI {
 			  op.m_name.c_str());
 	size_t nDims = a->m_isSequence ? 1 : a->m_arrayRank;
 	Partitioning *p = new Partitioning[nDims];
-	m_partitioning[a - op.m_args] = p;
+	m_partitioning[OCPI_SIZE_T_DIFF(a, op.m_args)] = p;
 	// We have an array of partitionings for all the dimensions (sequences are 1D).
 	// We start with a default based on what is in the argument element.
 	Partitioning def = m_defaultPartitioning;

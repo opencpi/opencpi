@@ -16,10 +16,15 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# This directory contains a library of device workers.
-# It is similar to the components directory except that all of the workers
-# are device specific - each worker controls some piece of hardware on a
-# chip or attached to a chip.
+# This is the hdl/devices library
+
+# All workers created here in *.<model> will be built automatically
+# All tests created here in *.test directories will be built/run automatically
+# To limit the workers that actually get built, set the Workers= variable
+# To limit the tests that actually get built/run, set the Tests= variable
+
+# Any variable definitions that should apply for each individual worker/test
+# in this library belong in Library.mk
 
 Tests = \
 	lime_dac_ts.test 

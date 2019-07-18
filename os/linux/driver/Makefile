@@ -34,7 +34,7 @@ ThisMake := $(lastword $(MAKEFILE_LIST))
 # and thus cannot get the platform description from a project-defined software platform, and
 # thus must be a native build.
 ifdef OCPI_TARGET_PLATFORM
- $(info Building driver in a CDK environment)
+ $(info Building/cleaning driver in a CDK environment)
  # Get the info about the target platform from the CDK
  include $(OCPI_CDK_DIR)/include/setup-target-platform.mk
 else
@@ -42,9 +42,9 @@ else
  # Set the variables that we use to constant values we know for self-hosted platforms
  # If this isn't good enough we can easily cache them in the RPM.
  OcpiCrossCompile=
- OcpiCC=gcc 
+ OcpiCC=gcc
  OcpiCXX=g++
- OCPI_TARGET_DIR=$OCPI_TOOL_DIR
+ OCPI_TARGET_DIR=$(OCPI_TOOL_DIR)
 endif
 # Set the global make variables that the kernel Makefiles want to see set in global variables
 CC=$(OcpiCrossCompile)$(OcpiCC)
@@ -74,6 +74,10 @@ all: installed
 # a kernel the rebuild is automatic?  Perhaps via "deps"?
 
 AT?=@
+
+# Compressed tar extensions for kernel headers
+TAR_EXTS:=tar tar.gz tgz tar.bz2 tbz2 tar.xz
+
 # This conditional selects whether we are being included from the
 # kernel Makefile or not. (this in-kernel building is not regularly tested)
 ifdef KERNELRELEASE
@@ -82,6 +86,14 @@ ifdef KERNELRELEASE
 else
 ifdef OCPI_TARGET_KERNEL_DIR
   KERNELDIR := $(OCPI_TARGET_KERNEL_DIR)
+  # Auto-extract any found tarballs of kernel headers (AV-5018)
+  $(strip $(foreach d,$(OCPI_TARGET_KERNEL_DIR), \
+    $(foreach t,$(TAR_EXTS), \
+      $(if $(wildcard $d.$t), \
+        $(if $(wildcard $d/Kconfig),,$(info Extracting found kernel headers: $d.$t)$(shell tar -C $(dir $d) -xf $d.$t)) \
+      ) \
+    ) \
+   ))
   ifeq ($(wildcard $(KERNELDIR)),)
     $(error OCPI_TARGET_KERNEL_DIR indicates '$(OCPI_TARGET_KERNEL_DIR)', which does not exist)
   endif
@@ -97,7 +109,7 @@ else
     $(error This is a cross-compiled platform, but OCPI_TARGET_KERNEL_DIR is not set, which is not supported.)
   endif
 
-  ifeq ($(filter clean topclean,$(MAKECMDGOALS)),)
+  ifeq ($(filter clean topclean cleanheaders,$(MAKECMDGOALS)),)
     # Find the kernel headers - they can be found:
     #  1. Specified KERNELDIR (always chosen if given)
     #  2. /usr/src/kernels/(uname -r)
@@ -166,6 +178,7 @@ $(MODFILE): opencpi.c $(shell echo $$(cd $(KERNELDIR); pwd -P)) $(KERNELDIR)/inc
 	$(AT)mkdir -p $(MyTargetDir)
 	$(AT)mv $(MODNAME).ko $(MODFILE)
 	$(AT)rm -rf $(TMP_FILES)
+	$(MAKE) -s cleanheaders
 
 .PHONY: installed modules modules_install load unload
 modules: $(MODFILE)
@@ -182,9 +195,17 @@ load:
 unload:
 	$(AT)./ocpi_linux_driver unload x
 
-.PHONY: all clean topclean distclean
+.PHONY: all clean topclean distclean cleanheaders
 # This clean is target specific
-clean:
+# It will erase extracted tarball versions of headers (AV-5018)
+# It is automatically called upon successful build of the module above
+cleanheaders:
+ifneq ($(KERNELDIR),)
+	$(AT)$(foreach d, $(KERNELDIR), $(foreach t, $(TAR_EXTS), $(if $(wildcard $d.$t),$(info Removing kernel headers we extracted from $d.$t)rm -rf $d)))
+endif
+	@true
+# This clean is target specific
+clean: cleanheaders
 ifneq ($(KERNELDIR),)
 	$(AT)find $(KERNELDIR)/scripts | xargs file | grep "ELF 64-bit" | cut -f1 -d: | xargs -r -n1 rm
 	$(AT)rm -f $(KERNELDIR)/include/config/auto.conf
@@ -197,7 +218,7 @@ endif
 
 # This clean is target specific
 topclean: clean
-	rm -f $(MyLib)/$(MODFILE) $(MyLib)/$(URULESFILE) $(MyLib)/$(MRULESFILE)
+	$(AT)rm -f $(MyLib)/$(MODFILE) $(MyLib)/$(URULESFILE) $(MyLib)/$(MRULESFILE)
 
 # This clean will clean locally for all targets
 distclean: clean

@@ -16,23 +16,14 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# This file is used to build the Application Control Interface api testbench and
-# is used to run the respective application. This file handles hardware workers
-# and has been tested on the Matchstiq-Z1 and Zedboard platforms.
+$(if $(realpath $(OCPI_CDK_DIR)),,\
+  $(error The OCPI_CDK_DIR environment variable is not set correctly.))
+# This is the application Makefile for the "rx_app" application
+# If there is a rx_app.cc (or rx_app.cxx) file, it will be assumed to be a C++ main program to build and run
+# If there is a rx_app.xml file, it will be assumed to be an XML app that can be run with ocpirun.
+# The RunArgs variable can be set to a standard set of arguments to use when executing either.
 
-$(if $(realpath $(OCPI_CDK_DIR)),,$(error The OCPI_CDK_DIR environment variable is not set correctly.))
-
-APP=rx_app
-
-.SILENT: show
-.PHONY: run clean show
-
-# build ...
-all:
-
-# build the testbench executable
-run: all
-	OCPI_LIBRARY_PATH=lib $(VG) $(PROG) $(OUT)
+include $(OCPI_CDK_DIR)/include/application.mk
 
 clean::
 	rm -rf odata/*
@@ -121,16 +112,14 @@ IF_TUNE_FREQ_MHZ=0.1
 ----------------------------------------------------------------------------
 4) Verification of output data: (development system)
 SAMP_RATE_HZ=2500000
-python ./scripts/plotAndFftAndTime.py odata/rx_app_shortened.out complex 65536 $$SAMP_RATE_HZ 16352 &
+python ./scripts/plotAndFftAndTime.py odata/rx_app_shortened.out complex 65536 $$SAMP_RATE_HZ 8192 &
 
 Verify that the signal generator tone exists at 700,000 Hz in the plotted baseband signal FFT (calculated as signal generator frequency - RF tune frequency - IF tune frequency = 2400.8 MHz - 2400 MHz - 0.1 MHz = 700,000Hz).
 
 Alternatively, use non-shortened rx_app_raw.out (results in potentially slow plot script)
 SAMP_RATE_HZ=2500000
-python ./scripts/plotAndFftAndTime.py odata/rx_app_raw.out complex 65536 $$SAMP_RATE_HZ 16352 &
+python ./scripts/plotAndFftAndTime.py odata/rx_app_raw.out complex 65536 $$SAMP_RATE_HZ 8192 &
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 endef
 export showhelp
-
-include $(OCPI_CDK_DIR)/include/application.mk

@@ -59,12 +59,8 @@ function found_in {
   return 1
 }
 
-# If a dir has a lib or bin dir it is a rcc platform
-# If the name dir being passed in as $1 returns something to stdin from getHdlPlatform.sh
-# it is an hdl platform (This would also catch rcc platforms but an rcc platform
-# should not get that far because it would have a bin or lib dir).
 function is_platform {
-  [ -d $1/lib -o -d $1/bin -o -n "$(./tools/cdk/scripts/getHdlPlatform.sh $(basename $1) 2> /dev/null)" ]
+ found_in `basename $1` $OCPI_ALL_RCC_PLATFORMS || found_in `basename $1` $OCPI_ALL_HDL_PLATFORMS
 }
 
 function skip_platform {
@@ -123,6 +119,7 @@ done
 # FIXME: this list is redundant with "install-prerequisites.sh" and "places"
 # This list could potentially be platform-specific
 # and then there are platform-specific prereqs
+# AV-5286
 prereqs="gmp lzma gtest patchelf inode64 ad9361 liquid"
 case $type in
   all)
@@ -146,7 +143,7 @@ case $type in
   deploy)
     for f in cdk/runtime/*; do
       platform=$(basename $f)
-      is_platform $f && [ $platform != $2 ] && continue;
+      is_platform $platform && [ $platform != $2 ] && continue;
       [ $f != cdk/runtime/env -a $f != cdk/runtime/env.d -a $f != cdk/runtime/include ] && echo $f
       [ -d $f ] && (cd cdk/runtime;
                     find $platform -type d -not -path "*env*" -not -path "*include*" -exec echo cdk/runtime/{}/ \; ) || :
@@ -205,6 +202,7 @@ case $type in
       echo projects/
       emit_project_dir projects/core
       emit_project_dir projects/assets
+      emit_project_dir projects/assets_ts
     fi
     ;;
   driver)

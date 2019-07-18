@@ -37,7 +37,12 @@ Applications=\
 	hello \
 	vsadd \
 	ptest \
-	copy
+	copy \
+	file-bias-capture.xml \
+	pattern-bias-file.xml \
+	pattern.xml \
+	tb_bias_file.xml \
+	tb_bias.xml
 
 #	fsk_modem_xml \ # Fails to build due to missing "CmdOption.h"
 

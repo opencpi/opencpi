@@ -25,6 +25,8 @@
 #include <cstdlib>    // strtol()
 #include "OcpiApi.hh" // OCPI::API namespace
 
+namespace OA = OCPI::API;
+
 /*! @brief Get the in-situ value with exact precision of the
  *         Rx BaseBand Filter Tune Divide
  *         from an operating AD9361 IC controlled by the specified OpenCPI
@@ -34,10 +36,8 @@
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_Rx_BBF_Tune_Divide(
+void get_AD9361_Rx_BBF_Tune_Divide(
     OCPI::API::Application& app, const char* app_inst_name_proxy,
     uint16_t& val)
 {
@@ -58,9 +58,8 @@ const char* get_AD9361_Rx_BBF_Tune_Divide(
     std::string err;
     err = "Invalid value read for ad9361_config_proxy.rcc ";
     err += "Rx_BBF_Tune_Divide property: " + enum_str;
-    return err.c_str();
+    throw err;
   }
-  return 0;
 }
 
 /*! @brief Get the nominal in-situ value with double floating point precision
@@ -73,10 +72,8 @@ const char* get_AD9361_Rx_BBF_Tune_Divide(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_Rx_BBBW_Hz(
+void get_AD9361_Rx_BBBW_Hz(
     OCPI::API::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
@@ -89,13 +86,9 @@ const char* get_AD9361_Rx_BBBW_Hz(
     double   BBPLL_FREQ_Hz;
     uint16_t Rx_BBF_Tune_Divide;
 
-    char* ret;
-
     const char* inst = app_inst_name_proxy;
-    ret = (char*) get_AD9361_BBPLL_FREQ_Hz(     app, inst, BBPLL_FREQ_Hz     );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_Rx_BBF_Tune_Divide(app, inst, Rx_BBF_Tune_Divide);
-    if(ret != 0) { return ret; }
+    get_AD9361_BBPLL_FREQ_Hz(     app, inst, BBPLL_FREQ_Hz     );
+    get_AD9361_Rx_BBF_Tune_Divide(app, inst, Rx_BBF_Tune_Divide);
 
     d_BBPLL_FREQ_Hz      = (double) BBPLL_FREQ_Hz;
     d_Rx_BBF_Tune_Divide = (double) Rx_BBF_Tune_Divide;
@@ -107,8 +100,6 @@ const char* get_AD9361_Rx_BBBW_Hz(
   // BBBW_ACTUAL,MHz = BBPLL_MHz * ln(2) / (2.8 * pi * Divider)
   const double PI = 3.141592653589793;
   val = d_BBPLL_FREQ_Hz*std::log(2.)/(1.4*2.*PI*(double)d_Rx_BBF_Tune_Divide);
-
-  return 0;
 }
 
 /*! @brief Get the nominal in-situ value with No-OS point precision
@@ -121,17 +112,12 @@ const char* get_AD9361_Rx_BBBW_Hz(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_rx_rf_bandwidth_Hz(
+void get_AD9361_rx_rf_bandwidth_Hz(
     OCPI::API::Application& app, const char* app_inst_name_proxy,
-    ocpi_ulong_t& val)
+    OA::ULong& val)
 {
-  OCPI::API::Property p(app, app_inst_name_proxy, "rx_rf_bandwidth");
-  val = p.getULongValue();
-
-  return 0;
+  val = app.getPropertyValue<OA::ULong>(app_inst_name_proxy, "rx_rf_bandwidth");
 }
 
 /*! @brief Get the nominal in-situ value with double floating point precision
@@ -144,20 +130,14 @@ const char* get_AD9361_rx_rf_bandwidth_Hz(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_rx_rf_bandwidth_Hz(
+void get_AD9361_rx_rf_bandwidth_Hz(
     OCPI::API::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
-  char* ret;
-  const char* inst = app_inst_name_proxy;
-
-  ocpi_ulong_t val_precast;
-  ret = (char*) get_AD9361_rx_rf_bandwidth_Hz(app, inst, val_precast);
+  OA::ULong val_precast;
+  get_AD9361_rx_rf_bandwidth_Hz(app, app_inst_name_proxy, val_precast);
   val = (double) val_precast;
-  return ret;
 }
 
 #endif // _READERS_AD9361_RX_FILTERS_ANALOG

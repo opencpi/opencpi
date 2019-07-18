@@ -39,6 +39,7 @@ $(ImplHeaderFiles): $(GeneratedDir)/%$(ImplSuffix) : $$(Worker_%_xml) | $(Genera
         $(and $(Assembly),-S $(Assembly)) \
 	$(and $(HdlPlatform),-P $(HdlPlatform)) \
 	$(and $(PlatformDir),-F $(PlatformDir)) \
+	$(and $(filter-out 1,$(words $(Workers))),-N ) \
 	$(HdlVhdlLibraries) -i $<)
 
 ifeq ($(origin SkelFiles),undefined)
@@ -49,7 +50,13 @@ endif
 # The "generate" goal is the generic one for workers, tests, etc.
 .PHONY: skeleton generate
 generate: skeleton
+# When the skeleton is created or updated we make sure the ../lib/workers file is updated.
+# This ensures that the workers file will be correct even if the worker is never built for a particular
+# target.
 skeleton:  $(ImplHeaderFiles) $(SkelFiles)
+	$(AT)$(and $(filter $(call OcpiGetDirType,$(DirContainingLib)),library),\
+	    make -C $(DirContainingLib) workersfile speclinks)
+
 all: skeleton
 
 $(SkelFiles): $(GeneratedDir)/%$(SkelSuffix) : $$(Worker_%_xml) | $(GeneratedDir)
@@ -134,6 +141,8 @@ WkrBinary=$(call WkrTargetDir,$1,$2)/$(WkrBinaryName)$(call BF,$1,$2)
 # Function to generate object file name from source: $(call WkrObject,src,target,config)
 WkrObject=$(call WkrTargetDir,$2,$3)/$(basename $(notdir $1))$(call OBJ,$3)
 
+# TODO: Could WkrMakeObject, WkrWorkerDep, WkrDoTargetConfig, WkrDoTarget all be moved to rcc-worker?
+
 # Function to make an object from source: $(call WkrMakeObject,src,target,config)
 define WkrMakeObject
 
@@ -203,11 +212,14 @@ endef
 ################################################################################
 # Function to do stuff per target: $(eval $(call WkrDoTarget,target))
 $(call OcpiDbgVar,ParamConfigurations)
+# Call WkrDoTargetConfig for each Parameter Configuration
 define WkrDoTarget
   $(foreach c,$(ParamConfigurations),$(call WkrDoTargetConfig,$1,$c))
 endef
 
 # Do all the targets
+# Call WkrDoTarget for all targets
+#   So, we are now calling this function for all Parameter Configurations and targets
 ifneq ($(MAKECMDGOALS),skeleton)
 $(call OcpiDbgVar,HdlTargets)
 $(call OcpiDbgVar,HdlTarget)
@@ -243,6 +255,7 @@ ifdef LibDir
 
 # $(call DoLink,<target>,<binary>,<linkname>,<confname>,<rmrvname>)
 MyBBLibFile=$(infox MBB:$1:$2:$3)$(call BBLibFile,$1,$(call RmRv,$(basename $2))$(if $(filter 0,$3),,_c$3),$3,$1)
+# FIXME: WkrBinaryLink is not defined anywhere and should be removed below.
 define DoLink
   $(infox DoLink:$1:$2:$3:$4:$5)
   $$(infox DoLink2:$1:$2:$3:$4:$5)
@@ -274,12 +287,12 @@ define DoLinks
                                        $(HdlToolRealCore_$(HdlToolSet_$1))),\
                                $(notdir $n),$r)),$(strip\
                      $(if $(HdlToolRealCore_$(HdlToolSet_$1)),$l,$r)$(suffix $n)),$c,$r))))))
-  $$(call OcpiDbgVar,WkrExportNames,In Dolinks )
+  $$(call xOcpiDbgVar,WkrExportNames,In Dolinks )
 endef
 
 # These links are to binaries
 ifndef HdlSkip
-  $(call OcpiDbgVar,WkrExportNames)
+  $(call xOcpiDbgVar,WkrExportNames)
   $(foreach t,$($(CapModel)Targets),$(infox $(call zDoLinks,$t))$(eval $(call DoLinks,$(call $(CapModel)TargetDirTail,$t))))
 endif
 
@@ -310,7 +323,7 @@ $(LibDir) $(LibDirs):
 endif # LibDir to export into
 
 ################################################################################
-# Cleanup.  Tricky/careful removal of skeletons that were copied up into the 
+# Cleanup.  Tricky/careful removal of skeletons that were copied up into the
 #           directory.
 cleanfirst::
 	$(AT)$(OcpiRemoveSkeletons)

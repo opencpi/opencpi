@@ -17,7 +17,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # This is the Makefile for worker socket_write.rcc
-RccOnlyPlatforms=centos6 centos7 macos10_12 pico_t6a xilinx13_3 xilinx13_4
+RccOnlyPlatforms=centos6 centos7 macos10_14 pico_t6a xilinx13_3 xilinx13_4
 
 # Two parameters: cross-host and if second is empty it will crash
 boost_static_finder=$(or $(shell locate libboost_thread | grep "\.a" | grep "$1" | head -1 | perl -ne 'm|(.*)/libboost| && print $$1'),$(or $2,$(error Could not find boost static libraries for $1)))
@@ -34,14 +34,17 @@ endif
 
 # We can use ASIO in standalone mode starting with gcc 4.7 (AV-2003)
 # Yes, this is ugly and messy, to support CentOS 6 (4.4 with local boost) and Picoflexor t6a (4.4 with DRS-provided libboost)
-CC_Common=-I$(dir $@)asio/include -I./ext_src
+# This next line was changed to work properly when boost was not globally installed.
+# Perhaps this causes an issue if boost is on the system?  In which case it is not "common".
+#CC_Common=-I$(dir $@)asio/include -I./ext_src
+CC_Common=-Iasio/include -I./ext_src
 CC_Standalone=-DASIO_STANDALONE $(CC_Common)
 CC_Boost=-I./asio/local_boost $(CC_Common)
 
 # This is for SDP only; will not work on older framework
 RccExtraCompileOptionsCC_centos6+=--std=c++0x $(CC_Boost)
 RccExtraCompileOptionsCC_centos7+=--std=c++11 $(CC_Standalone)
-RccExtraCompileOptionsCC_macos10_12+=--std=c++0x $(CC_Standalone)
+RccExtraCompileOptionsCC_macos10_14+=--std=c++0x $(CC_Standalone)
 RccExtraCompileOptionsCC_pico_t6a+=--std=c++0x $(CC_Boost)
 RccExtraCompileOptionsCC_xilinx13_3+=--std=c++0x $(CC_Standalone)
 RccExtraCompileOptionsCC_xilinx13_4+=--std=c++0x $(CC_Standalone)
@@ -55,7 +58,7 @@ Setup_ASIO_linux-c7-x86_64=$(call MakeASIO_Host,1)
 Setup_ASIO_linux-x13_3-arm=$(call MakeASIO_Cross,arm-xilinx-linux-gnueabi,1,$(dir $(firstword $(Gc++_linux-x13_3-arm))))
 Setup_ASIO_linux-x13_4-arm=$(call MakeASIO_Cross,arm-xilinx-linux-gnueabi,1,$(dir $(firstword $(Gc++_linux-x13_4-arm))))
 Setup_ASIO_linux-zynq-arm_cs=$(call MakeASIO_Cross,arm-none-linux-gnueabi,0,$(dir $(firstword $(Gc++_linux-zynq-arm_cs))))
-Setup_ASIO_macos-10_12-x86_64=$(call MakeASIO_Host,1)
+Setup_ASIO_macos-10_14-x86_64=$(call MakeASIO_Host,1)
 
 RccCompileDependencies+=$(dir $@)/asio
 

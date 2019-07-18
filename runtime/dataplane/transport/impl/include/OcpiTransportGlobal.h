@@ -95,8 +95,8 @@ namespace OCPI {
         /**********************************
          * Constructors
          *********************************/
-        TransportGlobal( OCPI::OS::int32_t argc, char** argv );
-        TransportGlobal( int event_ordinal, bool use_events);
+        TransportGlobal(unsigned argc, char** argv );
+        TransportGlobal(unsigned event_ordinal, bool use_events);
 
         /**********************************
          * Destructor

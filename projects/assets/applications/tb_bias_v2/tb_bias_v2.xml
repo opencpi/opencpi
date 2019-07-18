@@ -8,7 +8,7 @@
     <property name="data" value='0,1,2,3,4,5,6,7,8,9,10,11,12,13,14'/>
   </instance>
   <instance component='bias' connect="capture_v2">
-    <property name='biasValue' value='0x01020304'/>
+    <property name='biasValue' value='2'/>
   </instance>
   <instance component="ocpi.assets.util_comps.capture_v2">
     <property name='stopOnFull' value='true'/>

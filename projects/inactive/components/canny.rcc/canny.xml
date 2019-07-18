@@ -1,6 +1,5 @@
-<RccImplementation>
+<RccWorker spec="canny_spec.xml">
   <ControlInterface ControlOperations="start, release"/>
-  <xi:include href="canny_spec.xml"/>
-</RccImplementation>
+</RccWorker>
 
 

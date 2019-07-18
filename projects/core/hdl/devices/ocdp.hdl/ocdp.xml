@@ -1,35 +1,36 @@
-<HdlDevice language='vhdl' rawProperties='true' outer='true'>
+<HdlDevice language='vhdl' rawProperties='true' outer='true'
+	   SourceFiles='mkOCDP4B.v' Libraries='platform'>
   <ComponentSpec>
-    <property name='nLocalBuffers' readable='true' writable='true'/>
-    <property name='nRemoteBuffers' readable='true' writable='true'/>
-    <property name='localBufferBase' readable='true' writable='true'/>
-    <property name='localMetadataBase' readable='true' writable='true'/>
-    <property name='localBufferSize' readable='true' writable='true'/>
-    <property name='localMetadataSize' readable='true' writable='true'/>
-    <property name='nRemoteDone' writable='true'/>
-    <property name='rsvdregion' padding='true'/>
-    <property name='nReady' readable='true'/>
-    <property name='foodFace' readable='true'/>
-    <property name='debug' readable='true' arraylength='9'/>
-    <property name='memoryBytes' readable='true'/>
-    <property name='remoteBufferBase' readable='true' writable='true'/>
-    <property name='remoteMetadataBase' readable='true' writable='true'/>
-    <property name='remoteBufferSize' readable='true' writable='true'/>
-    <property name='remoteMetadataSize' readable='true' writable='true'/>
-    <property name='remoteFlagBase' readable='true' writable='true'/>
-    <property name='remoteFlagPitch' readable='true' writable='true'/>
-    <property name='control' readable='true' writable='true'/>
-    <property name='flowDiagCount' readable='true'/>
-    <property name='debug1' readable='true'/>
-    <property name='pad' arraylength='3' padding='true'/>
-    <property name='debug2' arraylength='5' readable='true'/>
-    <property name='remoteBufferHi' readable='true' writable='true'/>
-    <property name='remoteMetadataHi' readable='true' writable='true'/>
-    <property name='remoteFlagHi' readable='true' writable='true'/>
-    <property name='startTime' type='ulonglong' readable='true'/>
-    <property name='doneTime' type='ulonglong' readable='true'/>
     <DataInterfaceSpec Name="data"/>
   </ComponentSpec>
+  <property name='nLocalBuffers' readback='true' writable='true'/>
+  <property name='nRemoteBuffers' readback='true' writable='true'/>
+  <property name='localBufferBase' readback='true' writable='true'/>
+  <property name='localMetadataBase' readback='true' writable='true'/>
+  <property name='localBufferSize' readback='true' writable='true'/>
+  <property name='localMetadataSize' readback='true' writable='true'/>
+  <property name='nRemoteDone' writable='true'/>
+  <property name='rsvdregion' padding='true'/>
+  <property name='nReady' readback='true'/>
+  <property name='foodFace' readback='true'/>
+  <property name='debug' readback='true' arraylength='9'/>
+  <property name='memoryBytes' readback='true'/>
+  <property name='remoteBufferBase' readback='true' writable='true'/>
+  <property name='remoteMetadataBase' readback='true' writable='true'/>
+  <property name='remoteBufferSize' readback='true' writable='true'/>
+  <property name='remoteMetadataSize' readback='true' writable='true'/>
+  <property name='remoteFlagBase' readback='true' writable='true'/>
+  <property name='remoteFlagPitch' readback='true' writable='true'/>
+  <property name='control' readback='true' writable='true'/>
+  <property name='flowDiagCount' readback='true'/>
+  <property name='debug1' readback='true'/>
+  <property name='pad' arraylength='3' padding='true'/>
+  <property name='debug2' arraylength='5' readback='true'/>
+  <property name='remoteBufferHi' readback='true' writable='true'/>
+  <property name='remoteMetadataHi' readback='true' writable='true'/>
+  <property name='remoteFlagHi' readback='true' writable='true'/>
+  <property name='startTime' type='ulonglong' readback='true'/>
+  <property name='doneTime' type='ulonglong' readback='true'/>
   <ControlInterface ControlOperations="initialize" Sub32BitConfigProperties="true"/>
   <unoc name="client"/>
   <MessageInterface Name="data" ByteWidth="8" Bidirectional="true" PreciseBurst="true" DataWidth="32"  datavaluewidth="8" maxmessagevalues="16380" MFlagWidth="32"/>

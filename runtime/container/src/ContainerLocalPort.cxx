@@ -72,7 +72,6 @@ namespace OCPI {
       size_t
 	minper = inScale / outScale,
 	nbumped = inScale % outScale;
-      
       first = outIndex * minper + std::min(nbumped, outIndex);
       last = first + minper - 1 + (outIndex < nbumped ? 1 : 0);
       ocpiDebug("partialRange(%zu, %zu, %zu --> %zu to %zu)",
@@ -235,15 +234,13 @@ namespace OCPI {
       /* Hashed */   {{bad,bad},     {bad,bad},         {bad,bad},          {bad,bad},      {bad,bad}, {bad,bad},      {bad,bad}},
     };
 
+    LocalPort::BridgeOp::BridgeOp() : m_first(0), m_last(0), m_next(0), m_hashField(NULL), m_mode(Cyclic) {}
+
     // Figure out the three parameters for bridge port processing for the given op
     // at this port: the mode, the starting bridge port, and the ending bridge port.
     void LocalPort::
     determineBridgeOp(Launcher::Connection &c, const OU::Port &output, const OU::Port &input,
 		      unsigned op, BridgeOp &bo) {
-      bo.m_hashField = NULL;
-      bo.m_mode = Cyclic;
-      bo.m_first = 0;
-      bo.m_next = 0;
       bo.m_last = m_bridgePorts.size() - 1;
       bridgeModes[output.getDistribution(op)][input.getDistribution(op)][isProvider() ? 1 : 0]
 	(c, output, input, op, bo);
@@ -256,8 +253,9 @@ namespace OCPI {
 	&otherMeta = other.m_port ? other.m_port->m_metaPort : *other.m_metaPort,
 	&input = isProvider() ? m_metaPort : otherMeta,
 	&output = isProvider() ? otherMeta : m_metaPort;
-      size_t nOps = std::max((size_t)1, std::max(input.nOperations(), output.nOperations()));
+      size_t nOps = std::max(input.nOperations(), output.nOperations());
       m_bridgeOps.resize(nOps);
+      m_defaultBridgeOp.m_last = m_bridgePorts.size() - 1;
       for (unsigned n = 0; n < nOps; n++)
 	determineBridgeOp(c, output, input, n, m_bridgeOps[n]);
       if (isInProcess(NULL)) {
@@ -275,7 +273,8 @@ namespace OCPI {
 	determineTransport(isProvider() ? mine : base, isProvider() ? base : mine,
 			   NULL, NULL, NULL, bridged);
 	applyConnection(bridged, c.m_bufferSize);
-	m_localBridgePort = new BridgePort(*this, !isProvider(), NULL);
+	m_localBridgePort = new BridgePort(Container::baseContainer(), metaPort(), !isProvider(), NULL);
+	ocpiDebug("BRIDGE in setupBridging: %p in container %p", m_localBridgePort, &Container::baseContainer());
 	m_localBridgePort->applyConnection(bridged, c.m_bufferSize); // native transport
 	m_localBridgePort->connectLocal(*this, NULL);
       }
@@ -298,7 +297,8 @@ namespace OCPI {
 	assert(!m_bridgePorts[otherOrdinal]);
 	BridgePort &bp =
 	  *(m_bridgePorts[otherOrdinal] =
-	    new BridgePort(*this, isProvider(), (isProvider() ? c.m_in : c.m_out).m_params));
+	    new BridgePort(Container::baseContainer(), metaPort(), isProvider(),
+			   (isProvider() ? c.m_in : c.m_out).m_params));
 	// we can't imply recurse here without creating a dummy connection.
 	bp.applyConnection(c.m_transport, c.m_bufferSize);
 	if (!other)
@@ -380,8 +380,8 @@ namespace OCPI {
 		    this, name().c_str(), m_localBuffer, bpn, m_bridgePorts[bpn]);
 	  //	  assert("Peeking for opcode for bridge ports disabled"==0);
 	  if (m_bridgePorts[bpn]->peekOpCode(op)) {
-	    assert(op < m_bridgeOps.size());
-	    BridgeOp &bo = m_bridgeOps[op];
+	    assert(m_bridgeOps.empty() || op < m_bridgeOps.size());
+	    BridgeOp &bo = m_bridgeOps.empty() ? m_defaultBridgeOp : m_bridgeOps[op];
 	    ocpiDebug("getLocalBuffer: op %u nops %zu mode %u, first %zu last %zu next %zu",
 		      op, m_metaPort.nOperations(), bo.m_mode, bo.m_first, bo.m_last, bo.m_next);
 	    // Accept the bridge message if we can process it now
@@ -401,8 +401,8 @@ namespace OCPI {
       ocpiDebug("getLocalBuffer output: port %p (%s) buf %p ", this, name().c_str(), m_localBuffer);
       // Sending a local buffer.  Bridge op tells us which bridge(s) to use.
       op = m_localBuffer->opCode();
-      assert(op < m_bridgeOps.size());
-      m_bridgeOp = &m_bridgeOps[op];
+      assert(m_bridgeOps.empty() || op < m_bridgeOps.size());
+      m_bridgeOp = m_bridgeOps.empty() ? &m_defaultBridgeOp : &m_bridgeOps[op];
       return true;
     }
 

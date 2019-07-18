@@ -22,6 +22,7 @@
 #include "OcpiOsMisc.h"
 #include "OcpiOsEther.h"
 #include "OcpiUtilValue.h"
+#include "OcpiDriverManager.h"
 #include "ContainerManager.h"
 #include "RemoteLauncher.h"
 #include "RemoteDriver.h"
@@ -89,21 +90,23 @@ class Worker
     if (getControlMask() & (1 << op))
       m_launcher.controlOp(m_remoteInstance, op);
   }
-  void setPropertyValue(const OU::Property &p, const OU::Value &v) {
-    std::string val;
-    v.unparse(val);
-    m_launcher.setPropertyValue(m_remoteInstance, &p - properties(), val);
+  void setProperty(const OCPI::API::PropertyInfo &info, const char *val, const OU::Member &m,
+		   size_t offset, size_t dimension) const {
+    // Pass raw info for (maybe sub-) property access
+    m_launcher.setPropertyValue(m_remoteInstance, info.m_ordinal, val, m.m_path, offset, dimension);
+  }
+  // FIXME: this should be at the lower level for just reading the bytes remotely to enable caching
+  // properly, but we have to be careful to cache for remote proxies...
+  void getProperty(const OA::PropertyInfo &info, std::string &v, const OU::Member &m, size_t offset,
+		   size_t dimension, OA::PropertyOptionList &options,
+		   OA::PropertyAttributes *a_attributes = NULL) const {
+    m_launcher.getPropertyValue(m_remoteInstance, info.m_ordinal, v, m.m_path, offset, dimension,				options, a_attributes);
   }
   bool wait(OS::Timer *t) {
     return m_launcher.wait(m_remoteInstance, t ? t->getRemaining() : 0);
   }
-  void checkControlState() {
-    setControlState(m_launcher.getState(m_remoteInstance));
-  }
-  // FIXME: this should be at the lower level for just reading the bytes remotely to enable caching propertly
-  void getPropertyValue(const OU::Property &p, std::string &v, bool hex, bool add,
-			bool /*uncached*/) {
-    m_launcher.getPropertyValue(m_remoteInstance, &p - properties(), v, hex, add);
+  void checkControlState() const {
+    ((Worker *)this)->setControlState(m_launcher.getState(m_remoteInstance));
   }
 
   void read(size_t /*offset*/, size_t /*nBytes*/, void */*p_data*/) {}
@@ -129,46 +132,107 @@ class Worker
       
   void propertyWritten(unsigned /*ordinal*/) const {};
   void propertyRead(unsigned /*ordinal*/) const {};
-  void prepareProperty(OU::Property&,
+  void prepareProperty(OU::Property &,
 		       volatile uint8_t *&/*writeVaddr*/,
-		       const volatile uint8_t *&/*readVaddr*/) {}
-  // These property access methods are called when the fast path
-  // is not enabled, either due to no MMIO or that the property can
-  // return errors. 
+		       const volatile uint8_t *&/*readVaddr*/) const {}
+
+  // These scalar and binary accessors must convert to a string value in the remote
+  // case, since the RPC is string-based anyway.
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
-  void set##pretty##Property(const OCPI::API::PropertyInfo &, const Util::Member *, \
-			     size_t /*offset*/, const run /*val*/, unsigned /*idx*/) const {} \
-  void set##pretty##SequenceProperty(const OA::Property &/*p*/,const run */*vals*/, \
-				     size_t /*length*/) const {}
+  void set##pretty##Property(const OCPI::API::PropertyInfo &info, const OCPI::Util::Member &m, \
+			     size_t offset, const run val, unsigned idx) const { \
+    OU::Unparser up;							\
+    std::string s;							\
+    up.unparse##pretty(s, val, true);					\
+    setProperty(info, s.c_str(), m, offset + idx * m.m_elementBytes,	\
+		m.m_isSequence || m.m_arrayRank ? 1 : 0);		\
+  }									\
+  void set##pretty##Cached(const OCPI::API::PropertyInfo &info, const OCPI::Util::Member &m, \
+			     size_t offset, const run val, unsigned idx) const { \
+    set##pretty##Property(info, m, offset, val, idx); \
+  } \
+  void set##pretty##SequenceProperty(const OA::PropertyInfo &info, const run *vals, \
+				     size_t length) const { \
+    OU::Unparser up;					    \
+    std::string s;					    \
+    for (unsigned n = 0; n < length; ++n)		    \
+      up.unparse##pretty(s, *vals++, true);		    \
+    setProperty(info, s.c_str(), info, 0, 0);		    \
+  }
   // Set a string property value
   // ASSUMPTION:  strings always occupy at least 4 bytes, and
   // are aligned on 4 byte boundaries.  The offset calculations
   // and structure padding are assumed to do this.
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)      \
-  void set##pretty##Property(const OCPI::API::PropertyInfo &, const Util::Member *, \
-			     size_t /*offset*/, const run /*val*/, unsigned /*idx*/) const {} \
-  void set##pretty##SequenceProperty(const OA::Property &/*p*/, const run */*vals*/, \
+  void set##pretty##Property(const OCPI::API::PropertyInfo &info, const OCPI::Util::Member &m, \
+			     size_t offset, const run val, unsigned idx) const { \
+    OU::Unparser up;							\
+    std::string s;							\
+    up.unparse##pretty(s, val, true);					\
+    setProperty(info, s.c_str(), m, offset + idx * m.m_elementBytes,	\
+		m.m_isSequence || m.m_arrayRank ? 1 : 0);		\
+  }									\
+  void set##pretty##Cached(const OCPI::API::PropertyInfo &info, const OCPI::Util::Member &m, \
+			   size_t offset, const run val, unsigned idx) const { \
+    set##pretty##Property(info, m, offset, val, idx);			\
+  }									\
+  void set##pretty##SequenceProperty(const OA::PropertyInfo &/*p*/, const run */*vals*/, \
 				     size_t /*length*/) const {}
   OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE_S
 #undef OCPI_DATA_TYPE
-  // Get Scalar Property
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
-  run get##pretty##Property(const OCPI::API::PropertyInfo &, const Util::Member *, \
-			    size_t /*offset*/, unsigned /*idx*/) const { return 0; } \
-  unsigned get##pretty##SequenceProperty(const OA::Property &/*p*/,	\
-					 run */*vals*/,			\
-					 size_t /*length*/) const { return 0; }
+  // Get Scalar Property by in fact getting the string and parsing it
+  // We get the string because that is the natural remote operation
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		             \
+  run get##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member &m, \
+			    size_t offset, unsigned idx) const {	             \
+    std::string uValue; /* unparsed value */                                         \
+    getProperty(info, uValue, m, offset + idx * info.m_elementBytes, \
+		m.m_isSequence || m.m_arrayRank ? 1 : 0, OA::PropertyOptionList({ OA::HEX })); \
+    OU::ValueType vt(m);						\
+    vt.m_isSequence = false;						\
+    vt.m_arrayRank = 0;							\
+    OU::Value v(vt);							\
+    (void)v.parse(uValue.c_str());					\
+    return v.m_##pretty;						\
+  }									\
+  run get##pretty##Cached(const OCPI::API::PropertyInfo &info, const Util::Member &m, \
+			  size_t offset, unsigned idx) const {		\
+    return get##pretty##Property(info, m, offset, idx);			\
+  }									\
+  unsigned get##pretty##SequenceProperty(const OA::PropertyInfo &info, run *vals, \
+					 size_t length) const {		\
+    std::string uValue; /* unparsed value */				\
+    getProperty(info, uValue, info, 0, 0, OA::PropertyOptionList({ OA::HEX })); \
+    OU::Value v(info);							\
+    (void)v.parse(uValue.c_str());					\
+    if (vals) {								\
+      if (v.m_nTotal > length)						\
+	throw OU::Error("property value has more items than buffer");	\
+      memcpy(vals, v.m_pUChar, v.m_nTotal * info.m_elementBytes);	\
+    }									\
+    return OCPI_UTRUNCATE(unsigned, v.m_nTotal);			\
+  }
   // ASSUMPTION:  strings always occupy at least 4 bytes, and
   // are aligned on 4 byte boundaries.  The offset calculations
   // and structure padding are assumed to do this.
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)	\
-  void get##pretty##Property(const OCPI::API::PropertyInfo &, const Util::Member *, \
-			     size_t /*offset*/, char */*cp*/,		\
-			     size_t /*length*/, unsigned /*idx*/) const {} \
+  void get##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member &m, \
+			     size_t offset, char *cp, size_t length, unsigned idx) const { \
+    assert(m.m_stringLength < length); /* sb checked elsewhere */	\
+    std::string uValue; /* unparsed value */				\
+    getProperty(info, uValue, m, offset + idx * info.m_elementBytes,	\
+		m.m_isSequence || m.m_arrayRank ? 1 : 0, OA::PropertyOptionList({ OA::HEX }));	\
+    strncpy(cp, uValue.c_str(), length); \
+  }									\
+  run get##pretty##Cached(const OCPI::API::PropertyInfo &info, const Util::Member &m, \
+			   size_t offset, char *cp, size_t length, unsigned idx) const { \
+    get##pretty##Property(info, m, offset, cp, length, idx); \
+    return cp; \
+  } \
   unsigned get##pretty##SequenceProperty				\
-  (const OA::Property &/*p*/, char **/*vals*/, size_t /*length*/, char */*buf*/, \
+  (const OA::PropertyInfo &/*p*/, char **/*vals*/, size_t /*length*/, char */*buf*/, \
    size_t /*space*/) const { return 0; }
 
   OCPI_PROPERTY_DATA_TYPES
@@ -183,6 +247,8 @@ class Application
     : OC::ApplicationBase<Container,Application,Worker>(c, *this, a_name, params) {
   }
   virtual ~Application() {
+    // This really has no local (client-side) state and the server-side state is taken down
+    // by remotelauncher->appShutdown()
   }
   OC::Worker &
   createWorker(OC::Artifact *art, const char *appInstName, ezxml_t impl, ezxml_t inst,
@@ -318,6 +384,44 @@ Driver::Driver() throw() {
   if ((m_doNotDiscover = env && env[0] == '1' ? false : true))
     ocpiInfo("Remote container discovery is off.  Use OCPI::API::enableServerDiscovery() or the OCPI_ENABLE_REMOTE_DISCOVERY variable described in the Application Guide.");
 }
+
+// The driver entry point to deal with explicitly specified servers, in params or the environment
+bool Driver::
+useServers(const OU::PValue *params, bool verbose, std::string &error) {
+  char *saddr = getenv("OCPI_SERVER_ADDRESS");
+  if (saddr && probeServer(saddr, verbose, NULL, NULL, false, error))
+    return true;
+  if ((saddr = getenv("OCPI_SERVER_ADDRESSES")))
+    for (OU::TokenIter li(saddr); li.token(); li.next())
+      if (probeServer(li.token(), verbose, NULL, NULL, false, error))
+	return true;
+  if ((saddr = getenv("OCPI_SERVER_ADDRESS_FILE"))) {
+    std::string addrs;
+    const char *err = OU::file2String(addrs, saddr, ' ');
+    if (err)
+      throw OU::Error("The file indicated by the OCPI_SERVER_ADDRESS_FILE environment "
+		      "variable, \"%s\", cannot be opened: %s", saddr, err);
+    for (OU::TokenIter li(addrs); li.token(); li.next())
+      if (probeServer(li.token(), verbose, NULL, NULL, false, error))
+	return true;
+  }
+  for (const OU::PValue *p = params; p && p->name; ++p)
+    if (!strcasecmp(p->name, "server")) {
+      if (p->type != OA::OCPI_String)
+	throw OU::Error("Value of \"server\" parameter is not a string");
+      if (probeServer(p->vString, verbose, NULL, NULL, false, error))
+	return true;
+    }
+  return false;
+}
+
+void Driver::
+configure(ezxml_t xml) {
+  OCPI::Driver::Driver::configure(xml);
+  std::string error;
+  if (useServers(NULL, false, error))
+    ocpiBad("Error during remote server processing: %s", error.c_str());
+}
 // Called either from UDP discovery or explicitly, e.g. from ocpirun
 // If the latter, the "containers" argument will be NULL
 bool Driver::
@@ -333,7 +437,7 @@ probeServer(const char *server, bool verbose, const char **exclude, char *contai
     const char *err;
     if ((err = OU::Value::parseUShort(sport + 1, NULL, port)))
       return OU::eformat(error, "Bad port number in server name: \"%s\"", server);
-    host.resize(sport - server);
+    host.resize(OCPI_SIZE_T_DIFF(sport, server));
   } else
     port = REMOTE_PORT;
   ezxml_t rx = NULL; // need to explicitly free this below via "bad:" or "out:"
@@ -341,6 +445,8 @@ probeServer(const char *server, bool verbose, const char **exclude, char *contai
   bool taken = false; // whether the socket has been taken by a launcher
   Client *client = OU::Parent<Client>::findChildByName(server);
   if (!containers) {
+    if (client)
+      goto out; // we already are using this server
     // We are not being called during discovery, but explicitly (when avoiding discovery).
     // Whereas during UDP discovery, this info comes back in the UDP datagram, here we must go
     // get it via TCP by opening the TCP socket early, before excluding specific containers.

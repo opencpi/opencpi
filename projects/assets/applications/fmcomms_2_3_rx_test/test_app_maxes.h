@@ -21,9 +21,12 @@
 #ifndef _TEST_APP_MAXES_H
 #define _TEST_APP_MAXES_H
 
-#include "OcpiApi.hh" // OCPI::API namespace
-#include "ocpi_component_prop_type_helpers.h" // ocpi_..._t types
+#include <sstream> // std::ostringstream
+#include <string> // std::string
+#include "OcpiApi.hh" // OA namespace
 #include "test_app_common.h"// APP_DEFAULT_... macros, did_pass_test_expected_value_<prop>() functions
+
+namespace OA = OA;
 
 bool did_pass_test_ocpi_app_max_value_rf_gain_dB()
 {
@@ -31,7 +34,7 @@ bool did_pass_test_ocpi_app_max_value_rf_gain_dB()
   bool did_pass;
   try
   {
-    OCPI::API::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
+    OA::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
     app.initialize();
     //app.setProperty(APP_DEFAULT_XML_INST_NAME_RX, "enable_log_info",  "true");
     //app.setProperty(APP_DEFAULT_XML_INST_NAME_RX, "enable_log_trace", "true");
@@ -39,11 +42,11 @@ bool did_pass_test_ocpi_app_max_value_rf_gain_dB()
     app.start();
 
     {
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "frequency_MHz");
+      OA::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "frequency_MHz");
       p.setDoubleValue(1299.999999);
     }
     {
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "rf_gain_dB");
+      OA::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "rf_gain_dB");
       try {
         p.setDoubleValue(78.);
         did_pass = false; // set to 78. should not have succeeded
@@ -54,17 +57,17 @@ bool did_pass_test_ocpi_app_max_value_rf_gain_dB()
       TEST_EXPECTED_VAL(did_pass, true);
       p.setDoubleValue(77.);
     }
-    did_pass = did_pass_test_expected_value_frequency_MHz(app, 1299.999999, (ocpi_ulonglong_t) 1299999999);
+    did_pass = did_pass_test_expected_value_frequency_MHz(app, 1299.999999, (OA::ULongLong) 1299999999);
     if(!did_pass) { return false; }
-    did_pass = did_pass_test_expected_value_rf_gain_dB(app, 77., (ocpi_long_t) 77);
+    did_pass = did_pass_test_expected_value_rf_gain_dB(app, 77., (OA::Long) 77);
     if(!did_pass) { return false; }
 
     {
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "frequency_MHz");
+      OA::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "frequency_MHz");
       p.setDoubleValue(2400.);
     }
     {
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "rf_gain_dB");
+      OA::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "rf_gain_dB");
       try {
         p.setDoubleValue(72.);
         did_pass = false; // set to 72. should not have succeeded
@@ -76,17 +79,17 @@ bool did_pass_test_ocpi_app_max_value_rf_gain_dB()
       if(!did_pass) { return false; }
       p.setDoubleValue(71.);
     }
-    did_pass = did_pass_test_expected_value_frequency_MHz(app, 2400., (ocpi_ulonglong_t) 2400000000);
+    did_pass = did_pass_test_expected_value_frequency_MHz(app, 2400., (OA::ULongLong) 2400000000);
     if(!did_pass) { return false; }
-    did_pass = did_pass_test_expected_value_rf_gain_dB(app, 71., (ocpi_long_t) 71);
+    did_pass = did_pass_test_expected_value_rf_gain_dB(app, 71., (OA::Long) 71);
     if(!did_pass) { return false; }
 
     {
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "frequency_MHz");
+      OA::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "frequency_MHz");
       p.setDoubleValue(4000.000005); // rounded up to nearest Hz from 4GHz +4.768 Hz
     }
     {
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "rf_gain_dB");
+      OA::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "rf_gain_dB");
       try {
         p.setDoubleValue(63.);
         did_pass = false; // set to 63. should not have succeeded
@@ -97,9 +100,9 @@ bool did_pass_test_ocpi_app_max_value_rf_gain_dB()
       TEST_EXPECTED_VAL(did_pass, true);
       p.setDoubleValue(62.);
     }
-    did_pass = did_pass_test_expected_value_frequency_MHz(app, 4000.000001, (ocpi_ulonglong_t) 4000000001);
+    did_pass = did_pass_test_expected_value_frequency_MHz(app, 4000.000001, (OA::ULongLong) 4000000001);
     if(!did_pass) { return false; }
-    did_pass = did_pass_test_expected_value_rf_gain_dB(app, 62., (ocpi_long_t) 62);
+    did_pass = did_pass_test_expected_value_rf_gain_dB(app, 62., (OA::Long) 62);
     if(!did_pass) { return false; }
  
     app.stop();
@@ -116,40 +119,29 @@ bool did_pass_test_ocpi_app_max_value_bb_gain_dB()
 {
   printf("TEST: max     value for bb_gain_dB\n");
 
-  try
-  {
-  OCPI::API::Application app(APP_DEFAULT_FMCOMMS2_XML, NULL);
-  app.initialize();
-  app.start();
-  OCPI::API::Property pp(app, APP_DEFAULT_XML_INST_NAME_RX, "bb_gain_max_dB");
-  double max = pp.getValue<double>();
+  auto rx = APP_DEFAULT_XML_INST_NAME_RX;
 
-  std::ostringstream oss;
-  oss << std::setprecision(17) << max;
-  app.setProperty("rx", "bb_gain_dB", oss.str().c_str()); // test for exception
-  }
-  catch (std::string &e)
-  {
-    fprintf(stderr, "Exception thrown: %s\n", e.c_str());
-    return false;
-  }
+  std::vector<std::string> apps;
+  apps.push_back(APP_DEFAULT_FMCOMMS2_XML);
+  apps.push_back(APP_DEFAULT_FMCOMMS3_XML);
 
-  try
-  {
-  OCPI::API::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
-  app.initialize();
-  app.start();
-  OCPI::API::Property pp(app, APP_DEFAULT_XML_INST_NAME_RX, "bb_gain_max_dB");
-  double max = pp.getValue<double>();
+  for(auto it = apps.begin(); it != apps.end(); ++it) {
+    try
+    {
+      OA::Application app(*it, NULL);
+      app.initialize();
+      app.start();
 
-  std::ostringstream oss;
-  oss << std::setprecision(17) << max;
-  app.setProperty("rx", "bb_gain_dB", oss.str().c_str()); // test for exception
-  }
-  catch (std::string &e)
-  {
-    fprintf(stderr, "Exception thrown: %s\n", e.c_str());
-    return false;
+      double max = app.getPropertyValue<double>(rx, "bb_gain_max_dB");
+
+      // test for exception
+      app.setPropertyValue<double>(rx, "bb_gain_dB", max);
+    }
+    catch (std::string &e)
+    {
+      fprintf(stderr, "Exception thrown: %s\n", e.c_str());
+      return false;
+    }
   }
 
   return did_pass_test_ocpi_app_default_value_bb_gain_dB();
@@ -158,119 +150,79 @@ bool did_pass_test_ocpi_app_max_value_bb_gain_dB()
 bool did_pass_test_ocpi_app_max_value_frequency_MHz()
 {
   printf("TEST: max     value for frequency_MHz\n");
-  bool did_pass;
-  try
-  {
+
+  auto rx = APP_DEFAULT_XML_INST_NAME_RX;
+
+  std::vector<std::string> apps;
+  apps.push_back(APP_DEFAULT_FMCOMMS2_XML);
+  apps.push_back(APP_DEFAULT_FMCOMMS3_XML);
+
+  for(auto it = apps.begin(); it != apps.end(); ++it) {
+    try
     {
-      OCPI::API::Application app(APP_DEFAULT_FMCOMMS2_XML, NULL);
+      OA::Application app(*it, NULL);
       app.initialize();
       app.start();
 
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "frequency_MHz");
-      p.setDoubleValue(2500.);
+      double max = app.getPropertyValue<double>(rx, "frequency_max_MHz");
 
-      did_pass = did_pass_test_expected_value_frequency_MHz(app, 2500., (ocpi_ulonglong_t) 2500000000);
-      if(!did_pass) { return false; }
+      // test for exception
+      app.setPropertyValue<double>(rx, "frequency_MHz", max);
 
-      {
-      OCPI::API::Property pp(app, APP_DEFAULT_XML_INST_NAME_RX, "frequency_max_MHz");
-      double max = pp.getValue<double>();
-
-      std::ostringstream oss;
-      oss << std::setprecision(17) << max;
-      app.setProperty("rx", "frequency_MHz", oss.str().c_str()); // test for exception
+      bool did_pass = false;
+      if(*it == APP_DEFAULT_FMCOMMS2_XML) {
+        did_pass = did_pass_test_expected_value_frequency_MHz(app, 2500., (OA::ULongLong) 2500000000);
       }
-   
-      app.stop();
+      else if(*it == APP_DEFAULT_FMCOMMS3_XML) {
+        did_pass = did_pass_test_expected_value_frequency_MHz(app, 6000., (OA::ULongLong) 6000000000);
+      }
+      if(!did_pass) {
+        return false;
+      }
     }
-
+    catch (std::string &e)
     {
-      OCPI::API::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
-      app.initialize();
-      app.start();
-
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "frequency_MHz");
-      p.setDoubleValue(6000.);
-
-      did_pass = did_pass_test_expected_value_frequency_MHz(app, 6000., (ocpi_ulonglong_t) 6000000000);
-      if(!did_pass) { return false; }
-
-      {
-      OCPI::API::Property pp(app, APP_DEFAULT_XML_INST_NAME_RX, "frequency_max_MHz");
-      double max = pp.getValue<double>();
-
-      std::ostringstream oss;
-      oss << std::setprecision(17) << max;
-      app.setProperty("rx", "frequency_MHz", oss.str().c_str()); // test for exception
-      }
-   
-      app.stop();
+      fprintf(stderr, "Exception thrown: %s\n", e.c_str());
+      return false;
     }
   }
-  catch (std::string &e)
-  {
-    fprintf(stderr, "Exception thrown: %s\n", e.c_str());
-    return false;
-  }
+
   return true;
 }
 
 bool did_pass_test_ocpi_app_max_value_sample_rate_MHz()
 {
   printf("TEST: max     value for sample_rate_MHz\n");
-  bool did_pass;
-  try
-  {
+
+  auto rx = APP_DEFAULT_XML_INST_NAME_RX;
+
+  std::vector<std::string> apps;
+  apps.push_back(APP_DEFAULT_FMCOMMS2_XML);
+  apps.push_back(APP_DEFAULT_FMCOMMS3_XML);
+
+  for(auto it = apps.begin(); it != apps.end(); ++it) {
+    try
     {
-      OCPI::API::Application app(APP_DEFAULT_FMCOMMS2_XML, NULL);
+      OA::Application app(*it, NULL);
       app.initialize();
       app.start();
 
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "sample_rate_MHz");
-      p.setDoubleValue(61.44);
+      double max = app.getPropertyValue<double>(rx, "sample_rate_max_MHz");
 
-      did_pass = did_pass_test_expected_value_sample_rate_MHz(app, 61.44, (ocpi_ulong_t) 61440000);
-      if(!did_pass) { return false; }
+      // test for exception
+      app.setPropertyValue<double>(rx, "sample_rate_MHz", max);
 
-      {
-      OCPI::API::Property pp(app, APP_DEFAULT_XML_INST_NAME_RX, "sample_rate_max_MHz");
-      double max = pp.getValue<double>();
-
-      std::ostringstream oss;
-      oss << std::setprecision(17) << max;
-      app.setProperty("rx", "sample_rate_MHz", oss.str().c_str()); // test for exception
+      bool did_pass;
+      did_pass = did_pass_test_expected_value_sample_rate_MHz(app, 61.44, (OA::ULong) 61440000);
+      if(!did_pass) {
+        return false;
       }
-   
-      app.stop();
     }
-
+    catch (std::string &e)
     {
-      OCPI::API::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
-      app.initialize();
-      app.start();
-
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "sample_rate_MHz");
-      p.setDoubleValue(61.44);
-
-      did_pass = did_pass_test_expected_value_sample_rate_MHz(app, 61.44, (ocpi_ulong_t) 61440000);
-      if(!did_pass) { return false; }
-
-      {
-      OCPI::API::Property pp(app, APP_DEFAULT_XML_INST_NAME_RX, "sample_rate_max_MHz");
-      double max = pp.getValue<double>();
-
-      std::ostringstream oss;
-      oss << std::setprecision(17) << max;
-      app.setProperty("rx", "sample_rate_MHz", oss.str().c_str()); // test for exception
-      }
-   
-      app.stop();
+      fprintf(stderr, "Exception thrown: %s\n", e.c_str());
+      return false;
     }
-  }
-  catch (std::string &e)
-  {
-    fprintf(stderr, "Exception thrown: %s\n", e.c_str());
-    return false;
   }
 
   return true;
@@ -280,40 +232,29 @@ bool did_pass_test_ocpi_app_max_value_rf_cutoff_frequency_MHz()
 {
   printf("TEST: max     value for rf_cutoff_frequency_MHz\n");
 
-  try
-  {
-  OCPI::API::Application app(APP_DEFAULT_FMCOMMS2_XML, NULL);
-  app.initialize();
-  app.start();
-  OCPI::API::Property pp(app, APP_DEFAULT_XML_INST_NAME_RX, "rf_cutoff_frequency_max_MHz");
-  double max = pp.getValue<double>();
+  auto rx = APP_DEFAULT_XML_INST_NAME_RX;
 
-  std::ostringstream oss;
-  oss << std::setprecision(17) << max;
-  app.setProperty("rx", "rf_cutoff_frequency_MHz", oss.str().c_str()); // test for exception
-  }
-  catch (std::string &e)
-  {
-    fprintf(stderr, "Exception thrown: %s\n", e.c_str());
-    return false;
-  }
+  std::vector<std::string> apps;
+  apps.push_back(APP_DEFAULT_FMCOMMS2_XML);
+  apps.push_back(APP_DEFAULT_FMCOMMS3_XML);
 
-  try
-  {
-  OCPI::API::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
-  app.initialize();
-  app.start();
-  OCPI::API::Property pp(app, APP_DEFAULT_XML_INST_NAME_RX, "rf_cutoff_frequency_max_MHz");
-  double max = pp.getValue<double>();
+  for(auto it = apps.begin(); it != apps.end(); ++it) {
+    try
+    {
+      OA::Application app(*it, NULL);
+      app.initialize();
+      app.start();
 
-  std::ostringstream oss;
-  oss << std::setprecision(17) << max;
-  app.setProperty("rx", "rf_cutoff_frequency_MHz", oss.str().c_str()); // test for exception
-  }
-  catch (std::string &e)
-  {
-    fprintf(stderr, "Exception thrown: %s\n", e.c_str());
-    return false;
+      double max = app.getPropertyValue<double>(rx, "rf_cutoff_frequency_max_MHz");
+
+      // test for exception
+      app.setPropertyValue<double>(rx, "rf_cutoff_frequency_MHz", max);
+    }
+    catch (std::string &e)
+    {
+      fprintf(stderr, "Exception thrown: %s\n", e.c_str());
+      return false;
+    }
   }
 
   return did_pass_test_ocpi_app_default_value_rf_cutoff_frequency_MHz();
@@ -322,59 +263,36 @@ bool did_pass_test_ocpi_app_max_value_rf_cutoff_frequency_MHz()
 bool did_pass_test_ocpi_app_max_value_bb_cutoff_frequency_MHz()
 {
   printf("TEST: max     value for bb_cutoff_frequency_MHz\n");
-  bool did_pass;
-  try
-  {
+
+  auto rx = APP_DEFAULT_XML_INST_NAME_RX;
+
+  std::vector<std::string> apps;
+  apps.push_back(APP_DEFAULT_FMCOMMS2_XML);
+  apps.push_back(APP_DEFAULT_FMCOMMS3_XML);
+
+  for(auto it = apps.begin(); it != apps.end(); ++it) {
+    try
     {
-      OCPI::API::Application app(APP_DEFAULT_FMCOMMS2_XML, NULL);
+      OA::Application app(*it, NULL);
       app.initialize();
       app.start();
 
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "bb_cutoff_frequency_MHz");
-      p.setDoubleValue(39.2);
+      double max = app.getPropertyValue<double>(rx, "bb_cutoff_frequency_max_MHz");
 
-      did_pass = did_pass_test_expected_value_bb_cutoff_frequency_MHz(app, 39.2, (ocpi_ulong_t) 39200000);
-      if(!did_pass) { return false; }
- 
-      {
-      OCPI::API::Property pp(app, APP_DEFAULT_XML_INST_NAME_RX, "bb_cutoff_frequency_max_MHz");
-      double max = pp.getValue<double>();
+      // test for exception
+      app.setPropertyValue<double>(rx, "bb_cutoff_frequency_MHz", max);
 
-      std::ostringstream oss;
-      oss << std::setprecision(17) << max;
-      app.setProperty("rx", "bb_cutoff_frequency_MHz", oss.str().c_str()); // test for exception
+      bool did_pass;
+      did_pass = did_pass_test_expected_value_bb_cutoff_frequency_MHz(app, 39.2, (OA::ULong) 39200000);
+      if(!did_pass) {
+        return false;
       }
-   
-      app.stop();
     }
-
+    catch (std::string &e)
     {
-      OCPI::API::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
-      app.initialize();
-      app.start();
-
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "bb_cutoff_frequency_MHz");
-      p.setDoubleValue(39.2);
-
-      did_pass = did_pass_test_expected_value_bb_cutoff_frequency_MHz(app, 39.2, (ocpi_ulong_t) 39200000);
-      if(!did_pass) { return false; }
-
-      {
-      OCPI::API::Property pp(app, APP_DEFAULT_XML_INST_NAME_RX, "bb_cutoff_frequency_max_MHz");
-      double max = pp.getValue<double>();
-
-      std::ostringstream oss;
-      oss << std::setprecision(17) << max;
-      app.setProperty("rx", "bb_cutoff_frequency_MHz", oss.str().c_str()); // test for exception
-      }
-   
-      app.stop();
+      fprintf(stderr, "Exception thrown: %s\n", e.c_str());
+      return false;
     }
-  }
-  catch (std::string &e)
-  {
-    fprintf(stderr, "Exception thrown: %s\n", e.c_str());
-    return false;
   }
 
   return true;

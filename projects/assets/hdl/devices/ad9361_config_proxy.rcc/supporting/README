@@ -1,0 +1,1 @@
+If desired, Doxygen documentation can be built for the software in this directory: run "doxygen" command from this directory and look at the generated html/index.html in a web browser.

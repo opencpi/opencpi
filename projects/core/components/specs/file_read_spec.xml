@@ -17,13 +17,14 @@ Properties:
   <!-- File name to read from -->
   <property name='fileName' type='string' stringLength='1024' initial='true'/>
   <!-- Does the file contain messages with opcodes and lengths? -->
-  <property name='messagesInFile' type='bool' readable='true' initial='true' default='false'/>
+  <property name='messagesInFile' type='bool' initial='true' default='false'/>
   <!-- Fixed opcode value if previous value is false -->
-  <property name='opcode' type='uchar' readable='true' initial='true' default='0'/>
-  <!-- Fixed message size if messagesInFile is false -->
-  <property name='messageSize' type='ulong' readable='true' initial='true' default='4096'/>
+  <property name='opcode' type='uchar' initial='true' default='0'/>
+  <!-- Fixed message size if messagesInFile is false, letting the default come from the system's actual buffer sizes
+       which will be the most efficient -->
+  <property name='messageSize' type='ulong' initial='true' default='0'/>
   <!-- Granularity of last message if non-zero and less than message size -->
-  <property name='granularity' type='ulong' readable='true' initial='true' default='1'/>
+  <property name='granularity' type='ulong' initial='true' default='1'/>
 
   <!-- Read the file repeatedly -->
   <property name='repeat' type='bool' writable='true'/>

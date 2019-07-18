@@ -1,4 +1,10 @@
 <HdlDevice language="vhdl">
+
+  <!-- By design, this worker provides control and/or data plane functionality
+       that is never intended to be exposed by any other worker. Accordingly,
+       this worker defines the ComponentSpec element inside this OWD file, as
+       opposed to creating an OCS file including said functionality which could
+       be used by other workers. -->
   <ComponentSpec/>
 
   <!-- Parameters -->

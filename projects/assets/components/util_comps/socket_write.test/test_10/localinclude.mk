@@ -25,10 +25,9 @@ SIM_TIME?=180
 endif
 
 # Opening 255 ports, plus rest of framework causes out of file descriptor problems...
-# Slick! http://stackoverflow.com/a/12034077
 CUR_ULIMIT_N := $(shell ulimit -n)
 
-ifneq "2047" "$(word 1, $(sort 2047 $(CUR_ULIMIT_N)))"
+ifneq "1" "$(shell test $(CUR_ULIMIT_N) -ge 2048 && echo 1)"
   $(warning ulimit -n is currently $(CUR_ULIMIT_N), but this test requires 2048. Try running "ulimit -n 2048")
   SKIP_TEST := 1
 endif

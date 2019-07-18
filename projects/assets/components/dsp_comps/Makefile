@@ -19,7 +19,6 @@
 # This is the dsp_comps library
 
 Tests = \
-	Baudtracking_simple.test \
 	dc_offset_filter.test \
 	iq_imbalance_fixer.test \
 	complex_mixer.test \

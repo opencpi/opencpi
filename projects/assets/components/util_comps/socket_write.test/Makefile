@@ -29,6 +29,7 @@ ifneq (,)
   include $(OCPI_CDK_DIR)/include/test.mk
 endif
 
+ECHO=/bin/echo
 WORKER=socket_write
 ifneq (,$(filter testrun,$(MAKECMDGOALS)))
 ifeq (,$(VG))
@@ -47,10 +48,18 @@ endif
 RCCWORKER=$(WORKER).rcc
 space:=
 space+=
-ARTIFACT_DIRS=$(subst $(space),,$(foreach artdir,$(shell (cd $(OCPI_CDK_DIR) && find -type d -name artifacts )),\$${OCPI_CDK_DIR}/$(artdir):))
+
+
+# NOTE: This is just plain broken. Until AV-5383 / AV-5381 / AV-4641 it is local-only
+
+
+# MY_REG=$(if $(OCPI_PROJECT_REGISTRY_DIR),$(OCPI_PROJECT_REGISTRY_DIR),$(OCPI_CDK_DIR)/../project-registry)
+# ARTIFACT_DIRS=$(subst $(space),,$(foreach artdir,$(shell (cd ../../../imports/ && find -L . -type d -name artifacts 2>/dev/null )),../../../imports/$(artdir):))
 SUPPORT_PATH:=$(subst $(space),:,$(foreach worker, $(RCCWORKER) advanced_pattern.rcc file_write_demux.rcc,$(wildcard $(shell pwd)/../../$(worker)/target-*)))
-SUPPORT_PATH_REMOTE:=export OCPI_LIBRARY_PATH=$(ARTIFACT_DIRS):../../lib/rcc:../../../../exports/lib
-EXPORT_PATH := export OCPI_LIBRARY_PATH=:$(OCPI_LIBRARY_PATH):$(ARTIFACT_DIRS):../../lib/rcc:../../../../exports/lib:$(SUPPORT_PATH) && set -o pipefail && $(PRE_HOOK)
+# SUPPORT_PATH_REMOTE:=export OCPI_LIBRARY_PATH=$(ARTIFACT_DIRS):../../lib/rcc:../../../../exports/lib
+SUPPORT_PATH_REMOTE:=export OCPI_LIBRARY_PATH=$(shell pwd)/../../../../imports/
+# EXPORT_PATH := export OCPI_LIBRARY_PATH=:$(OCPI_LIBRARY_PATH):$(ARTIFACT_DIRS):../../lib/rcc:../../../../exports/lib:$(SUPPORT_PATH) && set -o pipefail && $(PRE_HOOK)
+EXPORT_PATH := export OCPI_LIBRARY_PATH=:$(shell pwd)/../../../../imports/ && set -o pipefail && $(PRE_HOOK)
 
 ifneq (,$(filter verify,$(MAKECMDGOALS)))
 export NO_AUTOCONFIG_WARNING=1
@@ -63,8 +72,8 @@ RCC_CONTAINERS?=$(shell echo "$(CONTAINERS)" | grep -c rcc)
 DEBUG=-d -v
 DEBUG+=-l 8
 
-.SILENT: all tests test verify testgen testgen_wrapper testrun testrun_wrapper testverify testverify_wrapper clean generate.sh verify.sh launchlisteners checklisteners killall runtest runtests run verifytest generate build prepare
-.PHONY: all tests test verify testgen testgen_wrapper testrun testrun_wrapper testverify testverify_wrapper clean launchlisteners checklisteners killall runtest runtests run verifytest generate build prepare
+.SILENT: all tests test verify testgen testgen_wrapper testrun testrun_wrapper testverify testverify_wrapper clean generate.sh verify.sh launchlisteners checklisteners killall runtest runtests run verifytest generate build prepare testrun_wrapper testverify_wrapper testgen_wrapper
+.PHONY: all tests test verify testgen testgen_wrapper testrun testrun_wrapper testverify testverify_wrapper clean launchlisteners checklisteners killall runtest runtests run verifytest generate build prepare testrun_wrapper testverify_wrapper testgen_wrapper
 
 # Map to "standard" targets:
 all: build
@@ -80,8 +89,9 @@ build: testgen_wrapper
 prepare: testgen_wrapper
 
 testgen_wrapper:
-	$(foreach tst, $(TESTS), echo -n "Generating $(tst): " && \
-	  $(MAKE) -f ../Makefile -sC $(tst) testgen && \
+	$(foreach tst, $(TESTS), $(ECHO) -n "Generating $(tst): " && \
+	  cat $(tst)/description && \
+	  $(MAKE) -f ../Makefile -sC $(tst) --no-print-directory testgen && \
 	  ) true
 
 testrun_wrapper:
@@ -89,13 +99,15 @@ ifneq (,$(IP))
 	@echo "wrapper not written to handle remote!"
 	@false
 endif
-	$(foreach tst, $(TESTS), echo "Running $(tst): " && \
-	  $(MAKE) -f ../Makefile -sC $(tst) testrun OCPI_HDL_SIMULATORS= && \
+	$(foreach tst, $(TESTS), $(ECHO) -n "Running $(tst): " && \
+	  cat $(tst)/description && \
+	  $(MAKE) -f ../Makefile -sC $(tst) --no-print-directory testrun OCPI_HDL_SIMULATORS= && \
 	  ) true
 
 testverify_wrapper:
-	$(foreach tst, $(TESTS), echo "Verifying $(tst): " && \
-	  $(MAKE) -f ../Makefile -sC $(tst) testverify && \
+	$(foreach tst, $(TESTS), $(ECHO) -n "Verifying $(tst): " && \
+	  cat $(tst)/description && \
+	  $(MAKE) -f ../Makefile -sC $(tst) --no-print-directory testverify && \
 	  ) true
 
 TESTS?=$(sort $(wildcard test_[0-9]*))
@@ -163,7 +175,6 @@ verify.sh:
 # The generate / run / verify are split into three because they might be platform-dependent:
 ifeq (,$(SKIP_TEST))
 testgen: generate.sh verify.sh
-	cat description
 	rm -rf odata
 	mkdir odata
 	./generate.sh > generate.log
@@ -171,7 +182,7 @@ testgen: generate.sh verify.sh
 testrun: launchlisteners
 # The 'bash -c' is needed to interpret the ${OCPI_CDK_DIR} that's there for embedded systems from ARTIFACT_DIRS
 ifeq (,$(REMOTE))
-	bash -c "$(EXPORT_PATH) time $(VG) ocpirun $(DEBUG) -m UUT=rcc -t -$(SIM_TIME) application.xml $(POST_HOOK)" > ocpirun.log 2>&1
+	bash -c "ulimit -n 2048; $(EXPORT_PATH) time $(VG) ocpirun $(DEBUG) -m UUT=rcc -t -$(SIM_TIME) application.xml $(POST_HOOK)" > ocpirun.log 2>&1
 else
 	echo "Remotely run: \" ($(SUPPORT_PATH_REMOTE) && cd $(TEST) && $(PRE_HOOK) time ocpirun $(DEBUG) -m UUT=rcc -t -$(SIM_TIME) application.xml $(POST_HOOK) > ocpirun.log 2>&1) \""
 	read -p "Press Enter when ocpirun is finished: " x
@@ -182,7 +193,7 @@ endif
 # If called by "ocpidev" then python is running one directory above so OK.
 testverify:
 	rm -f verify.log
-	while [ -n "`lsof -Fc +d . | grep cpython`" ]; do echo "(Waiting for listeners to exit)" >> verify.log ; sleep 1; done
+	while [ -n "`lsof -Fc +d . -x | grep cpython`" ]; do echo "(Waiting for listeners to exit)" >> verify.log ; sleep 1; done
 	./verify.sh >> verify.log 2>&1
 
 else
@@ -196,7 +207,7 @@ endif
 
 tests: clean
 ifneq (,$(IP))
-	$(foreach tst, $(TESTS), echo -n "Executing $(tst): " && \
+	$(foreach tst, $(TESTS), $(ECHO) -n "Executing $(tst): " && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testgen && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testrun REMOTE=1 TEST=$(tst) && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testverify && \
@@ -204,7 +215,7 @@ ifneq (,$(IP))
 else
 #sleep 2 added because python was not cleaning up listeners fast enough on some systems
 ifneq ($(RCC_CONTAINERS),0)
-	$(foreach tst, $(TESTS), echo -n "Executing ${tst}: " && \
+	$(foreach tst, $(TESTS), $(ECHO) -n "Executing ${tst}: " && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testgen && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testrun OCPI_HDL_SIMULATORS= && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testverify && \

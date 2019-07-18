@@ -84,8 +84,8 @@ function from_bool(b : bool_t) return std_logic_vector;
 function slv(a: bool_array_t) return std_logic_vector;
 function to_slv(a: bool_array_t) return std_logic_vector;
 function to_bool_array(a: std_logic_vector) return bool_array_t;
-function btrue return bool_t;
-function bfalse return bool_t;
+constant btrue : bool_t;
+constant bfalse : bool_t;
 function its(b : bool_t) return boolean;
 
 --

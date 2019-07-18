@@ -1,0 +1,8 @@
+<HdlAssembly>
+  <Instance Worker='file_read'          Connect='complex_mixer_ts'/>
+  <Instance Worker='complex_mixer_ts'   Connect='cic_dec_ts'/>
+  <Instance Worker='cic_dec_ts'         Connect='file_write'>
+    <Property Name='R' Value='8'/>
+  </Instance>
+  <Instance Worker='file_write'/>
+</HdlAssembly>

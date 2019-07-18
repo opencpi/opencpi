@@ -72,6 +72,7 @@
 #define OCPI_STRUNCATE(type, val) ((type)(val))
 #define OCPI_SIZEOF(utype, stype) ((utype)sizeof(stype))
 #define OCPI_OFFSETOF(utype, member, stype) ((utype)&((stype *)0)->member)
+#define OCPI_SIZE_T_DIFF(larger, smaller) ((size_t)((larger) - (smaller)))
 #else
 #define OCPI_UTRUNCATE(type, val) \
   (static_cast<type>(OCPI::Util::utruncate((uint64_t)(val), sizeof(type))))
@@ -81,6 +82,8 @@
   ((utype)OCPI::Util::utruncate((uint64_t)sizeof(stype), sizeof(utype)))
 #define OCPI_OFFSETOF(utype, stype, member)				\
   ((utype)OCPI::Util::utruncate((uint64_t)&((stype *)0)->member, sizeof(utype)))
+#define OCPI_SIZE_T_DIFF(larger, smaller) \
+  OCPI::Util::size_t_diff((larger) - (smaller))
 #endif
 
 namespace OCPI {
@@ -101,6 +104,11 @@ namespace OCPI {
 		  val <= ~((int64_t)-1 << (bytes*8-1))));
       return val;
     }
+    inline size_t size_t_diff(ssize_t diff) {
+      ocpiAssert(diff >= 0);
+      return (size_t)(diff);
+    }
+
     int64_t struncate(int64_t val, unsigned bytes);
       /**
        * \brief Convert an integer to a string.
@@ -201,6 +209,7 @@ namespace OCPI {
        * \throw std::string If the value can not be interpreted as a
        * number.
        */
+#if 0 // DISABLED
 
       unsigned long long stringToULongLong (const std::string & value,
                                             unsigned int base = 10);
@@ -225,7 +234,7 @@ namespace OCPI {
        *                positive value for <em>std::streamsize</em>,
        *                as requested using the \a minusone parameter.
        */
-
+#endif
       std::streamsize unsignedToStreamsize (unsigned long long pos,
                                             bool minusone = true);
 
@@ -347,6 +356,8 @@ namespace OCPI {
 		     bool onlyIfDifferent = false, bool makeExecutable = false),
 	*evsprintf(const char *fmt, va_list ap),
 	*esprintf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+      void
+	ewprintf(const char *fmt, ...) __attribute__((format(printf, 1, 2))); // for warnings
       inline const char *file2String(std::string &out, const std::string &file,
 				     char replaceNewLine = 0) {
 	return file2String(out, file.c_str(), replaceNewLine);

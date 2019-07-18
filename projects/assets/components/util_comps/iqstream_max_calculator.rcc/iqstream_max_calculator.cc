@@ -76,6 +76,8 @@ private:
     if(out.isConnected()) {
       out.iq().data().resize(in.iq().data().size());
       out.setOpCode(in.getOpCode());
+      if (in.getEOF())
+	out.setEOF();
     }
 
     const IqstreamIqData* inData = in.iq().data().data();

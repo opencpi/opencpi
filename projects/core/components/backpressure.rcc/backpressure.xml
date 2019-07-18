@@ -1,4 +1,4 @@
-<RccWorker language='c++' spec='backpressure-spec' controloperations='start,stop'>
+<RccWorker language='c++' spec='backpressure-spec' controloperations='start,stop' version='2'>
 
 
 </RccWorker>

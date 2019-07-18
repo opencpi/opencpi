@@ -1,4 +1,4 @@
-#!/bin/python
+#!/usr/bin/env python2
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #

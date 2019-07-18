@@ -1,0 +1,5 @@
+<tests useHDLFileIo='true'>
+  <!-- message size must be big enough for the largest message in the input file -->
+  <input port='in' file='input_file.dat' messagesinfile='true' messagesize='4096'/>
+  <output port='out' script='verify.py ../../golden_output_file.dat'/>
+</tests>

@@ -115,7 +115,7 @@ void run_test(std::unique_ptr<OA::Application>& app)
 
 enum HdlPlatformRFFrontend {matchstiq_z1_Frontend, zipperFrontend};
 
-int main(int argc, char **argv)
+int main(/*int argc, char **argv*/)
 {
   OA::Container *container;
   std::string container_name, xml_name, input;
@@ -188,9 +188,7 @@ int main(int argc, char **argv)
   double sample_rate;// = 1; // default
   double sample_rate_min;
   double sample_rate_max;
-  std::string ClkInStr;
-  std::string rxClkInStr = std::string("0"); // Forced to 0 during Tx
-  std::string txClkInStr;
+  std::string rxClkInStr("0"); // Forced to 0 during Tx
   std::ostringstream clock_gen_config;
 
   app->initialize();
@@ -217,7 +215,9 @@ int main(int argc, char **argv)
   	}
 
       // Si5338:CLKIN (i.e. Si5338:CH0 = Rx clock to Lime transceiver) = 2 x sample_rate x 1 MHz
-      ClkInStr = to_string((long double)(2 * sample_rate * 1e6)).c_str();
+      std::ostringstream ostr_clkin;
+      ostr_clkin << (2 * sample_rate * 1e6);
+      std::string ClkInStr(ostr_clkin.str());
 
       // Only required to set CH0 of the Clock Synthesis device
       clock_gen_config <<
@@ -270,7 +270,9 @@ int main(int argc, char **argv)
       	}
 
       // Si5351:CLKIN (i.e. Si5351:CH4 & 5 = Tx clock to Lime transceiver & FPGA) = 2 x sample_rate x 1 MHz
-      txClkInStr = to_string((long double)(2 * sample_rate * 1e6)).c_str();
+      std::ostringstream ostr_clkin;
+      ostr_clkin << (2 * sample_rate * 1e6);
+      std::string txClkInStr(ostr_clkin.str());
 
       // CH 4&5 tx CH 2&3 rx
       clock_gen_config <<
@@ -297,7 +299,8 @@ int main(int argc, char **argv)
     }
 
   // Configure clock synthesis device
-  app->setProperty("clock_gen", "channels", clock_gen_config.str().c_str());
+  std::string clock_gen_config_str(clock_gen_config.str());
+  app->setProperty("clock_gen", "channels", clock_gen_config_str.c_str());
 
   app->start();
 
@@ -341,6 +344,7 @@ int main(int argc, char **argv)
 
   } catch (std::string &e) {
     fprintf(stderr, "Exception thrown: %s\n", e.c_str());
+    return 1;
   }
 
 }

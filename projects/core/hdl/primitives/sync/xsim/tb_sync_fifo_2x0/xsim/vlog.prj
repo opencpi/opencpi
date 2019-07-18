@@ -1,0 +1,3 @@
+verilog xil_defaultlib "../../../../bsv/imports/FIFO20.v"
+verilog xil_defaultlib "glbl.v"
+nosort

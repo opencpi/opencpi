@@ -38,7 +38,7 @@ begin
   dev_cfg_data_port_out.p0_p1_are_swapped  <= swap_ports_p;
   dev_cfg_data_port_out.iostandard_is_lvds <= lvds_p;
 
-  #if !OCPI_PARAM_LVDS_p()
+  #if !OCPI_PARAM_ad9361_data_sub_LVDS_p()
   //---------------------------------------------------------------------------------
   // Signals common to all CMOS modes (0-6)
 
@@ -79,12 +79,13 @@ begin
       port map(I => dev_data_dac_in.tx_frame, O => TX_FRAME_P);
     fb_clk   : BUFFER_OUT_1 generic map(DIFFERENTIAL => false)
       port map(I => FB_CLK_P_s, O => FB_CLK_P);
-    // Tie _N signals to ground for CMOS as recommended in Table 13 of
-    // the AD9361 datasheet
+    // The AD9361 datasheet Table 13 recommends to ground these input pins in cmos mode.
+    // Note that these signals may or *may not* actually be connected on a given platform/card.
+    // If they are, we need to ground them ourselves.
     TX_FRAME_N <= '0';
     FB_CLK_N   <= '0';
   #endif
-  #if OCPI_PARAM_MODE_p()==0
+  #if OCPI_PARAM_ad9361_data_sub_MODE_p()==0
   //---------------------------------------------------------------------------------
   // CMOS I/O configuration - mode 0:  single port, half duplex, not swapped
     p0lo: TSINOUT_N generic map(width => port_width_c/2)
@@ -97,7 +98,7 @@ begin
                O  => dev_data_adc_out.data(port_width_c-1 downto port_width_c/2),
                OE => TXNRX_i,
                IO => p0_d_11_6);
-  #elif OCPI_PARAM_MODE_p()==1
+  #elif OCPI_PARAM_ad9361_data_sub_MODE_p()==1
   //---------------------------------------------------------------------------------
   // CMOS I/O configuration - mode 1:  single port, half duplex, swapped
     p1lo: TSINOUT_N generic map(width => port_width_c/2)
@@ -110,21 +111,21 @@ begin
                O  => dev_data_adc_out.data(port_width_c-1 downto port_width_c/2),
                OE => TXNRX_i,
                IO => p1_d_11_6);
-  #elif OCPI_PARAM_MODE_p()==2
+  #elif OCPI_PARAM_ad9361_data_sub_MODE_p()==2
   //---------------------------------------------------------------------------------
   // CMOS I/O configuration - mode 2:  single port, full duplex, not swapped
     p0lo: BUFFER_IN_N generic map(width => port_width_c/2, differential => false)
       port map(I => p0_d_5_0, O => dev_data_adc_out.data(port_width_c/2-1 downto 0));
     p0hi: BUFFER_OUT_N generic map(width => port_width_c/2, differential => false)
       port map(I => dev_data_dac_in.data(port_width_c/2-1 downto 0), O => p0_d_11_6);
-  #elif OCPI_PARAM_MODE_p()==3
+  #elif OCPI_PARAM_ad9361_data_sub_MODE_p()==3
   //---------------------------------------------------------------------------------
   // CMOS I/O configuration - mode 3:  single port, full duplex, swapped
     p1lo: BUFFER_IN_N generic map(width => port_width_c/2, differential => false)
       port map(I => p1_d_5_0, O => dev_data_adc_out.data(port_width_c/2-1 downto 0));
     p1hi: BUFFER_OUT_N generic map(width => port_width_c/2, differential => false)
       port map(I => dev_data_dac_in.data(port_width_c/2-1 downto 0), O => p1_d_11_6);
-  #elif OCPI_PARAM_MODE_p()==4
+  #elif OCPI_PARAM_ad9361_data_sub_MODE_p()==4
   //---------------------------------------------------------------------------------
   // CMOS I/O configuration - mode 4:  dual port, half duplex, swapped or not
     p0lo: TSINOUT_N generic map(width => port_width_c/2)
@@ -147,7 +148,7 @@ begin
                O  => dev_data_adc_out.data(port_width_c*2-1 downto port_width_c+port_width_c/2),
                OE => TXNRX_i,
                IO => p1_d_11_6);
-  #elif OCPI_PARAM_MODE_p()==5
+  #elif OCPI_PARAM_ad9361_data_sub_MODE_p()==5
   //---------------------------------------------------------------------------------
   // CMOS I/O configuration - mode 5:  dual port, full duplex, not swapped
     p0lo: BUFFER_IN_N generic map(width => port_width_c/2, differential => false)
@@ -162,7 +163,7 @@ begin
     p1hi: BUFFER_OUT_N generic map(width => port_width_c/2, differential => false)
       port map(I => dev_data_dac_in.data(port_width_c-1 downto port_width_c/2),
                O => p1_d_11_6);
-  #elif OCPI_PARAM_MODE_p()==6
+  #elif OCPI_PARAM_ad9361_data_sub_MODE_p()==6
   //---------------------------------------------------------------------------------
   // CMOS I/O configuration - mode 6:  dual port, full duplex, swapped
     p1lo: BUFFER_IN_N generic map(width => port_width_c/2, differential => false)
@@ -177,7 +178,7 @@ begin
     p0hi: BUFFER_OUT_N generic map(width => port_width_c/2, differential => false)
       port map(I => dev_data_dac_in.data(port_width_c-1 downto port_width_c/2),
                O => p0_d_11_6);
-  #elif OCPI_PARAM_MODE_p()==7
+  #elif OCPI_PARAM_ad9361_data_sub_MODE_p()==7
   //---------------------------------------------------------------------------------
   // LVDS I/O configuration - mode 7:  dual port, full duplex, no port swapping
   // P0 is output/TX/DAC (6 diff pairs) and P1 is input/RX/ADC

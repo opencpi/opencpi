@@ -1,0 +1,41 @@
+<RccWorker language='c++' spec='atest-spec'>
+
+  <!-- valid combinations for worker (not spec) properties
+       padding, raw, readable, indirect are allowed here and not in spec -->
+  <property name='pad1' padding='1'/>
+  <property name='raw1' raw='1' padding='1'/>
+  <property name='raw2' raw='1' indirect='0x123'/>
+  <property name='ind12' indirect='0x123'/>
+  <!-- errors could be: no value, any other accessibility or "default" -->
+  <property name='wparam0' parameter='1' value='5'/>
+  <property name='wparam1' parameter='1' default='5' hidden='1'/>
+  <!-- errors could be: any other accessibility except volatile -->
+  <property name='winitial' initial='1' default='1' writesync='1' writeerror='1'/>
+  <!-- errors could be: any other accessibility except volatile -->
+  <property name='wwritable' writable='1' default='2'/>
+  <!-- errors could be: any value -->
+  <property name='wreadonlyconst' />
+  <!-- errors could be: any value -->
+  <property name='wreadonlyvolatile' volatile='1' readerror='1' readsync='1'/>
+  <!-- errors could be: any other accessibility -->
+  <property name='winitialvolatile' initial='1' volatile='1' default='1'/>
+  <!-- errors could be: any other accessibility -->
+  <property name='wwritablevolatile' writable='1' volatile='1' default='1'/>
+  <!-- errors could be: no value, any other accessibility or "default" -->
+  <specproperty name='param0' parameter='1' hidden='1'/>
+  <specproperty name='param1' parameter='1'/>
+  <specproperty name='param2' value='1'/>
+  <!-- errors could be: any other accessibility except volatile -->
+  <specproperty name='initial' initial='1'  writesync='1' writeerror='1'/>
+  <!-- errors could be: any other accessibility except volatile -->
+  <specproperty name='writable1' writable='1'/>
+  <!-- errors could be: any value -->
+  <specproperty name='readonlyconst' />
+  <!-- errors could be: any value -->
+  <specproperty name='readonlyvolatile' volatile='1' readerror='1' readsync='1'/>
+  <!-- errors could be: any other accessibility -->
+  <specproperty name='initialvolatile' initial='1' volatile='1'/>
+  <!-- errors could be: any other accessibility -->
+  <specproperty name='writablevolatile' writable='1' volatile='1'/>
+
+</RccWorker>

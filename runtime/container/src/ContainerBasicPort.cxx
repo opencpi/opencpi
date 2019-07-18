@@ -284,7 +284,7 @@ namespace OCPI {
 	unpacker.getBoolean (bo);
 	unpacker.byteorder (bo);
         unpacker.getULong (desc.type);
-        unpacker.getLong (desc.role);
+        unpacker.getULong (desc.role);
         unpacker.getULong (desc.options);
 	OR::Desc_t & d = desc.desc;
 	unpacker.getULong     (d.nBuffers);
@@ -349,7 +349,7 @@ namespace OCPI {
 	  pOptions |= (1 << OCPI::RDT::FlagIsMeta);
 	  uOptions |= (1 << OCPI::RDT::FlagIsMeta);
 	} else
-	  uOptions &= ~(1 << OCPI::RDT::FlagIsMeta);
+	  uOptions &= ~(1u << OCPI::RDT::FlagIsMeta);
       } else if (pOptions & (1 << OCPI::RDT::FlagIsMeta))
 	return "Incompatible Metadata mode: output side cannot do flag-is-meta, input must";
       if (pOptions & (1 << OR::MandatedRole)) {
@@ -696,7 +696,7 @@ namespace OCPI {
 	m_port.m_next2put = m_next;
       } else if (m_port.m_dtPort) {
 	ocpiAssert(m_dtBuffer);
-	m_port.m_dtPort->sendOutputBuffer(m_dtBuffer, m_hdr.m_length, m_hdr.m_opCode);
+	m_port.m_dtPort->sendOutputBuffer(m_dtBuffer, m_hdr.m_length, m_hdr.m_opCode, m_hdr.m_eof);
 	m_dtBuffer = NULL;
       }
     }
@@ -861,17 +861,18 @@ namespace OCPI {
       }
       if (m_dtPort) {
 	size_t length;
+	bool end;
 	if (!m_dtLastBuffer)
 	  m_dtLastBuffer = new ExternalBuffer(*this, NULL, 0);
 	if (!m_dtLastBuffer->m_dtBuffer &&
 	    (m_dtLastBuffer->m_dtBuffer =
 	     m_dtPort->getNextFullInputBuffer(m_dtLastBuffer->m_dtData, length,
-					      m_dtLastBuffer->m_hdr.m_opCode)))
+					      m_dtLastBuffer->m_hdr.m_opCode, end))) {
 	  m_dtLastBuffer->m_hdr.m_length = OCPI_UTRUNCATE(uint32_t, length);
-	if (m_dtLastBuffer->m_dtBuffer) {
-	  m_dtLastBuffer->m_hdr.m_eof = false;
-	  return m_dtLastBuffer;
+	  m_dtLastBuffer->m_hdr.m_eof = end ? 1 : 0;
 	}
+	if (m_dtLastBuffer->m_dtBuffer)
+	  return m_dtLastBuffer;
       }
       return NULL;
     }
@@ -890,14 +891,16 @@ namespace OCPI {
 	}
       } else if (m_dtPort) {
 	size_t length;
-
+	bool end;
 	if (!m_dtLastBuffer)
 	  m_dtLastBuffer = new ExternalBuffer(*this, NULL, 0);
 	if (!m_dtLastBuffer->m_dtBuffer &&
 	    (m_dtLastBuffer->m_dtBuffer =
 	     m_dtPort->getNextFullInputBuffer(m_dtLastBuffer->m_dtData, length,
-					      m_dtLastBuffer->m_hdr.m_opCode)))
+					      m_dtLastBuffer->m_hdr.m_opCode, end))) {
 	  m_dtLastBuffer->m_hdr.m_length = OCPI_UTRUNCATE(uint32_t, length);
+	  m_dtLastBuffer->m_hdr.m_eof = end ? 1 : 0;
+	}
 	if (m_dtLastBuffer->m_dtBuffer) {
 	  op = m_dtLastBuffer->m_hdr.m_opCode;
 	  return true;

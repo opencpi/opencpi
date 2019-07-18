@@ -19,6 +19,7 @@
  */
 
 #include <unistd.h>
+#include <string.h>
 #include <cstdio>
 #include <cassert>
 #include <string>
@@ -29,12 +30,11 @@ namespace OA = OCPI::API;
 int
 main(int, char **) {
   try {
-    OA::PValue pvs[] = { OA::PVString("model", "=rcc"), OA::PVBool("verbose", true), OA::PVEnd };
+    OA::PValue pvs[] = { OA::PVString("model", "=rcc"), OA::PVBool("verbose", true), OA::PVBool("dump", true),
+			 OA::PVEnd };
     OA::Application app("<application>"
-			"  <instance component='local.copy' externals='true'>"
-			"    <property name='ocpi_debug' value='0'/>"
-			"  </instance>"
-			//			"  <external instance='copy' port='in' buffersize='4000'/>"
+			"  <instance component='local.copy' worker='copy' externals='true' connect='copy1'/>"
+			"  <instance component='local.copy' worker='copy_cc'externals='true'/>"
 		        "</application>", pvs);
     app.initialize();
     OA::ExternalPort
@@ -42,6 +42,10 @@ main(int, char **) {
       &pToMe = app.getPort("out");
     app.start();
     size_t length;
+    FILE
+      *in = fdopen(0, "r"),
+      *out = fdopen(1, "w");
+    assert(in && out);
     do {
       OA::ExternalBuffer *bFromMe, *bToMe;
       uint8_t *data;
@@ -51,8 +55,8 @@ main(int, char **) {
       while (!(bFromMe = pFromMe.getBuffer(data, length)))
 	usleep(1000);
       // Read data from standard input into our output buffer to the worker
-      ssize_t n = read(0, data, length);
-      assert(n >= 0);
+      data[length-1] = 0;
+      size_t n = fgets((char*)data, length, in) ? strlen((char*)data)+1 : 0;
       // Send our output buffer on its way - as input to the worker/app,
       // giving it back to the system.
       bFromMe->put(n, 23, n == 0);
@@ -60,15 +64,18 @@ main(int, char **) {
       while (!(bToMe = pToMe.getBuffer(data, length, opcode, end)))
 	usleep(1000);
       if (length) {
-	n = write(1, data, length);
-	assert(n == (ssize_t)length);
+	n = write(1, data, length-1);
+	assert(n == length-1);
       }
       // Give the buffer back to the system, I'm done with it.
       bToMe->release();
     } while (length);
+    app.wait();
+    app.finish();
   } catch (std::string &e) {
     fprintf(stderr, "Exception thrown: %s\n", e.c_str());
     return 1;
   }
+  
   return 0;
 }

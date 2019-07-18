@@ -386,6 +386,7 @@ use work.platform_pkg.all;
 package time_client_defs is
 type wti_in_t is record
   Clk         : std_logic;
+  -- These signals will only be needed someday if the "request" feature is implemented
   SThreadBusy : std_logic_vector(0 downto 0);
   SReset_n    : std_logic;
 end record wti_in_t;
@@ -402,6 +403,30 @@ component time_client_rv is
     );
 end component time_client_rv;
 end package time_client_defs;
+
+library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;
+library ocpi; use ocpi.all, ocpi.types.all;
+use work.platform_pkg.all;
+package time_client_co_defs is
+type wti_in_t is record
+  -- These signals will only be needed someday if the "request" feature is implemented
+  SThreadBusy : std_logic_vector(0 downto 0);
+  SReset_n    : std_logic;
+end record wti_in_t;
+type wti_out_t is record
+  Clk         : std_logic;
+  MCmd        : ocpi.ocp.MCmd_t;
+  MData       : std_logic_vector(63 downto 0);
+end record wti_out_t;
+
+component time_client_co_rv is
+  port(
+    time_in : in  time_service_t;
+    wti_in  : in  wti_in_t;
+    wti_out : out wti_out_t
+    );
+end component time_client_co_rv;
+end package time_client_co_defs;
 
 
 library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;

@@ -47,25 +47,14 @@ library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 use ieee.math_real.all;
 library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
 
-architecture rtl of dc_offset_filter_worker is
+architecture rtl of worker is
 
   constant DATA_WIDTH_c   : integer := to_integer(unsigned(DATA_WIDTH_p));
-  constant LATENCY_c      : integer := to_integer(unsigned(LATENCY_p));
 
-  type data_array is array (natural range <>) of std_logic_vector(ocpi_port_in_data_width-1 downto 0);
-  type byte_enable_array is array (natural range <>) of std_logic_vector(ocpi_port_in_MByteEn_width-1 downto 0);
-
-  signal enable           : std_logic;
   signal idata_vld        : std_logic;
-  signal som              : std_logic_vector(LATENCY_c-1 downto 0);
-  signal eom              : std_logic_vector(LATENCY_c-1 downto 0);
-  signal valid            : std_logic_vector(LATENCY_c-1 downto 0);
-  signal data             : data_array(LATENCY_c-1 downto 0);
-  signal byte_enable      : byte_enable_array(LATENCY_c-1 downto 0);
   signal i_odata          : signed(DATA_WIDTH_c-1 downto 0);
   signal q_odata          : signed(DATA_WIDTH_c-1 downto 0);
   signal odata_vld        : std_logic;
-  signal missed_odata_vld : std_logic := '0';
   signal peak_out         : std_logic_vector(15 downto 0);
   -- Temp signals to make older VHDL happy
   signal peak_rst_in       : std_logic;
@@ -82,84 +71,19 @@ begin
   -- 'enable' circuit (when up/downstream Workers ready and operating)
   -----------------------------------------------------------------------------
 
-  enable <= ctl_in.is_operating and in_in.ready and out_in.ready;
-
-  -----------------------------------------------------------------------------
-  -- 'idata_vld' enables primitives (when enabled and input valid)
-  -----------------------------------------------------------------------------
-
-  idata_vld <= '1' when (enable = '1' and in_in.valid = '1') else '0';
+  idata_vld <= in_in.valid and out_in.ready;
 
   -----------------------------------------------------------------------------
   -- Take (when up/downstream Workers ready and operating)
   -----------------------------------------------------------------------------
 
-  in_out.take <= enable;
+  in_out.take <= idata_vld;
 
   -----------------------------------------------------------------------------
-  -- Give (when downstream Worker ready & primitive has valid output OR the
-  -- primitive was disabled and there is one valid sample on the primitive output)
+  -- Valid is always true since we only give valid data.
   -----------------------------------------------------------------------------
 
-  out_out.give <= ctl_in.is_operating and out_in.ready and (odata_vld or missed_odata_vld
-                  or valid(valid'high) or ((som(som'high) or eom(eom'high)) and not(valid(valid'high))));
-
-  -----------------------------------------------------------------------------
-  -- Valid (when downstream Worker ready & primitive has valid output OR the
-  -- primitive was disabled and there is one valid sample on the primitive output)
-  -----------------------------------------------------------------------------
-
-  out_out.valid <= out_in.ready and (odata_vld or missed_odata_vld or valid(valid'high));
-
-  -----------------------------------------------------------------------------
-  -- Delay line to match the latency of the primitive for non-sample data
-  -----------------------------------------------------------------------------
-
-  latency_eq_one_gen : if LATENCY_c = 1 generate
-    opcodeBypass : process (ctl_in.clk)
-    begin
-      if rising_edge(ctl_in.clk) then
-        if (ctl_in.reset = '1') then
-          som            <= (others => '0');
-          eom            <= (others => '0');
-          valid          <= (others => '0');
-          data           <= (others => (others => '0'));
-          byte_enable    <= (others => (others => '0'));
-        elsif (ctl_in.is_operating = '1' and out_in.ready = '1') then
-          som(0)         <= in_in.som;
-          eom(0)         <= in_in.eom;
-          byte_enable(0) <= in_in.byte_enable;
-          valid(0)       <= idata_vld;
-          data(0)        <= in_in.data;
-        end if;
-      end if;
-    end process opcodeBypass;
-  end generate latency_eq_one_gen;
-
-  latency_gt_one_gen : if LATENCY_c > 1 generate
-    opcodeBypass : process (ctl_in.clk)
-    begin
-      if rising_edge(ctl_in.clk) then
-        if (ctl_in.reset = '1') then
-          som            <= (others => '0');
-          eom            <= (others => '0');
-          valid          <= (others => '0');
-          data           <= (others => (others => '0'));
-          byte_enable    <= (others => (others => '0'));
-        elsif (ctl_in.is_operating = '1' and out_in.ready = '1') then
-          som            <= som(som'high-1 downto 0) & in_in.som;
-          eom            <= eom(eom'high-1 downto 0) & in_in.eom;
-          byte_enable    <= byte_enable(byte_enable'high-1 downto 0) & in_in.byte_enable;
-          valid          <= valid(valid'high-1 downto 0) & idata_vld;
-          data           <= data(data'high-1 downto 0) & in_in.data;
-        end if;
-      end if;
-    end process opcodeBypass;
-  end generate latency_gt_one_gen;
-
-  out_out.som         <= som(som'high);
-  out_out.eom         <= eom(eom'high);
-  out_out.byte_enable <= byte_enable(byte_enable'high);
+  out_out.valid <= odata_vld;
 
   -----------------------------------------------------------------------------
   -- DC offset cancellation filter
@@ -176,6 +100,7 @@ begin
       TC        => signed(props_in.tc),
       DIN       => signed(in_in.data(DATA_WIDTH_c-1 downto 0)),
       DIN_VLD   => idata_vld,
+      DOUT_RDY  => out_in.ready,
       DOUT      => i_odata,
       DOUT_VLD  => odata_vld);
 
@@ -190,24 +115,12 @@ begin
       TC        => signed(props_in.tc),
       DIN       => signed(in_in.data(DATA_WIDTH_c-1+16 downto 16)),
       DIN_VLD   => idata_vld,
+      DOUT_RDY  => out_in.ready,
       DOUT      => q_odata,
       DOUT_VLD  => open);
 
-      backPressure : process (ctl_in.clk)
-      begin
-        if rising_edge(ctl_in.clk) then
-          if (ctl_in.reset = '1' or out_in.ready = '1') then
-            missed_odata_vld <= '0';
-          elsif (out_in.ready = '0' and odata_vld = '1') then
-            missed_odata_vld <= '1';
-          end if;
-        end if;
-      end process backPressure;
-
-
     out_out.data        <= std_logic_vector(resize(q_odata,16)) &
                            std_logic_vector(resize(i_odata,16));
-
 
   -----------------------------------------------------------------------------
   -- Peak Detection primitive. Value is cleared when read

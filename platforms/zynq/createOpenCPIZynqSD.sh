@@ -52,11 +52,7 @@ EOF
   exit 1
 fi
 REL=opencpi-zynq-linux-release-$1
-if test ! -d $REL; then
-  echo The release directory, $REL, doesn\'t exist.
-  exit 1
-fi
-
+[ -z "$OCPI_CDK_DIR" ] && echo OCPI_CDK_DIR environment not set up. && exit 1
 source $OCPI_CDK_DIR/scripts/util.sh
 
 export OCPI_TARGET_PLATFORM=${3:-$(basename $(pwd))}
@@ -64,14 +60,13 @@ export OCPI_TARGET_PLATFORM=${3:-$(basename $(pwd))}
 # Someday provide the option to select the build mode
 export OCPI_TARGET_DIR=$OCPI_TARGET_PLATFORM
 export HDL_PLATFORM=${2:-zed}
-source $OCPI_CDK_DIR/scripts/util.sh
 echo Software platform is $OCPI_TARGET_PLATFORM, and hardware platform is $HDL_PLATFORM.
-if test -z $RPM_BUILD_ROOT; then
+if test -z "$RPM_BUILD_ROOT"; then
   # We assume a built tree for the tool platform - check for exports etc.?
   # ensure OCPI_CDK_DIR and OCPI_TOOL_DIR
-  OCPI_BOOTSTRAP=$OCPI_CDK_DIR/scripts/ocpibootstrap.sh; source $OCPI_BOOTSTRAP
   source $OCPI_CDK_DIR/scripts/ocpitarget.sh $OCPI_TARGET_PLATFORM
   EXAMPLES_ROOTDIR=$(getProjectRegistryDir)/ocpi.assets
+  cd $OCPI_TARGET_PLATFORM_DIR
 else
   echo RPM Build detected - faking directory structure
   OCPI_CDK_DIR=${RPM_BUILD_ROOT}/opt/opencpi/cdk
@@ -79,6 +74,10 @@ else
   # EXAMPLES_ROOTDIR set externally
   # This is using a "path" variable assuming it has no colons in it!
   export OCPI_LIBRARY_PATH=${RPM_BUILD_ROOT}/opt/opencpi/projects/core/artifacts
+fi
+if test ! -d $REL; then
+  echo The release directory, $REL, doesn\'t exist.
+  exit 1
 fi
 if test "$OCPI_LIBRARY_PATH" = ""; then
   # Put all artifacts in the core project, as well as any pre-built bitstreams in the hdl
@@ -106,62 +105,54 @@ cp dts/zynq-$HDL_PLATFORM.dtb $sd/devicetree.dtb
 cp uImage $sd
 # Use the new patched root fs.
 cp uramdisk.image.gz $sd
-echo Adding OpenCPI setup scripts to the SD image directory
-mkdir -p $sd/opencpi/lib $sd/opencpi/bin $sd/opencpi/artifacts $sd/opencpi/xml
-cp $OCPI_CDK_DIR/platforms/zynq/zynq_net_setup.sh $OCPI_CDK_DIR/platforms/zynq/zynq_setup.sh $sd/opencpi
-echo You should have already customized the mysetup.sh script for your environment
-if test -r $OCPI_CDK_DIR/platforms/zynq/mynetsetup.sh; then
-  cp $OCPI_CDK_DIR/platforms/zynq/mynetsetup.sh $sd/opencpi
-fi
-if test -r $OCPI_CDK_DIR/platforms/zynq/mysetup.sh; then
-  cp $OCPI_CDK_DIR/platforms/zynq/mysetup.sh $sd/opencpi
-fi
-
-# After this is files for standalone operation
-shopt -s nullglob
-drivers=(${KERNEL_LIB_DIR}/opencpi*.ko)
-shopt -u nullglob
-if test "${drivers[*]}" = ""; then
-  echo No OpenCPI linux kernel drivers for $OCPI_TARGET_PLATFORM have been built.
-  echo It is expected to be in: "${KERNEL_LIB_DIR}/opencpi*.ko"
-  exit 1
-fi
-# Note we take files from OCPI_TARGET_DIR and put them in OCPI_TARGET_PLATFORM
-# So we can support building SD cards from particular modes, but any particular SD card will
-# have only one mode for now.
-mkdir $sd/opencpi/lib/${OCPI_TARGET_PLATFORM}
-cp -L ${KERNEL_LIB_DIR}/opencpi*.ko $sd/opencpi/lib/${OCPI_TARGET_PLATFORM}
-cp -L ${KERNEL_LIB_DIR}/mdev-opencpi.rules $sd/opencpi/lib/${OCPI_TARGET_PLATFORM}
-for b in run hdl zynq serve xml; do
-  cp -L $BIN_DIR/ocpi$b $sd/opencpi/bin
-  # Ensure the deployed files are stripped - if we debug we'll be looking at dev-sys executables
-  test -z $RPM_BUILD_ROOT && ${OCPI_TARGET_CROSS_COMPILE}strip $sd/opencpi/bin/ocpi$b
+# Copy the runtime package here
+rm -r -f $sd/opencpi
+mkdir $sd/opencpi
+set -o pipefail
+(cd $OCPI_CDK_DIR/..; ./packaging/prepare-package-list.sh deploy $OCPI_TARGET_PLATFORM 1 ) |
+while read source dest; do
+  [[ $source == */ ]] && continue # we don't do anything for individual directories
+  if [ -n "$dest" ] ; then
+    dest=$sd/opencpi/$dest
+  else
+    dest=$sd/opencpi
+  fi
+  links=
+  [[ $$source != *@ ]] && links=-L
+  cp -R $links $OCPI_CDK_DIR/../$source $dest
+done || ( echo Preparation of file list failed. && exit 1)
+echo Stripping all binaries to reduce space.
+for f in `find $sd/opencpi/$OCPI_TARGET_PLATFORM/bin -type f`; do
+  file -L $f| grep -q ' ELF ' && ${OCPI_TARGET_CROSS_COMPILE}strip $f || :
 done
-# we use rdate for now... : cp ../ntpclient $sd/opencpi/bin
-# copy driver libraries to the subdirectory so that OCPI_CDK_DIR will
-# find them.
-cp -L ${RUNTIME_LIB_DIR}/*_s.so $sd/opencpi/lib/${OCPI_TARGET_PLATFORM}
-cp -L $OCPI_CDK_DIR/scripts/ocpibootstrap.sh $sd/opencpi/bin
-cp -L $OCPI_CDK_DIR/scripts/ocpidriver $sd/opencpi/bin
-cp -L $OCPI_CDK_DIR/scripts/ocpi_linux_driver $sd/opencpi/bin
-cp -L ${EXAMPLES_ROOTDIR}/applications/{*.xml,test.input} $sd/opencpi/xml
-
-# Add the default system.xml to the SD card.
-sx=../system.xml
-[ -f $sx ] || sx=$OCPI_CDK_DIR/platforms/zynq/zynq_system.xml
-cp $sx $sd/opencpi/system.xml
-n=0
-echo Adding artifacts found in OCPI_LIBRARY_PATH for ${OCPI_TARGET_PLATFORM} and ${HDL_PLATFORM} HDL targets.
-export OCPI_SYSTEM_CONFIG=
-for i in $(${OCPI_CDK_DIR}/${OCPI_TOOL_DIR}/bin/ocpirun -A ${OCPI_TARGET_PLATFORM},${HDL_PLATFORM} | xargs -rn1 readlink -e | sort -u ); do
-  cp $i $sd/opencpi/artifacts/$(printf %03d-%s $n $(basename $i))
-  n=$(expr $n + 1)
-done
-echo Added $n artifacts to SD image.
+[ -n "$OCPI_LIBRARY_PATH" ] && {
+  n=0
+  echo Adding artifacts found in OCPI_LIBRARY_PATH for ${OCPI_TARGET_PLATFORM} and ${HDL_PLATFORM} HDL targets.
+  mkdir $sd/opencpi/artifacts
+  # Prefix artifact w/ "a" then number for bad simulators (AV-5233)
+  for i in $(${OCPI_CDK_DIR}/${OCPI_TOOL_DIR}/bin/ocpirun \
+			    -A ${OCPI_TARGET_PLATFORM},${HDL_PLATFORM} | \
+		            xargs -rn1 readlink -e | sort -u ); do
+    cp -p $i $sd/opencpi/artifacts/$(printf a%03d-%s $n $(basename $i))
+    n=$(expr $n + 1)
+  done
+  echo Added $n artifacts to SD image.
+}
+# If the platform has a system.xml, make it the one
+[ -f $sd/opencpi/$OCPI_TARGET_PLATFORM/system.xml ] && {
+    rm -f $sd/opencpi/system.xml
+    mv $sd/opencpi/$OCPI_TARGET_PLATFORM/system.xml $sd/opencpi
+}
+# Give the user a starting point for the setup scripts
+cp -p $sd/opencpi/$OCPI_TARGET_PLATFORM/default_mynetsetup.sh $sd/opencpi/mynetsetup.sh
+cp -p $sd/opencpi/$OCPI_TARGET_PLATFORM/default_mysetup.sh $sd/opencpi/mysetup.sh
+mv $sd/opencpi/$OCPI_TARGET_PLATFORM/zynq_net_setup.sh $sd/opencpi
+mv $sd/opencpi/$OCPI_TARGET_PLATFORM/zynq_setup.sh $sd/opencpi
 cd ..
 echo New OpenCPI Release SD:
 du -k -s -h $REL/$sd/opencpi/artifacts
-du -k -s -h $REL/$sd/opencpi/lib
-du -k -s -h $REL/$sd/opencpi/bin
+du -k -s -h $REL/$sd/opencpi/*/lib
+du -k -s -h $REL/$sd/opencpi/*/bin
+[ -d $REL/$sd/opencpi/*/artifacts ] && du -k -s -h $REL/$sd/opencpi/*/artifacts
 du -k -s -h $REL/$sd/opencpi
 du -k -s -h $REL/$sd

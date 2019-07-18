@@ -19,14 +19,11 @@
               '/>
   </Instance>
   <Instance Component="ocpi.assets.devices.qadc" Connect="dc_offset_filter">
-   <Property Name="messageSize" Value="16352"/>
   </Instance>
   <Instance Component="ocpi.assets.dsp_comps.dc_offset_filter" Connect="iq_imbalance_fixer">
-    <Property Name="messageSize" Value="16352"/>
     <Property Name="bypass" Value="false"/>
  </Instance>
   <Instance Component="ocpi.assets.dsp_comps.iq_imbalance_fixer" Connect="cic_dec">
-    <Property Name="messageSize" Value="16352"/>
     <Property Name="enable" Value="true"/>
     <Property Name="log2_averaging_length" Value="11"/>
   </Instance>

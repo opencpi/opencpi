@@ -18,6 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <cstring> // std::memcpy
 #include "OcpiOsAssert.h"
 #include "OcpiOsTimer.h"
 #include "OcpiContainerRunConditionApi.h"
@@ -25,14 +26,15 @@ namespace OCPI { namespace API {
 
 RunCondition::
 RunCondition()
-  : m_portMasks(m_myMasks), m_timeout(false), m_usecs(0), m_allocated(NULL), m_allMasks(0) {
+  : m_portMasks(m_myMasks), m_timeout(false), m_usecs(0), m_inUse(false), m_allocated(NULL),
+    m_hasRun(false), m_allMasks(0) {
   m_myMasks[0] = OCPI_ALL_PORTS; // all connected ports must be ready
   m_myMasks[1] = 0;
   m_allMasks = m_myMasks[0];
 }
 RunCondition::
 RunCondition(OcpiPortMask pm, ...) :
-  m_timeout(false), m_usecs(0), m_allocated(NULL), m_allMasks(0) {
+  m_timeout(false), m_usecs(0), m_inUse(false), m_allocated(NULL), m_hasRun(false), m_allMasks(0) {
   va_list ap;
   va_start(ap, pm);
   initMasks(pm, ap);
@@ -43,15 +45,48 @@ RunCondition(OcpiPortMask pm, ...) :
 }
 RunCondition::
 RunCondition(OcpiPortMask *rpm, uint32_t usecs, bool timeout)
-  : m_portMasks(NULL), m_timeout(timeout), m_usecs(usecs), m_allocated(NULL), m_allMasks(0) {
+  : m_portMasks(NULL), m_timeout(timeout), m_usecs(usecs), m_inUse(false), m_allocated(NULL),
+    m_hasRun(false), m_allMasks(0) {
   setPortMasks(rpm);
 }
 RunCondition::
 ~RunCondition() {
+  //? ocpiAssert(!m_inUse);
   delete [] m_allocated;
+}
+RunCondition &RunCondition::
+operator=(const RunCondition& other) {
+  ocpiAssert(!m_inUse);
+  setPortMasks(other.m_portMasks); // This handles all memory copies, etc.
+  m_timeout = other.m_timeout;
+  m_usecs = other.m_usecs;
+  m_hasRun = false; // Doesn't really matter since activate() resets
+  return *this;
+}
+RunCondition &RunCondition::
+operator=(RunCondition&& other) {
+  ocpiAssert(!m_inUse);
+  ocpiAssert(!other.m_inUse);
+  ocpiAssert(this != &other);
+  delete [] m_allocated;
+  m_allocated = NULL;
+  m_timeout = other.m_timeout;
+  m_usecs = other.m_usecs;
+  m_hasRun = other.m_hasRun;
+  /* CentOS 6 won't do this: std::copy(std::begin(other.m_myMasks), std::end(other.m_myMasks), m_myMasks); */
+  std::memcpy(m_myMasks, other.m_myMasks, sizeof(m_myMasks));
+  if (other.m_allocated) { // Steal them
+    m_portMasks = m_allocated = other.m_allocated;
+    other.m_allocated = NULL;
+  } else {
+    m_portMasks = m_myMasks;
+  }
+  m_allMasks = other.m_allMasks;
+  return *this;
 }
 void RunCondition::
 initMasks(OcpiPortMask first, va_list ap) {
+  ocpiAssert(!m_inUse);
   OcpiPortMask m = first;
   unsigned n;
   for (n = 2; m && (m = va_arg(ap, OcpiPortMask)); n++)
@@ -63,6 +98,7 @@ initMasks(OcpiPortMask first, va_list ap) {
 }
 void RunCondition::
 setMasks(OcpiPortMask first, va_list ap) {
+  ocpiAssert(!m_inUse);
   OcpiPortMask
     *pms = m_portMasks,
     m = first;
@@ -74,6 +110,7 @@ setMasks(OcpiPortMask first, va_list ap) {
 }
 void RunCondition::
 setPortMasks(OcpiPortMask pm, ...) {
+  ocpiAssert(!m_inUse);
   delete [] m_allocated;
   m_allocated = NULL;
   m_allMasks = 0;
@@ -87,6 +124,7 @@ setPortMasks(OcpiPortMask pm, ...) {
 }
 void RunCondition::
 setPortMasks(OcpiPortMask *rpm) {
+  ocpiAssert(!m_inUse);
   delete [] m_allocated;
   m_allocated = NULL;
   m_allMasks = 0;
@@ -108,7 +146,7 @@ setPortMasks(OcpiPortMask *rpm) {
   }
 }
 void RunCondition::
-activate(OCPI::OS::Timer &tmr, unsigned nPorts) {
+activate(OCPI::OS::Timer &tmr, unsigned nPorts) const {
   if (m_timeout)
     tmr.reset(m_usecs / 1000000, (m_usecs % 1000000) * 1000);
   // fix up default run condition when there are no ports at all
@@ -119,14 +157,15 @@ activate(OCPI::OS::Timer &tmr, unsigned nPorts) {
       m_portMasks = NULL;
   }
   m_hasRun = false;
+  m_inUse = true;
 }
 bool RunCondition::
-shouldRun(OCPI::OS::Timer &timer, bool &timedOut, bool &bail) {
+shouldRun(OCPI::OS::Timer &timer, bool &timedOut, bool &bail) const {
   if (!m_portMasks) // no port mask array means run all the time
     return true;
   if (m_timeout && timer.expired()) {
-    ocpiInfo("WORKER TIMED OUT, elapsed time = %u,%u", 
-	     timer.getElapsed().seconds(), timer.getElapsed().nanoseconds());
+    ocpiInfo("WORKER TIMED OUT, elapsed time = %u,%u",
+             timer.getElapsed().seconds(), timer.getElapsed().nanoseconds());
     timedOut = true;
     return true;
   }

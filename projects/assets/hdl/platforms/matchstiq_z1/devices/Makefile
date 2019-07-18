@@ -21,8 +21,9 @@
 # are device specific - each worker controls some piece of hardware on a
 # chip or attached to a chip.
 
-# Currently, all tests are disabled because they need specific setups with a signal generator, etc.
-Tests =
+# Currently, all tests except matchstiq_z1_gp_out.test are disabled because they
+# need specific setups with a signal generator, etc.
+Tests = matchstiq_z1_gp_out.test
 
 # Build Ordering Rules:
 # 1) Subdevices that support other devices must occur AFTER the devices they support.
@@ -34,6 +35,7 @@ Workers = \
 	matchstiq_z1_i2c.hdl \
 	matchstiq_z1_rx.rcc \
 	matchstiq_z1_tx.rcc \
-	$(Tests)
+	matchstiq_z1_gp_out.hdl \
+	matchstiq_z1_gp_out_em.hdl
 
 include $(OCPI_CDK_DIR)/include/library.mk

@@ -23,7 +23,7 @@ library ieee, ocpi, util;
 use ieee.std_logic_1164.all, ieee.numeric_std.all, std.textio.all; 
 use ocpi.types.all, ocpi.wci.all, util.util.all;
 
-architecture rtl of file_write_worker is
+architecture rtl of worker is
   -- for file I/O and using util.cwd module
   constant pathLength      : natural := props_in.fileName'right;
   signal cwd               : string_t(0 to props_out.cwd'right);
@@ -72,6 +72,9 @@ begin
         if not init_r then  
           open_file(data_file, cwd, props_in.fileName, write_mode);
           init_r <= true;
+        elsif its(in_in.eof) then
+          finished_r <= true;
+          close_file(data_file, props_in.fileName);
         elsif its(in_in.ready) then
           new_msg_length := to_integer(messageLength_r);
           if its(in_in.valid) and in_in.byte_enable /= "0000" then
@@ -95,24 +98,19 @@ begin
             end loop;    
           end if;
           if its(in_in.eom) then
-            if new_msg_length = 0 and unsigned(in_in.opcode) = 0 and props_in.stopOnEOF then
-              finished_r <= true;
-              close_file(data_file, props_in.fileName);
-            else
-              if its(props_in.messagesInFile) then
-                for i in 0 to 3 loop
-                  write(data_file, char(to_ulong(new_msg_length),i));
-                end loop;
-                for i in 0 to 3 loop
-                  write(data_file, char(ulong_t(resize(unsigned(std_logic_vector(in_in.opcode)),
-                                                       ulong_t'length)), i));
-                end loop;
-                for i in 0 to new_msg_length-1 loop
-                  write(data_file, msg_buffer(i+1));
-                end loop;            
-              end if;
-              messagesWritten_r <= messagesWritten_r + 1; -- we count non-EOF ZLMs
+            if its(props_in.messagesInFile) then
+              for i in 0 to 3 loop
+                write(data_file, char(to_ulong(new_msg_length),i));
+              end loop;
+              for i in 0 to 3 loop
+                write(data_file, char(ulong_t(resize(unsigned(std_logic_vector(in_in.opcode)),
+                                                     ulong_t'length)), i));
+              end loop;
+              for i in 0 to new_msg_length-1 loop
+                write(data_file, msg_buffer(i+1));
+              end loop;
             end if;
+            messagesWritten_r <= messagesWritten_r + 1; -- we count non-EOF ZLMs
             bytesWritten_r <= bytesWritten_r + new_msg_length;
             messageLength_r <= (others => '0');
           else
@@ -120,6 +118,6 @@ begin
           end if; -- eom
         end if; --if in_in.ready
       end if; -- if operating and not finished
-    end if; -- if rising_edge(ctl_in.clk)  
+    end if; -- if rising_edge(ctl_in.clk)
   end process;
 end rtl;

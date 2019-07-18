@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -18,21 +18,11 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
-import sys
 import os
+import sys
 import struct
+import opencpi.colors as color
 
-class color:
-    PURPLE = '\033[95m'
-    CYAN = '\033[96m'
-    DARKCYAN = '\033[36m'
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    END = '\033[0m'
 
 if len(sys.argv) != 2:
     print('Invalid arguments:  usage is: verify.py <output-file>')
@@ -81,8 +71,7 @@ try:
 except ValueError as err:
   print color.RED + color.BOLD + 'FAILED, ' + err.message + color.END
   exit_status = 1
-  
+
 finally:
   f.close()
   sys.exit(exit_status)
-

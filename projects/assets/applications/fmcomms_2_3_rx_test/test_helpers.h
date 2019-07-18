@@ -22,6 +22,7 @@
 #define _TEST_HELPERS_H
 
 #include <sstream> // std::ostringstream
+#include <string>  // std::string
 #include <cstdio>  // printf()
 #include <cmath>   // std::abs()
 #include <iomanip> // std::setprecision()
@@ -32,13 +33,13 @@
 
 #define TEST_EXPECTED_VAL_DIFF(var, expected, max_diff) test_expected_val_diff(#var, var, expected, max_diff); if(std::abs(var-expected) > max_diff) { printf("UNEXPECTED\n"); return false; } else { printf("EXPECTED\n"); }
 
-//! @todo TODO/FIXME - this function should be deleted, it is a hack
+//! @todo / FIXME - this function should be deleted, it is a hack
 void inline append_to_oss(std::ostringstream& oss, std::string val)
 {
   oss << val;
 }
 
-//! @todo TODO/FIXME - this function should be deleted, it is a hack
+//! @todo / FIXME - this function should be deleted, it is a hack
 void inline append_to_oss(std::ostringstream& oss, double val)
 {
   oss << std::setprecision(15) << val;
@@ -54,7 +55,8 @@ void test_expected_val(const char* var, T actual, T expected)
   oss << ",\tactual value: ";
   append_to_oss(oss, actual);
   oss << "\t";
-  printf(oss.str().c_str());
+  std::string tmp_str(oss.str());
+  printf(tmp_str.c_str());
 }
 
 void test_expected_val_diff(const char* var, double actual, double expected, double diff)
@@ -70,7 +72,8 @@ void test_expected_val_diff(const char* var, double actual, double expected, dou
   oss << ",\tmax allowable abs(diff): ";
   append_to_oss(oss, diff);
   oss << "\t";
-  printf(oss.str().c_str());
+  std::string tmp_str(oss.str());
+  printf(tmp_str.c_str());
 }
 
 #endif // _TEST_HELPERS_H

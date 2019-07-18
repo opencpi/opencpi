@@ -103,11 +103,6 @@ HdlToolRequiresInstanceMap_quartus_pro=yes
 # platform worker, devices, and app workers only need to be included for 17.1+
 HdlToolRequiresFullCoreHierarchy_quartus_pro=$(filter-out 16.% 17.0,$(call OcpiAlteraVersionFromEnv,pro))
 ################################################################################
-# Function required by toolset: $(call HdlToolLibRef,libname)
-# This is the name after library name in a path
-# It might adjust (genericize?) the target
-#
-HdlToolLibRef=$(or $3,$(call HdlGetFamily,$2))
 
 QuartusSources=$(filter-out %.vh,$(HdlSources))
 

@@ -37,13 +37,12 @@ Release ID: %{COMMIT_HASH}
 
 %build
 cd %{SRC_BASE}
-rm -rf pdfs
-doc/av/tex/generator/genDocumentation.sh
-find pdfs -type d \( -name '*@tmp' -o -name logs \) -print0 | xargs -r0 rm -rf
+make doc
+find doc/pdfs -type d \( -name '*@tmp' -o -name logs \) -print0 | xargs -r0 rm -rf
 
 %install
 %{__mkdir_p} %{buildroot}/%{_pkgdocdir}/
-cd %{SRC_BASE}/pdfs
+cd %{SRC_BASE}/doc/pdfs
 %{__cp} -R . %{buildroot}/%{_pkgdocdir}/
 %{__mkdir_p} %{buildroot}/opt/opencpi/
 %{__ln_s} -f %{_pkgdocdir}/index.html %{buildroot}/opt/opencpi/documentation.html

@@ -29,6 +29,46 @@
 
 namespace OCPI {
   namespace API {
+    // This structure holds attributes that are exposed to the ACI.
+    // Normally that means what is somehow documented in any case.
+    // It allows property introspection
+    // It is not within the Property class (namespace) for reasons of circular dependencies
+    struct PropertyAttributes {
+      // How is it set from outside the worker?
+      bool isParameter; // is a compiler/build-time constant, cannot be set at runtime, reads as constant
+      bool isInitial;   // value may be set before start, in XML, but not at runtime, cached if not volatile
+      bool isWritable;  // is dynamically writable at runtime, including after start, cached if not volatile
+      // How is the value read?  If neither of these you can only read back what was set (above)
+      bool isVolatile;  // worker may change value any time, reading is always uncached
+      bool isConst;     // property is readable, stored in worker, and cachable.
+      // Other
+      bool isDebug;     // is only available if the worker was built with ocpi_debug = true
+      bool isHidden;    // is not dumped by default
+      bool isWorker;    // is a worker property that is not in its spec
+      bool isBuiltin;   // property is part of infrastructure, not declared by spec or worker
+      bool isPadding;   // is a worker property used only for padding property offsets
+      bool isRaw;       // is a raw property where the worker itself is responsible for access+storage
+      std::string name; // property name (copy)
+      // Dynamic conditions of a particular access
+      bool isCached;    // property value is currently cached in the ACI process
+      bool isUnreadable;// never written, not readable, not volatile etc., or padding
+      PropertyAttributes() :
+	isParameter(false), isInitial(false), isWritable(false), isVolatile(false), isConst(false),
+	isDebug(false), isHidden(false), isWorker(false), isBuiltin(false), isPadding(false),
+	isRaw(false), isCached(false), isUnreadable(false) {
+      }
+    };
+    enum PropertyOption {
+      UNCACHED,      // force uncached access when possible
+      HEX,           // format integers in hex
+      APPEND,        // append value to output string, instead of setting it
+      UNREADABLE_OK, // allow an unreadable property to return an empty string, and not throw
+      NONE           // convenience for conditional elements
+    };
+    typedef const std::initializer_list<PropertyOption> PropertyOptionList;
+    const PropertyOptionList noPropertyOptions; // because GCC 4.4 doesn't completely support init lists
+
+#if 0
   struct ReadableSequenceProperty {
     size_t length() const;
     size_t maxLength() const;
@@ -100,6 +140,7 @@ OCPI_PROPERTY_DATA_TYPES
 OCPI_PROPERTY_DATA_TYPES
 
 #undef OCPI_DATA_TYPE
+#endif
   }
 }
 #endif

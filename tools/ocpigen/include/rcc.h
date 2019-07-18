@@ -26,10 +26,12 @@
 #define RCC_ASSEMBLY_ATTRS "platform", "config", "configuration"
 #define RCC_ASSEMBLY_ELEMS "connection"
 // These are for all implementaitons whether assembly or written
-#define RCC_TOP_ATTRS "Pattern", "PortPattern", "DataWidth", "Language", "library"
+#define RCC_TOP_ATTRS "Pattern", "PortPattern", "Language"
 // These are for implementaitons that you write (e.g. not generated assemblies)
-#define RCC_IMPL_ATTRS GENERIC_IMPL_CONTROL_ATTRS, "RawProperties", "FirstRawProperty", "outer"
-#define RCC_IMPL_ELEMS "timeinterface", "memoryinterface", "streaminterface", "messageinterface", "signal", "cpmaster", "time_service", "control", "metadata"
+#define RCC_IMPL_ATTRS \
+  GENERIC_IMPL_CONTROL_ATTRS, RCC_TOP_ATTRS, IMPL_ATTRS, \
+    "ExternMethods", "StaticMethods", "Threaded", "StaticPrereqLibs", "DynamicPrereqLibs", "Slave"
+#define RCC_IMPL_ELEMS IMPL_ELEMS
 
 class RccPort : public DataPort {
 public:
@@ -37,7 +39,7 @@ public:
 };
 
 class RccAssembly : public Worker {
-public:  
+public:
   static RccAssembly *
   create(ezxml_t xml, const char *xfile, const char *&err);
   RccAssembly(ezxml_t xml, const char *xfile, const char *&err);

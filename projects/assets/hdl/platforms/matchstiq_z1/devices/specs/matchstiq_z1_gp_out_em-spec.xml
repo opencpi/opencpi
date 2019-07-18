@@ -1,0 +1,6 @@
+<!-- Matchstiq-Z1 GP Out Device Emulator OCS -->
+<ComponentSpec>
+  <!-- Port -->
+  <DataInterfaceSpec Name="out" Producer="true"/>
+
+</ComponentSpec>

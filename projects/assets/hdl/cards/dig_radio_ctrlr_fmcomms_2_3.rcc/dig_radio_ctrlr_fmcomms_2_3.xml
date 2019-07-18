@@ -1,0 +1,258 @@
+<!--
+      bist_loopback
+        AD9361 BIST loopback mode. Requested config locks will always fail if
+        this property's value is loobpack_AD9361_internal. When one or more
+        config locks exist, write attempts to this property with any value other
+        than disabled will cause a runtime exception. Writes of the value
+        ad9361_init_has_not_occured are not supported and will always cause a
+        runtime exception. The read value will be ad9361_init_has_not_occurred
+        if no underlying call to the No-OS ad9361_init() function has occurred,
+        which is possible if no config locks have been requested or if this
+        property has never been written to.
+
+      MIN_ACHIEVABLE_RX_BANDWIDTH_3DB_MHZ_p
+         Value is calculated as follows. Because a potential decimator's
+         decimation factor is not restricted, decimation_factor_max is assumed
+         to be infinite.
+         rx_rf_bandwidth_min / decimation_factor_max
+         = rx_rf_bandwidth_min / inf = 0
+
+      MAX_ACHIEVABLE_RX_BANDWIDTH_3DB_MHZ_p
+        Value is calculated as follows.
+        rx_rf_bandwidth_max / decimation_factor_min = 56 / 1 = 56
+
+      MIN_ACHIEVABLE_RX_SAMPLING_RATE_MSPS_p
+        Value is calculated as follows. Because a potential decimator's
+        decimation factor is not restricted, decimation_factor_max is assumed
+        to be infinite.
+        RX_SAMPL_FREQ_MHz_LVDS_min / decimation_factor_max
+        = RX_SAMPL_FREQ_MHz_LVDS_min / inf = 0
+
+      MAX_ACHIEVABLE_RX_SAMPLING_RATE_MSPS_p
+        Value is calculated as follows.
+        RX_SAMPL_FREQ_MHz_LVDS_max / decimation_factor_min = 61.44 / 1 = 61.44
+-->
+<!-- TODO / FIXME - add SCHEMATIC_CRYSTAL_Y101_FREQ parameter property -->
+<!-- TODO / FIXME - add ARE_USING_REF_CLK_SMA bool parameter property -->
+<RccWorker language='c++'
+	   spec='dig_radio_ctrlr-spec'
+	   slave='ad9361_config.hdl'
+	   staticprereqlibs='ad9361'
+	   includedirs='supporting/include/no-OS/ad9361/sw/platform_opencpi supporting/include/no-OS/ad9361/sw supporting/include supporting/include/OCPIProjects supporting/include/OCPIProjects/AD9361 supporting/src/OCPIProjects supporting/src/OCPIProjects/AD9361'
+	   sourcefiles='platform.cc'
+	   >
+
+  <Property Name="FMCOMMS_NUM_p" Type="ushort"
+                                 Parameter="true"
+                                 Description="Valid values are 2 or 3."/>
+
+  <SpecProperty Name="NUM_DATA_STREAM_IDS_p"     Default="4"/>
+  <SpecProperty Name="NUM_DATA_STREAM_IDS_RX_p"  Default="2"/>
+  <SpecProperty Name="NUM_DATA_STREAM_IDS_TX_p"  Default="2"/>
+  <SpecProperty Name="MAX_NUM_DATA_STREAMS_RX_p" Default="2"/>
+  <SpecProperty Name="MAX_NUM_DATA_STREAMS_TX_p" Default="2"/>
+
+  <!-- value arbitrarily chosen -->
+  <SpecProperty Name="MAX_STRING_LENGTH_p"                    Default="1024"/>
+
+  <SpecProperty Name="MIN_ACHIEVABLE_RX_BANDWIDTH_3DB_MHZ_p"  Default="0"/>
+  <SpecProperty Name="MAX_ACHIEVABLE_RX_BANDWIDTH_3DB_MHZ_p"  Default="56"/>
+  <SpecProperty Name="MIN_ACHIEVABLE_RX_SAMPLING_RATE_MSPS_p" Default="0"/>
+  <SpecProperty Name="MAX_ACHIEVABLE_RX_SAMPLING_RATE_MSPS_p" Default="61.44"/>
+  <SpecProperty Name="IS_SUPPORTED_RX_SAMPLES_COMPLEX_p"      Default="true"/>
+  <SpecProperty Name="IS_SUPPORTED_RX_SAMPLES_REAL_p"         Default="false"/>
+  <SpecProperty Name="IS_SUPPORTED_RX_GAIN_MODE_AUTO_p"       Default="true"/>
+  <SpecProperty Name="IS_SUPPORTED_RX_GAIN_MODE_MANUAL_p"     Default="true"/>
+  <SpecProperty Name="MIN_ACHIEVABLE_TX_BANDWIDTH_3DB_MHZ_p"  Default="0"/>
+  <SpecProperty Name="MAX_ACHIEVABLE_TX_BANDWIDTH_3DB_MHZ_p"  Default="40"/>
+  <SpecProperty Name="MIN_ACHIEVABLE_TX_SAMPLING_RATE_MSPS_p" Default="0"/>
+  <SpecProperty Name="MAX_ACHIEVABLE_TX_SAMPLING_RATE_MSPS_p" Default="61.44"/>
+  <SpecProperty Name="IS_SUPPORTED_TX_SAMPLES_COMPLEX_p"      Default="true"/>
+  <SpecProperty Name="IS_SUPPORTED_TX_SAMPLES_REAL_p"         Default="false"/>
+
+  <SpecProperty Name="request_config_lock" WriteSync="true"/>
+  <SpecProperty Name="config_locks"        ReadSync="true"/>
+  <SpecProperty Name="unlock_config_lock"  WriteSync="true"/>
+  <SpecProperty Name="unlock_all"          WriteSync="true"/>
+
+  <SpecProperty Name="data_stream_is_enabled" ReadSync="true"/>
+  <SpecProperty Name="direction_readback"     ReadSync="true"/>
+  <SpecProperty Name="tuning_freq_MHz"        ReadSync="true"/>
+  <SpecProperty Name="bandwidth_3dB_MHz"      ReadSync="true"/>
+  <SpecProperty Name="sampling_rate_Msps"     ReadSync="true"/>
+  <SpecProperty Name="samples_are_complex"    ReadSync="true"/>
+
+  <SpecProperty Name="valid_values_tuning_freq_MHz"     ReadSync="true"/>
+  <SpecProperty Name="valid_values_bandwidth_3dB_MHz"   ReadSync="true"/>
+  <SpecProperty Name="valid_values_sampling_rate_Msps"  ReadSync="true"/>
+  <SpecProperty Name="valid_values_samples_are_complex" ReadSync="true"/>
+
+  <!-- _readback was only included due to enum namespace collision  -->
+  <Property Name="gain_mode_readback" Type="struct"
+                             Volatile="true"
+                             ReadSync="true"
+                             SequenceLength="MAX_NUM_DATA_STREAMS_RX_p + MAX_NUM_DATA_STREAMS_TX_p"
+                             Description="Reads gain mode for each data
+                                          stream.">
+    <Member Name="data_stream_ID" Type="string"
+                                  StringLength="MAX_STRING_LENGTH_p"/>
+
+    <!-- _readback_val was only included due to enum namespace collision  -->
+    <Member Name="gain_mode_readback_val" Type="string"
+                                          StringLength="MAX_STRING_LENGTH_p"/>
+  </Property>
+
+  <Property Name="gain_dB" Type="struct"
+                           Volatile="true"
+                           ReadSync="true"
+                           SequenceLength="MAX_NUM_DATA_STREAMS_RX_p + MAX_NUM_DATA_STREAMS_TX_p"
+                           Description="Reads gain for each data stream.">
+    <Member Name="data_stream_ID" Type="string"
+                                  StringLength="MAX_STRING_LENGTH_p"/>
+    <Member Name="gain_dB"        Type="double"/>
+  </Property>
+  <Property Name="valid_values_gain_mode" Type="struct"
+                                          Volatile="true"
+                                          ReadSync="true"
+                                          ArrayLength="NUM_DATA_STREAM_IDS_RX_p + NUM_DATA_STREAM_IDS_TX_p"
+                                          Description="Indicates the
+                                            current valid ranges of values for all data
+                                            stream/data stream type combinations.">
+    <Member Name="data_stream_ID" Type="string"
+                                  StringLength="MAX_STRING_LENGTH_p"/>
+
+    <!-- _gain_mode was only included due to enum namespace collision -->
+    <Member Name="direction_gain_mode" Type="Enum" Enums="RX,TX"/>
+
+    <Member Name="valid_values"   Type="string"
+                                  StringLength="MAX_STRING_LENGTH_p"
+                                  SequenceLength="32"/>
+  </Property>
+  <Property Name="valid_values_gain_dB" Type="struct"
+                                        Volatile="true"
+                                        ReadSync="true"
+                                        ArrayLength="NUM_DATA_STREAM_IDS_RX_p + NUM_DATA_STREAM_IDS_TX_p"
+                                        Description="Indicates the
+                                          current valid ranges of values for all data
+                                          stream/data stream type combinations.">
+    <Member Name="data_stream_ID" Type="string"
+                                  StringLength="MAX_STRING_LENGTH_p"/>
+
+    <!-- _gain was only included due to enum namespace collision -->
+    <Member Name="direction_gain" Type="Enum" Enums="RX,TX"/>
+
+    <Member Name="valid_values"   Type="struct"
+                                  SequenceLength="32">
+      <Member Name="min"            Type="double"/>
+      <Member Name="max"            Type="double"/>
+    </Member>
+  </Property>
+
+  <Property Name="app_inst_name_TX0_qdac" Type="string"
+                                          Initial="true"
+                                          WriteSync="true"
+                                          StringLength="MAX_STRING_LENGTH_p"
+                                          Default=""
+                                          Description="Application name of TX0
+                                                       routing ID's qdac worker."/>
+  <Property Name="app_inst_name_TX0_complex_mixer" Type="string"
+                                                   Initial="true"
+                                                   WriteSync="true"
+                                                   StringLength="MAX_STRING_LENGTH_p"
+                                                   Default=""
+                                                   Description="Application name
+                                                     of TX0 routing ID's
+                                                     complex_mixer worker."/>
+  <Property Name="app_inst_name_TX0_cic_int" Type="string"
+                                             Initial="true"
+                                             WriteSync="true"
+                                             StringLength="MAX_STRING_LENGTH_p"
+                                             Default=""
+                                             Description="Application name of TX0
+                                                          routing ID's cic_int
+                                                          worker."/>
+  <Property Name="app_inst_name_TX1_qdac" Type="string"
+                                          Initial="true"
+                                          WriteSync="true"
+                                          StringLength="MAX_STRING_LENGTH_p"
+                                          Default=""
+                                          Description="Application name of TX1
+                                                       routing ID's qdac worker."/>
+  <Property Name="app_inst_name_TX1_complex_mixer" Type="string"
+                                                   Initial="true"
+                                                   WriteSync="true"
+                                                   StringLength="MAX_STRING_LENGTH_p"
+                                                   Default=""
+                                                   Description="Application name
+                                                     of TX1 routing ID's
+                                                     complex_mixer worker."/>
+  <Property Name="app_inst_name_TX1_cic_int" Type="string"
+                                             Initial="true"
+                                             WriteSync="true"
+                                             StringLength="MAX_STRING_LENGTH_p"
+                                             Default=""
+                                             Description="Application name of TX1
+                                                          routing ID's cic_int
+                                                          worker."/>
+  <Property Name="app_inst_name_RX0_qadc" Type="string"
+                                          Initial="true"
+                                          WriteSync="true"
+                                          StringLength="MAX_STRING_LENGTH_p"
+                                          Default=""
+                                          Description="Application name of RX0
+                                                       routing ID'qadc worker."/>
+  <Property Name="app_inst_name_RX0_complex_mixer" Type="string"
+                                                   Initial="true"
+                                                   WriteSync="true"
+                                                   StringLength="MAX_STRING_LENGTH_p"
+                                                   Description="Application name
+                                                     of RX0 routing ID's
+                                                     complex_mixer worker."/>
+  <Property Name="app_inst_name_RX0_cic_dec" Type="string"
+                                             Initial="true"
+                                             WriteSync="true"
+                                             StringLength="MAX_STRING_LENGTH_p"
+                                             Default=""
+                                             Description="Application name of RX0
+                                                          routing ID's cic_dec
+                                                          worker."/>
+  <Property Name="app_inst_name_RX1_qadc" Type="string"
+                                          Initial="true"
+                                          WriteSync="true"
+                                          StringLength="MAX_STRING_LENGTH_p"
+                                          Default=""
+                                          Description="Application name of RX1
+                                                       routing ID'qadc worker."/>
+  <Property Name="app_inst_name_RX1_complex_mixer" Type="string"
+                                                   Initial="true"
+                                                   WriteSync="true"
+                                                   StringLength="MAX_STRING_LENGTH_p"
+                                                   Default=""
+                                                   Description="Application name
+                                                     of RX1 routing ID's
+                                                     complex_mixer worker."/>
+  <Property Name="app_inst_name_RX1_cic_dec" Type="string"
+                                             Initial="true"
+                                             WriteSync="true"
+                                             StringLength="MAX_STRING_LENGTH_p"
+                                             Default=""
+                                             Description="Application name of RX1
+                                                          routing ID's cic_dec
+                                                          worker."/>
+  <!-- TODO / FIXME - implement proper slave interface -->
+  <Property Name="app_inst_name_ad9361_data_sub" Type="string"
+                                                 Initial="true"
+                                                 WriteSync="true"
+                                                 StringLength="MAX_STRING_LENGTH_p"
+                                                 Default="ad9361_data_sub"
+                                                 Description="Application name
+                                                     of ad9361_data_sub worker."/>
+
+  <Property Name='bist_loopback' Type='enum'
+                                 Enums='disabled,loopback_AD9361_internal,ad9361_init_has_not_occurred'
+                                 Volatile='true'
+                                 ReadSync='true'
+                                 Writable='true'
+                                 WriteSync='true'
+                                 Description="AD9361 BIST loopback mode."/>
+</RccWorker>

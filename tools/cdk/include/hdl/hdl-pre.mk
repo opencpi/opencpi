@@ -186,12 +186,12 @@ HdlPreExcludeTargets:=$(HdlActualTargets)
 $(call OcpiDbgVar,HdlPreExcludeTargets,Before only: )
 HdlActualTargets:=$(call Unique,\
               $(foreach t,$(HdlActualTargets),\
-		 $(or $(findstring $(t),$(HdlOnlyTargets)), \
-                   $(and $(findstring $(t),$(HdlAllFamilies)), \
+		 $(or $(filter $(t),$(HdlOnlyTargets)), \
+                   $(and $(filter $(t),$(HdlAllFamilies)), \
 		     $(foreach o,$(HdlOnlyTargets), \
-		       $(if $(findstring $(t),$(call HdlGetFamily,$(o))),$(o)))), \
+		       $(if $(filter $(t),$(call HdlGetFamily,$(o))),$(o)))), \
                    $(foreach o,$(HdlOnlyTargets),\
-		      $(if $(findstring $(o),$(call HdlGetFamily,$(t))),$(t))))))
+		      $(if $(filter $(o),$(call HdlGetFamily,$(t))),$(t))))))
 $(call OcpiDbgVar,HdlActualTargets,After only: )
 # Now prune to exclude targets mentioned in ExcludeTargets
 # We don't expand families into constituents, but we do

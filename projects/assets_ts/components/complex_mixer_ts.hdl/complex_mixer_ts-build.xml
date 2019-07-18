@@ -1,0 +1,10 @@
+<build>
+  <configuration id='0'>
+    <parameter name='NCO_DATA_WIDTH_p' value='12'/>
+    <parameter name='INPUT_DATA_WIDTH_p' value='12'/>
+  </configuration>
+  <configuration id='1'>
+    <parameter name='NCO_DATA_WIDTH_p' value='16'/>
+    <parameter name='INPUT_DATA_WIDTH_p' value='16'/>
+  </configuration>
+</build>

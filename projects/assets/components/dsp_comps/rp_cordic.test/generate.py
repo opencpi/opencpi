@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -68,7 +68,7 @@ for i in xrange(0,len(out_data)):
 FFT = 1.0/num_samples * abs(np.fft.fft(complex_data))
 eps = pow(10, -10) #Error factor to avoid divide by zero in log10
 # one tone in range DC to +Fs/2
-PowerT1  = 20*np.log10(FFT[float(Tone27)/(float(Fs)/2.0)*float(len(FFT)/2.0)]+eps)
+PowerT1  = 20*np.log10(FFT[int(round(float(Tone27)/(float(Fs)/2.0)*float(len(FFT)/2.0)))]+eps)
 print 'Input Tone 1 power level = ', PowerT1, ' dBm'
 
 # Save data file

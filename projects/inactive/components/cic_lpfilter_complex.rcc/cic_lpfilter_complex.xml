@@ -1,6 +1,5 @@
-<RccImplementation controloperations="start">
-  <xi:include href="cic_lpfilter_complex_spec.xml"/>
+<RccWorker controloperations="start" spec="cic_lpfilter_complex_spec.xml">
   <specproperty name='M' volatile='1'/>
-</RccImplementation>
+</RccWorker>
 
 

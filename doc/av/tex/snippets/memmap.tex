@@ -1,17 +1,22 @@
-\section{Driver Setup}
+\section{Reserve Memory for Driver}
 \begin{flushleft}
-If you want to use more then 128KB of RAM, then you will need to reserve a
-block of memory during the Linux kernel boot, using the memmap parameter.  The
-memmap parameter takes a number of formats, but the one that is most useful to
-us is the following: \\
-\bigskip
-	memmap=SIZE\$START \\
-\bigskip
-Where SIZE is the number of bytes to reserve in either hex or decimal, and
-START is the physical address in hexidecimal bytes.  You *must* use even
-page boundaries (0x1000 or 4096 bytes) for all addresses and sizes. \\
+
+When OpenCPI communicates to cards via PCI, it uses a loadable Linux kernel device driver
+for discovery and DMA-based communication, which requires local (reserved) DMA memory
+resources. DMA memory resources must be allocated or reserved on the CPU-side memory,
+that is accessible to both the CPU (via the local mmap system call), as well as,
+OpenCPI's PCI DMA engine with the board is issuing PCI READ or WRITE TLPs. By default,
+Linux allocates 128 KB of memory for the OpenCPI driver. However, OpenCPI applications may have buffering requirements that necessitate additional memory resources. \\ \medskip
+
+In the example provided below, special measures (memmap=) are used to allocate 128 MB of memory. The memmap parameter is used to reserved more block memory from the Linux kernel. While this variable supports many formats, the following usage has proven to be sufficient: \\ \bigskip
+	memmap=SIZE\$START \\ \bigskip
+Where SIZE is the number of bytes to reserve in either hexadecimal or decimal, and
+START is the physical address in hexadecimal bytes. It is required that the pages for all addresses and sizes are on even boundaries (0x1000 or 4096 bytes). \\
+
 \subsection{Calculate Values in Preparation for Memory Reservation}
-Start by running: \\
+At this time, the OpenCPI PCI DMA engine requires that the user-mode DMA memory pool be in a 32 or 64-bit memory range and due to the manner with which Linux manages memory, it is recommended that the address be higher than the first 24 bits. With these requirements, the first step is to find a “usable” contiguous memory range by examining the BIOS physical RAM map as reported by dmesg.\\ \medskip
+
+Run dmesg and filter on BIOS to review the physical RAM map: \\
 \lstset{language=bash, backgroundcolor=\color{lightgray}, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
 \begin{lstlisting}
 dmesg | grep BIOS
@@ -33,36 +38,37 @@ BIOS-provided physical RAM map:
  BIOS-e820: 00000000fee00000 - 00000000fee01000 (reserved)
  BIOS-e820: 00000000fffe0000 - 0000000100000000 (reserved)
 \end{lstlisting}
- You want to select a (usable) section of memory and reserve a section of that
- memory.  Once the memory is reserved, the Linux kernel will ignore it.  In
- this example, there are 3 useable sections:\\
+
+Select a "(usable)" section of memory and reserve a subsection of that memory. Once the memory is reserved, the Linux kernel will ignore it. In this example, there are three usable sections:\\
 \begin{lstlisting}
  BIOS-e820: 0000000000000000 - 000000000009f800 (usable)
  BIOS-e820: 0000000000100000 - 000000005fef0000 (usable)
  BIOS-e820: 000000005ff00000 - 0000000060000000 (usable)
 \end{lstlisting}
-Due to the way Linux manages memory, it is recommended you pick a higher
-address (above the first 24 bits).  The best choice is the second section
-(pages 0x100-0x5fef0).  If you wanted to reserve 128MB, that would be
-0x8000 pages.  Pick the end of the block (page 0x5fef0) and subtract the
-number of pages, leaving 0x57ef0.  This would result in the following memmap
-parameter:\\
-\bigskip
-memmap=128M\$0x57EF0000\\
+
+Upon close review of the usable regions, the first range is too small and below the first 24 bits, while the third ranges is simply too small. Fortunately the second address space meets the address range requirement (between 24 and 32 bits) and it is large enough for to reserve several hundred megabytes of memory. \\ \medskip
+
+The starting memory address for the user-mode DMA region is calculated by subtracting 0x08000000 (128 MB) from the largest memory region available, as long as it is greater than 0x08000000 (128MB) and inside the 32-bit address range (address is less than 4GB). In this example, the 2nd region is the largest: 0x5FEF0000 - 0x100000 = 0x5FDF0000 = 1,608,450,048 (~1.6GB) and it is inside of the 32-bit address space. The starting memory address (0x5FEF0000 - 0x08000000) is 0x57EF0000. And this is the value that used to construct the memmap parameter, as shown below:\\ \medskip
+
+memmap=128M\$0x57EF0000 \\ \medskip
+
+When calculating the starting address, the user must ensure that address occurs on an even page boundary of 4 KB. This may necessitate an additional adjustment to the starting address. \\ \medskip
+
+In some cases, the \texttt{\$dmesg | grep BIOS} returns a value like 0x5FEFFFFF. It is recommended that the user simply change this address, such that, its low word is all zeros, ex. 0x5FEF0000, prior to calculating the starting address. \\ \medskip
+
 \subsection{Configure Memory Reservation}
-Once you've calculated your memmap parameter, you will need to add it to the
-kernel command line in your boot loader. \\
+\textbf{Critical Note:
+If other memmap parameters are implemented, e.g. for non-OpenCPI PCI cards, then grubby usage will be different. The OpenCPI driver will use the first memmap parameter on the command line OR the parameter ``opencpi\_memmap'' if it is explicitly given. If this parameter is given, the standard memmap command with the same parameters must ALSO be passed to the kernel.}\\ \bigskip
+
+Once the memmap parameter as been calculated, it will need to be added to the kernel command line in the boot loader. \\
 \bigskip
-For CentOS, you can use the utility ``grubby''. \\
+For CentOS, the utility ``grubby'' can be used to add the parameter to all kernels in the start-up menu. The single quotes are REQUIRED or the shell will interpret the \$0: \\
 \bigskip
-This will add the parameter to all kernels in the startup menu. The single
-quotes are REQUIRED or your shell will interpret the \$0: \\
-\bigskip
-For \textbf{\textit{CentOS6}}:\\
+\textbf{\textit{CentOS6}}:\\
 \begin{lstlisting}
 sudo grubby --update-kernel=ALL --args=memmap='128M\$0x57EF0000'
 \end{lstlisting}
-\textbf{\textit{CentOS 7}} uses grub2, which requires a double backslash to not interpret it:\\
+\textbf{\textit{CentOS 7}} uses \textit{grub2}, which \textbf{requires a DOUBLE} backslash:\\
 \begin{lstlisting}
 sudo grubby --update-kernel=ALL --args=memmap='128M\\$0x57EF0000'
 \end{lstlisting}
@@ -73,12 +79,10 @@ sudo -v
 sudo grubby --info $(sudo grubby --default-kernel)
 \end{lstlisting}
 
-\textbf{\textit{CentOS 7}} users should see a SINGLE backslash before the \$, for example: \\
+\textbf{\textit{CentOS 7}} displays a \textbf{SINGLE} backslash before the \$, for example: \\
 \begin{lstlisting}
 args="ro rdblacklist=nouveau crashkernel=auto rd.lvm.lv=vg.0/root quiet audit=1 boot=UUID=96933cb5-f478-4933-a0d4-16953cf47f5c memmap=128M\$0x57EF0000 LANG=en_US.UTF-8"
 \end{lstlisting}
-
-
 
 If no longer desired, the parameter can also be removed:
 \begin{lstlisting}
@@ -88,19 +92,14 @@ sudo grubby --update-kernel=ALL --remove-args=memmap
 More information concerning grubby can be found at:\\
 \url{https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/System_Administrators_Guide/sec-Making_Persistent_Changes_to_a_GRUB_2_Menu_Using_the_grubby_Tool.html}
 \bigskip
-... the memmap parameter:\\
+
+For the memmap parameter:\\
 \url{https://www.kernel.org/doc/html/latest/admin-guide/kernel-parameters.html}
 
-\bigskip
-Note: If you have other memmap parameters, e.g. for non-OpenCPI PCI cards,
-then grubby usage will be different. The OpenCPI driver will use the first
-memmap parameter on the command line OR the parameter ``opencpi\_memmap'' if it
-is explicitly given. If this parameter is given, the standard memmap command
-with the same parameters must ALSO be passed to the kernel.\\
 \subsection{Apply Memory Reservation}
-Reboot the system, making certain to boot from your new configuration.
+Reboot the system, making certain to boot from the new configuration.
 \subsection{Verify Memory Reservation}
-Once that's done, if you run 'dmesg' you should see something like this:\\
+Once the system has finished booting, examine the state of the physical RAM map to confirm that the desired memory has been reserved:\\
 \bigskip
 \begin{lstlisting}
 dmesg | more
@@ -138,9 +137,5 @@ user-defined physical RAM map:
 DMI present.
 \end{lstlisting}
 
-You will see a new (reserved) area between the second (useable) section and the
-(ACPI data) section.\\
-\bigskip
-Now, when you run the 'make load' script, it will detect the new reserved
-area, and pass that data to the opencpi kernel module. \\
+A new "(reserved)" area is shown between the second "(useable)" section and the (ACPI data) section. Now, when the "ocpidriver load" is ran, it will detect the new reserved area, and pass that data to the OpenCPI kernel module. \\
 \end{flushleft}

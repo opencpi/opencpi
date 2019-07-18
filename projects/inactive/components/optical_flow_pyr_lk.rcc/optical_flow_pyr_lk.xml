@@ -1,6 +1,5 @@
-<RccImplementation>
+<RccWorker spec="optical_flow_pyr_lk_spec.xml">
   <ControlInterface ControlOperations="start, release"/>
-  <xi:include href="optical_flow_pyr_lk_spec.xml"/>
-</RccImplementation>
+</RccWorker>
 
 

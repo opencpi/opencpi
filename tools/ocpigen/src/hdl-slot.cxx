@@ -101,6 +101,8 @@ Slot(ezxml_t xml, const char */*parent*/, const std::string &name, const SlotTyp
   : m_name(name), m_type(a_type), m_ordinal(ordinal)
 {
   err = NULL;
+  std::string defPrefix(name + "_");
+  OE::getOptionalString(xml, m_prefix, "prefix", defPrefix.c_str());
   // process non-default signals: slot=pfsig, platform=dddd
   for (ezxml_t xs = ezxml_cchild(xml, "Signal"); xs; xs = ezxml_cnext(xs)) {
     std::string slot, platform;

@@ -89,7 +89,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.0}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -111,9 +111,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		\hline
 		Name & \comp \\
 		\hline
-		Version & v1.0 \\
+		Version & v1.5 \\
 		\hline
-		Release Date & August 2018 \\
+		Release Date & 5/2019 \\
 		\hline
 		Component Library & ocpi.assets.util\_comps \\
 		\hline
@@ -122,17 +122,35 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		Tested Platforms & xsim, isim, matchstiq\_z1 \\
 		\hline
 	\end{tabular}
+	
+	\begin{center}
+	\textit{\textbf{Revision History}}
+		\begin{table}[H]
+		\label{table:revisions} % Add "[H]" to force placement of table
+			\begin{tabularx}{\textwidth}{|c|X|l|}
+			\hline
+			\rowcolor{blue}
+			\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+		    \hline
+		    v1.4 & Initial Release & 10/2018 \\
+		    \hline
+        v1.5 & \begin{itemize} \item Fixed incorrect property accessibility "Writable" and changed it to "Initial" for the \texttt{messagesToSend} property. \item Clarified that the opcode that is sent by the component is an 8 bit opcode. \end{itemize} & 5/2019 \\
+		    \hline
+			\end{tabularx}
+		\end{table}
+	\end{center}
+	
 \section*{Functionality}
 \begin{flushleft}
 
-The {\comp} component provides the ability to output a pattern of messages by allowing the user to create a record of messages each having a configurable number of bytes and associated opcode. Through a set of properties, the component may send messages (data and opcode) up to the amount dictated by the build-time parameters. \newline
+The {\comp} component provides the ability to output a pattern of messages by allowing the user to create a record of messages each having a configurable number of bytes and associated 8 bit opcode. Through a set of properties, the component may send messages (data and opcode) up to the amount dictated by the build-time parameters. \newline
 
 The \texttt{messages} property defines the record of messages to send, as well as, defines the number of data bytes and an opcode for each message. \newline
 
 For example: \newline
 
 When \texttt{messages} = \{4, 255\}, one message will be sent having 4 bytes of data and an opcode of 255. \newline
-When \texttt{messages} = \{8, 251\}, \{6, 250\}, two messages will sent, the first having 8 bytes of data and an opcode of 251, and the second message having 6 bytes of data and an opcode of 250. \newline
+When \texttt{messages} = \{8, 251\}, \{6, 250\}, two messages will be sent, the first having 8 bytes of data and an opcode of 251, and the second message having 6 bytes of data and an opcode of 250. \newline
 
 Data to be sent with a message is defined by the \texttt{data} property and is referred to as the data buffer. The number of data words in the data buffer is the number of data bytes for the messages. \newline
 
@@ -199,7 +217,7 @@ False - Multiple messages sent from the current position of the data buffer.\\
                 \hline
                 \verb+numMessagesMax+ & uLong & 5 & - & - & - & true & - & Max number of messages to send.  \\
                 \hline
-                \verb+messagesToSend+ & uLong & 5 & - & - & - & false & Volatile, Writable & Counter of messages to send. This value must be less than or equal to numMessagesMax. Decrements as they are sent.\\
+                \verb+messagesToSend+ & uLong & 5 & - & - & - & false & Volatile, Initial & Counter of messages to send. This value must be less than or equal to numMessagesMax. Decrements as they are sent.\\
                 \hline
                 \verb+messagesSent+ & uLong & - & - & - & - & false & Volatile & Messages sent counter. Initialized to 0.\\
                 \hline
@@ -209,7 +227,7 @@ False - Multiple messages sent from the current position of the data buffer.\\
                 \hline
                 \verb+numMessageFields+ & uLong & 2 & - & - & - & true & - & Due to a limitation, cannot use constrained elements in unconstrained array declarations, so cannot directly set the second dimension for the messages property to 2. The numMessageFields property must always be 2 since there are 2 message fields; the number of data bytes and opcode. So the default value must not be changed.  \\
                 \hline
-                \verb+messages+ & uLong & - & - & - & numMessagesMax, numMessageFields & false & Initial & Multidimensional array that defines the record of messages to send, as well as, defines the number of data bytes and an opcode for each message.\\
+                \verb+messages+ & uLong & - & - & - & numMessagesMax, numMessageFields & false & Initial & Multidimensional array that defines the record of messages to send, as well as, defines the number of data bytes and an 8 bit opcode for each message.\\
                 \hline
                 \verb+data+ & uLong & - & - & numDataWords & - & false & Initial & Data buffer containing the data to be sent.\\
                 \hline

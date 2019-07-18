@@ -93,6 +93,9 @@ __HDL_SEARCH_MK__=x
 #  itself.
 
 # Return list of target directories in all possible component libraries
+# For example, return a list of all component-library "target" directories.
+#              Of the form: <library>/lib/hdl/<target>
+# These locations are useful for locating HDL cores/workers
 HdlTargetComponentLibraries=$(infox HTCL:$1:$(OcpiComponentLibraries):$(ComponentLibraries):$2)\
   $(or $(strip $(foreach f,$(call HdlGetFamily,$1),\
                   $(foreach d,$(OcpiComponentLibraries),$(infox HTCL1:$d:$f)\

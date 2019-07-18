@@ -20,22 +20,22 @@ $(if $(realpath $(OCPI_CDK_DIR)),,\
   $(error The OCPI_CDK_DIR environment variable is not set correctly.))
 # To restrict the primitives that are built or run, you can set the Libraries or Cores
 # variables to the specific list of which ones you want to build and run, e.g.:
-ImportCoreDirs=\
-  $(OCPI_HDL_IMPORTS_DIR)/coregen/temac_v6 \
-  $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_trn_v6_gtx_x4_250 \
-  $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_hip_s4gx_gen2_x4_128
+#ImportCoreDirs=\
+#  $(OCPI_HDL_IMPORTS_DIR)/coregen/temac_v6 \
+#  $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_trn_v6_gtx_x4_250 \
+#  $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_hip_s4gx_gen2_x4_128
 PrimitiveLibraries=comms_prims \
                    misc_prims \
                    util_prims \
                    dsp_prims \
-                   temac_v6 \
-                   pcie_4243_trn_v6_gtx_x4_250 \
-                   pcie_4243_hip_s4gx_gen2_x4_128 \
                    virtex6 \
                    stratix4 \
                    xilinx \
                    zynq \
                    i2c
-# PrimitiveCores=core1 core2
+PrimitiveCores=temac_v6\
+               pcie_4243_trn_v6_gtx_x4_250 \
+               pcie_4243_hip_s4gx_gen2_x4_128 \
+
 # Otherwise all primitives will be built
 include $(OCPI_CDK_DIR)/include/hdl/hdl-primitives.mk

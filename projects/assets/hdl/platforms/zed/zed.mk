@@ -18,3 +18,4 @@
 
 HdlPart_zed=xc7z020-1-clg484
 HdlRccPlatform_zed=xilinx13_3
+HdlAllRccPlatforms_zed=xilinx13_3 xilinx13_4

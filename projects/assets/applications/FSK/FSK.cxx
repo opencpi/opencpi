@@ -33,13 +33,6 @@ using namespace std;
 
 #define PROMPT(app,val,worker,propmin,propmax) prompt_auto_range(app, val, #val, "Error: invalid "#val".\n",worker,propmin,propmax);
 
-template <typename T>
-std::string to_string(T const& value) {
-  stringstream sstr;
-  sstr << value;
-  return sstr.str();
-}
-
 static void usage(const char *name, const char *error_message) {
   fprintf(stderr,
   "%s\n"
@@ -858,23 +851,21 @@ int main(int argc, char **argv) {
 
       prompt_with_range(rx_if_center_freq, "rx_if_center_freq", "Error: invalid rx_if_center_freq.\n", rx_if_center_freq_min, rx_if_center_freq_max);
 
-      if (rx_if_center_freq == 0)
-      {
+      // It is desired that setting a + IF freq results in mixing *down*.
+      // Because complex_mixer's NCO mixes *up* for + freqs (see complex mixer
+      // datasheet), IF tune freq must be negated in order to achieve the
+      // desired effect.
+      double nco_output_freq = -rx_if_center_freq;
+
+      // todo this math might be better off in a small proxy that sits on top of complex_mixer
+      // from complex mixer datasheet, nco_output_freq =
+      // sample_freq * phs_inc / 2^phs_acc_width, phs_acc_width is fixed at 16
+      OA::Short phase_inc = round(nco_output_freq/rx_sample_rate*65536.);
+
+      if(phase_inc == 0) {
         app.setProperty("complex_mixer", "enable", "false");
       }
-      else
-      {
-        // It is desired that setting a + IF freq results in mixing *down*.
-        // Because complex_mixer's NCO mixes *up* for + freqs (see complex mixer
-        // datasheet), IF tune freq must be negated in order to achieve the
-        // desired effect.
-        double nco_output_freq = -rx_if_center_freq;
-
-        // todo this math might be better off in a small proxy that sits on top of complex_mixer
-        // from complex mixer datasheet, nco_output_freq =
-        // sample_freq * phs_inc / 2^phs_acc_width, phs_acc_width is fixed at 16
-        OA::Short phase_inc = round(nco_output_freq/rx_sample_rate*65536.);
-
+      else {
         //std::cout << "setting complex mixer phase_inc = " << phase_inc <<"\n";
         app.setPropertyValue<OA::Short>("complex_mixer","phs_inc", phase_inc);
       }
@@ -943,12 +934,11 @@ int main(int argc, char **argv) {
         printLimits("Error: invalid rx_rf_center_freq.\n", rx_rf_center_freq, rx_frequency_min_MHz, rx_frequency_max_MHz);
       }
 
-      app.getProperty("rx","rf_cutoff_frequency_min_MHz", value);
-      rx_rf_cutoff_frequency_min_MHz = atof(value.c_str());
-      app.getProperty("rx","rf_cutoff_frequency_max_MHz", value);
-      rx_rf_cutoff_frequency_max_MHz = atof(value.c_str());
-      if (rx_rf_bw != rx_rf_cutoff_frequency_min_MHz && rx_rf_bw != rx_rf_cutoff_frequency_max_MHz)
-      {
+      OA::Property prop_rf_cutoff_min(app, "rx", "rf_cutoff_frequency_min_MHz");
+      rx_rf_cutoff_frequency_min_MHz = prop_rf_cutoff_min.getValue<double>();
+      OA::Property prop_rf_cutoff_max(app, "rx", "rf_cutoff_frequency_max_MHz");
+      rx_rf_cutoff_frequency_max_MHz = prop_rf_cutoff_max.getValue<double>();
+      if (rx_rf_bw < rx_rf_cutoff_frequency_min_MHz || rx_rf_bw > rx_rf_cutoff_frequency_max_MHz) {
         printLimits("Error: invalid rx_rf_bw.\n", rx_rf_bw, rx_rf_cutoff_frequency_min_MHz, rx_rf_cutoff_frequency_max_MHz);
       }
 
@@ -1093,29 +1083,28 @@ int main(int argc, char **argv) {
         rx_bb_bw = rx_sample_rate;
         rx_bb_gain = -1.; // must be disabled
       }
-      app.setProperty("rx","sample_rate_MHz", to_string(rx_sample_rate).c_str());
-      app.setProperty("rx","frequency_MHz", to_string(rx_rf_center_freq).c_str());
-      app.setProperty("rx","rf_cutoff_frequency_MHz", to_string(rx_rf_bw).c_str());
-      app.setProperty("rx","rf_gain_dB", to_string(rx_rf_gain).c_str());
-      app.setProperty("rx","bb_cutoff_frequency_MHz", to_string(rx_bb_bw).c_str());
-      app.setProperty("rx","bb_gain_dB", to_string(rx_bb_gain).c_str());
-      if (rx_if_center_freq == 0)
-      {
+      app.setPropertyValue<double>("rx","sample_rate_MHz", rx_sample_rate);
+      app.setPropertyValue<double>("rx","frequency_MHz", rx_rf_center_freq);
+      app.setPropertyValue<double>("rx","rf_cutoff_frequency_MHz", rx_rf_bw);
+      app.setPropertyValue<double>("rx","rf_gain_dB", rx_rf_gain);
+      app.setPropertyValue<double>("rx","bb_cutoff_frequency_MHz", rx_bb_bw);
+      app.setPropertyValue<double>("rx","bb_gain_dB", rx_bb_gain);
+
+      // It is desired that setting a + IF freq results in mixing *down*.
+      // Because complex_mixer's NCO mixes *up* for + freqs (see complex mixer
+      // datasheet), IF tune freq must be negated in order to achieve the
+      // desired effect.
+      double nco_output_freq = -rx_if_center_freq;
+
+      // todo this math might be better off in a small proxy that sits on top of complex_mixer
+      // from complex mixer datasheet, nco_output_freq =
+      // sample_freq * phs_inc / 2^phs_acc_width, phs_acc_width is fixed at 16
+      OA::Short phase_inc = round(nco_output_freq/rx_sample_rate*65536.);
+
+      if(phase_inc == 0) {
         app.setProperty("complex_mixer", "enable", "false");
       }
-      else
-      {
-        // It is desired that setting a + IF freq results in mixing *down*.
-        // Because complex_mixer's NCO mixes *up* for + freqs (see complex mixer
-        // datasheet), IF tune freq must be negated in order to achieve the
-        // desired effect.
-        double nco_output_freq = -rx_if_center_freq;
-
-        // todo this math might be better off in a small proxy that sits on top of complex_mixer
-        // from complex mixer datasheet, nco_output_freq =
-        // sample_freq * phs_inc / 2^phs_acc_width, phs_acc_width is fixed at 16
-        OA::Short phase_inc = round(nco_output_freq/rx_sample_rate*65536.);
-
+      else {
         //std::cout << "setting complex mixer phase_inc = " << phase_inc <<"\n";
         app.setPropertyValue<OA::Short>("complex_mixer","phs_inc", phase_inc);
       }
@@ -1140,11 +1129,11 @@ int main(int argc, char **argv) {
         tx_bb_bw = tx_sample_rate;
         tx_bb_gain = -1.; // must be disabled
       }
-      app.setProperty("tx","sample_rate_MHz", to_string(tx_sample_rate).c_str());
-      app.setProperty("tx","frequency_MHz", to_string(tx_rf_center_freq).c_str());
-      app.setProperty("tx","rf_gain_dB", to_string(tx_rf_gain).c_str());
-      app.setProperty("tx","bb_cutoff_frequency_MHz", to_string(tx_bb_bw).c_str());
-      app.setProperty("tx","bb_gain_dB", to_string(tx_bb_gain).c_str());
+      app.setPropertyValue<double>("tx","sample_rate_MHz", tx_sample_rate);
+      app.setPropertyValue<double>("tx","frequency_MHz", tx_rf_center_freq);
+      app.setPropertyValue<double>("tx","rf_gain_dB", tx_rf_gain);
+      app.setPropertyValue<double>("tx","bb_cutoff_frequency_MHz", tx_bb_bw);
+      app.setPropertyValue<double>("tx","bb_gain_dB", tx_bb_gain);
     }
 
     //Loopback mode for txrx app
@@ -1208,7 +1197,7 @@ int main(int argc, char **argv) {
     //  app.setProperty("ad9361_config_proxy","bist_loopback", "1");
     //}
 
-    //Mode filerw waits for a zlm message to complete. All others use runtime.
+    //Mode filerw waits for a zlm to complete. All others use runtime.
     if (mode == "rx" || mode == "tx" || mode == "txrx" || mode == "bbloopback")
     {
       printf("App runs for %f seconds...\n",runtime);

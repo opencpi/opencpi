@@ -1,0 +1,24 @@
+<!-- AD9361 ADC worker w/ timestamping-->
+<HdlDevice language="vhdl" spec='qadc_ts-spec'>
+  <!-- Properties -->
+  <Specproperty name='messageSize' default='8192'/>
+  <Specproperty name='overrun' default='0'/>
+  <Property name='fifo_depth' type='ulong' parameter='1' description='Clock domain crossing FIFO depth in samples.'/>
+  <Property Name='ODATA_WIDTH_p' Type='ushort' Default='32' Parameter='1'/>
+  <!--Property name='overrange' type='bool' volatile='1' writable='1' description='This property reads the value of a sticky bit internal to the HDL device which goes high once the maximum amplitude ADC value (on high or low side) is read, indicating that clipping occured at the ADC sample boundary. Writing false will clear the sticky bit.'/--> <!-- TODO / FIXME - add overrange -->
+  <Property name='time_correction' type='longlong'
+                                   writable='true'
+                                   readable='true'
+                                   description="Signed Q31.32 time correction
+                                     value which is subtracted from time
+                                     interface port's time."/>
+
+  <!-- Ports -->
+  <StreamInterface Name="OUT" producer='true' DataWidth="ODATA_WIDTH_p"/>
+  <TimeInterface Name='time' secondswidth='32'
+                             fractionwidth='32'
+                             myoutputclock='true'/>
+
+  <devsignal name='dev_adc' signals='adc-12-signals.xml' master='true'/>
+</HdlDevice>
+

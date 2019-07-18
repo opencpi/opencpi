@@ -22,9 +22,10 @@
 #define _TEST_APP_DEFAULTS_H
 
 #include <string>     // std::string
-#include "OcpiApi.hh" // OCPI::API namespace
-#include "ocpi_component_prop_type_helpers.h" // ocpi_..._t types
+#include "OcpiApi.hh" // OA namespace
 #include "test_app_common.h"// APP_DEFAULT_... macros, did_pass_test_expected_value_<prop>() functions
+
+namespace OA = OCPI::API;
 
 bool did_pass_test_ocpi_app_default_value_rf_gain_dB()
 {
@@ -33,20 +34,20 @@ bool did_pass_test_ocpi_app_default_value_rf_gain_dB()
   try
   {
     {
-      OCPI::API::Application app(APP_DEFAULT_FMCOMMS2_XML, NULL);
+      OA::Application app(APP_DEFAULT_FMCOMMS2_XML, NULL);
       app.initialize();
       app.start();
       app.stop();
-      did_pass = did_pass_test_expected_value_rf_gain_dB(app, 1., (ocpi_long_t) 1);
+      did_pass = did_pass_test_expected_value_rf_gain_dB(app, 1., (OA::Long) 1);
       if(!did_pass) { return false; }
     }
     
     {
-      OCPI::API::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
+      OA::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
       app.initialize();
       app.start();
       app.stop();
-      did_pass = did_pass_test_expected_value_rf_gain_dB(app, 1., (ocpi_long_t) 1);
+      did_pass = did_pass_test_expected_value_rf_gain_dB(app, 1., (OA::Long) 1);
       if(!did_pass) { return false; }
     }
   }
@@ -65,7 +66,7 @@ bool did_pass_test_ocpi_app_default_value_bb_gain_dB()
   try
   {
     {
-      OCPI::API::Application app(APP_DEFAULT_FMCOMMS2_XML, NULL);
+      OA::Application app(APP_DEFAULT_FMCOMMS2_XML, NULL);
       app.initialize();
       app.start();
       app.stop();
@@ -75,7 +76,7 @@ bool did_pass_test_ocpi_app_default_value_bb_gain_dB()
 
     {
       if(!did_pass) { return false; }
-      OCPI::API::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
+      OA::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
       app.initialize();
       app.start();
       app.stop();
@@ -98,20 +99,20 @@ bool did_pass_test_ocpi_app_default_value_frequency_MHz()
   try
   {
     {
-      OCPI::API::Application app(APP_DEFAULT_FMCOMMS2_XML, NULL);
+      OA::Application app(APP_DEFAULT_FMCOMMS2_XML, NULL);
       app.initialize();
       app.start();
       app.stop();
-      did_pass = did_pass_test_expected_value_frequency_MHz(app, 2400., (ocpi_ulonglong_t) 2400000000);
+      did_pass = did_pass_test_expected_value_frequency_MHz(app, 2400., (OA::ULongLong) 2400000000);
       if(!did_pass) { return false; }
     }
 
     {
-      OCPI::API::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
+      OA::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
       app.initialize();
       app.start();
       app.stop();
-      did_pass = did_pass_test_expected_value_frequency_MHz(app, 2400., (ocpi_ulonglong_t) 2400000000);
+      did_pass = did_pass_test_expected_value_frequency_MHz(app, 2400., (OA::ULongLong) 2400000000);
       if(!did_pass) { return false; }
     }
   }
@@ -130,20 +131,20 @@ bool did_pass_test_ocpi_app_default_value_sample_rate_MHz()
   try
   {
     {
-      OCPI::API::Application app(APP_DEFAULT_FMCOMMS2_XML, NULL);
+      OA::Application app(APP_DEFAULT_FMCOMMS2_XML, NULL);
       app.initialize();
       app.start();
       app.stop();
-      did_pass = did_pass_test_expected_value_sample_rate_MHz(app, 30.72, (ocpi_ulong_t) 30720000);
+      did_pass = did_pass_test_expected_value_sample_rate_MHz(app, 30.72, (OA::ULong) 30720000);
       if(!did_pass) { return false; }
     }
 
     {
-      OCPI::API::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
+      OA::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
       app.initialize();
       app.start();
       app.stop();
-      did_pass = did_pass_test_expected_value_sample_rate_MHz(app, 30.72, (ocpi_ulong_t) 30720000);
+      did_pass = did_pass_test_expected_value_sample_rate_MHz(app, 30.72, (OA::ULong) 30720000);
       if(!did_pass) { return false; }
     }
   }
@@ -162,7 +163,7 @@ bool did_pass_test_ocpi_app_default_value_rf_cutoff_frequency_MHz()
   try
   {
     {
-      OCPI::API::Application app(APP_DEFAULT_FMCOMMS2_XML, NULL);
+      OA::Application app(APP_DEFAULT_FMCOMMS2_XML, NULL);
       app.initialize();
       app.start();
       app.stop();
@@ -171,7 +172,7 @@ bool did_pass_test_ocpi_app_default_value_rf_cutoff_frequency_MHz()
     }
 
     {
-      OCPI::API::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
+      OA::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
       app.initialize();
       app.start();
       app.stop();
@@ -194,20 +195,20 @@ bool did_pass_test_ocpi_app_default_value_bb_cutoff_frequency_MHz()
   try
   {
     {
-      OCPI::API::Application app(APP_DEFAULT_FMCOMMS2_XML, NULL);
+      OA::Application app(APP_DEFAULT_FMCOMMS2_XML, NULL);
       app.initialize();
       app.start();
       app.stop();
-      did_pass = did_pass_test_expected_value_bb_cutoff_frequency_MHz(app, 18., (ocpi_ulong_t) 18000000);
+      did_pass = did_pass_test_expected_value_bb_cutoff_frequency_MHz(app, 18., (OA::ULong) 18000000);
       if(!did_pass) { return false; }
     }
 
     {
-      OCPI::API::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
+      OA::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
       app.initialize();
       app.start();
       app.stop();
-      did_pass = did_pass_test_expected_value_bb_cutoff_frequency_MHz(app, 18., (ocpi_ulong_t) 18000000);
+      did_pass = did_pass_test_expected_value_bb_cutoff_frequency_MHz(app, 18., (OA::ULong) 18000000);
       if(!did_pass) { return false; }
     }
   }

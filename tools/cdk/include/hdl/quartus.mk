@@ -71,12 +71,6 @@ HdlToolCoreRef_quartus=$1
 # Set if the tool requires a listing of source files and libraries
 HdlToolNeedsSourceList_quartus=yes
 ################################################################################
-# Function required by toolset: $(call HdlToolLibRef,libname)
-# This is the name after library name in a path
-# It might adjust (genericize?) the target
-#
-HdlToolLibRef=$(or $3,$(call HdlGetFamily,$2))
-
 # This is because it seems that Quartus cannot support entities and architectures in
 # separate files, so we have to combine them
 QuartusVHDLWorker=$(and $(findstring worker,$(HdlMode)),$(findstring VHDL,$(HdlLanguage)))

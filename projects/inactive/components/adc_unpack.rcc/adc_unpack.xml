@@ -1,4 +1,3 @@
-<RccImplementation>
-  <xi:include href="adc_unpack_spec.xml"/>
+<RccWorker spec="adc_unpack_spec.xml">
   <ControlInterface SizeOfConfigSpace="1m" ControlOperations="initialize,start,stop"/>
-</RccImplementation>
+</RccWorker>

@@ -24,7 +24,7 @@ BIAS=$2
 BIAS0=$3
 DURATION=$4
 CMP=" && cmp test.input test.output"
-export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../projects/assets/artifacts:$OCPI_CDK_DIR/../projects/core/artifacts
+export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../projects/assets/artifacts:$OCPI_CDK_DIR/../projects/core/artifacts:/mnt
 echo OCPI_LIBRARY_PATH===$OCPI_LIBRARY_PATH
 $VG ocpirun -v -d $OPTS $FR $FW copy $CMP
 $VG ocpirun -v -d $OPTS hello
@@ -35,13 +35,8 @@ $VG ocpirun -v -d -pbias0=biasValue=0 -pbias1=biasValue=0 $OPTS $BIAS0 $FR $FW t
 function doit {
 $VG ocpirun -v -d $OPTS $BIAS $FR $FW bias
 $VG ocpirun -v -d -pbias=biasValue=0 $OPTS $BIAS $FR $FW bias $CMP
-$VG ocpirun -v -d $OPTS $BIAS $FR file-bias-capture
-$VG ocpirun -v -d $OPTS $BIAS $FW pattern-bias-file
-$VG ocpirun -v -d $OPTS $BIAS $FW pattern
 # This delay is necessary until capture.hdl has the stop-on-eof feature
 # The default is appropriate for hardware, but not sim
-$VG ocpirun -v -d $OPTS $BIAS -t ${DURATION:-3} tb_bias
-$VG ocpirun -v -d $OPTS $BIAS $FR tb_bias_file
 $VG ocpirun -v -d $OPTS $BIAS $FR $FW testbias
 $VG ocpirun -v -d -pbias=biasValue=0 $OPTS $BIAS $FR $FW testbias $CMP
 }

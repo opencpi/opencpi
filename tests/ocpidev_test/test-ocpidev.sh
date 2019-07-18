@@ -51,8 +51,9 @@ OCPIRUN=$OCPIBIN/ocpirun
 if [ -z "$HDL_PLATFORM" ] ; then
   HDL_PLATFORM=isim_pf
   HDL_TARGET=isim
-  if ! $OCPIRUN -v -C --only-platforms | grep '[^a-zA-Z]isim$'; then
+  if (env|grep 'HdlPlatforms=$') || ! $OCPIRUN -v -C --only-platforms | grep '[^a-zA-Z]isim$'; then
     HDL_NO_BUILD=1
+    echo No HDL tests will be performed.
     RCC=--rcc
   fi
 fi
@@ -61,7 +62,7 @@ fi
 # strip trailing _pf from platform name
 HDL_PLATFORM=${HDL_PLATFORM/%_pf/}
 #echo HDL_PLATFORM:$HDL_PLATFORM RCC_PLATFORM:$RCC_PLATFORM HDL_NO_BUILD=$HDL_NO_BUILD RCC=$RCC
-# This is the number of identical assets to create in EVERY library 
+# This is the number of identical assets to create in EVERY library
 # including devices, platform/*/devices
 if [ -z "$OCPI_NUM_ASSETS" ] ; then
   OCPI_NUM_ASSETS=1
@@ -83,7 +84,7 @@ function bad {
   exit 1
 }
 
-# devices in hdl/cards or hdl/platforms/*/devices may use 
+# devices in hdl/cards or hdl/platforms/*/devices may use
 # spec files or workers from hdl/devices. Therefore,
 # we include directories in the search path for specs.
 function do_ocpidev {
@@ -91,7 +92,7 @@ function do_ocpidev {
     XmlIncludeDirs=$xmldirs $OCPIDEV $V $@ #&> /dev/null
   else
     echo "Calling: ocpidev $V $@"
-    echo "         With: XmlIncludeDirs=$xmldirs" 
+    echo "         With: XmlIncludeDirs=$xmldirs"
     XmlIncludeDirs=$xmldirs $OCPIDEV $V $@
   fi
 
@@ -149,27 +150,27 @@ devlibs=(devices adapters cards)
 for lib in ${devlibs[@]} ; do
   libopt=""
   if [ "$lib" != "devices" ] ; then
-    libopt="-h $lib"
+    libopt="--hdl-library $lib"
   fi
   do_ocpidev create hdl device "dev_$lib".hdl $libopt -S none
   Workers=" dev_$lib".hdl
   for c in ${compseq1[@]}; do
-    do_ocpidev create spec $c -h $lib
-    do_ocpidev create test $c -h $lib
+    do_ocpidev create spec $c --hdl-library $lib
+    do_ocpidev create test $c --hdl-library $lib
     do_ocpidev create hdl device "$c".hdl $libopt
     Workers+=" $c".hdl
     do_ocpidev create hdl device "$c"_sub.hdl $libopt -U "$c".hdl -S none
     Workers+=" $c"_sub.hdl
-    do_ocpidev create worker "$c"_proxy.rcc -h $lib -V "$c".hdl -S "$c"-spec
+    do_ocpidev create worker "$c"_proxy.rcc --hdl-library $lib -V "$c".hdl -S "$c"-spec
     Workers+=" $c"_proxy.rcc
     # This one file is copied so that this entire set of tests can run without depending
     # on built or exported projects - i.e. these tests can run in a virgin RPM installation
     [ -f specs/emulator-spec.xml ] ||
 	cp $OCPI_CDK_DIR/../projects/core/specs/emulator-spec.xml specs
-    do_ocpidev -v create hdl device "$c"_em.hdl $libopt -E "$c".hdl 
+    do_ocpidev -v create hdl device "$c"_em.hdl $libopt -E "$c".hdl
     Workers+=" $c"_em.hdl
   done
-  # update the makefile beacuse order matters 
+  # update the makefile beacuse order matters
   cp /dev/null hdl/$lib/Makefile
   echo "Workers= $Workers" >> hdl/$lib/Makefile
   echo "include \$(OCPI_CDK_DIR)/include/library.mk" >> hdl/$lib/Makefile
@@ -179,13 +180,13 @@ done
 echo "====Creating some cards, slots, and card devices"
 do_ocpidev create hdl card card0
 do_ocpidev create hdl slot slot0
-do_ocpidev create spec comp6 -h cards
+do_ocpidev create spec comp6 --hdl-library cards
 # this is broken an bug needs to be written for this
-#do_ocpidev create test comp6 -h cards
-do_ocpidev create hdl device comp6.hdl -h cards
-do_ocpidev create hdl device comp6_sub.hdl -h cards -U "$c".hdl -S none
-do_ocpidev create worker comp6_proxy.rcc -h cards -V "$c".hdl -S "$c"-spec
-do_ocpidev create hdl device comp6_em.hdl -h cards -E "$c".hdl 
+#do_ocpidev create test comp6 --hdl-library cards
+do_ocpidev create hdl device comp6.hdl --hdl-library cards
+do_ocpidev create hdl device comp6_sub.hdl --hdl-library cards -U "$c".hdl -S none
+do_ocpidev create worker comp6_proxy.rcc --hdl-library cards -V "$c".hdl -S "$c"-spec
+do_ocpidev create hdl device comp6_em.hdl --hdl-library cards -E "$c".hdl
 
 
 echo "========Creating platform device libraries"
@@ -201,7 +202,7 @@ for lib in ${platnames[@]} ; do
     Workers+=" $c"_sub.hdl
     do_ocpidev create worker "$c"_proxy.rcc -P $lib -V "$c".hdl -S "$c"-spec
     Workers+=" $c"_proxy.rcc
-    do_ocpidev create hdl device "$c"_em.hdl -P $lib -E "$c".hdl 
+    do_ocpidev create hdl device "$c"_em.hdl -P $lib -E "$c".hdl
     Workers+=" $c"_em.hdl
   done
   set -x
@@ -253,7 +254,7 @@ do_ocpidev show rcc platforms --json
 echo "ocpidev show hdl platforms"
 do_ocpidev show hdl platforms
 echo "ocpidev show hdl platforms --simple"
-do_ocpidev show hdl platforms --simple 
+do_ocpidev show hdl platforms --simple
 echo "ocpidev show hdl platforms --json"
 do_ocpidev show hdl platforms --json
 echo "ocpidev show workers"
@@ -301,19 +302,37 @@ do_ocpidev show tests --json --local-scope
 echo "ocpidev show tests --local-scope"
 do_ocpidev show tests --local-scope
 echo "ocpidev show tests --local-scope --simple"
-do_ocpidev show tests --local-scope --simple 
-echo "ocpidev show project --local-scope"
-do_ocpidev show project --local-scope
-echo "ocpidev show project --local-scope --simple"
-do_ocpidev show project --local-scope --simple
-echo "ocpidev show project --json --local-scope"
-do_ocpidev show project --json --local-scope
+do_ocpidev show tests --local-scope --simple
+echo "ocpidev show project"
+do_ocpidev show project
+echo "ocpidev show project --simple"
+do_ocpidev show project --simple
+echo "ocpidev show project --json"
+do_ocpidev show project --json
 echo "ocpidev show libraries --json --local-scope"
 do_ocpidev show libraries --json --local-scope
 echo "ocpidev show libraries --local-scope"
 do_ocpidev show libraries --local-scope
 echo "ocpidev show libraries --local-scope --simple"
 do_ocpidev show libraries --local-scope --simple
+echo "ocpidev show component top_comp1-spec.xml --simple"
+do_ocpidev show component top_comp1-spec.xml --simple
+echo "ocpidev show component top_comp1-spec.xml --table"
+do_ocpidev show component top_comp1-spec.xml --table
+echo "ocpidev show component top_comp1-spec.xml --json"
+do_ocpidev show component top_comp1-spec.xml --json
+echo "ocpidev show component top_comp1-spec.xml --simple"
+do_ocpidev show component top_comp1-spec.xml --simple
+echo "ocpidev show component --hdl-library devices comp1-spec.xml --simple"
+do_ocpidev show component --hdl-library devices comp1-spec.xml --simple
+echo "ocpidev show component -p matchstiq_z1_0 comp1-spec.xml --simple"
+do_ocpidev show component -P matchstiq_z1_0 comp1-spec.xml --simple
+echo "ocpidev show worker -l dsp_comps comp1.rcc --simple"
+do_ocpidev show worker -l dsp_comps comp1.rcc --simple
+echo "ocpidev show worker -l dsp_comps comp1.rcc --table"
+do_ocpidev show worker -l dsp_comps comp1.rcc --table
+echo "ocpidev show worker -l dsp_comps comp1.rcc --json"
+do_ocpidev show worker -l dsp_comps comp1.rcc --json
 
 if [ "$ONLY_CREATE" == "1" ] ; then
   echo "Keeping the project and exiting before build or deletion"
@@ -364,10 +383,6 @@ if [ -z "$NO_BUILD" ] ; then
   do_ocpidev clean test --build-rcc-platform $RCC_PLATFORM
   do_ocpidev clean test --rcc-platform $RCC_PLATFORM
   # in this test project building platforms is not relevenat beacuse they are fake platforms
-  #echo "============OCPIDEVTEST:Building platform "
-  #do_ocpidev build hdl platform isim_0 
-  #echo "============OCPIDEVTEST:Building platforms "
-  #do_ocpidev build hdl platforms
 if [ -z "$HDL_NO_BUILD" ]; then
   echo "============OCPIDEVTEST:Building primitive "
   do_ocpidev build hdl primitive library comms_comps --build-hdl-platform $HDL_PLATFORM
@@ -397,7 +412,7 @@ if [ -z "$HDL_NO_BUILD" ]; then
   do_ocpidev build hdl assemblies --hdl-platform $HDL_PLATFORM
   do_ocpidev clean hdl assemblies --build-hdl-platform $HDL_PLATFORM
   do_ocpidev clean hdl assemblies --hdl-platform $HDL_PLATFORM
-  do_ocpidev clean  
+  do_ocpidev clean
   echo "============OCPIDEVTEST:Building primitives target"
   do_ocpidev build hdl primitives --build-hdl-platform $HDL_TARGET
   do_ocpidev build hdl primitives --hdl-platform $HDL_TARGET
@@ -413,15 +428,17 @@ if [ -z "$HDL_NO_BUILD" ]; then
   do_ocpidev build hdl assemblies --hdl-platform $HDL_PLATFORM
 fi
   echo "============OCPIDEVTEST:Clean "
-  do_ocpidev clean  
+  do_ocpidev clean
   echo "============OCPIDEVTEST:Building project HP"
   do_ocpidev -v build project . $RCC --build-hdl-platform $HDL_PLATFORM
   do_ocpidev -v build project . $RCC --hdl-platform $HDL_PLATFORM
-  do_ocpidev clean   
+  do_ocpidev clean
   echo "============OCPIDEVTEST:Building project HSP/HP"
   do_ocpidev build project . $RCC --build-hdl-rcc-platform $HDL_PLATFORM --build-hdl-platform $HDL_PLATFORM
-  do_ocpidev build project . $RCC --hdl-rcc-platform $HDL_PLATFORM --hdl-platform $HDL_PLATFORM 
-  fi  
+  do_ocpidev build project . $RCC --hdl-rcc-platform $HDL_PLATFORM --hdl-platform $HDL_PLATFORM
+  do_ocpidev run library components
+  do_ocpidev run -d components
+  fi
   if [ "$ONLY_CREATE_BUILD" == 1 ] ; then
     echo "Exiting before project deletion."
     exit 0
@@ -450,45 +467,45 @@ confirm_empty hdl/assemblies
 
 echo "========Deleting platform device libraries"
 for lib in ${platnames[@]} ; do
-  do_ocpidev delete -f hdl device "dev_$lib".hdl -P $lib 
+  do_ocpidev delete -f hdl device "dev_$lib".hdl -P $lib
   for c in ${compseq1[@]}; do
     do_ocpidev delete -f spec $c -P $lib
     do_ocpidev delete -f test $c -P $lib
     do_ocpidev delete -f hdl device "$c".hdl -P $lib
     do_ocpidev delete -f hdl device "$c"_sub.hdl -P $lib
-    do_ocpidev delete -f worker "$c"_proxy.rcc -P $lib 
-    do_ocpidev delete -f hdl device "$c"_em.hdl -P $lib 
+    do_ocpidev delete -f worker "$c"_proxy.rcc -P $lib
+    do_ocpidev delete -f hdl device "$c"_em.hdl -P $lib
   done
-  confirm_empty hdl/platforms/$lib/devices 
+  confirm_empty hdl/platforms/$lib/devices
 done
 
 echo "====Deleting misc cards, slots, and card devices"
 do_ocpidev delete -f hdl card card0
 do_ocpidev delete -f hdl slot slot0
-do_ocpidev delete -f spec comp6 -h cards
-# this is broken an bug needs to be written for this 
-#do_ocpidev delete -f test comp6 -h cards 
-do_ocpidev delete -f hdl device comp6.hdl -h cards
-do_ocpidev delete -f hdl device comp6_sub.hdl -h cards
-do_ocpidev delete -f worker comp6_proxy.rcc -h cards
-do_ocpidev delete -f hdl device comp6_em.hdl -h cards
+do_ocpidev delete -f spec comp6 --hdl-library cards
+# this is broken an bug needs to be written for this
+#do_ocpidev delete -f test comp6 --hdl-library cards
+do_ocpidev delete -f hdl device comp6.hdl --hdl-library cards
+do_ocpidev delete -f hdl device comp6_sub.hdl --hdl-library cards
+do_ocpidev delete -f worker comp6_proxy.rcc --hdl-library cards
+do_ocpidev delete -f hdl device comp6_em.hdl --hdl-library cards
 
 echo "========Deleting device libraries"
 for lib in ${devlibs[@]} ; do
   libopt=""
   if [ "$lib" != "devices" ] ; then
-    libopt="-h $lib"
+    libopt="--hdl-library $lib"
   fi
   do_ocpidev delete -f hdl device "dev_$lib".hdl $libopt
   for c in ${compseq1[@]}; do
-    do_ocpidev delete -f spec $c -h $lib
-    do_ocpidev delete -f test $c -h $lib
+    do_ocpidev delete -f spec $c --hdl-library $lib
+    do_ocpidev delete -f test $c --hdl-library $lib
     do_ocpidev delete -f hdl device "$c".hdl $libopt
     do_ocpidev delete -f hdl device "$c"_sub.hdl $libopt
-    do_ocpidev delete -f worker "$c"_proxy.rcc -h $lib
+    do_ocpidev delete -f worker "$c"_proxy.rcc --hdl-library $lib
     do_ocpidev delete -f hdl device "$c"_em.hdl $libopt
   done
-  confirm_empty hdl/$lib 
+  confirm_empty hdl/$lib
 done
 
 echo "========Deleting primitive libraries"
@@ -529,4 +546,3 @@ echo "========Deleting project $pj"
 confirm_empty .
 cd ..
 do_ocpidev delete -f project $(basename $pj) -d $(dirname $pj)
-

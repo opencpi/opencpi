@@ -70,13 +70,19 @@ PKGS_D+=(epel-release)
 PKGS_D+=(glibc.i686=/lib/ld-linux.so.2
          redhat-lsb-core.i686=/lib/ld-lsb.so.3
          ncurses-libs.i686=/usr/lib/libncurses.so.5
-         libXft.i686=/lib/libXft.so.2
-         libXext.i686=/lib/libXext.so.6)
+         libXft.i686=/usr/lib/libXft.so.2
+         libXext.i686=/usr/lib/libXext.so.6)
 #    for Quartus Pro 17 (AV-4318), we need specifically the 1.2 version of libpng
 PKGS_D+=(libpng12)
+#    to cleanup multiple copies of Linux kernel, etc. (AV-4802)
+PKGS_D+=(hardlink)
 # docker container missing this	libXdmcp.i686=/lib/libXdmcp.so.6) # AV-3645
 #    for bash completion - a noarch package  (AV-2398)
 PKGS_D+=(bash-completion=/etc/profile.d/bash_completion.sh)
+#    Needed to build gdb
+PKGS_D+=(bison)
+#    Needed to build gdb
+PKGS_D+=(flex)
 ##########################################################################################
 # S. yum-installed and but not rpm-required - conveniences or required for source environment
 # While some manual installations require git manually installed before this,
@@ -102,6 +108,7 @@ PKGS_S+=(glibc-devel.i686)
 #    for devel.  For RPM installations we somehow rely on the user pre-installing epel
 #
 #    for various testing scripts
+#    AV-5478: If the minor version changes here, fix script below
 PKGS_E+=(python34-numpy)
 
 # functions to deal with arrays with <pkg>=<file> syntax
@@ -117,3 +124,15 @@ function ypkgs {
 sudo yum -y install $(ypkgs PKGS_R) $(ypkgs PKGS_D) $(ypkgs PKGS_S)
 # Now those that depend on epel, e.g.
 sudo yum -y install $(ypkgs PKGS_E)
+# AV-5478: Make sure the python3 link is present
+if ! command -v python3 >/dev/null; then
+    if ! py34=$(command -v python3.4); then
+      echo "Cannot find python3.4 after installing it" 2>&1
+      exit 1
+    fi
+    if ! sudo ln -s $py34 /usr/bin/python3; then
+      echo "Cannot create missing /usr/bin/python3 link to $py34" 2>&1
+      exit 1
+    fi
+    echo "Created the missing /usr/bin/python3 -> python3.4 link" 2>&1
+fi

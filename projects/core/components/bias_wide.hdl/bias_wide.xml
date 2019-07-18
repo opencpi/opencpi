@@ -1,5 +1,5 @@
 <HdlWorker language="vhdl" spec="bias_spec.xml">
-  <property name='nWide' parameter='1' initial='1' default='1'/>
+  <property name='nWide' parameter='1' default='1'/>
   <streaminterface name='in' datawidth='nWide*32' numberofopcodes='256'/>
   <streaminterface name='out' datawidth='nWide*32' numberofopcodes='256'/>
 </HdlWorker>

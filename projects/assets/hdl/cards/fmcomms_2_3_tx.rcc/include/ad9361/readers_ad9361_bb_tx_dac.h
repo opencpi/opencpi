@@ -72,11 +72,12 @@
  ******************************************************************************/
 
 #include <cstdint>    // uint8_t, uint32_t types
-#include "OcpiApi.hh" // OCPI::API namespace
+#include "OcpiApi.hh" // OA namespace
 //#include "ad9361.h"   // BBPLL_MODULUS macro (this is a ADI No-OS header)
-#include "ocpi_component_prop_type_helpers.h" // ocpi_float_t
 #include "readers_ad9361_bb_rx_adc.h"             // get_AD9361_ADC_FREQ_Hz()
 #include "readers_ad9361_bb_tx_filters_digital.h" // get_AD9361_THB...() functions
+
+namespace OA = OCPI::API;
 
 /*! @brief Get the in-situ value with exact precision of the
  *         DAC divider
@@ -87,17 +88,13 @@
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_DAC_divider(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_DAC_divider(
+    OA::Application& app, const char* app_inst_name_proxy,
     uint8_t& val)
 {
-  OCPI::API::Property p(app, app_inst_name_proxy, "DAC_Clk_div2");
+  OA::Property p(app, app_inst_name_proxy, "DAC_Clk_div2");
   val = p.getBoolValue() ? 2 : 1;
-
-  return 0;
 }
 
 /*! @brief Get the nominal in-situ value with double floating point precision
@@ -110,11 +107,9 @@ const char* get_AD9361_DAC_divider(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_DAC_FREQ_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_DAC_FREQ_Hz(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   double d_ADC_FREQ_Hz;
@@ -125,13 +120,10 @@ const char* get_AD9361_DAC_FREQ_Hz(
     double  ADC_FREQ_Hz;
     uint8_t DAC_divider;
 
-    char* ret;
     const char* inst = app_inst_name_proxy;
 
-    ret = (char*) get_AD9361_ADC_FREQ_Hz(app, inst, ADC_FREQ_Hz);
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_DAC_divider(app, inst, DAC_divider);
-    if(ret != 0) { return ret; }
+    get_AD9361_ADC_FREQ_Hz(app, inst, ADC_FREQ_Hz);
+    get_AD9361_DAC_divider(app, inst, DAC_divider);
 
     d_ADC_FREQ_Hz = (double) ADC_FREQ_Hz;
     d_DAC_divider = (double) DAC_divider;
@@ -143,8 +135,6 @@ const char* get_AD9361_DAC_FREQ_Hz(
   val = d_ADC_FREQ_Hz / d_DAC_divider;
 
   //log_debug("calculated DAC_FREQ = %.15f Hz", val);
-
-  return 0;
 }
 
 /*! @brief Get the nominal in-situ value with double floating point precision
@@ -157,11 +147,9 @@ const char* get_AD9361_DAC_FREQ_Hz(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_DAC_FREQ_step_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_DAC_FREQ_step_Hz(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   double d_ADC_FREQ_step_Hz;
@@ -172,13 +160,10 @@ const char* get_AD9361_DAC_FREQ_step_Hz(
     double  ADC_FREQ_step_Hz;
     uint8_t DAC_divider;
 
-    char* ret;
     const char* inst = app_inst_name_proxy;
 
-    ret = (char*) get_AD9361_ADC_FREQ_step_Hz(app, inst, ADC_FREQ_step_Hz);
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_DAC_divider(     app, inst, DAC_divider     );
-    if(ret != 0) { return ret; }
+    get_AD9361_ADC_FREQ_step_Hz(app, inst, ADC_FREQ_step_Hz);
+    get_AD9361_DAC_divider(     app, inst, DAC_divider     );
 
     d_ADC_FREQ_step_Hz = (double) ADC_FREQ_step_Hz;
     d_DAC_divider      = (double) DAC_divider;
@@ -188,12 +173,10 @@ const char* get_AD9361_DAC_FREQ_step_Hz(
   // "When clear, the DAC clock rate equals the ADC clock rate.
   // When set, the DAC clock equals 1/2 of the ADC rate."
   val = d_ADC_FREQ_step_Hz / d_DAC_divider;
-
-  return 0;
 }
 
-const char* get_AD9361_T2_FREQ_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_T2_FREQ_Hz(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   double d_DAC_FREQ_Hz;
@@ -204,13 +187,10 @@ const char* get_AD9361_T2_FREQ_Hz(
     double DAC_FREQ_Hz;
     uint8_t THB3_interpolation_factor;
 
-    char* ret;
     const char* inst = app_inst_name_proxy;
 
-    ret = (char*) get_AD9361_DAC_FREQ_Hz(              app, inst, DAC_FREQ_Hz              );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_THB3_interpolation_factor(app, inst, THB3_interpolation_factor);
-    if(ret != 0) { return ret; }
+    get_AD9361_DAC_FREQ_Hz(              app, inst, DAC_FREQ_Hz              );
+    get_AD9361_THB3_interpolation_factor(app, inst, THB3_interpolation_factor);
 
     d_DAC_FREQ_Hz               = (double) DAC_FREQ_Hz;
     d_THB3_interpolation_factor = (double) THB3_interpolation_factor;
@@ -218,12 +198,10 @@ const char* get_AD9361_T2_FREQ_Hz(
 
   val = d_DAC_FREQ_Hz / d_THB3_interpolation_factor;
   //log_debug("calculated T2_FREQ = %.15f Hz", val);
-
-  return 0;
 }
 
-const char* get_AD9361_T2_FREQ_step_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_T2_FREQ_step_Hz(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   double d_DAC_FREQ_step_Hz;
@@ -234,25 +212,20 @@ const char* get_AD9361_T2_FREQ_step_Hz(
     double DAC_FREQ_step_Hz;
     uint8_t THB3_interpolation_factor;
 
-    char* ret;
     const char* inst = app_inst_name_proxy;
 
-    ret = (char*) get_AD9361_DAC_FREQ_step_Hz(         app, inst, DAC_FREQ_step_Hz         );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_THB3_interpolation_factor(app, inst, THB3_interpolation_factor);
-    if(ret != 0) { return ret; }
+    get_AD9361_DAC_FREQ_step_Hz(         app, inst, DAC_FREQ_step_Hz         );
+    get_AD9361_THB3_interpolation_factor(app, inst, THB3_interpolation_factor);
 
     d_DAC_FREQ_step_Hz          = (double) DAC_FREQ_step_Hz;
     d_THB3_interpolation_factor = (double) THB3_interpolation_factor;
   }
 
   val = d_DAC_FREQ_step_Hz / d_THB3_interpolation_factor;
-
-  return 0;
 }
 
-const char* get_AD9361_T1_FREQ_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_T1_FREQ_Hz(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   double d_T2_FREQ_Hz;
@@ -263,13 +236,10 @@ const char* get_AD9361_T1_FREQ_Hz(
     double T2_FREQ_Hz;
     uint8_t THB2_interpolation_factor;
 
-    char* ret;
     const char* inst = app_inst_name_proxy;
 
-    ret = (char*) get_AD9361_T2_FREQ_Hz(               app, inst, T2_FREQ_Hz               );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_THB2_interpolation_factor(app, inst, THB2_interpolation_factor);
-    if(ret != 0) { return ret; }
+    get_AD9361_T2_FREQ_Hz(               app, inst, T2_FREQ_Hz               );
+    get_AD9361_THB2_interpolation_factor(app, inst, THB2_interpolation_factor);
 
     d_T2_FREQ_Hz                = (double) T2_FREQ_Hz;
     d_THB2_interpolation_factor = (double) THB2_interpolation_factor;
@@ -277,12 +247,10 @@ const char* get_AD9361_T1_FREQ_Hz(
 
   val = d_T2_FREQ_Hz / d_THB2_interpolation_factor;
   //log_debug("calculated T1_FREQ = %.15f Hz", val);
-
-  return 0;
 }
 
-const char* get_AD9361_T1_FREQ_step_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_T1_FREQ_step_Hz(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   double d_T2_FREQ_step_Hz;
@@ -293,21 +261,16 @@ const char* get_AD9361_T1_FREQ_step_Hz(
     double T2_FREQ_step_Hz;
     uint8_t THB2_interpolation_factor;
 
-    char* ret;
     const char* inst = app_inst_name_proxy;
 
-    ret = (char*) get_AD9361_T2_FREQ_step_Hz(          app, inst, T2_FREQ_step_Hz          );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_THB2_interpolation_factor(app, inst, THB2_interpolation_factor);
-    if(ret != 0) { return ret; }
+    get_AD9361_T2_FREQ_step_Hz(          app, inst, T2_FREQ_step_Hz          );
+    get_AD9361_THB2_interpolation_factor(app, inst, THB2_interpolation_factor);
 
     d_T2_FREQ_step_Hz           = (double) T2_FREQ_step_Hz;
     d_THB2_interpolation_factor = (double) THB2_interpolation_factor;
   }
 
   val = d_T2_FREQ_step_Hz / d_THB2_interpolation_factor;
-
-  return 0;
 }
 
 /*! @brief Get the nominal in-situ value with double floating point precision
@@ -320,11 +283,9 @@ const char* get_AD9361_T1_FREQ_step_Hz(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_CLKTF_FREQ_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_CLKTF_FREQ_Hz(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   double d_T1_FREQ_Hz;
@@ -335,13 +296,10 @@ const char* get_AD9361_CLKTF_FREQ_Hz(
     double T1_FREQ_Hz;
     uint8_t THB1_interpolation_factor;
 
-    char* ret;
     const char* inst = app_inst_name_proxy;
 
-    ret = (char*) get_AD9361_T1_FREQ_Hz(               app, inst, T1_FREQ_Hz               );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_THB1_interpolation_factor(app, inst, THB1_interpolation_factor);
-    if(ret != 0) { return ret; }
+    get_AD9361_T1_FREQ_Hz(               app, inst, T1_FREQ_Hz               );
+    get_AD9361_THB1_interpolation_factor(app, inst, THB1_interpolation_factor);
 
     d_T1_FREQ_Hz                = (double) T1_FREQ_Hz;
     d_THB1_interpolation_factor = (double) THB1_interpolation_factor;
@@ -349,8 +307,6 @@ const char* get_AD9361_CLKTF_FREQ_Hz(
 
   val = d_T1_FREQ_Hz / d_THB1_interpolation_factor;
   //log_debug("calculated CLKTF_FREQ = %.15f Hz", val);
-
-  return 0;
 }
 
 /*! @brief Get the nominal in-situ value with double floating point precision
@@ -364,11 +320,9 @@ const char* get_AD9361_CLKTF_FREQ_Hz(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_CLKTF_FREQ_step_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_CLKTF_FREQ_step_Hz(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   double d_T1_FREQ_step_Hz;
@@ -379,21 +333,16 @@ const char* get_AD9361_CLKTF_FREQ_step_Hz(
     double T1_FREQ_step_Hz;
     uint8_t THB1_interpolation_factor;
 
-    char* ret;
     const char* inst = app_inst_name_proxy;
 
-    ret = (char*) get_AD9361_T1_FREQ_step_Hz(          app, inst, T1_FREQ_step_Hz          );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_THB1_interpolation_factor(app, inst, THB1_interpolation_factor);
-    if(ret != 0) { return ret; }
+    get_AD9361_T1_FREQ_step_Hz(          app, inst, T1_FREQ_step_Hz          );
+    get_AD9361_THB1_interpolation_factor(app, inst, THB1_interpolation_factor);
 
     d_T1_FREQ_step_Hz           = (double) T1_FREQ_step_Hz;
     d_THB1_interpolation_factor = (double) THB1_interpolation_factor;
   }
 
   val = d_T1_FREQ_step_Hz / d_THB1_interpolation_factor;
-
-  return 0;
 }
 
 #endif // _READERS_AD9361_TX_DAC_H

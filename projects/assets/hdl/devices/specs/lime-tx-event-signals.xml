@@ -1,7 +1,7 @@
 <Signals>
-  <Signal Output="connected"/>
-  <Signal Output="event_pending"/>
-  <Signal Output="opcode"/>
-  <Signal  Input="done_processing_event"/>
-  <Signal  Input="busy"/>
+  <Signal Name="connected" Direction="out"/>
+  <Signal Name="event_pending" Direction="out"/>
+  <Signal Name="opcode" Direction="out"/>
+  <Signal Name="done_processing_event" Direction="in"/>
+  <Signal Name="busy" Direction="in"/>
 </Signals>

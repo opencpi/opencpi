@@ -93,7 +93,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -111,7 +111,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \graphicspath{ {figures/} }
 
 \begin{document}
-
+\section*{Zipper Deprecation Notice:}
+Beginning with OpenCPI Version 1.5, support for Lime Microsystems' Zipper card is now deprecated.
 \section*{Summary - \Comp}
 \begin{tabular}{|c|M{13.5cm}|}
 	\hline
@@ -124,7 +125,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & February 2018 \\
+	Release Date      & 4/2019 \\
 	\hline
 	Component Library & ocpi.assets.devices     \\
 	\hline
@@ -207,14 +208,18 @@ The main purpose of this worker is to perform a CDC for a data bus. The decision
 \subsection*{\comp.hdl}
 \begin{itemize}
 	\item assets/hdl/devices/lime\_dac.hdl/lime\_dac.vhd
-	\item assets/hdl/devices/lime\_adc.hdl/sync\_status.vhd
-	      \begin{itemize}
-	      	\item Generates the \textit{underrun} event when the DAC tries to unload a sample and the DAC FIFO is empty
-	      \end{itemize}
 	\item core/hdl/primitives/util/dac\_fifo.vhd
-	      \begin{itemize}
-	      	\item Performs the clock domain crossing between the control clock and sample clock domains
-	      \end{itemize}
+      \begin{itemize}
+      	\item Performs the clock domain crossing between the control clock and sample clock domains
+		\item assets/hdl/devices/lime\_adc.hdl/sync\_status.vhd
+    		\begin{itemize}
+			\item Generates the \textit{underrun} event when the DAC tries to unload a sample and the DAC FIFO is empty
+		\end{itemize}
+		\item core/hdl/primitives/bsv/imports/SyncFIFO.v
+    		\begin{itemize}
+		    	\item Two-clocked CDC FIFO
+	    \end{itemize}
+      \end{itemize}
 \end{itemize}
 \begin{landscape}
 
@@ -242,8 +247,8 @@ The main purpose of this worker is to perform a CDC for a data bus. The decision
 			\hline
 			Property     & \verb+IDATA_WIDTH_p+ & UShort&-              & -               & Parameter     & Standard           & 32      & \\
 			\hline
-			Property     & \verb+min_num_cp_clks_per_txen_events+ & UShort & - & -        & Initial, Readable & Standard       & 180     &
-After every ZLM received on the \verb+event_in+ port, backpressure will be held on that port for one less than the number of control plane clock cycles specified by this property. This is done in order to ensure tx events are properly synchronized to the AD9361 FB\_CLK without losing any events. Minimum required value is ceil(1.5 * control plane clock rate / AD9361 FB\_CLK rate [use lowest expected FB\_CLK rate for your scenario]).
+			Property     & \verb+min_num_cp_clks_per_txen_events+ & UShort & - & -        & Initial, Readable & Standard       & 938     &
+After every ZLM received on the \verb+event_in+ port, backpressure will be held on that port for one less than the number of control plane clock cycles specified by this property. This is done in order to ensure tx events are properly synchronized to the DAC clock without losing any events. Minimum required value is ceil(1.5 * control plane clock rate / DAC clock rate [use lowest expected DAC clock rate for your scenario]).
 \\
 			\hline
 			Property     & \verb+other_present+ & Bool & -              & -               & Readable      & -           & -       & Not implemented. Flag to indicated presence of ADC worker                                                              \\

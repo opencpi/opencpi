@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -28,28 +28,18 @@ Verify args:
 
 To test the Complex Mixer, a binary data file is generated containing complex
 signed 16-bit samples with a tone at a configurable center frequency and sample
-frequency. 
+frequency.
 The Application XML sets the phase increment of the Mixer/NCO to output a 1 Hz tone,
 sampled at 16 Hz. The output waveform's frequency is expected to +1 Hz greater than
 the input waveform frequency. The validation of the test involves performing an FFT
 of the output file to ensure the max tone is located at DC or 0 Hz.
 """
-import struct
-import numpy as np
-import sys
 import os.path
+# import struct
+import sys
+import opencpi.colors as color
+import numpy as np
 
-class color:
-    PURPLE = '\033[95m'
-    CYAN = '\033[96m'
-    DARKCYAN = '\033[36m'
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    END = '\033[0m'
 
 """
 Ex: python verify.py {sample-freq} {number_of_samples} {ofilename} {ifilename}
@@ -93,7 +83,7 @@ if len(odata) != len(idata):
     sys.exit(1)
 else:
     print '      PASS - Input and output file lengths match'
-    
+
 if(enable == 'true'): # => NORMAL MODE
     complex_data = np.array(np.zeros(num_samples), dtype=np.complex)
     for i in xrange(0,num_samples):
@@ -117,11 +107,11 @@ else: # => BYPASS MODE
 TODO: TEST IS ONLY VALID FOR HDL OUTPUT!
 - NEED TO BLOCK WHEN VERIFYING RCC OUTPUT or NOT RUN CONFIGURATION AGAINST RCC.
 
-    else: 
+    else:
         # Calculate NCO tone for mixing with input
         system_freq = sample_rate
-        phase_acc_width = 16 # Configuration of the Xilinx CORE Generator: DDS module       
-        nco_freq = ((system_freq * phs_inc) / (2**phase_acc_width)) 
+        phase_acc_width = 16 # Configuration of the Xilinx CORE Generator: DDS module
+        nco_freq = ((system_freq * phs_inc) / (2**phase_acc_width))
         #print '      NCO freq (calc) = ', nco_freq
         # Construct complex array of vectors for performing FFT
         # (PUT FFT INTO ITS OWN FUNCTION)

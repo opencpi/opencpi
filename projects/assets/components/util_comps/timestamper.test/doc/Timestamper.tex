@@ -89,7 +89,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -114,13 +114,13 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & September 2018 \\
+	Release Date      & 4/2019 \\
 	\hline
 	Component Library & ocpi.assets.util\_comps \\
 	\hline
 	Workers           & \comp.hdl              \\
 	\hline
-	Tested Platforms  & xsim, isim, modelsim, Matchstiq-Z1(PL) \\
+	Tested Platforms  & xsim, isim, modelsim, zed, e3xx, Matchstiq-Z1(PL), alst4, ml605 \\
 	\hline
 \end{tabular}
 
@@ -181,13 +181,23 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 			\rowcolor{blue}
 			Name          & Type & SequenceLength & ArrayDimensions & Accessibility      & Valid Range & Default & Usage                        \\
 			\hline
-			\verb+enable+ & Bool & -              & -               & Writable, Readable & Standard    & true    & Enable or bypass timestamper \\
+			\verb+enable+ & Bool & -              & -               & Initial 		   & Standard    & true    & Enable or bypass timestamper \\
 			\hline
 		\end{tabular}
 	\end{scriptsize}
 
 	\section*{Worker Properties}
-	There are no worker implementation-specific properties for this component
+	\subsection*{\comp.hdl}
+	\begin{scriptsize}
+		\begin{tabular}{|p{2cm}|p{2cm}|p{1cm}|c|c|c|p{2cm}|p{1cm}|p{4cm}|}
+			\hline
+			\rowcolor{blue}
+			Type     & Name                   & Type   & SequenceLength & ArrayDimensions & Accessibility       & Valid Range & Default & Usage                   \\
+			\hline
+			SpecProperty & \verb+enable+ 	   & - 		& -              & -               & Readable			   & -           & -		& Enable or bypass timestamper \\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
 
 	\section*{Component Ports}
 	\begin{scriptsize}

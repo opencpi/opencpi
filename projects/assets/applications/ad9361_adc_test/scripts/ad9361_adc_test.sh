@@ -84,7 +84,8 @@ if [ ! -f $APP_XML ]; then
 fi
 
 echo "Running PRBS Built-In-Self-Test across range of sample rates for 1R1T LVDS mode"
-set -o pipefail; OCPI_LOG_LEVEL=1 OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:./assemblies/ ./scripts/AD9361_BIST_PRBS.sh $APP_XML 2>&1 | tee odata/AD9361_BIST_PRBS.log
+#'grep -v ...' added below to satisfy AV-5440. the test would report a failure because of the warning about readable otherwise
+set -o pipefail; OCPI_LOG_LEVEL=1 OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:./assemblies/ ./scripts/AD9361_BIST_PRBS.sh $APP_XML 2>&1 | tee odata/temp; grep -v "the \"readable\" attribute is deprecated: all properties are considered readable" odata/temp > odata/AD9361_BIST_PRBS.log; rm odata/temp; 
 if [ "$?" !=  "0" ]; then
   echo "TEST FAILED"
   exit 1

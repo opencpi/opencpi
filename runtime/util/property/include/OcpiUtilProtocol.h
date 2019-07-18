@@ -25,9 +25,14 @@
 #include "OcpiUtilProperty.h"
 #include "OcpiUtilEzxml.h"
 
+// The attributes normally derived from examining the protocol operations.
+// In the absence of protocol operations, they can be specified directly.
+// They can also be specified to override the protocol-operation-derived values
+// They may appear as attributes in protocol elements or even port elements
 #define OCPI_PROTOCOL_SUMMARY_ATTRS \
   "DataValueWidth", "DataValueGranularity", "DiverseDataSizes", "MaxMessageValues", \
-  "VariableMessageLength", "ZeroLengthMessages", "MinMessageValues"
+  "VariableMessageLength", "ZeroLengthMessages", "MinMessageValues", "Unbounded", \
+  "NumberOfOpcodes", "twoway", "DefaultBufferSize"
 
 namespace OCPI  {
   namespace Util {
@@ -68,7 +73,7 @@ namespace OCPI  {
     };
     class Protocol {
     public:
-      size_t m_nOperations;
+      size_t m_nOperations; // the actual length of m_operations
       Operation *m_operations;
       Operation *m_op;                 // used during parsing
       std::string
@@ -76,7 +81,7 @@ namespace OCPI  {
 	m_file,
 	m_name;
       // Summary attributes derived from protocols.  May be specified in the absense of protocol
-      size_t m_defaultBufferSize;      // Allow the protocol to simply override the protocol size, if != 0
+      size_t m_defaultBufferSize;      // Allow the protocol to simply override the protocol size, if != SIZE_MAX
                                        // and particularly when it is unbounded
       size_t m_minBufferSize;          // convenience - in bytes
       size_t m_dataValueWidth;         // the smallest atomic data size in any message
@@ -93,13 +98,15 @@ namespace OCPI  {
       bool m_zeroLengthMessages;       // are there messages of zero length (min == 0)
       bool m_isTwoWay;                 // are there operations that are two-way?
       bool m_isUnbounded;              // are there messages with no upper bound?
+      size_t m_nOpcodes;               // the value from actual operations, or summary, or override
       Protocol();
       Protocol(const Protocol & p );
       Protocol(Protocol *p); // clone
       virtual ~Protocol();
       Protocol & operator=( const Protocol & p );
       Protocol & operator=( const Protocol * p );
-      void init();
+      void initForProtocol();
+      void initNoProtocol();
       const char *parseOperation(ezxml_t op);
       Operation *findOperation(const char *name);
       void finishOperation(const Operation &op);

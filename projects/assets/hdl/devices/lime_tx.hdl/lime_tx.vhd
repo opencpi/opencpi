@@ -48,6 +48,10 @@ begin
   --TXEN must be high during SPI Read/Writes
   txen <= dev_txen_dac_in.txen or props_in.raw.is_read or props_in.raw.is_write;
 
+  -- TxEn ---> GPIO pin
+  dev_gp_out.data <= dev_txen_dac_in.txen;
+  dev_gp_out.mask <= dev_txen_dac_in.txen;
+
   pin_control_true : if its(txen_pin_control_p) generate
     props_in_s.raw <= props_in.raw;   --No mux needed for pin control mode
     dev_tx_event_out.done_processing_event <= '1';

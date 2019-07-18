@@ -32,7 +32,7 @@ typedef StringSet::const_iterator StringSetIter;
 // Ordered list with no duplicates, i.e. a set ordered by order of insertion
 struct OrderedStringSet : public std::list<std::string> {
   void push_back(const std::string &);
-  std::list<std::string>::const_iterator find(const std::string &);
+  std::list<std::string>::iterator find(const std::string &);
 };
 
 enum Model {

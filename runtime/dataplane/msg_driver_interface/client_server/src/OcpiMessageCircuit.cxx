@@ -143,16 +143,17 @@ namespace OCPI {
     getNextFullInputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode, OS::Timer *timer)
     {
       BufferUserFacet *r_buf = NULL;
+      bool end;
 
       if (timer) {
-	while (!(r_buf = m_rcv_port->getNextFullInputBuffer(data, length, opcode))) {
+	while (!(r_buf = m_rcv_port->getNextFullInputBuffer(data, length, opcode, end))) {
 	  if (timer->expired())
 	    return 0;
 	  m_transport.dispatch();
 	  OS::sleep(0);
 	}
       } else
-	r_buf = m_rcv_port->getNextFullInputBuffer(data, length, opcode);
+	r_buf = m_rcv_port->getNextFullInputBuffer(data, length, opcode, end);
 
       static bool one_time_warning = 0;
       if ( m_rcv_port->getCircuit()->getStatus() == Circuit::Disconnecting ) {

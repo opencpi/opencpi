@@ -65,7 +65,7 @@ namespace OCPI {
                                  // the m_dataAlign would be 2 while the m_align would be 4
       size_t m_align;            // The alignment requirement for this complete type
       size_t m_nBits;            // bits per element FIXME: is this redundant with mBytes
-      size_t m_elementBytes;     // nytes per element (in arrays or if not array, in sequences
+      size_t m_elementBytes;     // bytes per element (in arrays or if not array, in sequences
       size_t m_nBytes;           // total bytes (if bounded), minimum bytes if unbounded      
       size_t m_nItems;           // total number of fixed items ?for arrays?
       bool m_fixedLayout;        // is this type fixed length in its parent?
@@ -75,6 +75,7 @@ namespace OCPI {
       std::string m_format;      // placeholder for formatting attribute for this type
       ValueTypeInternal(OCPI::API::BaseType bt, bool isSequence);
     };
+    class Reader;
     // The ValueType class (which could be DataType) represents the data type of something, and
     // not its value.  It is not named.  It has the base scalar type (from the list in
     // *DataTypesApi.h) or also extended types:  enum, struct, and recursively "type".  This
@@ -95,6 +96,7 @@ namespace OCPI {
       Member *m_members;         // for m_baseType==OCPI_Struct, m_nMembers long
       Member *m_type;            // for m_baseType==OCPI_Type, points to type it is based on
       const char **m_enums;      // for m_baseType==OCPI_Enum, m_nEnums+1 long
+      std::vector<uint8_t> m_path;   // how to navigate to here from top
       // Rule of 3 with copy swap idiom (makes a temp when assigning)
       ValueType(OCPI::API::BaseType bt = OCPI::API::OCPI_none, bool isSequence = false);
       ValueType(const ValueType &other);
@@ -155,16 +157,16 @@ namespace OCPI {
     public:
       virtual void
 	writeOpcode(const char *name, uint8_t opcode),
-	beginSequence(Member &m, size_t nElements) = 0,
-	beginArray(Member &m, size_t nItems),
-	endArray(Member &m),
-	endSequence(Member &m),
-	beginStruct(Member &m),
-	endStruct(Member &m),
-	beginType(Member &m),
-	endType(Member &m),
-	writeString(Member &m, WriteDataPtr p, size_t strLen, bool start, bool top) = 0,
-	writeData(Member &m, WriteDataPtr p, size_t nBytes, size_t nElements) = 0,
+	beginSequence(const Member &m, size_t nElements) = 0,
+	beginArray(const Member &m, size_t nItems),
+	endArray(const Member &m),
+	endSequence(const Member &m),
+	beginStruct(const Member &m),
+	endStruct(const Member &m),
+	beginType(const Member &m),
+	endType(const Member &m),
+	writeString(const Member &m, WriteDataPtr p, size_t strLen, bool start, bool top) = 0,
+	writeData(const Member &m, WriteDataPtr p, size_t nBytes, size_t nElements) = 0,
 	end();
     };
 
@@ -223,12 +225,11 @@ namespace OCPI {
       void printAttrs(std::string &out, const char *tag, unsigned indent = 0, bool suppressDefault = false);
       void printChildren(std::string &out, const char *tag, unsigned indent = 0);
       void printXML(std::string &out, const char *tag, unsigned indent);
-      void write(Writer &writer, const uint8_t *&data, size_t &length, bool topSeq = false);
+      void write(Writer &writer, const uint8_t *&data, size_t &length, bool topSeq = false) const;
+      void generate(const char *name, unsigned ordinal = 0, unsigned depth = 0);
       // Fake means don't actually touch the message.
       void read(Reader &reader, uint8_t *&data, size_t &length, bool fake = false,
 		bool top = false) const;
-      void generate(const char *name, unsigned ordinal = 0, unsigned depth = 0);
-      //      const std::string &name() const { return m_name; }
       const char *cname() const { return m_name.c_str(); }
       const char *pretty() const { return m_pretty.c_str(); }
       const char
@@ -236,12 +237,15 @@ namespace OCPI {
 	*parseDefault(const char *value, const char *tag, const IdentResolver *resolv = NULL),
 	*parse(ezxml_t x, bool isFixed, bool hasName, const char *hasDefault, const char *tag,
 	       unsigned ordinal, const IdentResolver *resolv = NULL),
+	*descend(OCPI::API::AccessList &list, const Member *&member, size_t &offset,
+		 size_t *dimensionp = NULL) const,
 	*offset(size_t &maxAlign, size_t &argOffset, size_t &minSize, bool &diverseSizes,
 		bool &sub32, bool &unBounded, bool &isVariable, bool isTop = false);
       uint8_t *getField(uint8_t *data, size_t &length) const;
       static const char
 	*parseMembers(ezxml_t prop, size_t &nMembers, Member *&members, bool isFixed,
-		     const char *tag, const char *vtag, const IdentResolver *resolv = NULL),
+		      const char *tag, const char *vtag, const std::vector<uint8_t> *pathp = NULL,
+		      const IdentResolver *resolv = NULL),
 	*alignMembers(Member *m, size_t nMembers, size_t &maxAlign, size_t &myOffset,
 		     size_t &minSize, bool &diverseSizes, bool &sub32, bool &unBounded,
 		     bool &isVariable, bool isTop = false);

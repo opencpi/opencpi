@@ -24,14 +24,16 @@
 set -e
 if [ -n "$HDL_TEST_PLATFORM" ]; then
    sims=$HDL_TEST_PLATFORM
+elif env | grep -q '^HdlPlatforms=$'; then
+   sims=
 else
    sims=(`ocpirun -C --only-platforms | grep '.*-.*sim' | sed s/^.*-//`)
-   [ -z "$sims" ] && {
-       echo This test requires a simulator for building, and there are none so we are skipping it.
-       exit 0
-  }
-  echo Available simulators are: ${sims[*]}, using $sims.
 fi
+[ -z "$sims" ] && {
+   echo This test requires a simulator for building, and there are none so we are skipping it.
+   exit 0
+}
+echo Available simulators are: ${sims[*]}, using $sims.
 echo Using sim platform: $sims
 rm -r -f test
 ocpidev create project test

@@ -1141,7 +1141,8 @@ module mkSMAdapter4B(wciS0_Clk,
   assign wsiM0_MData = wsiM_reqFifo_q_0[43:12] ;
 
   // value method wsiM0_mByteEn
-  assign wsiM0_MByteEn = wsiM_reqFifo_q_0[11:8] ;
+  assign wsiM0_MByteEn = wsiM_reqFifo_q_0[11:8] == 4'hA ? 4'd0 : wsiM_reqFifo_q_0[11:8];
+  assign wsiM0_MDataInfo[0] = wsiM_reqFifo_q_0[11:8] == 4'hA ? 1'd1 : 1'd0;
 
   // value method wsiM0_mReqInfo
   assign wsiM0_MReqInfo = wsiM_sThreadBusy_d ? 8'd0 : wsiM_reqFifo_q_0[7:0] ;
@@ -1523,7 +1524,7 @@ module mkSMAdapter4B(wciS0_Clk,
 	     (WILL_FIRE_RL_wmrd_mesgBodyRequest ? b__h15473 : 12'd0) +
 	     (WILL_FIRE_RL_wmrd_mesgResptoWsi ? 12'd1 : 12'd0) ;
   assign MUX_fabWordsRemain$write_1__VAL_1 =
-	     (wmi_sFlagReg[23:0] == 24'd0) ? 14'd1 : b__h18410[13:0] ;
+	     (wmi_sFlagReg[22:0] == 23'd0) ? 14'd1 : b__h18410[13:0] ;
   assign MUX_fabWordsRemain$write_1__VAL_2 = fabWordsRemain - fabWordsCurReq ;
   assign MUX_mesgCount$write_1__VAL_2 = mesgCount + 32'd1 ;
   assign MUX_mesgReqAddr$write_1__VAL_2 =
@@ -1532,9 +1533,9 @@ module mkSMAdapter4B(wciS0_Clk,
   assign MUX_thisMesg$write_1__VAL_1 =
 	     { mesgCount[7:0], mesgMetaF_opcode__h23695, x_length__h24096 } ;
   assign MUX_thisMesg$write_1__VAL_2 =
-	     { mesgCount[7:0], wmi_sFlagReg[31:24], wmi_sFlagReg[15:0] } ;
+	     { mesgCount[7:0], wmi_sFlagReg[31:23], wmi_sFlagReg[14:0] } ;
   assign MUX_unrollCnt$write_1__VAL_1 =
-	     (wmi_sFlagReg[23:0] == 24'd0) ? 16'd1 : b__h18410[15:0] ;
+	     (wmi_sFlagReg[22:0] == 23'd0) ? 16'd1 : b__h18410[15:0] ;
   assign MUX_unrollCnt$write_1__VAL_2 = unrollCnt - 16'd1 ;
   assign MUX_wci_wslv_illegalEdge$write_1__VAL_1 =
 	     wci_wslv_reqF$D_OUT[36:34] != 3'd4 &&
@@ -1687,7 +1688,7 @@ module mkSMAdapter4B(wciS0_Clk,
 	       wsiS0_MBurstPrecise,
 	       wsiS0_MBurstLength,
 	       wsiS0_MData,
-	       wsiS0_MByteEn,
+	       wsiS0_MDataInfo[0] ? 4'hA : wsiS0_MByteEn,
 	       wsiS0_MReqInfo } ;
   assign wsiS_wsiReq$whas = 1'd1 ;
   assign wsiS_operateD_1$wget = 1'd1 ;
@@ -1839,15 +1840,19 @@ module mkSMAdapter4B(wciS0_Clk,
 
   // register lastMesg
   assign lastMesg$D_IN =
-	     (MUX_endOfMessage$write_1__SEL_1 ||
-	      MUX_unrollCnt$write_1__SEL_1) ?
-	       thisMesg :
-	       32'hFEFEFFFE ;
-  assign lastMesg$EN =
-	     MUX_wsiS_reqFifo_levelsValid$write_1__SEL_3 &&
-	     wsiS_reqFifo$D_OUT[57] ||
-	     MUX_unrollCnt$write_1__SEL_1 ||
-	     WILL_FIRE_RL_wci_ctrl_IsO ;
+             //      1        11                            4              8               1      7
+            { wsiM0_MReqLast, wsiM0_MBurstLength[10:0], wsiM0_MByteEn, wsiM0_MReqInfo, wsiM0_MDataInfo, 7'd0};
+//  wmi_mFlagF_q_0;
+  
+	     // (MUX_endOfMessage$write_1__SEL_1 ||
+	     //  MUX_unrollCnt$write_1__SEL_1) ?
+	     //   thisMesg :
+	     //   32'hFEFEFFFE ;
+  assign lastMesg$EN = wsiM0_MCmd == 3'd1;
+  	     // MUX_wsiS_reqFifo_levelsValid$write_1__SEL_3 &&
+	     // wsiS_reqFifo$D_OUT[57] ||
+	     // MUX_unrollCnt$write_1__SEL_1 ||
+	     // WILL_FIRE_RL_wci_ctrl_IsO ;
 
   // register mesgCount
   always@(MUX_mesgCount$write_1__SEL_1 or
@@ -2572,9 +2577,10 @@ module mkSMAdapter4B(wciS0_Clk,
   assign b__h18410 = x__h18530 + residue__h18273 ;
   assign b__h18783 = { {2{fabRespCredit_value[11]}}, fabRespCredit_value } ;
   assign mesgMetaF_length__h23696 =
-	     (wsiS_reqFifo$D_OUT[57] && wsiS_reqFifo$D_OUT[11:8] == 4'd0 &&
+	     (wsiS_reqFifo$D_OUT[57] && 
+	      (wsiS_reqFifo$D_OUT[11:8] == 4'd0 || wsiS_reqFifo$D_OUT[11:8] == 4'hA) &&
 	      mesgLengthSoFar == 14'd0) ?
-	       24'd0 :
+	       {wsiS_reqFifo$D_OUT[11:8] == 4'hA ? 1'd1 : 1'd0, 23'd0} :
 	       { 10'd0, mlB__h23529 } ;
   assign mesgMetaF_opcode__h23695 = opcode[8] ? opcode[7:0] : 8'd0 ;
   assign mlB__h23529 = mesgLengthSoFar + mlInc__h23528 ;
@@ -2605,8 +2611,8 @@ module mkSMAdapter4B(wciS0_Clk,
 	       12'd1 :
 	       (smaCtrl[5] ? 12'd4095 : wsiBurstLength__h19161[11:0]) ;
   assign sendData_byteEn__h19245 =
-	     (thisMesg[15:0] == 16'd0) ?
-	       4'd0 :
+	     (thisMesg[14:0] == 15'd0) ?
+	       (thisMesg[15] ? 4'hA : 4'd0) :
 	       ((unrollCnt == 16'd1) ? x__h19302[3:0] : 4'd15) ;
   assign value__h6702 =
 	     MUX_wmi_mFlagF_x_wire$wset_1__SEL_1 ?
@@ -2622,7 +2628,7 @@ module mkSMAdapter4B(wciS0_Clk,
 	     (smaCtrl[3:0] != 4'h3 || wsiM_reqFifo_c_r != 2'd2) &&
 	     (!wsiS_reqFifo$D_OUT[57] || wmi_mFlagF_c_r != 2'd2) ;
   assign x__h16878 = respF_rRdPtr + 12'd1 ;
-  assign x__h18530 = { 2'd0, wmi_sFlagReg[23:2] } ;
+  assign x__h18530 = { 3'd0, wmi_sFlagReg[22:2] } ;
   assign x__h18954 = fabWordsRemain == fabWordsCurReq ;
   assign x__h19302 =
 	     ({ 4'd0, thisMesg[1:0] } == 6'd0) ?
@@ -3179,8 +3185,8 @@ module mkSMAdapter4B(wciS0_Clk,
 	$display("[%0d]: %m: wmrd_mesgBegin mesgCount:%0h mesgLength:%0h reqInfo:%0h",
 		 v__h18699,
 		 mesgCount,
-		 wmi_sFlagReg[23:0],
-		 wmi_sFlagReg[31:24]);
+		 wmi_sFlagReg[22:0],
+		 wmi_sFlagReg[31:23]);
     if (wciS0_MReset_n != `BSV_RESET_VALUE)
       if (WILL_FIRE_RL_wmwt_mesgBegin && wsiS_reqFifo$D_OUT[56])
 	begin

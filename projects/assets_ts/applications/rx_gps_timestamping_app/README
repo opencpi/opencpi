@@ -1,0 +1,15 @@
+Generate input data and taps:
+rm -rf odata/*
+python generate.py 1024 1024000 8 256000 idata/rx_app_input.bin
+
+Sim filerw
+OCPI_LIBRARY_PATH=../../hdl/assemblies/rx_gps_timestamping_filerw_asm ocpirun -v -d rx_gps_timestamping_filerw_app.xml
+
+RCC filerw:
+OCPI_LIBRARY_PATH=../../imports/ocpi.core/exports/lib/components/:../../hdl/assemblies/rx_gps_timestamping_asm ocpirun -v -d rx_gps_timestamping_filerw_app.xml
+
+To view input data:
+python ../../scripts/plotAndFft.py idata/rx_app_input.bin complex 120000 1024000 true
+
+To view output data:
+python ../../scripts/plotAndFft.py odata/rx_app_output.bin complex 120000 128000 true

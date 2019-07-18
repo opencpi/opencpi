@@ -1,4 +1,3 @@
-<RccImplementation>
-  <xi:include href="delay_spec.xml"/>
+<RccWorker spec="delay_spec.xml">
   <ControlInterface SizeOfConfigSpace="1m" ControlOperations="initialize,start,stop,release"/>
-</RccImplementation>
+</RccWorker>

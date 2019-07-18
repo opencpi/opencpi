@@ -30,7 +30,7 @@ fi
 output_path="$1"
 platform="$2"
 cross="$3"
-[ -z $OCPI_CDK_DIR ] && echo "Need to set \$OCPI_CDK_DIR before running this script" && exit 1
+[ -z "$OCPI_CDK_DIR" ] && echo "Need to set \$OCPI_CDK_DIR before running this script" && exit 1
 
 # Make output directory
 mkdir -p $output_path
@@ -53,6 +53,16 @@ if [ -n "$cross" ]; then
     else
       [ -d $file ] && mkdir -p $opencpi_output_path/$edited_file
       cp -LR $file $opencpi_output_path/$(dirname "$edited_file")
+      # Normally we are simply doing a deep copy here, but there is an exception:
+      # We need to preserve symlinks that are in the same directory (i.e. for alternative names)
+      # So we do a post-pass to fix this.
+      for l in $(find $file -type l); do
+        if [[ $(readlink $l) != */* ]]; then
+          subdir=
+          [ -d $file ] && subdir=/$(echo $l | sed s=$(dirname $file)==)
+          cp -PR $l $opencpi_output_path/$subdir
+        fi
+      done
     fi
   done
 else

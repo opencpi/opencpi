@@ -1,0 +1,23 @@
+The test_width_v2 application utilizes the pattern_v2, bias, wsi_width_adapter, and capture_v2 components.
+Because the app sets the nWide property for the two bias components, a property of the bias_wide worker,
+it uses an assembly containing the bias_wide worker.
+
+To run the application on an embedded platform, with the assumption you are operating in NFS/Network mode on the
+embedded platform and you have your projects mounted at /mnt/ocpi_core and /mnt/ocpi_assets do:
+
+export OCPI_LIBRARY_PATH=/mnt/ocpi_assets/artifacts:/mnt/ocpi_core/artifacts
+ocpirun -d -v -x test_width_v2
+
+The pattern_v2 component sends the following messages:
+
+msg1 = {0x00000000} with opcode 251, msg2 = {0x00000000,0x00000001} with opcode 252, msg3 = {0x00000000,0x00000001,0x00000002} with opcode 253,
+msg4 = {0x00000000,0x00000001,0x00000002,0x00000003} with opcode 254, msg5 = {0x00000000,0x00000001,0x00000002,0x00000003,0x00000004} with opcode 255
+
+The first bias component (bias0) adds the bias value 1 to the data in the messages.
+
+The second bias component (bias1) adds the bias value 2 to the data in the messages.
+
+The expected messages capture_v2 will receive are:
+
+msg1 = {0x00000003} with opcode 251, msg2 = {0x00000003,0x00000004} with opcode 252, msg3 = {0x00000003,0x00000004,0x00000005} with opcode 253,
+msg4 = {0x00000003,0x00000004,0x00000005,0x00000006} with opcode 254, msg5 = {0x00000003,0x00000004,0x00000005,0x00000006,0x00000007} with opcode 255

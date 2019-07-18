@@ -1,0 +1,3 @@
+verilog xil_defaultlib "../../../../util/arSRLFIFOD.v"
+verilog xil_defaultlib "glbl.v"
+nosort

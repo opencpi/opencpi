@@ -23,7 +23,7 @@
   <Property Name="numMetadataWords" Parameter="true" Type="uLong" Default="4" Description="Due to a limitation (AV-4292), cannot use constrained elements
   in unconstrained array declarations, so cannot directly set the second dimension for the metadata property to 4. The number of metadata words must
   always be 4, since there are four 4 byte words that are captured. The first metadata word is the opcode for the message and message size in bytes;
-  opcode 8 MSB and message size 24 LSB. The second word is the fraction time stamp for the EOM. The third word is the fraction time stamp for the SOM.
+  opcode 8 MSB and message size 24 LSB. The second word is the fraction timestamp for the EOM. The third word is the fraction timestamp for the SOM.
   And the fourth word is the seconds timestamp for the SOM. So the default value must not be changed."/>
 
   <Property Name="metaFull" Type="bool" Default="false" Volatile="true" Initial="true" Description="Metadata buffer full flag."/>
@@ -34,8 +34,7 @@
 
   <Property Name="stopOnZLM" Type="bool"  Default="false" Initial="true" Description="Indicates stopping on ZLM of stopZLMOpcode."/>
 
-  <Property Name="stopOnEOF" Type="bool"  Default="true" Initial="true" Description="As of now, this indicates stopping on ZLM of opcode 0. In the future it is
-  expected that OpenCPI will standardize a definition of EOF."/>
+  <Property Name="stopOnEOF" Type="bool"  Default="true" Initial="true" Description="Indicates stopping on EOF."/>
 
   <Property Name="metadata" Type="uLong" ArrayDimensions="numRecords, numMetadataWords" Volatile="true" Description="Multidimensional array containing metadata records."/>
 

@@ -22,11 +22,11 @@
  * Abstract:
  *   This file contains the interface and data structures for the JTRS DSP Worker.
  *
- * Revision History: 
+ * Revision History:
  *
  *    06/23/09  John Miller
  *    Added code to handle RCC_ERROR and RCC_FATAL return codes.
- * 
+ *
  *    06/01/05  John Miller
  *    Initial revision
  *
@@ -67,6 +67,14 @@ namespace OCPI {
       void run(bool &anyRun);
       void advanceAll();
       void portError(std::string&error);
+      bool doEOF();
+      // EOF propagation for V2+ RCC workers
+      // If workereof is set on the first input, then all handling is by the worker
+      // Otherwise it is per-output-port
+      inline bool checkEOF() const {
+	return m_version >= 2 && m_firstInput && !m_firstInput->metaPort->m_workerEOF && 
+	  m_firstInput->current.data && m_firstInput->current.eof_;
+      }
     public:
       RCCResult setError(const char *fmt, va_list ap);
       inline RCCWorker &context() const { return *m_context; }
@@ -79,21 +87,21 @@ namespace OCPI {
 
       // These property access methods are called when the fast path
       // is not enabled, either due to no MMIO or that the property can
-      // return errors. 
+      // return errors.
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
-      void set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *, \
+      void set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member &, \
 				 size_t off, const run val, unsigned idx) const; \
-      void set##pretty##SequenceProperty(const OCPI::API::Property &p, const run *vals, \
+      void set##pretty##SequenceProperty(const OCPI::API::PropertyInfo &p, const run *vals, \
 					 size_t length) const;
       // Set a string property value
       // ASSUMPTION:  strings always occupy at least 4 bytes, and
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this.
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)	\
-      void set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *, \
+      void set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member &, \
 				 size_t offset, const run val, unsigned idx) const;     \
-      void set##pretty##SequenceProperty(const OCPI::API::Property &p, const run *vals, \
+      void set##pretty##SequenceProperty(const OCPI::API::PropertyInfo &p, const run *vals, \
 					 size_t length) const;
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE_S
@@ -101,18 +109,18 @@ namespace OCPI {
       // Get Scalar Property
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)	             \
 	run get##pretty##Property(const OCPI::API::PropertyInfo &info,	\
-				  const OCPI::Util::Member *m, size_t offset, \
+				  const OCPI::Util::Member &m, size_t offset, \
 				  unsigned idx) const;			\
-        unsigned get##pretty##SequenceProperty(const OCPI::API::Property &p, \
+        unsigned get##pretty##SequenceProperty(const OCPI::API::PropertyInfo &p, \
 					       run *vals, size_t length) const;
       // ASSUMPTION:  strings always occupy at least 4 bytes, and
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this.
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)	      \
-	void get##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *, \
+	void get##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member &, \
 				   size_t off, char *cp, size_t length, unsigned idx) const; \
       unsigned get##pretty##SequenceProperty                                  \
-	(const OCPI::API::Property &p, char **vals, size_t length, char *buf, \
+	(const OCPI::API::PropertyInfo &p, char **vals, size_t length, char *buf, \
 	 size_t space) const;
 
       OCPI_PROPERTY_DATA_TYPES
@@ -135,19 +143,19 @@ namespace OCPI {
       void propertyRead(unsigned ordinal) const;
       void prepareProperty(OCPI::Util::Property&,
 			   volatile uint8_t *&writeVaddr,
-			   const volatile uint8_t *&readVaddr);
+			   const volatile uint8_t *&readVaddr) const;
       // backward compatibility for ctests
       OCPI::Container::Port
 	&createInputPort(OCPI::Util::PortOrdinal portId, size_t bufferCount, size_t bufferSize,
 			 const OCPI::Util::PValue *params),
-	&createOutputPort(OCPI::Util::PortOrdinal portId, size_t bufferCount, size_t bufferSize, 
+	&createOutputPort(OCPI::Util::PortOrdinal portId, size_t bufferCount, size_t bufferSize,
 			  const OCPI::Util::PValue *params),
 	&createTestPort(OCPI::Util::PortOrdinal portId, size_t bufferCount, size_t bufferSize,
 			bool isProvider, const OU::PValue *params);
       void read(size_t offset, size_t nBytes, void* p_data);
       void write(size_t offset, size_t nBytes, const void* p_data);
       // end backward compatibility for ctests
-     
+
       // Get our transport
       inline OCPI::DataTransport::Transport &getTransport() { return m_transport; }
 
@@ -158,9 +166,11 @@ namespace OCPI {
     private:
       void initializeContext();
       void checkError() const;
-      inline void setRunCondition(RunCondition &rc) {
-	m_runCondition = &rc;
-	m_runCondition->activate(m_runTimer, m_nPorts);
+      inline void setRunCondition(const RunCondition &rc) {
+        if (m_runCondition) // there is no RunCondition::deactivate()
+          m_runCondition->m_inUse = false;
+        m_runCondition = &rc;
+        m_runCondition->activate(m_runTimer, m_nPorts);
       }
       // Our dispatch table
       RCCEntryTable   *m_entry;    // our entry in the entry table of the artifact
@@ -170,11 +180,13 @@ namespace OCPI {
       unsigned         m_portInit; // This counts up as C++ user ports are constructed
       // Our context
       RCCWorker       *m_context;
+      RCCPort         *m_firstInput; // easy way to find first input port
+      RCCPortMask     m_eofSent;     // record EOF propagation
       OCPI::OS::Mutex &m_mutex;
       RunCondition     m_defaultRunCondition; // run condition we create
       RunCondition     m_cRunCondition;       // run condition we use when C-language RC changes
-      RunCondition    *m_runCondition;        // current active run condition used in dispatching
-      
+      const RunCondition *m_runCondition;        // current active run condition used in dispatching
+
       // Mutable since this is a side effect of clearing the worker-set error when reported
       mutable char     *m_errorString;         // error string set via "setError"
     protected:
@@ -192,7 +204,7 @@ namespace OCPI {
       // Last time that the worker was run
       OCPI::OS::Timer m_runTimer;
       OCPI::OS::Time  m_lastRun;
-                        
+
       // Debug/stats
       uint64_t worker_run_count;
 
@@ -217,4 +229,3 @@ namespace OCPI {
 }
 
 #endif
-

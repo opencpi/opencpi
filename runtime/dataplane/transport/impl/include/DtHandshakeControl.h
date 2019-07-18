@@ -47,7 +47,7 @@ namespace OCPI {
   // Token definition
   typedef int32_t ControlToken;
   typedef int32_t BooleanToken;
-  typedef int32_t PortId; // signed to allow a sentinel of -1
+  typedef uint32_t PortId; // was signed to allow a sentinel of -1, but not used that way anymore
 
   /**********************************
    *  SMB communications structures
@@ -240,10 +240,10 @@ namespace OCPI {
     assert(length <= maxXferLength);
     return (uint32_t)
       ((length & ~(UINT32_MAX << lengthBits)) | // length is LSB
-       ((eof ? 1 : 0) << lengthBits) |          // EOF independent of length, above length
+       ((eof ? 1u : 0) << lengthBits) |          // EOF independent of length, above length
        (1 << (lengthBits+1)) |                  // always-1 is above eof
                                                 // truncation indicator is above always-1
-       (opcode << (32 - opCodeBits)));          // high byte is opcode
+       ((uint32_t)opcode << (32 - opCodeBits)));          // high byte is opcode
   }
   inline void unpackXferMetaData(uint32_t md, size_t &length, uint8_t &opcode, bool &eof,
 				 bool &truncate) {

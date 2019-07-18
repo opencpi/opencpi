@@ -112,7 +112,7 @@
 
 %include "OcpiUtilDataTypesApi.h"
 %include "OcpiPValueApi.h"
-//%include "OcpiUtilPropertyApi.h"
+%include "OcpiUtilPropertyApi.h"
 %include "OcpiUtilExceptionApi.h"
 %include "OcpiLibraryApi.h"
 %include "OcpiContainerApi.h"

@@ -30,7 +30,6 @@
 typedef struct {
 	uint16_t mask;
 	uint16_t data;
-	uint8_t synronized;
 } State;
 static size_t mysizes[] = {sizeof(State), 0 };
 
@@ -53,11 +52,11 @@ static RCCResult start(RCCWorker *self)
 	myState->data = 0;
 	if (p->need_sync != 0)
 	{
-	   myState->synronized = 0;
+	   p->sync_criteria_met = 0;
 	}
 	else
 	{
-	   myState->synronized = 1;
+	   p->sync_criteria_met = 1;
 	}
 
 	return RCC_OK;
@@ -71,6 +70,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
    Real_digitizerInData  *inData  = in->current.data;
    Real_digitizerOutData *outData = out->current.data;
    State *myState = self->memories[0];
+	 Real_digitizerProperties *p = self->properties;
    unsigned len = byteLen2Real(in->input.length);
    unsigned int i,j = 0;
    unsigned short data = 0;
@@ -93,7 +93,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 
    for (i = 0; i<len; i++ )
    {
-     if (myState->synronized == 0)
+     if (!p->sync_criteria_met)
      {
        myState->data = myState->data << 1;
        if (Uscale(inData->real[i]) > 0)
@@ -101,7 +101,11 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 
        if (myState->data == 0xCEFA)
        {
-         myState->synronized = 1;
+         p->sync_criteria_met = 1;
+         if(p->enable_printing)
+         {
+           printf("real_digitizer: sync pattern 0xFACE found\n");
+         }
        }
      }
      else

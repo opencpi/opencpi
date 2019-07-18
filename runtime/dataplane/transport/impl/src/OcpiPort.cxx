@@ -1473,7 +1473,7 @@ hasEmptyOutputBuffer()
 
 BufferUserFacet* 
 Port::
-getNextFullInputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode)
+getNextFullInputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode, bool &end)
 {
   Circuit *c = getCircuit();
   OU::SelfAutoMutex guard(c); // FIXME: refactor to make this a circuit method
@@ -1490,6 +1490,7 @@ getNextFullInputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode)
 
     data = (uint8_t*)buf->getBuffer(); // cast off the volatile
     opcode = (uint8_t)buf->getMetaData()->ocpiMetaDataWord.opCode;
+    end = buf->getMetaData()->ocpiMetaDataWord.end;
     length = buf->getDataLength();
     if (buf->getMetaData()->ocpiMetaDataWord.truncate)
       ocpiBad("Message was truncated to %zu bytes", length);
@@ -1497,8 +1498,8 @@ getNextFullInputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode)
 
     OCPI_EMIT_REGISTER_FULL_VAR( "Data Buffer Opcode and length", OCPI::Time::Emit::DT_u, 64, OCPI::Time::Emit::Value, dbre ); 
     OCPI_EMIT_VALUE_CAT_NR__(dbre, (uint64_t)(opcode | (uint64_t)length<<16) , OCPI_EMIT_CAT_WORKER_DEV,OCPI_EMIT_CAT_WORKER_DEV_BUFFER_VALUES, buf);
-    ocpiDebug("Getting buffer %p on port %p on circuit %p on transport %p data %p op %u len %zu",
-	      buf, this, c, &c->parent(), data, opcode, length);
+    ocpiDebug("Getting buffer %p on port %p on circuit %p on transport %p data %p op %u len %zu end %u",
+	      buf, this, c, &c->parent(), data, opcode, length, buf->getMetaData()->ocpiMetaDataWord.end);
 
   }
   return buf;
@@ -1519,6 +1520,7 @@ getNextEmptyInputBuffer(uint8_t *&data, size_t &length) {
   }
   return NULL;
 }
+#if 0
 void Port::
 sendInputBuffer(BufferUserFacet &ib, size_t length, uint8_t opcode) {
   OU::SelfAutoMutex guard(getCircuit());
@@ -1543,7 +1545,7 @@ getNextFullOutputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode) {
   }
   return NULL;
 }
-
+#endif
 void Port::
 releaseOutputBuffer(BufferUserFacet &ob) {
   OU::SelfAutoMutex guard(getCircuit());
@@ -1655,17 +1657,19 @@ getNextEmptyOutputBuffer()
 
 void 
 Port::
-sendZcopyInputBuffer(BufferUserFacet &buf, size_t len, uint8_t op, bool /*end*/)
+sendZcopyInputBuffer(BufferUserFacet &buf, size_t len, uint8_t op, bool end)
 {
   Buffer *src_buf = static_cast<Buffer*>(&buf);
   src_buf->getMetaData()->ocpiMetaDataWord.length = (uint32_t)len;
   src_buf->getMetaData()->ocpiMetaDataWord.opCode = op;
+  src_buf->getMetaData()->ocpiMetaDataWord.end = end ? 1u : 0;
   src_buf->getMetaData()->ocpiMetaDataWord.timestamp = 0x01234567;
-  src_buf->getMetaData()->ocpiMetaDataWord.xferMetaData = packXferMetaData(len, op, false);
-  ocpiLog(9,"METAZ: @%p %x %x %x %x", src_buf->getMetaData(),
+  src_buf->getMetaData()->ocpiMetaDataWord.xferMetaData = packXferMetaData(len, op, end);
+  ocpiLog(9,"METAZ: @%p %x %x %x %u %x", src_buf->getMetaData(),
 	  src_buf->getMetaData()->ocpiMetaDataWord.length,
 	  src_buf->getMetaData()->ocpiMetaDataWord.opCode,
 	  src_buf->getMetaData()->ocpiMetaDataWord.timestamp,
+	  src_buf->getMetaData()->ocpiMetaDataWord.end,
 	  src_buf->getMetaData()->ocpiMetaDataWord.xferMetaData);
   Circuit *c = getCircuit();
   OU::SelfAutoMutex guard(c); // FIXME: refactor to make this a circuit method
@@ -1680,7 +1684,7 @@ getBufferLength()
 
 void 
 Port::
-sendOutputBuffer( BufferUserFacet* buf, size_t length, uint8_t opcode, bool /*end*/,
+sendOutputBuffer( BufferUserFacet* buf, size_t length, uint8_t opcode, bool end,
 		  bool /*data*/)
 {
   if (length > getBufferLength())
@@ -1690,15 +1694,17 @@ sendOutputBuffer( BufferUserFacet* buf, size_t length, uint8_t opcode, bool /*en
   // Put the actual opcode and data length in the meta-data
   b->getMetaData()->ocpiMetaDataWord.opCode = opcode;
   b->getMetaData()->ocpiMetaDataWord.length = OCPI_UTRUNCATE(uint32_t,length);
+  b->getMetaData()->ocpiMetaDataWord.end = end ? 1u : 0;
   if (!b->getMetaData()->ocpiMetaDataWord.timestamp)
     b->getMetaData()->ocpiMetaDataWord.timestamp = b->getTid() << 1 | 1;
   else
     b->getMetaData()->ocpiMetaDataWord.timestamp +=
       OCPI_UTRUNCATE(uint32_t, getBufferCount() << 1);
-  b->getMetaData()->ocpiMetaDataWord.xferMetaData = packXferMetaData(length, opcode, false);
-  ocpiLog(9,"METAs: @%p %x %x %x %x sz %zu %zu", b->getMetaData(),
+  b->getMetaData()->ocpiMetaDataWord.xferMetaData = packXferMetaData(length, opcode, end);
+  ocpiLog(9,"METAs: @%p %x %x %u %x %x sz %zu %zu", b->getMetaData(),
 	  b->getMetaData()->ocpiMetaDataWord.length,
 	  b->getMetaData()->ocpiMetaDataWord.opCode,
+	  b->getMetaData()->ocpiMetaDataWord.end,
 	  b->getMetaData()->ocpiMetaDataWord.timestamp,
 	  b->getMetaData()->ocpiMetaDataWord.xferMetaData,
 	  sizeof(RplMetaData), sizeof(BufferMetaData));

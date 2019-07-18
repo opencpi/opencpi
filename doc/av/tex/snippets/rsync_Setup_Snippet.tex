@@ -1,0 +1,36 @@
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+% This is for inserting into various "Getting Started" Guides
+% First, turn off indenting to avoid all the flushleft
+\newlength{\savedparindentrsync}%
+\setlength{\savedparindentrsync}{\parindent}%
+\setlength{\parindent}{0pt} % Don't indent all paragraphs
+\providecommand{\forceindent}{\leavevmode{\parindent=1em\indent}}%
+\def\qrsync{``\code{rsync}''~}
+\subsection{\qrsync provided binary}
+\label{sec:rsync}
+An ARM-compiled version of \qrsync is provided in the included SD card image for \rccplatform.
+This tool allows the use of \textit{standalone mode} while shortening the required developer time to synchronize the artifacts being developed.
+For command-line usage, see the \href{https://rsync.samba.org/documentation.html}{rsync home page}.
+The easiest usage is to have the radio ``pull'' from the developer's workstation; this does not need any additional command-line arguments.
+\subsubsection*{Implementation Details}
+Unfortunately, the \qrsync executable is not in the default path because when called remotely, it requests a non-interactive shell. For this reason, a ``pull'' approach is recommended.
+If a user for some reason requires a ``push'' from the workstation to the radio, the local \qrsync executable must be told the \textit{remote location} of the \path{rsync} executable to call, \textit{e.g.} \code{rsync --rsync-path=/mnt/card/opencpi/\rccplatform/bin/rsync}
+\setlength{\parindent}{\savedparindentrsync}%

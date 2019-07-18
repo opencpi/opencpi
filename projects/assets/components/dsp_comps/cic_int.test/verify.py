@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -30,22 +30,12 @@ Tests:
 #2: Is the expected amount
 #3: Matches the expected output
 """
+import datetime
 import sys
 import os.path
+import opencpi.colors as color
 import numpy as np
-import datetime
 
-class color:
-    PURPLE = '\033[95m'
-    CYAN = '\033[96m'
-    DARKCYAN = '\033[36m'
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    END = '\033[0m'
 
 if len(sys.argv) != 4:
     print("Invalid arguments:  usage is: verify.py <amplitude> <output-file> <input-file>")
@@ -98,14 +88,14 @@ ifile_nbytes = int(os.stat(sys.argv[3]).st_size)
 ofile_nbytes = int(os.stat(sys.argv[2]).st_size)
 #print 'DBG: Output filesize:\t', sys.argv[2],"/",ofile_nbytes,"bytes","/",ofile_nbytes / 4,"samples"
 if ((ifile_nbytes * R - bytes_lost_at_startup) != ofile_nbytes):
-    print '    FAIL - Output file is not the correct size'
+    print '    FAIL - Output file is not the correct size.  Expected: ', ifile_nbytes * R - bytes_lost_at_startup, ", Got: ", ofile_nbytes;
     sys.exit(1)
 else:
     print '    PASS - Output file is the correct size'
-    
+
 # Test #3 - Check that output data values: Unity Gain Response or Tone
 if (Ft == 0): # Unity Gain Response (DC input results in DC output)
-    # Calculate the expected output DC value, by scaling the input DC value 
+    # Calculate the expected output DC value, by scaling the input DC value
     # based on the configuration of the worker under test
     AMPLITUDE = int(AMPLITUDE * ((R*M)**N) / 2**np.ceil((N*(np.log2(R*M))))) #overwrite
     #print 'DBG: Test for Unity Gain Response: expected amplitude=%d' % AMPLITUDE
@@ -124,9 +114,9 @@ else: # Compare Expected vs Measured tone
     T1 = 50.0                   # frequency of target signal
     nsamples = len(real)
     if (R >= 2048):
-        # When there is a large amount of data to process, due to a large interpolator factor, 
+        # When there is a large amount of data to process, due to a large interpolator factor,
         # limit the number of samples to process, to largest power of 2.
-        # This greatly reduces the FFT processing duration, 
+        # This greatly reduces the FFT processing duration,
         # with a small sacrifice of not processing all of the data.
         nsamples = int(2**(np.floor(np.log2(len(real)))))
     data=np.zeros((nsamples), dtype=complex)

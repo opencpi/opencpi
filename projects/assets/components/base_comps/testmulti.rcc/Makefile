@@ -17,7 +17,4 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 Workers=prod cons
-# Set this if some of the xml files are elsewhere, like a spec file that is being
-# shared with other implementers
-IncludeDirs=../../runtime/local/util/timeEmit/include
 include $(OCPI_CDK_DIR)/include/worker.mk

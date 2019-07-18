@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #include <set>
 #include "ocpi-config.h"
 #include "OcpiOsAssert.h"
@@ -45,6 +46,18 @@ namespace OCPI {
       using OCPI::Util::ApiError;
       class Library;
 
+      static bool isProjectImports(const std::string &a_libName) {
+	if (OS::FileSystem::relativeName(a_libName) == "imports") {
+	  struct stat s;
+	  if (!lstat(a_libName.c_str(), &s) && (s.st_mode & S_IFMT) == S_IFLNK) {
+	    std::string dirName = OS::FileSystem::directoryName(a_libName);
+	    if (OS::FileSystem::relativeName(dirName) == "exports" &&
+		OS::FileSystem::exists(dirName + "/project-package-id"))
+	      return true;
+	  }
+	}
+	return false;
+      }
       // Our concrete artifact class
       class Artifact
 	: public OL::ArtifactBase<Library, Artifact> {
@@ -76,7 +89,7 @@ namespace OCPI {
 	  std::string globbedName;
 	  if (OU::globPath(name().c_str(), globbedName))
 	    ocpiInfo("Library path pathname \"%s\" is invalid or nonexistent, and ignored",
-		    name().c_str());
+		     name().c_str());
 	  doPath(globbedName);
 	}
 	OCPI::Library::Artifact *
@@ -97,7 +110,10 @@ namespace OCPI {
 	  //	  ocpiDebug("Processing library path: %s", libName.c_str());
 	  bool isDir;
 	  OS::FileSystem::FileId file_id;
-	  if (!OS::FileSystem::exists(a_libName, &isDir, NULL, NULL, &file_id))
+	  if (isProjectImports(a_libName))
+	    ocpiDebug("Ignoring project registry imports link: %s in OCPI_LIBRARY_PATH search.",
+		      a_libName.c_str());
+	  else if (!OS::FileSystem::exists(a_libName, &isDir, NULL, NULL, &file_id))
 	    ocpiDebug("Path name found in OCPI_LIBRARY_PATH, \"%s\", "
 		     "is nonexistent, not a normal file, or a broken link.  It will be ignored",
 		     a_libName.c_str());

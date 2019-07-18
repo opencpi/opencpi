@@ -1,4 +1,4 @@
-<HdlDevice language='vhdl' outer='true'>
+<HdlDevice language='vhdl' outer='true' Libraries='platform'>
   <ComponentSpec name='unoc2sdp' nocontrol='true'/>
   <unoc name="client"/>
   <cpmaster master='true'/>

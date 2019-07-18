@@ -127,10 +127,10 @@ namespace OCPI {
       /**********************************
        * Reteives the next available input buffer.
        *********************************/
-      BufferUserFacet* getNextFullInputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode);
+      BufferUserFacet* getNextFullInputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode, bool &end);
       // For use by bridge ports
       BufferUserFacet* getNextEmptyInputBuffer(uint8_t *&data, size_t &length);
-      void sendInputBuffer(BufferUserFacet &b, size_t length, uint8_t opcode);
+      //      void sendInputBuffer(BufferUserFacet &b, size_t length, uint8_t opcode);
 
       /**********************************
        * This method retreives the next available buffer from the local (our)
@@ -139,7 +139,7 @@ namespace OCPI {
       Buffer* getNextEmptyOutputBuffer();
       BufferUserFacet* getNextEmptyOutputBuffer(uint8_t *&data, size_t &length);
       // For use by bridge ports
-      BufferUserFacet* getNextFullOutputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode);
+      //      BufferUserFacet* getNextFullOutputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode);
       void releaseOutputBuffer(BufferUserFacet &b);
       /**********************************
        * Get the port dependency data

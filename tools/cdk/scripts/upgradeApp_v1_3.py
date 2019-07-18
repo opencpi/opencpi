@@ -23,6 +23,8 @@ from os.path import basename
 from os.path import dirname
 import sys
 import ocpiutil
+sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
+import _opencpi.util as ocpiutil
 
 def createPackageDict():
     packDict = {"ocpi":"ocpi.core"}

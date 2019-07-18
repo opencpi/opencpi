@@ -1,3 +1,4 @@
 <RccWorker language="c++" spec="biasFGM_spec.xml">
   <!-- Insert any other implementation-specific information here -->
+  <SpecProperty Name="biasValue" readback="true"/>
 </RccWorker>

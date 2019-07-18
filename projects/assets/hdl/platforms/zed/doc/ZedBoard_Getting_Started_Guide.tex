@@ -21,10 +21,16 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{OpenCPI\\ \bigskip ZedBoard Getting Started Guide}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
+\def\rccplatform{xilinx13\_3}
+\def\radioName{Zedboard}
+\def\mountPoint{/mnt/}
+\def\copyLoc{<partition>}
 %----------------------------------------------------------------------------------------
-\input{../../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
-\input{../../../../../../doc/av/tex/snippets/ocpidev_ide.tex}
+\def\snippetpath{../../../../../../doc/av/tex/snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
+\input{ocpidev_ide}
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{Zedboard Getting Started Guide}
@@ -45,14 +51,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \maketitle
 %\thispagestyle{fancy}
 
-% AV-4173 blurb start
-\begin{center}
-\framebox{\parbox{0.8\linewidth}{\centering
-\textcolor{red}{WARNING:}
-Applications (including XML-only ones) fail if there is not an IP address assigned to the ZedBoard, even when in ``standalone mode.'' To set a temporary IP address, the command ``\code{ifconfig eth0 192.168.244.244}'' can be used. This problem was found late within the 1.4 release cycle and should be addressed with the next major release.
-\PackageWarning{}{AV-4173} }}
-\end{center}
-% AV-4173 blurb end
 \newpage
 
 	\begin{center}
@@ -65,15 +63,17 @@ Applications (including XML-only ones) fail if there is not an IP address assign
 			\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
 		    \hline
 		    v1.1 & Initial Release & 3/2017 \\
-            \hline
-            v1.2 & Updated for OpenCPI Release 1.2 & 8/2017 \\
-            \hline
-            v1.3 & Updated for OpenCPI Release 1.3 & 2/2018 \\
-            \hline
-            pre-v1.4 & Fixed inaccurate description for hardware jumper configuration, OpenCPI-SD-zed directory path, and MAC address modification instructions for multiple ZedBoards on the same network. & 4/2018 \\
-            \hline
-            v1.4 & Update descriptions and paths & 9/2018 \\
-            \hline
+				\hline
+				v1.2 & Updated for OpenCPI Release 1.2 & 8/2017 \\
+				\hline
+				v1.3 & Updated for OpenCPI Release 1.3 & 2/2018 \\
+				\hline
+				pre-v1.4 & Fixed inaccurate description for hardware jumper configuration, OpenCPI-SD-zed directory path, and MAC address modification instructions for multiple ZedBoards on the same network. & 4/2018 \\
+				\hline
+				v1.4 & Update descriptions and paths & 9/2018 \\
+				\hline
+				v1.5 & Deprecated Zipper & 4/2019 \\
+				\hline
 			\end{tabularx}
 		\end{table}
 	\end{center}
@@ -88,22 +88,24 @@ Applications (including XML-only ones) fail if there is not an IP address assign
 	This document assumes a basic understanding of the Linux command line (or ``shell'') environment.  The reference(s) in Table 1 can be used as an overview of OpenCPI and may prove useful.
 \def\refskipocpiov{}
 \def\refcapbottom{}
-\input{../../../../../../doc/av/tex/snippets/References_Table}
+\input{References_Table}
 
 \newpage
 \section{Overview}
-This document provides steps for configuring a factory provided Digilent Zedboard with the OpenCPI run-time environment for executing applications, configuring a development system to build OpenCPI bitstreams targeting the \textit{zed} platform, and examples of executing applications on the OpenCPI configured Zedboard.
+This document provides: steps for configuring a factory provided Digilent Zedboard with the OpenCPI run-time environment for executing applications, configuring a development system to build OpenCPI bitstreams targeting the \textit{zed} platform, and examples of executing applications on the OpenCPI configured Zedboard.
 
 \section{Prerequisites}
+\subsection{RCC Platforms}
+The RCC platforms xilinx13\_3 and xilinx13\_4 are both supported. When targeting xilinx13\_4, replace 13\_3 in directory names and other places where 13\_3 is used or applicable. Boards such as the E310 and ZedBoard use the same xilinx13\_4 RCC platform. If it is already installed and built it can apply to the ZedBoard. 
 \begin{flushleft}
+\subsection{RPM}
 This guide assumes that, at a minimum, the following RPMs are installed:  \\
 \begin{table}[H]
 	\label{table:rpms}
-		\begin{tabularx}{\textwidth}{|c|X|}
+		\begin{tabularx}{\textwidth}{|C|X|}
 		\hline
 		\rowcolor{blue}
-		\textbf{RPM Name} & \textbf{Description} \\
-		\hline
+		 \textbf{RPM Name} & \textbf{Description} \\
 		\hline
 		All prerequisite RPMs & These packages have OpenCPI-specific patches and are provided as RPMs. This packaging ensures they will not conflict with other installed copies by using a nonstandard installation location of \path{/opt/opencpi/prerequisites}. \\
 		\hline
@@ -119,11 +121,13 @@ platforms, etc. \\
 		Additional header files and scripts for developing new assets as HDL
 and/or RCC. \\
 		\hline
-		\small{\code{opencpi-sw-platform-xilinx13\_3-*.noarch.rpm}} &
+		\small{\code{opencpi-sw-platform-xilinx13\_3-*.noarch.rpm}}
+		\centerline{or}
+		\small{\code{opencpi-sw-platform-xilinx13\_4-*.noarch.rpm}} &
 		Additional files necessary to build the framework targeting specific
 RCC/software platforms, independent of the final deployed hardware. \\
 		\hline
-		\small{\code{opencpi-hw-platform-zed-xilinx13\_3-*.noarch.rpm}} &
+		\small{\code{opencpi-hw-platform-zed-xilinx13\_3-*.noarch.rpm}} \centerline{or} \small{\code{opencpi-hw-platform-zed-xilinx13\_4-*.noarch.rpm}} &
 		Additional files necessary to build the framework targeting specific hardware platform ``X'' when running RCC platform ``Y'' (``Y'' can be ``no sw''). This RPM also includes hardware-specific SD Card images when applicable. \\
 		\hline
 	\end{tabularx}
@@ -179,7 +183,7 @@ See the ANGRYVIPER Team's Getting Started Guide for additional information conce
 \begin{itemize}
 \item \textbf{Digilent Zedboard}\\ \medskip
 It is expected that this evaluation board includes a power supply, micro-USB to USB cable, micro-USB to female-USB adapter and standard SD card (4GB). \\ \medskip
-OpenCPI has been tested on revisions C and D of the Zedboard. However, limitations have been observed for both revisions when used with the Zipper daughter card, details are provided in Myriad-RF\_1\_Zipper\_Limitations.pdf.\\ \medskip
+OpenCPI has been tested on revisions C and D of the Zedboard.\\ \medskip
 The micro-USB serial port located on the top-side of the ZedBoard labeled UART, can be used to access the serial connection with the processor.\medskip
 
 \begin{figure}[H]
@@ -205,18 +209,11 @@ An Ethernet port is available on the Zedboard and is required when the Network m
 \end{figure}
 
 \item \textbf{OpenCPI Zedboard BSP supported daughter cards (OPTIONAL)}\\
-The ZedBoard has a FMC LPC slot that is used to connect plug-in modules or daughter cards. Currently, OpenCPI supports three FMC daughter cards, which may be installed on the Zedboard:
+The ZedBoard has a FMC LPC slot that is used to connect plug-in modules or daughter cards. Currently, OpenCPI supports two FMC daughter cards, which may be installed on the Zedboard:
 \begin{itemize}
 	\item Analog Devices FMCOMMS2
 	\item Analog Devices FMCOMMS3
-	\item Lime Microsystems' Zipper card with the MyriadRF-1
 \end{itemize} \medskip
-
-\begin{figure}[ht]
-	\centerline{\includegraphics[scale=0.05]{zed_zipper}}
-	\caption{ZedBoard With Zipper and MyriadRF-1 Connected to the FMC Slot}
-	\label{fig:zed_zipper}
-\end{figure}
 
 \item \textbf{Access to a network which supports DHCP. (Network Mode)}
 
@@ -269,7 +266,7 @@ The SD can be setup to support both modes, as there is no conflict between the f
 \noindent After performing the steps from \ref{sec:Copy embedded OS and boot files to SD card}, copy the entire \textit{opencpi} directory to the SD card.
 
 \begin{verbatim}
-$ cp -r /opt/opencpi/cdk/zed/sdcard-xilinx13_3/opencpi /run/media/<user>/<partition>/
+$ cp -rL /opt/opencpi/cdk/zed/sdcard-xilinx13_3/opencpi /run/media/<user>/<partition>/
 
 $ cp /home/<user>/ocpi_projects/assets/hdl/assemblies/testbias/container-testbias_zed_base/\
 target-zynq/testbias_zed_base.bit.gz /run/media/<user>/<partition>/opencpi/xilinx13_3/artifacts/
@@ -279,7 +276,7 @@ target-zynq/testbias_zed_base.bit.gz /run/media/<user>/<partition>/opencpi/xilin
 After performing the steps from \ref{sec:Copy embedded OS and boot files to SD card}, copy the entire \textit{opencpi} directory to the SD card, then copy the relevant bitstreams, artifacts into the \textit{artifacts} directory and application XMLs into the \textit{applications} directory. For this getting started guide, only one bitstream is required to be copied onto the SD cards, where as the required artifacts and application XML where copied to the SD along with the entire \textit{opencpi} directory.
 
 \begin{verbatim}
-$ cp -r /opt/opencpi/cdk/zed/sdcard-xilinx13_3/opencpi /run/media/<user>/<partition>/
+$ cp -rL /opt/opencpi/cdk/zed/sdcard-xilinx13_3/opencpi /run/media/<user>/<partition>/
 
 $ cp /home/<user>/ocpi_projects/assets/hdl/assemblies/testbias/container-testbias_zed_base/\
 target-zynq/testbias_zed_base.bit.gz /run/media/<user>/<partition>/opencpi/xilinx13_3/artifacts/
@@ -302,65 +299,9 @@ $ cp /opt/opencpi/cdk/zed/sdcard-xilinx13_3/opencpi/zynq_net_setup.sh \
 The final SD Card artifacts are distributed in \path{/opt/opencpi/cdk/zed/} via RPM as noted previously. The end user is not required nor expected to generate the files.
 
 \pagebreak
-\section{Script Setup}
-There are two type of setups or modes for running applications on any embedded radio: Network and Standalone. In Network mode, a development system hosts the OpenCPI tree as an NFS server to the ZedBoard which is an NFS client. This configuration provides quick and dynamic access to all of OpenCPI, and presumably any applications, components and bitstreams. In Standalone mode, all the artifacts are located on the SDR's local storage (\textit{e.g.} SD card) and no network connection is required. This may be more suited for \textit{deployment} scenarios in which network connection is not possible or practical. Network mode is generally preferred during the development process.
-
-\begin{flushleft}
-
-\subsection{Setting up the Network and Standalone Mode scripts}
-
-For each mode, a startup script is used to configure the environment of the embedded system. The OpenCPI framework provides a default script for each mode. The default scripts are to be copied and modified per the user's requirements.\par\medskip
-
-\subsubsection{Network Mode}
-1) Make a copy of the default script for editing.
-\begin{verbatim}
-$ cp /run/media/<user>/<partition>/opencpi/default_mynetsetup.sh \
-/run/media/<user>/<partition>/opencpi/mynetsetup.sh
-\end{verbatim}\medskip
-
-2) Edit the copy
-\begin{enumerate}
-\item In \texttt{mynetsetup.sh}, uncomment the following lines which are necessary for mounting \textit{core} and \textit{assets} project:
-
-\begin{verbatim}
-mkdir -p /mnt/ocpi_core
-mount -t nfs -o udp,nolock,soft,intr $1:/home/user/ocpi_projects/core /mnt/ocpi_core
-mkdir -p /mnt/ocpi_assets
-mount -t nfs -o udp,nolock,soft,intr $1:/home/user/ocpi_projects/assets /mnt/ocpi_assets
-\end{verbatim}
- \item Edit \texttt{/home/user/ocpi\_projects/core} and \texttt{/home/user/ocpi\_projects/assets} to reflect the paths to the \textit{core} and \textit{assets} project on the host, e.g.:
-\begin{verbatim}
-mkdir -p /mnt/ocpi_core
-mount -t nfs -o udp,nolock,soft,intr $1:/home/johndoe/ocpi_projects/core /mnt/ocpi_core
-mkdir -p /mnt/ocpi_assets
-mount -t nfs -o udp,nolock,soft,intr $1:/home/johndoe/ocpi_projects/assets /mnt/ocpi_assets
-\end{verbatim}
-\end{enumerate}
-
-\subsubsection{Standalone Mode}
-In this mode, all OpenCPI artifacts that are required to run any application on the ZedBoard must be copied onto the SD card.  Building the provided projects to obtain such artifacts is discussed in Section \ref{sec:Building OpenCPI projects}. Once the artifacts have been created, they must be copied to the SD card in Section \ref{sec:SD_Card_Setup}. In general, any required \texttt{.so} (RCC workers), \texttt{.bit.gz} (hdl assemblies), and application XMLs or executables must be copied to the SD card.\medskip
-
-1) Make a copy of the default script for editing\medskip
-\begin{verbatim}
-$ cp /run/media/<user>/<partition>/opencpi/default_mysetup.sh \
-/run/media/<user>/<partition>/opencpi/mysetup.sh
-\end{verbatim}\medskip
-
-2) Edit the copy\\ \medskip
-Unlike Network mode, there is no required modifications to this script. \medskip
-
-3) Copy any additional artifacts to SD card's \path{opencpi/xilinx13_3/artifacts/} directory \medskip
-
-\subsection{Setup system time reference}
-\textbf{If Linux system time is not required to be accurate, this step may be skipped.} \\ \medskip
-
-\textit{For either Network or Standalone mode}, the following settings that are passed by \texttt{mynetsetup.sh/mysetup.sh} to the \texttt{zynq\_net\_setup.sh/zynq\_setup.sh} scripts \textit{may} require modification:
-
-\begin{itemize}
- \item Identify the system that is to be used as a time server, where the default is ``time.nist.gov''. A valid time server must support RFC-868.
- \item Identify the current timezone description, where the default is ``EST5EDT,M3.2.0,M11.1.0''. Change this if required for the local timezone. See \texttt{man tzset} on the host PC for more information.
- \item If a time server is not required, or cannot connect to a time server, the user is required to manually set the time at start up.  Use the \code{date} command to manually set the Linux system time. See \texttt{man date} on the host PC for more information.
-\end{itemize}
+\input{Script_Setup}
+\input{Setup_System_Time}
+\input{rsync_Setup_Snippet}
 \end{flushleft}
 
 \subsection{Multiple ZedBoards on the same network}
@@ -418,7 +359,7 @@ $ screen /dev/zed0 115200
 \pagebreak
 \section{Development Host Setup - Network Mode ONLY}
 % Bring in NFS setup snippet (has subsections)
-\input{../../../../../../doc/av/tex/snippets/NFS_Setup_Snippet.tex}
+\input{NFS_Setup_Snippet}
 %
 
 \pagebreak
@@ -475,7 +416,7 @@ where XX.XX.XX.XX is the IP address of the NFS host (i.e. that development host,
 	\label{fig:netsetup}
 \end{figure} \medskip
 
-Note: If the output includes ``\verb+rdate: bad address `time.nist.gov'+'', comment out the \code{rdate} command in \code{zynq\_net\_setup.sh}, reboot the radio, and start back at step 1 of this section.
+\input{NTP_Alarm_Clock}
 
 \end{enumerate}
 
@@ -521,7 +462,7 @@ $ source /mnt/card/opencpi/mysetup.sh
 	\label{fig:standalonesetup}
 \end{figure} \medskip
 
-Note: If the output includes ``\verb+rdate: bad address `time.nist.gov'+'', comment out the \code{rdate} command in \code{zynq\_setup.sh}, reboot the radio, and start back at step 1 of this section.
+\input{NTP_Alarm_Clock}
 
 \end{enumerate}
 
@@ -535,7 +476,7 @@ The setup of the platform can be verified by running an application that uses bo
 \subsection{Network Mode}
 The default setup script sets the \texttt{OCPI\_LIBRARY\_PATH} variable to include the RCC workers that are required to execute the application, but it must be updated to include to the assembly bitstream that was built.  After running the \texttt{mynetsetup.sh} script, navigate to  \texttt{/mnt/ocpi\_assets/applications}, then update the \texttt{OCPI\_LIBRARY\_PATH} variable:
 \begin{verbatim}
-$ cd /mnt/card/opencpi/applications
+$ cd /mnt/ocpi_assets/applications
 $ export OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:/mnt/ocpi_assets/artifacts
 \end{verbatim}
 Run the application using the following command:
@@ -629,7 +570,20 @@ $ ocpidev build --hdl-platform zed_ise
 \end{flushleft}
 % Bring in kernel message snippet
 \section{Driver Notes}
-\input{../../../../../../doc/av/tex/snippets/Driver_Snippet.tex}
+\input{Driver_Snippet}
 %
+\section{Deprecated Zipper}
+\begin{flushleft}
+Beginning with OpenCPI Version 1.5, support for Lime Microsystems' Zipper card is now deprecated, and the following note and figure have been removed from the main body of this Getting Started Guide:\medskip
+
+OpenCPI has been tested on revisions C and D of the Zedboard. However, limitations have been observed for both revisions when used with the Zipper daughter-card, details are provided in Myriad-RF\_1\_Zipper\_Limitations.pdf.
+\end{flushleft}
+
+\begin{figure}[ht]
+	\centerline{\includegraphics[scale=0.05]{zed_zipper}}
+	\caption{ZedBoard With Zipper and MyriadRF-1 Connected to the FMC Slot}
+	\label{fig:zed_zipper}
+\end{figure}
+
 \end{appendices}
 \end{document}

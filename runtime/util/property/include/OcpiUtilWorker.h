@@ -126,10 +126,12 @@ namespace OCPI {
       Memory *m_memories;
       //      Test *m_tests;
       unsigned m_nPorts, m_nMemories; //, size , m_nTests
+      uint8_t  m_version;   // version of the model-specific API this worker is written to
+      bool     m_workerEOF; // this worker handles all input EOFs by itself.  No auto-propagation
     private: // FIXME: make more of this stuff private
       size_t m_totalPropertySize;
-      bool   m_isSource;
-      //      Test &findTest(unsigned int testId) const;
+      bool   m_isSource; // is this worker a source of data (no inputs)
+      bool   m_isDebug;  // is this worker in debug mode?
     public:
       unsigned m_nProperties;
       Property *m_properties;
@@ -142,6 +144,7 @@ namespace OCPI {
       std::map<std::string, Port::Scaling> m_scalingParameters;
       Worker();
       ~Worker();
+      inline uint8_t version() const { return m_version; }
       inline const std::string &model() const { return m_model; }
       inline const std::string &package() const { return m_package; }
       inline const std::string &specName() const { return m_specName; }
@@ -150,6 +153,7 @@ namespace OCPI {
       inline const std::vector<const char *> &slaves() const { return m_slaves; }
       inline const Attributes &attributes() const { return *m_attributes; }
       inline bool isSource() const { return m_isSource; }
+      inline bool isDebug() const { return m_isDebug; }
       const char *parse(ezxml_t xml, Attributes *attr = NULL);
       virtual const char
 	*getNumber(ezxml_t x, const char *attr, size_t *np, bool *found = NULL,
@@ -199,6 +203,7 @@ namespace OCPI {
       {
         return m_totalPropertySize;
       }
+      const char *finalizeProperties(size_t &offset, uint64_t &totalSize , const IdentResolver *resolver);
       enum ControlOperation {
 #define CONTROL_OP(x, c, t, s1, s2, s3, s4)  Op##c,
 	OCPI_CONTROL_OPS

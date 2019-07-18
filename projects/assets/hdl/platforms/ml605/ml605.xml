@@ -8,7 +8,7 @@
   <timebase master='true'/> <!-- providing a timebase for the time service -->
   <!-- Declare and parameterize the time_server device worker for this platform -->
   <device worker='time_server'>
-    <property name='frequency' value='200e6'/>
+    <property name='frequency' value='125e6'/> <!-- changed from '200e6' AV-5437 -->
   </device>
   <!-- This platform worker provides a data plane called "pcie" -->
   <unoc name="pcie" master='true'/>

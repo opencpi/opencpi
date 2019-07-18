@@ -27,9 +27,9 @@
 #include "hdl-container.h"
 
 static void
-emitTimeClient(std::string &assy, const char *instance, const char *port) {
+emitTimeClient(std::string &assy, const char *instance, const char *portName, Port *port = NULL) {
   OU::formatAdd(assy,
-		"  <instance worker='time_client' name='%s_%s_time_client'/>\n"
+		"  <instance worker='time_client%s' name='%s_%s_time_client'/>\n"
 		"  <connection>\n"
 		"    <port instance='%s_%s_time_client' name='wti'/>\n"
 		"    <port instance='%s' name='%s'/>\n"
@@ -38,18 +38,20 @@ emitTimeClient(std::string &assy, const char *instance, const char *port) {
 		"    <port instance='pfconfig' name='time'/>\n"
 		"    <port instance='%s_%s_time_client' name='time'/>\n"
 		"  </connection>\n",
-		instance, port,
-		instance, port,
-		instance, port,
-		instance, port);
+		port && port->myClock && !port->clock->m_output ?  "_co" : "",
+		instance, portName,
+		instance, portName,
+		instance, portName,
+		instance, portName);
 }
 
 HdlContainer *HdlContainer::
 create(ezxml_t xml, const char *xfile, const char *&err) {
   std::string myConfig, myPlatform, myAssy, myConstraints;
   OrderedStringSet platforms;
+  // "only" is for backward compatibility
   if ((err = OE::checkAttrs(xml, IMPL_ATTRS, HDL_TOP_ATTRS, PLATFORM_ATTRS,
-			    HDL_CONTAINER_ATTRS, (void*)0)) ||
+			    HDL_CONTAINER_ATTRS, "only", (void*)0)) ||
       (err = OE::checkElements(xml, HDL_CONTAINER_ELEMS, (void*)0)) ||
       (err = parsePlatform(xml, myConfig, myConstraints, platforms)))
     return NULL;
@@ -215,7 +217,7 @@ HdlContainer::
 HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const char *xfile,
 	     const char *&err)
   : Worker(xml, xfile, "", Worker::Container, NULL, NULL, err),
-    HdlHasDevInstances(config.m_platform, config.m_plugged),
+    HdlHasDevInstances(config.m_platform, config.m_plugged, *this),
     m_appAssembly(appAssembly), m_config(config) {
   appAssembly.setParent(this);
   config.setParent(this);
@@ -445,10 +447,12 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 		      dt.ports()[0]->pname());
 	nWCIs++;
       }
-      // Instance time clients for the assembly
-      for (PortsIter pi = dt.ports().begin(); pi != dt.ports().end(); pi++)
-	if ((*pi)->m_type == WTIPort)
-	  emitTimeClient(assy, di.cname(), (*pi)->pname());
+      // Instance time clients for the device
+      for (auto pi = dt.ports().begin(); pi != dt.ports().end(); ++pi) {
+        Port &p = **pi;
+        if (p.m_type == WTIPort)
+          emitTimeClient(assy, di.cname(), p.pname(), &p);
+      }
     }
     for (ContConnectsIter ci = connections.begin(); ci != connections.end(); ci++)
       if ((err = emitConnection(assy, uNocs, nWCIs, *ci)))
@@ -466,9 +470,11 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   for (UNocsIter ii = uNocs.begin(); ii != uNocs.end(); ii++)
     ii->second.terminate(assy);
   // Instance time clients for the assembly
-  for (PortsIter pi = m_appAssembly.m_ports.begin(); pi != m_appAssembly.m_ports.end(); pi++)
-    if ((*pi)->m_type == WTIPort)
-      emitTimeClient(assy, m_appAssembly.m_implName, (*pi)->pname());
+  for (auto pi = m_appAssembly.m_ports.begin(); pi != m_appAssembly.m_ports.end(); ++pi) {
+    Port &p = **pi;
+    if (p.m_type == WTIPort)
+      emitTimeClient(assy, m_appAssembly.m_implName, p.pname(), &p);
+  }
   OU::formatAdd(assy,
 		"  <instance worker='metadata'/>\n"
 		"    <connection>\n"
@@ -502,8 +508,8 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
       if (ssi != sl.m_signals.end() && ssi->second.c_str()[0] == '/')
 	sig.m_name = &ssi->second.c_str()[1];
       else
-	sig.m_name = sl.m_name + "_" + (ssi == sl.m_signals.end() ? (*si)->cname() :
-					ssi->second.c_str());
+	sig.m_name = sl.m_prefix + (ssi == sl.m_signals.end() ? (*si)->cname() :
+				    ssi->second.c_str());
       if (!m_sigmap.findSignal(sig.m_name)) {
 	m_signals.push_back(&sig);
 	m_sigmap[sig.cname()] = &sig;
@@ -560,7 +566,6 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
       }
     }
   }
-#if 1
   // During the parsing of the container assembly we KNOW what the platform is,
   // but the platform config XML that might be parsed might think it is defaulting
   // from the platform where it lives, so we temporarily set the global to the
@@ -570,7 +575,6 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   if ((err = parseHdl()))
     return;
   g_platform = save;
-#endif
 }
 
 HdlContainer::
@@ -772,7 +776,7 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
 		  sma.c_str(), index++,
 		  dma.c_str(), port->isDataProducer() ? "to" : "from",
 		  sma.c_str(), port->isDataProducer() ? "from" : "to");
-    // Add time client to OCDP
+    // Add time client to OCDP's WTI port
     emitTimeClient(assy, dma.c_str(), "wti");
     ctl = dma;
   }
@@ -929,8 +933,13 @@ emitXmlConnections(FILE *f) {
 // are actually signals of the platform configuration worker.
 void HdlContainer::
 mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
-  const Signals &devsigs = di.device.deviceType().m_signals;
-  for (SignalsIter s = devsigs.begin(); s != devsigs.end(); s++)
+  const Signals
+    &devSigs = di.device.deviceType().m_signals,
+    &instSigs = di.m_worker->m_signals;
+  for (SignalsIter s = devSigs.begin(), i = instSigs.begin(); s != devSigs.end(); ++s, ++i) {
+    assert((*s)->m_name == (*i)->m_name);
+    if ((*i)->m_direction == Signal::UNUSED)
+      continue;
     for (unsigned n = 0; (*s)->m_width ? n < (*s)->m_width : n == 0; n++) {
       // (Re)create the signal name of the pf_config signal
       const char *boardName;
@@ -941,7 +950,7 @@ mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
 	  OU::formatAdd(devSig, "(%u)", n);
 	std::string dname, ename;
 	if (di.slot && !inContainer)
-	  OU::format(dname, "%s_%s_%s", di.slot->cname(), di.device.cname(), devSig.c_str());
+	  OU::format(dname, "%s_%s_%s", di.slot->m_name.c_str(), di.device.cname(), devSig.c_str());
 	else if (inContainer)
 	  dname = devSig.c_str();
 	else
@@ -956,7 +965,7 @@ mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
 	  if (ssi != di.slot->m_signals.end() && ssi->second.c_str()[0] == '/')
 	    ename = &ssi->second.c_str()[1];
 	  else if (ssi == di.slot->m_signals.end() || ssi->second.c_str()[0])
-	    OU::format(ename, "%s_%s", di.slot->cname(),
+	    OU::format(ename, "%s%s", di.slot->m_prefix.c_str(),
 		       ssi == di.slot->m_signals.end()  ?
 		       slotSig->cname() : ssi->second.c_str());
 	} else
@@ -965,7 +974,7 @@ mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
 	  OU::formatAdd(assy, "    <signal name='%s' external='%s'/>\n",
 			dname.c_str(), ename.c_str());
       } else {
-	Signal *ns = new Signal(**s);
+	Signal *ns = new Signal(**i);
 	if (di.device.deviceType().m_type != Worker::Platform)
 	  OU::format(ns->m_name, "%s_%s", di.device.cname(), ns->cname());
 	m_signals.push_back(ns);
@@ -973,6 +982,7 @@ mapDevSignals(std::string &assy, const DevInstance &di, bool inContainer) {
 	break;
       }
     }
+  }
 }
 
 const char *HdlContainer::
@@ -1154,7 +1164,7 @@ parsePlatform(ezxml_t xml, std::string &config, std::string &constraints,
       if (cf)
 	return "specifying both \"config\" attribute and config after slash in \"platform\" "
 	  "attribute is invalid";
-      p.assign(pf, slash - pf);
+      p.assign(pf, OCPI_SIZE_T_DIFF(slash, pf));
       cf = slash + 1;
     } else
       p = pf;

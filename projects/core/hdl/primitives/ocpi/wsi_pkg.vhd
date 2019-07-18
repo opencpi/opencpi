@@ -20,7 +20,7 @@
 -- These records have all possible signals.
 
 library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;
-library ocpi; use ocpi.types.all; use ocpi.ocp;
+library ocpi; use ocpi.types.all, ocpi.ocp, ocpi.util;
 package wsi is
 
   -- Generic slave to slave - no variability at all
@@ -52,6 +52,7 @@ package wsi is
              byte_width       : natural; -- byte_width
              opcode_width     : natural; -- bits in reqinfo
              own_clock        : boolean; -- does the port have a clock different thanthe wci?
+             hdl_version      : natural; -- hdl interface version
              early_request    : boolean  -- are datavalid and datalast used? 
              );
     port (
@@ -79,16 +80,17 @@ package wsi is
       wci_clk          : in  std_logic;
       wci_reset        : in  Bool_t;
       wci_is_operating : in  Bool_t;
+      -- Non-worker internal signals
+      first_take       : out Bool_t; -- the first datum after is_operating taken, a pulse
       -- Interior signals used by worker logic
       take             : in  Bool_t; -- the worker is taking data
       reset            : out Bool_t; -- this port is being reset from outside/peer
       ready            : out Bool_t; -- data can be taken
-      som, eom, valid  : out Bool_t;
+      -- user visible metadata
+      som, eom, valid, eof, abort : out Bool_t;
       data             : out std_logic_vector(byte_width*n_bytes-1 downto 0);
-      -- only used if abortable
-      abort            : out Bool_t; -- message is aborted
       -- only used if bytes are required (zlm or byte size < data width)
-      byte_enable      : out std_logic_vector(n_bytes-1 downto 0);
+      byte_enable      : buffer std_logic_vector(n_bytes-1 downto 0);
       -- only used if precise is required
       burst_length     : out std_logic_vector(burst_width-1 downto 0);
       -- only used if number of opcodes > 1
@@ -105,7 +107,14 @@ package wsi is
              byte_width       : natural; -- byte_width
              opcode_width     : natural; -- bits in reqinfo
              own_clock        : boolean; -- does the port have a clock different thanthe wci?
-             early_request    : boolean  -- are datavalid and datalast used? 
+             hdl_version      : natural; -- hdl interface version
+             early_request    : boolean; -- are datavalid and datalast used? 
+             insert_eom       : boolean; -- create output messages
+             max_bytes        : natural; -- max possible supported message size in bytes
+             max_latency      : natural := 256; -- max supported latency value
+             worker_eof       : boolean; -- worker will push an EOF when appropriate
+             fixed_buffer_size: boolean;
+             debug            : boolean
              );
     port (
       -- Exterior OCP input/slave signals
@@ -127,19 +136,27 @@ package wsi is
       wci_clk          : in  std_logic;
       wci_reset        : in  Bool_t;
       wci_is_operating : in  Bool_t;
-      -- Interior signals used by worker logic
-      reset            : out Bool_t; -- this port is being reset from outside/peer
-      ready            : out Bool_t; -- data can be given
+      -- Non-worker internal signals
+      first_take       : in  Bool_t; -- the first datum after is_operating taken, a pulse
+      input_eof        : in  Bool_t;   -- an EOF is pending from (the first) input port
+      buffer_size      : in  UShort_t;
+      latency          : out UShort_t;
+    --====== Signals to and from the worker=====
       -- only used if abortable
       abort            : in  Bool_t; -- message is aborted
       -- only used if precise is required
       burst_length     : in  std_logic_vector(burst_width-1 downto 0);
       -- only used if number of opcodes > 1
       opcode           : in  std_logic_vector(opcode_width-1 downto 0);
-      give             : in  Bool_t;
-      data             : in  std_logic_vector(byte_width*n_bytes-1 downto 0);
-      byte_enable      : in  std_logic_vector(n_bytes-1 downto 0) := (n_bytes-1 downto 0 => '1');
-      som, eom, valid  : in  Bool_t);
+      eof              : in  Bool_t; -- an EOF is pending from worker for this port
+      give             : in  Bool_t := bfalse;
+      data             : in  std_logic_vector(n_bytes * byte_width-1 downto 0);
+      byte_enable      : in  std_logic_vector(n_bytes-1 downto 0) := (others => '1');
+      som              : in  Bool_t := bfalse;
+      eom              : in  Bool_t := bfalse;
+      valid            : in  Bool_t := bfalse;
+      reset            : out Bool_t;  -- this port is being reset from outside/peer
+      ready            : out Bool_t); -- data can be given
   end component master;
 
   component part_slave
@@ -257,4 +274,28 @@ package wsi is
       part_give        : in Bool_t
       );
   end component part_master;
+  
+  component delayline is
+    generic (
+      LATENCY : integer);
+    port (
+      CLK                : in std_logic;
+      RESET              : in std_logic;
+      IS_OPERATING       : in std_logic;
+      IN_READY           : in std_logic;
+      IN_SOM             : in std_logic;
+      IN_EOM             : in std_logic;
+      IN_OPCODE          : in std_logic_vector;
+      IN_VALID           : in std_logic;
+      IN_BYTE_ENABLE     : in std_logic_vector;
+      IN_DATA            : in std_logic_vector;
+      OUT_READY          : in std_logic;
+      OUT_SOM            : out std_logic;
+      OUT_EOM            : out std_logic;
+      OUT_OPCODE         : out std_logic_vector;
+      OUT_VALID          : out std_logic;
+      OUT_BYTE_ENABLE    : out std_logic_vector;
+      OUT_DATA           : out std_logic_vector
+      );
+  end component;
 end package wsi;

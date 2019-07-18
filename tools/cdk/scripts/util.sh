@@ -54,7 +54,7 @@ function getProjectPathAndRegistered {
 function findInProjectPath {
   for p in $(getProjectPathAndRegistered); do
     [ -d $p/exports ] && p=$p/exports
-    if [ "$OCPI_LOG_LEVEL" > 7 ]; then
+    if [ "${OCPI_LOG_LEVEL:-0}" -gt 7 ]; then
       echo "OCPI(           ): looking for $p/$2/$1" # TODO / FIXME - add timestamp similar to rest of debug printouts
     fi
     if [ -e $p/$2/$1 ] ; then
@@ -72,7 +72,7 @@ function findInProjectPath {
 function setVarsFromMake {
   local quiet
   [ -z "$3" ] && quiet=1
-  [ -z $(which make 2> /dev/null) ] && {
+  [ -z "$(which make 2> /dev/null)" ] && {
     [ -n "$3" ] && echo The '"make"' command is not available. 2>&1
     return 1
   }
@@ -149,7 +149,7 @@ function getElapsedTime {
   [ -z "$var" ] && var=_start_time_
   local elapsed=$(( $(date -u +%s) - $var))
   [ -z "$_end_time_" ] && {
-    if [ $(uname -s) = Darwin ]; then
+    if [ "$(uname -s)" = Darwin ]; then
       _end_time_='-r '
     else
       _end_time_='-d @'
@@ -206,7 +206,6 @@ function ocpiDirType {
       [ $rc = 0 ] && echo $type
   }
 }
-
 
 OcpiEcho=/bin/echo
 

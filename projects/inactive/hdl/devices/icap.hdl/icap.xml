@@ -1,4 +1,4 @@
-<HdlImplementation Language="Verilog" Pattern="%w%M%0_">
+<HdlWorker Language="Verilog" Pattern="%w%M%0_">
   <ComponentSpec>
     <Properties>
       <property name="dramStatus" readable="true"/>
@@ -11,7 +11,7 @@
       <property name="dbg_calib_rd_data_sel" readable="true"/>
       <property name="dbg_calib_ren_delay" readable="true"/>
       <property name="dbg_calib_gate_delay" readable="true"/>
-      <property name="32hcode_babe" readable="true"/>
+      <property name="code_babe" readable="true"/>
       <property name="wmemiWrReq" readable="true"/>
       <property name="wmemiRdReq" readable="true"/>
       <property name="wmemiRdResp" readable="true"/>
@@ -22,8 +22,8 @@
       <property name="requestCount" readable="true"/>
       <property name="reserved2" readable="true"/>
       <property name="pReg" readable="true" writable="true"/>
-      <property name="4b_write_pio" writable="true"/>
-      <property name="4b_read_pio" writable="true"/>
+      <property name="write_pio" writable="true"/>
+      <property name="read_pio" writable="true"/>
       <property name="mReg" readable="true" writable="true"/>
       <property name="wdReg_0" readable="true"/>
       <property name="wdReg_1" readable="true"/>
@@ -42,6 +42,6 @@
     <property name="isV6ICAP" parameter="true" type="bool" default='true'/>
   </ControlInterface>
   <!--  Non-OCP Signals -->
-</HdlImplementation>
+</HdlWorker>
 
 

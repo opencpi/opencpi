@@ -89,7 +89,7 @@ PortMetaData( PortOrdinal pid,
               const OCPI::RDT::Descriptors& desc,
               PortSetMetaData* psmd )
   : CU::Child<PortSetMetaData,PortMetaData>(*psmd, *this), m_shadow(true), remoteCircuitId(0),
-    remotePortId(-1),
+    remotePortId(UINT32_MAX),
     id(pid),rank(0),output(s),user_data(NULL),
     m_portSetMd(psmd),m_init(false),m_real_location(ep),m_shadow_location(NULL),
     m_bufferData(NULL)
@@ -108,7 +108,7 @@ PortMetaData( PortOrdinal pid,
               const OCPI::RDT::Descriptors& portDesc,
               PortSetMetaData* psmd )
   : CU::Child<PortSetMetaData,PortMetaData>(*psmd, *this),m_shadow(true),remoteCircuitId(0),
-    remotePortId(-1),
+    remotePortId(UINT32_MAX),
     id(pid),rank(0),user_data(NULL),
     m_portSetMd(psmd),m_init(false),m_real_location(&ep),m_shadow_location(NULL),
     m_bufferData(NULL)
@@ -126,7 +126,7 @@ PortMetaData( PortOrdinal pid,
               XF::EndPoint* shadow_ep,
               PortSetMetaData* psmd )
   : CU::Child<PortSetMetaData,PortMetaData>(*psmd, *this),m_shadow(true),remoteCircuitId(0),
-    remotePortId(-1),
+    remotePortId(UINT32_MAX),
     id(pid),rank(0),output(s),user_data(NULL),
     m_portSetMd(psmd),m_init(false),m_real_location(ep),m_shadow_location(shadow_ep),
     m_bufferData(NULL)

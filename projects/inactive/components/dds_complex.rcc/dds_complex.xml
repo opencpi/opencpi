@@ -1,6 +1,5 @@
-<RccImplementation>
+<RccWorker spec="dds_complex_spec.xml">
   <ControlInterface ControlOperations="start"/>
-  <xi:include href="dds_complex_spec.xml"/>
-</RccImplementation>
+</RccWorker>
 
 

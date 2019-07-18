@@ -119,9 +119,9 @@ PortSetData::
 
 Port* 
 PortSet::
-getPortFromIndex( OCPI::OS::int32_t idx )
+getPortFromIndex( OCPI::OS::uint32_t idx )
 {
-  int f=0;
+  uint32_t f=0;
   for ( OCPI::OS::uint32_t n=0; n<m_data.ports.size(); n++) {
     if (m_data.ports[n] ) {
       if ( f == idx ) {
@@ -172,7 +172,7 @@ PortSet::
 ~PortSet()
 {
   ocpiDebug("**** In PortSet::~PortSet() %p", this);
-  for ( int n =0; n< m_data.portCount; n++ ) {
+  for ( unsigned n =0; n< m_data.portCount; n++ ) {
     Port *p = getPortFromIndex(n);
     delete p;
   }

@@ -1,3 +1,4 @@
+%TODO: Use LaTeX_Header
 \documentclass{article}
 \iffalse
 This file is protected by Copyright. Please refer to the COPYRIGHT file
@@ -49,8 +50,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \renewcommand{\contentsname}{Table of Contents}
 \renewcommand{\listfigurename}{List of Figures}
 \renewcommand{\listtablename}{List of Tables}
-\newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
-\newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
 %----------------------------------------------------------------------------------------
 % Various pacakges
 %----------------------------------------------------------------------------------------
@@ -95,11 +94,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\small{\docTitle}}
+
+\def\snippetpath{../../../../../../doc/av/tex/snippets}
+\input{\snippetpath/includes}
 
 \def\comp{ad9361\_dac\_sub}
 \edef\ecomp{ad9361_dac_sub}
@@ -118,9 +120,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Worker Type       & Device           \\
 	\hline
-	Version           & v\docVersion     \\
-	\hline
-	Release Date      & October 2018         \\
+	OpenCPI Release Version & v\docVersion (release data 4/2019) \\
 	\hline
 	Component Library & ocpi.assets.devices     \\
 	\hline
@@ -146,16 +146,16 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 The \comp.hdl subdevice worker handles registering and interleaving of two independent TX data streams which are sent to this worker via the \verb+dev_data_ch0_in+ and \verb+dev_data_ch1_in+ devsignal ports. Data is sent out via the \verb+dev_data_to_pins+ devsignal port which ad9361\_data\_sub.hdl routes to the AD9361\cite{data_sub_comp_datasheet}. This worker's \verb+LVDS_p+, \verb+HALF_DUPLEX_p+, \verb+SINGLE_PORT_p+, and \verb+DATA_RATE_CONFIG_p+ parameter properties enforce build-time configuration for all of the possible AD9361 TX data time-interleaved modes. The currently supported modes and their limitations are shown in the following table.
 \begin{scriptsize}
 	\begin{longtable}{|c|c|c|c|c|}
-		\caption{Supported ADC Sampling Rates per RX channel} \\
+		\caption{Supported DAC Sampling Rates per TX channel} \\
     \hline
 		\rowcolor{blue}
     Platform/Cards which & AD9361 Data Port Mode & AD9361 Channel Mode & Max AD9361- & Max \\
 		\rowcolor{blue}
     allow the AD9361                           & &                       & Supported Sampling    & \comp.hdl{}- \\
 		\rowcolor{blue}
-    Data Port/Channel       & &                       & Rate per RX channel        & Supported Sampling \\
+    Data Port/Channel       & &                       & Rate per TX channel        & Supported Sampling \\
 		\rowcolor{blue}
-    Mode                    & &                       &                            & Rate per RX channel \\
+    Mode                    & &                       &                            & Rate per TX channel \\
     \hline
     E310 & CMOS Single Port Half Duplex SDR &                   & & not yet supported  \\
     \hline
@@ -499,17 +499,17 @@ The test outlined in \cite{dac_comp_datasheet} includes validation of this worke
 \begin{thebibliography}{1}
 
 \bibitem{ad9361} AD9361 Datasheet and Product Info \\
-\url{http://www.analog.com/en/products/rf-microwave/integrated-transceivers-transmitters-receivers/wideband-transceivers-ic/ad9361.html}
+\url{https://www.analog.com/en/products/ad9361.html}
 \bibitem{adi_ug570} AD9361 Reference Manual UG-570\\
 AD9361\_Reference\_Manual\_UG-570.pdf
 \bibitem{adi_ug671} AD9361 Register Map Reference Manual UG-671\\
 AD9361\_Register\_Map\_Reference\_Manual\_UG-671.pdf
  \bibitem{data_sub_comp_datasheet} AD9361 Data Sub Component Data Sheet \\
- \url{https://opencpi.github.io/assets/AD9361_Data_Sub.pdf}
+ \githubioURL{assets/AD9361_Data_Sub.pdf}
  \bibitem{dac_comp_datasheet} AD9361 DAC Component Data Sheet \\
- \url{https://opencpi.github.io/assets/AD9361_DAC.pdf}
+ \githubioURL{assets/AD9361_DAC.pdf}
  \bibitem{config_proxy_comp_datasheet} AD9361 Config Proxy Component Data Sheet \\
- \url{https://opencpi.github.io/assets/AD9361_Config_Proxy.pdf}
+ \githubioURL{assets/AD9361_Config_Proxy.pdf}
 
 \end{thebibliography}
 \pagebreak

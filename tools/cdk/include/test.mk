@@ -30,8 +30,8 @@ endif
 ifdef ExcludePlatform
   override ExcludePlatforms+= $(ExcludePlatform)
 endif
-  export OnlyPlatforms
-  export ExcludePlatforms
+export OnlyPlatforms
+export ExcludePlatforms
 export Cases
 export KeepSimulations
 export TestTimeout
@@ -95,8 +95,7 @@ TESTXML:=$(CwdName)-test.xml
 
 $(CASEXML): $(TESTXML)
 	$(AT)echo ========= Generating test assemblies, inputs and applications for $(CwdName):
-	$(AT)OCPI_ALL_PLATFORMS="$(strip $(HdlAllPlatforms:%=%.hdl) $(RccAllPlatforms:%=%.rcc) $(OclAllPlatforms:%=%.ocl))" \
-	     $(call OcpiGen, -v -T $<)
+	$(AT)$(call OcpiGen, -v -T $<)
 
 -include gen/*.deps
 generate: $(CASEXML)
@@ -149,6 +148,21 @@ run: prepare
 # only for verify only so we can use wildcard
 RunPlatforms=$(foreach p,$(filter-out $(ExcludePlatforms),$(notdir $(wildcard run/*))),\
                $(if $(OnlyPlatforms),$(filter $p,$(OnlyPlatforms)),$p))
+ifneq ($(origin HdlPlatforms),undefined)
+  ifdef OnlyPlatforms
+    OnlyPlatforms:=$(filter-out $(filter-out $(HdlPlatforms),$(HdlAllPlatforms)),$(OnlyPlatforms))
+    # If we had OnlyPlatforms, and we are building for none of them, we are building for nothing
+    ifndef OnlyPlatforms
+      override HdlPlatforms:=
+      MAKEOVERRIDES:=$(filter-out HdlPlatforms=% HdlPlatform=%,$(MAKEOVERRIDES))
+    endif
+  else ifdef ExcludePlatforms
+    ExcludePlatforms:=$(call Unique,$(filter-out $(HdlPlatforms),$(HdlAllPlatforms)) $(ExcludePlatforms))
+  else
+    ExcludePlatforms:=$(filter-out $(HdlPlatforms),$(HdlAllPlatforms))
+  endif
+endif
+
 verify:
 	$(AT)if [ ! -d run ]; then \
 	       echo No tests have been run so none can be verified.; \

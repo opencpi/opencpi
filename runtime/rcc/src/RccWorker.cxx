@@ -38,11 +38,11 @@ Worker(Application & app, Artifact *art, const char *a_name, ezxml_t impl, ezxml
        const OU::PValue *wParams)
   : OC::WorkerBase<Application,Worker,Port>(app, *this, art, a_name, impl, inst, a_slaves,
 					    a_hasMaster, a_member, a_crewSize, wParams),
-    OCPI::Time::Emit(&parent().parent(), "Worker", a_name), 
+    OCPI::Time::Emit(&parent().parent(), "Worker", a_name),
     m_entry(art ? art->getDispatch(ezxml_cattr(impl, "name")) : NULL), m_user(NULL),
-    m_dispatch(NULL), m_portInit(0), m_context(NULL), m_mutex(app.container()),
-    m_runCondition(NULL), m_errorString(NULL), enabled(false), hasRun(false),
-    sourcePortCount(0), targetPortCount(0), m_nPorts(nPorts()), worker_run_count(0),
+    m_dispatch(NULL), m_portInit(0), m_context(NULL), m_firstInput(NULL), m_eofSent(RCC_NO_PORTS),
+    m_mutex(app.container()), m_runCondition(NULL), m_errorString(NULL), enabled(false),
+    hasRun(false), sourcePortCount(0), targetPortCount(0), m_nPorts(nPorts()), worker_run_count(0),
     m_transport(app.parent().getTransport()), m_taskSem(0)
 {
    memset(&m_info, 0, sizeof(m_info));
@@ -72,24 +72,9 @@ Worker(Application & app, Artifact *art, const char *a_name, ezxml_t impl, ezxml
      m_info.propertySize = m_dispatch->propertySize;
    }
    initializeContext();
-#if 0
-   // If we have an event handler, we need to inform it about the timeout
-   if (m_runCondition->m_timeout ) {
-     runTimeout.set(m_runCondition->m_usecs / 1000000,
-		    (m_runCondition->m_usecs % 1000000) * 1000);
-     if ( m_transport.m_transportGlobal->getEventManager() ) {
-
- #ifdef EM_PORT_COMPLETE
-       parent().myparent->m_transport->m_transportGlobal->getEventManager()->setMinTimeout( workerId, 
-									 m_runCondition->m_usecs );
- #endif
-
-     }
-   }
-#endif
  }
 
-void 
+void
 Worker::
 read(size_t offset, size_t nBytes, void * p_data)
 {
@@ -99,7 +84,7 @@ read(size_t offset, size_t nBytes, void * p_data)
   memcpy( p_data, (char*)m_context->properties+offset, nBytes );
 }
 
-void 
+void
 Worker::
 write(size_t offset, size_t nBytes, const void * p_data)
 {
@@ -204,6 +189,7 @@ cSend(RCCPort* rccPort, RCCBuffer* rccBuffer, RCCOpCode op, size_t len)
 {
   rccBuffer->length_ = len;
   rccBuffer->opCode_ = op;
+  rccBuffer->eof_ = false;
   rccSend(rccPort, rccBuffer);
 }
 
@@ -221,6 +207,7 @@ cAdvance(RCCPort* rccPort, size_t max)
   // This is only useful for output buffers
   rccPort->current.length_ = rccPort->output.length;
   rccPort->current.opCode_ = rccPort->output.u.operation;
+  rccPort->current.eof_ = rccPort->output.eof;
   return rccAdvance(rccPort, max);
 }
 
@@ -274,7 +261,7 @@ rccTake(RCCPort *rccPort, RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
        m_nPorts = wd->numInputs + wd->numOutputs;
    }
 
-   RCCPortMask ourMask = ~(-1 << m_nPorts);
+   RCCPortMask ourMask = ~(~0u << m_nPorts);
    if (~ourMask & optionalPorts())
      throw OU::EmbeddedException( OU::PORT_COUNT_MISMATCH,
 				  "optional port mask is invalid",
@@ -343,7 +330,7 @@ rccTake(RCCPort *rccPort, RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
        throw OU::EmbeddedException( OU::NO_MORE_MEMORY, "worker requested too much memory",
 				    OU::ApplicationRecoverable);
      }
-   }  
+   }
    // Now create and initialize the worker properties
    if (m_dispatch) { // A C language worker.  The properties are initialized to zero here
      if (m_info.propertySize) {
@@ -367,7 +354,7 @@ rccTake(RCCPort *rccPort, RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
 
  // Called from the generic getPort when the port is not found.
  // Also called from createInputPort and createOutputPort locally
- OC::Port & 
+ OC::Port &
  Worker::
  createPort(const OU::Port& mp, const OCPI::Util::PValue *params)
  {
@@ -389,7 +376,7 @@ rccTake(RCCPort *rccPort, RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
 	 ocpiDebug("Worker PortInfo for port %d, bc,s: %d,%zu, metadata is %zu,%zu",
 		   mp.m_ordinal, pi->minBuffers, pi->maxLength, mp.m_minBufferCount,
 		   mp.m_minBufferSize);
-	 if (pi->minBuffers > mp.m_minBufferCount) // bad: worker needs more than metadata   
+	 if (pi->minBuffers > mp.m_minBufferCount) // bad: worker needs more than metadata
 	   throw OU::EmbeddedException(OU::PORT_NOT_FOUND,
 				       "Worker metadata inconsistent with RCC PortInfo",
 				       OU::ContainerFatal);
@@ -413,6 +400,10 @@ rccTake(RCCPort *rccPort, RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
    // FIXME: this can change on connections
    m_context->ports[mp.m_ordinal].current.maxLength = l_port->getData().data.desc.dataBufferSize;
    m_context->ports[mp.m_ordinal].containerPort = l_port;
+   if (mp.m_provider && (!m_firstInput ||
+			 (m_firstInput->metaPort &&
+			  mp.m_ordinal < m_firstInput->metaPort->m_ordinal)))
+     m_firstInput = &m_context->ports[mp.m_ordinal];
    return *l_port;
  }
 
@@ -433,8 +424,8 @@ rccTake(RCCPort *rccPort, RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
    assert(!OU::Worker::m_ports); // no metadata ports here
    OU::Worker::m_nPorts++;
    assert(m_dispatch);
-   if (m_dispatch->optionallyConnectedPorts & (1 << portId))
-     optionalPorts() |= (1 << portId);
+   if (m_dispatch->optionallyConnectedPorts & (1u << portId))
+     optionalPorts() |= (1u << portId);
    return createPort(*pmd, props);
  }
  OC::Port &Worker::
@@ -452,7 +443,7 @@ rccTake(RCCPort *rccPort, RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
  void Worker::
  portIsConnected(unsigned ordinal) {
    ocpiDebug("Worker '%s', port %u is connected", name().c_str(), ordinal);
-   m_context->connectedPorts |= (1 << ordinal);
+   m_context->connectedPorts |= (1u << ordinal);
  }
 
  void Worker::
@@ -480,9 +471,9 @@ propertyRead(unsigned ordinal) const {
 }
 
 void Worker::
-prepareProperty(OU::Property& md , 
+prepareProperty(OU::Property& md ,
 		volatile uint8_t *&writeVaddr,
-		const volatile uint8_t *&readVaddr) {
+		const volatile uint8_t *&readVaddr) const {
   (void)readVaddr;
   if (md.m_baseType != OA::OCPI_Struct && !md.m_isSequence && md.m_baseType != OA::OCPI_String &&
       OU::baseTypeSizes[md.m_baseType] <= 32 &&
@@ -510,6 +501,41 @@ checkError() const {
   }
 }
 
+// return true if should not run this time
+bool Worker::
+doEOF() {
+  bool
+    fallThrough = false, // record whether there are output ports that handle EOFs
+    moreOutputs = false; // record whether there are not-ready output ports that need EOFs
+  // First input has an EOF, and it does not want to handle it by itself.
+  // But if any output port needs to handle it, then we must give it to the input anyway.
+  RCCPort *rccPort = m_context->ports;
+  for (unsigned n = 0, mask = 1; n < m_nPorts; n++, rccPort++, mask <<= 1)
+    if (!rccPort->metaPort->m_provider) { // if output
+      if (rccPort->metaPort->m_workerEOF) // if it is handling the EOF itself
+	fallThrough = true; // some output is handled by the worker, so we have to give this eof anyway
+      else if (!(m_eofSent & mask)) {
+	if (rccPort->current.data) {
+	  rccPort->current.length_ = 0;
+	  rccPort->current.opCode_ = 0;
+	  rccPort->current.eof_ = true;
+	  rccPort->containerPort->advanceRcc(0);
+	  m_eofSent |= mask;
+	} else
+	  moreOutputs = true;
+      }
+    }
+  if (moreOutputs)
+    return true; // we need to propagate the input EOF to more outputs
+  if (!fallThrough) {
+    // all outputs have propagated, and there are no ports that handle EOFs, so we're done
+    enabled = false;
+    setControlState(OU::Worker::FINISHED);
+    return true;
+  }
+  return false;
+}
+
 void Worker::
 run(bool &anyone_run) {
   checkControl();
@@ -524,8 +550,10 @@ run(bool &anyone_run) {
   bool didCallBack = false;
   RCCPort *rccPort = m_context->ports;
   for (unsigned n = 0; n < m_nPorts; n++, rccPort++)
-    if (rccPort->callBack && m_context->connectedPorts & (1 << n) &&
+    if (rccPort->callBack && m_context->connectedPorts & (1u << n) &&
 	rccPort->containerPort->checkReady()) {
+      if (rccPort == m_firstInput && checkEOF() && doEOF())
+	return;
       if (rccPort->callBack(m_context, rccPort, RCC_OK) == RCC_OK)
 	didCallBack = true;
       else {
@@ -536,7 +564,7 @@ run(bool &anyone_run) {
     }
   if (didCallBack)
     return;
-  // OCPI_EMIT_REGISTER_FULL_VAR( "Worker Evaluation", OCPI::Time::Emit::DT_u, 1, OCPI::Time::Emit::State, were ); 
+  // OCPI_EMIT_REGISTER_FULL_VAR( "Worker Evaluation", OCPI::Time::Emit::DT_u, 1, OCPI::Time::Emit::State, were );
   // OCPI_EMIT_STATE_CAT_NR_(were, 1, OCPI_EMIT_CAT_TUNING, OCPI_EMIT_CAT_TUNING_WC);
 
   // Run condition processing: we break if we're going to run, and return if not
@@ -565,6 +593,8 @@ run(bool &anyone_run) {
       if ((pm & readyMask) == (pm & ~(RCC_ALL_PORTS << m_nPorts)))
 	break;
     if (!pm)
+      return;
+    if (checkEOF() && doEOF())
       return;
   } while (0);
   assert(enabled);
@@ -608,6 +638,7 @@ run(bool &anyone_run) {
 	break;
       case RCC_ADVANCE_DONE:
 	advanceAll();
+	// falls thru
       case RCC_DONE:
 	// FIXME:  release all current buffers
 	enabled = false;
@@ -639,7 +670,7 @@ run(bool &anyone_run) {
 
 void Worker::
 advanceAll() {
-  OCPI_EMIT_REGISTER_FULL_VAR( "Advance All", OCPI::Time::Emit::DT_u, 1, OCPI::Time::Emit::State, aare ); 
+  OCPI_EMIT_REGISTER_FULL_VAR( "Advance All", OCPI::Time::Emit::DT_u, 1, OCPI::Time::Emit::State, aare );
   OCPI_EMIT_STATE_CAT_NR_(aare, 1, OCPI_EMIT_CAT_TUNING, OCPI_EMIT_CAT_TUNING_WC);
   RCCPort *rccPort = m_context->ports;
   for (unsigned n = 0; n < m_nPorts; n++, rccPort++)
@@ -674,7 +705,7 @@ OCPI_CONTROL_OPS
     {
       RCCPort *rccPort = m_context->ports;
       for (unsigned n = 0; n < m_nPorts; n++, rccPort++)
-	if (m_context->connectedPorts & (1 << n))
+	if (m_context->connectedPorts & (1u << n))
 	  if (!(rccPort->connectedCrewSize = rccPort->containerPort->nOthers()))
 	    rccPort->connectedCrewSize = 1;
     }
@@ -751,19 +782,18 @@ OCPI_CONTROL_OPS
       OU::Error("Control operation \"%s\" on RCC worker \"%s\" returned invalid "
 		"RCCResult value: 0x%x", OU::Worker::s_controlOpNames[op],
 		name().c_str(), rc);
-  }    
+  }
 }
 
       // These property access methods are called when the fast path
       // is not enabled, either due to no MMIO or that the property can
-      // return errors. 
+      // return errors.
 #undef OCPI_DATA_TYPE_S
       // Set a scalar property value
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
     void Worker:: \
-    set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *mp, \
+    set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member &m, \
 			  size_t offset, const run val, unsigned idx) const { \
-      const OU::Member &m = mp ? *mp : info;			       \
     if (info.m_writeError)                                     \
       throw; /*"worker has errors before write */              \
     store *pp = (store *)(getPropertyVaddr() + info.m_offset + offset + \
@@ -780,22 +810,22 @@ OCPI_CONTROL_OPS
     if (info.m_writeSync)                                      \
       propertyWritten(info.m_ordinal);			       \
   }                                                            \
-  void Worker::set##pretty##SequenceProperty(const OA::Property &p, const run *vals, \
+  void Worker::set##pretty##SequenceProperty(const OA::PropertyInfo &info, const run *vals, \
 					     size_t length) const {	\
-    if (p.m_info.m_writeError)						\
+    if (info.m_writeError)						\
       throw; /*"worker has errors before write */			\
-    if (p.m_info.m_isSequence) {     					\
-      memcpy((void *)(getPropertyVaddr() + p.m_info.m_offset + p.m_info.m_align), vals, \
+    if (info.m_isSequence) {     					\
+      memcpy((void *)(getPropertyVaddr() + info.m_offset + info.m_align), vals, \
 	     length * sizeof(run));					\
-      *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset) =           \
-	(uint32_t)(length/p.m_info.m_nItems);				\
+      *(uint32_t *)(getPropertyVaddr() + info.m_offset) =           \
+	(uint32_t)(length/info.m_nItems);				\
     } else								\
-      memcpy((void *)(getPropertyVaddr() + p.m_info.m_offset), vals,	\
+      memcpy((void *)(getPropertyVaddr() + info.m_offset), vals,	\
 	     length * sizeof(run));					\
-    if (p.m_info.m_writeError)						\
+    if (info.m_writeError)						\
       throw; /*"worker has errors after write */			\
-    if (p.m_info.m_writeSync)						\
-      propertyWritten(p.m_ordinal); 				        \
+    if (info.m_writeSync)						\
+      propertyWritten(info.m_ordinal); 				        \
   }
 // Set a string property value
 // ASSUMPTION:  strings always occupy at least 4 bytes, and
@@ -803,9 +833,8 @@ OCPI_CONTROL_OPS
 // and structure padding are assumed to do this.
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)      \
   void Worker:: \
-  set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *mp, \
+  set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member &m, \
 			size_t offset, const run val, unsigned idx) const { \
-    const OU::Member &m = mp ? *mp : info;				      \
     size_t ocpi_length;                                               \
     if (!val || (ocpi_length = strlen(val)) > m.m_stringLength)      \
       throw std::string("string property too long");		      \
@@ -824,31 +853,30 @@ OCPI_CONTROL_OPS
     if (info.m_writeSync)					      \
       propertyWritten(info.m_ordinal); 				      \
   }								      \
-  void Worker::set##pretty##SequenceProperty(const OA::Property &p,const run *vals,\
+  void Worker::set##pretty##SequenceProperty(const OA::PropertyInfo &info,const run *vals,\
 					     size_t length) const {	\
-    if (p.m_info.m_writeError)						\
+    if (info.m_writeError)						\
       throw; /*"worker has errors before write */			\
-    char *cp = (char *)(getPropertyVaddr() + p.m_info.m_offset + 32/CHAR_BIT); \
+    char *cp = (char *)(getPropertyVaddr() + info.m_offset + 32/CHAR_BIT); \
     for (unsigned i = 0; i < length; i++) {				\
       size_t len = strlen(vals[i]);					\
-      if (len > p.m_info.m_stringLength)				\
+      if (len > info.m_stringLength)				\
 	throw; /* "string in sequence too long" */			\
       memcpy(cp, vals[i], len+1);					\
     }									\
-    *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset) = (uint32_t)length; \
-    if (p.m_info.m_writeError)						\
+    *(uint32_t *)(getPropertyVaddr() + info.m_offset) = (uint32_t)length; \
+    if (info.m_writeError)						\
       throw; /*"worker has errors after write */			\
-    if (p.m_info.m_writeSync)						\
-      propertyWritten(p.m_ordinal); 				        \
+    if (info.m_writeSync)						\
+      propertyWritten(info.m_ordinal); 				        \
   }
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE_S
 #undef OCPI_DATA_TYPE
       // Get Scalar Property
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		    \
-      run Worker::get##pretty##Property(const OA::PropertyInfo &info, const OU::Member *mp, \
+      run Worker::get##pretty##Property(const OA::PropertyInfo &info, const OU::Member &m, \
 					size_t offset, unsigned idx) const { \
-        const OU::Member &m = mp ? *mp : info;				    \
 	if (info.m_readSync)						    \
 	  propertyRead(info.m_ordinal);					    \
         if (info.m_readError )					            \
@@ -866,27 +894,27 @@ OCPI_CONTROL_OPS
           throw; /*"worker has errors after read */			    \
         return u.r;							    \
       }									    \
-      unsigned Worker::get##pretty##SequenceProperty(const OA::Property &p, \
+      unsigned Worker::get##pretty##SequenceProperty(const OA::PropertyInfo &info, \
 					     run *vals,			    \
 					     size_t length) const {	    \
-	if (p.m_info.m_readSync)					    \
-	  propertyRead(p.m_info.m_ordinal);				    \
-        if (p.m_info.m_readError )					    \
+	if (info.m_readSync)					    \
+	  propertyRead(info.m_ordinal);				    \
+        if (info.m_readError )					    \
           throw; /*"worker has errors before read "*/			    \
-	if (p.m_info.m_isSequence) {					    \
-	  uint32_t nSeq = *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset); \
-	  size_t n = nSeq * p.m_info.m_nItems;				    \
+	if (info.m_isSequence) {					    \
+	  uint32_t nSeq = *(uint32_t *)(getPropertyVaddr() + info.m_offset);\
+	  size_t n = nSeq * info.m_nItems;				    \
 	  if (n > length)						    \
 	    throw "sequence longer than provided buffer";		    \
 	  memcpy(vals,							    \
-		 (void*)(getPropertyVaddr() + p.m_info.m_offset + p.m_info.m_align), \
+		 (void*)(getPropertyVaddr() + info.m_offset + info.m_align),\
 		 n * sizeof(run));					    \
 	  length = n;							    \
 	} else								    \
 	  memcpy(vals,							    \
-		 (void*)(getPropertyVaddr() + p.m_info.m_offset),	    \
+		 (void*)(getPropertyVaddr() + info.m_offset),	            \
 		 length * sizeof(run));					    \
-	if (p.m_info.m_readError )					    \
+	if (info.m_readError)					            \
 	  throw; /*"worker has errors after read */			    \
 	return (unsigned)length;         				    \
       }
@@ -896,9 +924,8 @@ OCPI_CONTROL_OPS
       // and structure padding are assumed to do this.
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)	            \
       void Worker:: \
-      get##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *mp,	\
+      get##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member &m,	\
 			    size_t offset, char *cp, size_t length, unsigned idx) const { \
-        const OU::Member &m = mp ? *mp : info;				            \
 	  if (info.m_readSync)	   				                    \
 	    propertyRead(info.m_ordinal);				            \
 	  size_t stringLength = m.m_stringLength;			            \
@@ -914,19 +941,19 @@ OCPI_CONTROL_OPS
 	  if (info.m_readError)					                    \
 	    throw; /*"worker has errors after write */			            \
 	}								            \
-      unsigned Worker::get##pretty##SequenceProperty			    \
-	(const OA::Property &p, char **vals, size_t length, char *buf,      \
+      unsigned Worker::get##pretty##SequenceProperty			     \
+	(const OA::PropertyInfo &info, char **vals, size_t length, char *buf,\
 	 size_t space) const {					            \
-	if (p.m_info.m_readSync)	  				    \
-	    propertyRead(p.m_info.m_ordinal);				    \
-        if (p.m_info.m_readError)					    \
+	if (info.m_readSync)	  				    \
+	    propertyRead(info.m_ordinal);				    \
+        if (info.m_readError)					    \
           throw; /*"worker has errors before read */                        \
         uint32_t                                                            \
-          n = *(uint32_t *)(getPropertyVaddr() + p.m_info.m_offset);	    \
-	size_t wlen = p.m_info.m_stringLength + 1;			    \
+          n = *(uint32_t *)(getPropertyVaddr() + info.m_offset);	    \
+	size_t wlen = info.m_stringLength + 1;			    \
         if (n > length)                                                     \
           throw; /* sequence longer than provided buffer */                 \
-        char *cp = (char *)(getPropertyVaddr() + p.m_info.m_offset + 32/CHAR_BIT); \
+        char *cp = (char *)(getPropertyVaddr() + info.m_offset + 32/CHAR_BIT); \
         for (unsigned i = 0; i < n; i++) {                                  \
           if (space < wlen)                                                 \
             throw;                                                          \
@@ -937,7 +964,7 @@ OCPI_CONTROL_OPS
           buf += slen;                                                      \
           space -= slen;                                                    \
         }                                                                   \
-        if (p.m_info.m_readError)                                           \
+        if (info.m_readError)                                           \
           throw; /*"worker has errors after read */                         \
         return n;                                                           \
       }
@@ -947,7 +974,8 @@ OCPI_CONTROL_OPS
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
       void Worker::setPropertyBytes(const OA::PropertyInfo &info, size_t offset,
 			    const uint8_t *data, size_t nBytes, unsigned idx) const {
-        memcpy((void *)(getPropertyVaddr() + offset + idx * info.m_elementBytes), data, nBytes);
+        memcpy((void *)(getPropertyVaddr() + info.m_offset + offset + idx * info.m_elementBytes),
+	       data, nBytes);
       }
       void Worker::
       setProperty8(const OA::PropertyInfo &info, size_t offset, uint8_t data,
@@ -974,10 +1002,11 @@ OCPI_CONTROL_OPS
 		       uint8_t *data, size_t nBytes, unsigned idx, bool string)
 	const {
 	if (string)
-	  strncpy((char*)data, (char *)(getPropertyVaddr() + offset + idx * info.m_elementBytes),
+	  strncpy((char*)data,
+		  (char *)(getPropertyVaddr() + info.m_offset + offset + idx * info.m_elementBytes),
 		  nBytes);
 	else
-	  memcpy(data, (void *)(getPropertyVaddr() + offset + idx * info.m_elementBytes),
+	  memcpy(data, (void *)(getPropertyVaddr() + info.m_offset + offset + idx * info.m_elementBytes),
 		 nBytes);
       }
       uint8_t Worker::
@@ -997,7 +1026,7 @@ OCPI_CONTROL_OPS
 	return ((uint64_t *)(getPropertyVaddr() + info.m_offset + offset))[idx];
       }
 
-     RCCUserWorker::RCCUserWorker()
+   RCCUserWorker::RCCUserWorker()
      : m_worker(*(Worker *)pthread_getspecific(Driver::s_threadKey)), m_ports(NULL),
        m_first(true), m_rcc(m_worker.context()) {
    }
@@ -1008,8 +1037,11 @@ OCPI_CONTROL_OPS
        m_worker.m_runCondition == &m_worker.m_defaultRunCondition ?
        NULL : m_worker.m_runCondition;
    }
-   void RCCUserWorker::setRunCondition(RunCondition *rc) {
+   void RCCUserWorker::setRunCondition(const RunCondition *rc) {
      m_worker.setRunCondition(rc ? *rc : m_worker.m_defaultRunCondition);
+   }
+   bool RCCUserWorker::isOperating() const {
+       return m_worker.isOperating(); 
    }
    OA::Application &RCCUserWorker::getApplication() {
      OA::Application *app = m_worker.parent().getApplication();
@@ -1021,7 +1053,7 @@ OCPI_CONTROL_OPS
    }
    size_t RCCUserWorker::
    memberItemTotal(uint64_t total, size_t maxPerMessage, size_t *perMessagep) {
-    size_t 
+    size_t
       perMessage = OCPI_UTRUNCATE(size_t, std::min((uint64_t)maxPerMessage,
 						   (total + getCrewSize() - 1)/getCrewSize())),
       nMessages = OCPI_UTRUNCATE(size_t, (total + perMessage - 1)/perMessage),
@@ -1032,7 +1064,7 @@ OCPI_CONTROL_OPS
     if (perMessagep)
       *perMessagep = perMessage;
     return
-      ((nMessages - msgRemainder) / getCrewSize()) * perMessage + 
+      ((nMessages - msgRemainder) / getCrewSize()) * perMessage +
       (msgRemainder && getMember() < msgRemainder ? perMessage : 0) +
       (itemRemainder && getMember() == msgRemainder ? itemRemainder : 0);
    }
@@ -1051,7 +1083,7 @@ OCPI_CONTROL_OPS
      m_worker.parent().parent().addTask(this);
    }
 
-   void RCCUserWorker::   
+   void RCCUserWorker::
    addTask( RCCUserTask * task ) {
      printf("^^^^^^ In RCCTaskHandle RCCUserWorker::addTask\n");
      //     Container * c = static_cast<Container*>(&m_worker.parent().parent());
@@ -1071,13 +1103,13 @@ OCPI_CONTROL_OPS
    void RCCUserWorker::
    waitTasks() {
      m_worker.parent().parent().join(true, m_worker.m_taskSem);
-     //     Container * c = static_cast<Container*>(&m_worker.parent().parent());     
+     //     Container * c = static_cast<Container*>(&m_worker.parent().parent());
      //     return c->join( block, m_worker.m_taskSem );
    }
    bool RCCUserWorker::
    checkTasks() {
      return m_worker.parent().parent().join(false, m_worker.m_taskSem);
-     //     Container * c = static_cast<Container*>(&m_worker.parent().parent());     
+     //     Container * c = static_cast<Container*>(&m_worker.parent().parent());
      //     return c->join( block, m_worker.m_taskSem );
    }
 
@@ -1113,9 +1145,6 @@ OCPI_CONTROL_OPS
    }
    bool RCCUserWorker::isInitialized() const {
      return m_worker.getControlState() == OU::Worker::INITIALIZED;
-   }
-   bool RCCUserWorker::isOperating() const {
-     return m_worker.getControlState() == OU::Worker::OPERATING;
    }
    bool RCCUserWorker::isSuspended() const {
      return m_worker.getControlState() == OU::Worker::SUSPENDED;
@@ -1159,7 +1188,7 @@ OCPI_CONTROL_OPS
 	 if (op.m_nArgs > 1) {
 	   const OU::Member &m = op.m_args[op.m_nArgs - 1];
 	   if (m.m_isSequence) // make sure any sequence is initially zero length
-	     *(uint32_t *)((uint8_t *)buf.m_rccBuffer->data + m.m_offset) = 
+	     *(uint32_t *)((uint8_t *)buf.m_rccBuffer->data + m.m_offset) =
 	       (uint32_t)((l_length - (m.m_offset + m.m_align)) / m.m_elementBytes);
 	 }
 	 buf.resize(l_length);
@@ -1219,7 +1248,7 @@ OCPI_CONTROL_OPS
        nBytes = size * m.m_elementBytes,
        limit = buf.m_rccBuffer->maxLength - (o.m_nArgs == 1 ? 0 : m.m_offset + m.m_align);
      if (buf.m_lengthSet)
-       throw OU::Error("resize of %zu specified after length set to %zu bytes", size, 
+       throw OU::Error("resize of %zu specified after length set to %zu bytes", size,
 		       buf.m_rccBuffer->length_);
      if (nBytes > limit)
        throw OU::Error("for worker \"%s\" port \"%s\" protocol \"%s\" operation \"%s\" argument \"%s\": "
@@ -1232,7 +1261,7 @@ OCPI_CONTROL_OPS
        *(uint32_t *)((uint8_t*)buf.m_rccBuffer->data + m.m_offset) =
 	 OCPI_UTRUNCATE(uint32_t, size);
        nBytes += m.m_offset + m.m_align;
-     }     
+     }
      buf.resize(nBytes);
    }
    void RCCUserPort::
@@ -1281,7 +1310,7 @@ OCPI_CONTROL_OPS
    isConnected() {
      return m_rccPort.containerPort &&
        m_rccPort.containerPort->parent().m_context->connectedPorts &
-       (1 << m_rccPort.containerPort->ordinal());
+       (1u << m_rccPort.containerPort->ordinal());
    }
    RCCOrdinal RCCUserPort::
    ordinal() const { return (RCCOrdinal)m_rccPort.containerPort->ordinal(); }
@@ -1310,7 +1339,7 @@ OCPI_CONTROL_OPS
    void RCCUserPort::
    shouldBeOutput() const {
      if (m_rccPort.metaPort->m_provider)
-       throw OU::Error("Port \"%s\" is an input port, opcode or length cannot be set", 
+       throw OU::Error("Port \"%s\" is an input port, opcode or length cannot be set",
 		       m_rccPort.metaPort->m_name.c_str());
    }
    void RCCUserPort::

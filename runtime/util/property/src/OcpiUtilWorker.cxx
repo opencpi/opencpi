@@ -21,9 +21,12 @@
 #include <stdint.h>
 #include <string.h>
 #include <strings.h>
+#include "ocpi-config.h"
+#include "OcpiUtilCppMacros.h"
 #include "OcpiOsAssert.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
+#include "OcpiUtilValue.h"
 #include "OcpiUtilWorker.h"
 
 namespace OCPI {
@@ -31,8 +34,8 @@ namespace OCPI {
 
     namespace OE = OCPI::Util::EzXml;
     Worker::Worker()
-      : m_attributes(NULL), m_ports(NULL), m_memories(NULL), m_nPorts(0), m_nMemories(0),
-        m_totalPropertySize(0), m_isSource(false), m_nProperties(0), m_properties(NULL),
+      : m_attributes(NULL), m_ports(NULL), m_memories(NULL), m_nPorts(0), m_nMemories(0), m_version(0),
+        m_totalPropertySize(0), m_isSource(false), m_isDebug(false), m_nProperties(0), m_properties(NULL),
 	m_firstRaw(NULL), m_xml(NULL), m_ordinal(0) {
     }
 
@@ -67,6 +70,28 @@ namespace OCPI {
           return p;
       return NULL;
     }
+    const char *Worker::finalizeProperties(size_t &offset, uint64_t &totalSize, const IdentResolver *resolver) {
+      const char *err;
+      assert(m_firstRaw == NULL);
+      Property *p = m_properties;
+      for (unsigned n = 0; n < m_nProperties; n++, p++) {
+	if (p->m_isRaw) {
+	  if (!m_firstRaw)
+	    m_firstRaw = p;
+	} else if ((err = p->offset(offset, totalSize, resolver)))
+	  return err;
+	if (!strcasecmp("ocpi_debug", p->cname()) && p->m_default && p->m_default->m_Bool)
+	  m_isDebug = true;
+      }
+      if (m_firstRaw) {
+	offset = roundUp(offset, 4);
+	p = m_properties;
+	for (unsigned n = 0; n < m_nProperties; n++, p++)
+	  if (p->m_isRaw && (err = p->offset(offset, totalSize, resolver)))
+	    return err;
+      }
+      return NULL;
+    }
 #if 0
     Test &Worker::findTest(unsigned int testId) const {
        (void)testId;
@@ -79,6 +104,8 @@ namespace OCPI {
       m_attributes = attr;
       const char *err = OE::getRequiredString(xml, m_name, "name", "worker");
       if (err ||
+	  (err = OE::getNumber8(xml, "version", &m_version)) ||
+	  (err = OE::getBoolean(xml, "workerEOF", &m_workerEOF)) ||
 	  (err = OE::getRequiredString(xml, m_model, "model", "worker")))
 	return err;
       if (!OE::getOptionalString(xml, m_specName, "specName"))
@@ -88,7 +115,7 @@ namespace OCPI {
 	if (ezxml_cchild(xml, "slave"))
 	  return esprintf("cannot have slave elements when you have a slave attribute");
 	m_slaves.push_back(slave);
-      } else      
+      } else
 	for (ezxml_t cx = ezxml_cchild(xml, "slave"); cx; cx = ezxml_cnext(cx)) {
 	  const char *w = ezxml_cattr(cx, "worker");
 	  if (!w)
@@ -102,6 +129,7 @@ namespace OCPI {
       m_nMemories = OE::countChildren(xml, "localMemory");
       if ((m_nMemories += OE::countChildren(xml, "memory")))
         m_memories = new Memory[m_nMemories];
+#if 0
       size_t firstRaw;
       bool haveRaw;
       if ((err = OE::getNumber(xml, "firstRaw", &firstRaw, &haveRaw)))
@@ -110,6 +138,7 @@ namespace OCPI {
 	m_firstRaw = m_properties + firstRaw;
 	ocpiAssert(firstRaw < m_nProperties);
       }
+#endif
       // Second pass - decode all information
       Property *prop = m_properties;
       ezxml_t x;
@@ -119,11 +148,16 @@ namespace OCPI {
       prop = m_properties;
       size_t offset = 0;
       uint64_t totalSize = 0;
+#if 1
+      if ((err = finalizeProperties(offset, totalSize, NULL)))
+	return err;
+#else
       for (unsigned n = 0; n < m_nProperties; n++, prop++) {
 	if (m_firstRaw && prop == m_firstRaw)
 	  offset = roundUp(offset, 4);
 	prop->offset(offset, totalSize);
       }
+#endif
       ocpiAssert(totalSize < UINT32_MAX);
       m_totalPropertySize = OCPI_UTRUNCATE(size_t, totalSize);
       // Ports at this level are unidirectional? Or do we support the pairing at this point?
@@ -169,7 +203,7 @@ namespace OCPI {
     }
     // Get a property value from the metadata
     const char *Worker::getValue(const char *sym, ExprValue &val) const {
-      // Our builtin symbols take precendence, but can be overridden with $
+      // Our builtin symbols take precendence, but can be overridden with @
       if (!strcasecmp(sym, "model")) {
 	val.setString(m_model);
 	return NULL;
@@ -178,6 +212,12 @@ namespace OCPI {
 	return NULL;
       } else if (!strcasecmp(sym, "os") && m_attributes) {
 	val.setString(m_attributes->os());
+	return NULL;
+      } else if (!strcasecmp(sym, "host_platform")) {
+	val.setString(OCPI_CPP_STRINGIFY(OCPI_PLATFORM));
+	return NULL;
+      } else if (!strcasecmp(sym, "spec")) {
+	val.setString(m_specName);
 	return NULL;
       }
       Property *p = m_properties;

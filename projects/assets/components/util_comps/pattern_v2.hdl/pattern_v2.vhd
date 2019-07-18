@@ -25,7 +25,7 @@
 --
 -- The pattern v2 component provides the ability to output a pattern of messages
 -- by allowing the user to create a record of messages each having a configurable
--- number of bytes and associated opcode. Through a set of properties, the
+-- number of bytes and associated 8 bit opcode. Through a set of properties, the
 -- component may send messages (data and opcode) up to the amount dictated by
 -- the build-time parameters. The messages property defines the record of messages
 -- to send, as well as, defines the number of data bytes and an opcode for each
@@ -34,7 +34,7 @@
 -- For example:
 -- When messages = {4, 255}, one message will be sent having 4
 -- bytes of data and an opcode of 255. When messages = {8, 251}, {6, 250}, two
--- messages will sent, the first having 8 bytes of data and an opcode of 251,
+-- messages will be sent, the first having 8 bytes of data and an opcode of 251,
 -- and the second message having 6 bytes of data and an opcode of 250.
 --
 -- Data to be sent with a message is defined by the data property and is referred
@@ -70,7 +70,7 @@
 -------------------------------------------------------------------------------
 
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
-library ocpi; use ocpi.util.all; use ocpi.types.all;
+library ocpi; use ocpi.util.all; use ocpi.types.all; use ocpi.wci.all;
 architecture rtl of pattern_v2_worker is
 
 
@@ -96,10 +96,6 @@ signal s_som_next_r          : std_logic := '0'; -- Used for logic for starting 
 signal s_eom_r               : std_logic := '0'; -- Used to drive out_eom
 signal s_ready_r             : std_logic := '0'; -- Used to determine if ready to send message data
 signal s_valid_r             : std_logic := '0'; -- Used for combinatorial logic for out_valid
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
--- Mandatory input port logic
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-signal ready_for_in_port_data : std_logic := '0';
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- Mandatory output port logic
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -179,8 +175,8 @@ begin
       finished <= '0';
       msg_ptr <= (others => '0');
       messagesSent <= (others => '0');
-    -- Grab the value of messagesToSend once it gets it's default value
-    elsif (props_in.messagesToSend_written = '1') then
+    -- Grab the value of messagesToSend once it gets it's initial value
+    elsif (ctl_in.state = INITIALIZED_e) then
       messagesToSend <= props_in.messagesToSend;
     elsif (ctl_in.is_operating = '1'and finished = '0' and out_in.ready = '1') then
         -- Report an error if messagesToSend is greater than numMessagesMax

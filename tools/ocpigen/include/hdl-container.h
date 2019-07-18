@@ -33,7 +33,8 @@ struct ContConnect {
   Port *port, *otherPort;
   Port *interconnect;
   ContConnect()
-  : external(NULL), devInstance(NULL), otherDevInstance(NULL), devInConfig(false), otherDevInConfig(false), port(NULL), otherPort(NULL), interconnect(port) {
+  : external(NULL), devInstance(NULL), otherDevInstance(NULL), devInConfig(false),
+    otherDevInConfig(false), port(NULL), otherPort(NULL), interconnect(port) {
   }
 };
 typedef std::list<ContConnect> ContConnects;

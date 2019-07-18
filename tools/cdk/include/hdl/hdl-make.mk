@@ -656,6 +656,12 @@ define HdlPreprocessTargets
     endif
   else ifeq ($$(HdlPlatforms),all)
     override HdlPlatforms:=$$(HdlAllPlatforms)
+  else ifdef HdlPlatforms
+    # Leave it alone if it was specifically defined as nothing
+    override HdlPlatforms:=$$(filter-out $$(ExcludePlatforms),$$(HdlPlatforms))
+    ifdef OnlyPlatforms
+     override HdlPlatforms:=$$(filter $$(OnlyPlatforms),$$(HdlPlatforms))
+    endif
   endif
   ifndef HdlTargets
     ifdef HdlTarget

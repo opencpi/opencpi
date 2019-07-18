@@ -30,11 +30,7 @@ architecture rtl of test_tx_event_worker is
 begin
   doit <= event_out_in.ready and ctl_in.is_operating;
   event_out_out.give <= doit and to_bool(ctr = props_in.max_count_value-1);
-  event_out_out.som <= doit;
-  event_out_out.eom <= doit;
-  event_out_out.valid <= '0';
   event_out_out.opcode <= tx_event_txOn_op_e when its(opcode_bit) else tx_event_txOff_op_e;
-  event_out_out.byte_enable <= (others => '0');
   
   FlipOpCode : process(ctl_in.clk)
   begin

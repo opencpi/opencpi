@@ -1,4 +1,5 @@
-#!/bin/env python
+#!/usr/bin/env python2
+# pylint: skip-file
 """Inserts copyright into files, replacing old ones found (AV-2759, AV-2912)"""
 # For copyright information concerning THIS script; see build_copyright below.
 
@@ -23,10 +24,8 @@ scan_mode = os.getenv('OCPI_SCAN_COPYRIGHTS') is not None  # Debug mode to scan 
 
 # Query rows
 try:
-    use_color = False
     with open(os.devnull, 'w') as devnull:
         rows = int(subprocess.check_output(['tput', 'lines'], stderr=devnull))-20
-        use_color = True
 except OSError:
     rows = 40
 except subprocess.CalledProcessError:
@@ -38,21 +37,33 @@ try:
 except NameError:
     pass
 
+# import opencpi.colors as color - don't want dependency here
+class color(object):
+    """ Look-up Table for colors """
+    CLS = BLUE = GREEN = YELLOW = RED = BOLD = UNDERLINE = END = ''
+    try:
+        with open(os.devnull, 'w') as devnull:
+            dont_care = int(subprocess.check_output(['tput', 'lines'], stderr=devnull))
+            if os.getenv('TERM', 'dumb') != "dumb":
+                CLS = subprocess.check_output(['tput', 'clear'], stderr=devnull)
+                BLUE = subprocess.check_output(['tput', 'setaf', '4'], stderr=devnull)
+                GREEN = subprocess.check_output(['tput', 'setaf', '2'], stderr=devnull)
+                YELLOW = subprocess.check_output(['tput', 'setaf', '3'], stderr=devnull)
+                RED = subprocess.check_output(['tput', 'setaf', '1'], stderr=devnull)
+                BOLD = subprocess.check_output(['tput', 'bold'], stderr=devnull)
+                UNDERLINE = subprocess.check_output(['tput', 'smul'], stderr=devnull)
+                END = subprocess.check_output(['tput', 'sgr0'], stderr=devnull)
+    except OSError:
+        pass
+    except subprocess.CalledProcessError:
+        pass
 
-# Set up colors LUT
-class color:
-    if use_color:
-        CLS = '\033[2J\033[;H'
-        GREEN = '\033[92m'
-        RED = '\033[91m'
-        BOLD = '\033[1m'
-        END = '\033[0m'
-    else:
-        CLS = GREEN = RED = BOLD = END = ''
 
-
-# Set up copyright notice for various source languages
 def build_copyright(comment, pre='', post=''):
+    """
+    Function that builds the copyright notice when given single line comment
+    prefix, block prefix, and block postfix.
+    """
     if len(comment):
         comment += ' '
     if len(pre):
@@ -94,6 +105,7 @@ ocpi_copyright['rpmspec'] = ocpi_copyright['script']
 ocpi_copyright['text'] = build_copyright('')
 ocpi_copyright['verilog'] = ocpi_copyright['c']
 ocpi_copyright['vhdl'] = build_copyright('--')
+ocpi_copyright['xml'] = build_copyright('   -', pre=r'<!--', post=r'-->')
 
 # LUT for extension <=> file type
 extensions = dict()
@@ -106,9 +118,10 @@ extensions['make'] = ('mk',)
 extensions['matlab'] = ('m',)
 extensions['rpmspec'] = ('spec',)
 extensions['script'] = ('csh', 'js', 'pl', 'py', 'qsf', 'sdc', 'sh', 'tcl', 'ucf', 'xcf', 'xdc')
-extensions['text'] = ('txt',)
+extensions['text'] = ('md', 'txt',)  # Includes Markdown text
 extensions['verilog'] = ('v', 'vh')
 extensions['vhdl'] = ('vhd', 'vhi')
+extensions['xml'] = ('sdef',)
 extensions['skip'] = ('asm',  # Future? Don't think we have any of our own now.
                       'aux',
                       'bat',  # Future?
@@ -170,13 +183,13 @@ other_regexs = (
     re.compile(r'Downloaded.*opencores'),
     re.compile(r'OpenSplice\s+DDS'),
     re.compile(r'This file is part of CommPy'),
-    # re.compile(r'Boost Software License'),
     re.compile(r'The Khronos Group Inc.'),
     re.compile(r'Copyright \(C\)[\s\d ,-]+Massachusetts Institute of Technology', re.IGNORECASE),
     re.compile(r'Copyright.*Intel Corp'),
     re.compile(r'Copyright \(c\) Internet2'),  # Fasttime
     re.compile(r'Copyright[\s\d ,-]+Aaron Voisine'),  # ezxml
     re.compile(r'^#\s*Doxyfile\s+[.\d]+$'),  # Doxygen config files
+    re.compile(r'Copyright \(c\).*Google,?\s+Inc'),  # Some Eclipse things
 )
 bad_paths = (
     '/.git/',
@@ -188,33 +201,49 @@ bad_paths = (
     '/gen/',
     '/kernel-headers',
     '/opencpi-zynq-linux-release-',
+    '/prerequisites/',
+    '/prerequisites-build/',
     '/projects/assets/components/util_comps/socket_write.rcc/asio/',  # Boost
     '/projects/assets/components/util_comps/socket_write.rcc/ext_src/',  # Boost
     '/release-2013.4/',
     '/releng/blacklist/',
+    '/releng/config_files/',
     '/releng/jenkins/',
     '/releng/oss_release/',
     '/releng/prereq/',
     '/runtime/foreign/',
     '/target-',
+    '/tests/pytests/utilization_proj/',
+    'vendor',
     '/vm_support/',
     '/xilinx-zynq-binary-release-',
 )
 bad_path_globs = (
+    '*/component_ports.inc', '*/component_properties.inc',  # LaTeX include files for generated documentation
+    '*/component_spec_properties.inc',                      # "
+    '*/developer_doc.inc', '*/properties.inc',              # "
+    '*/worker_interfaces.inc', '*/worker_properties.inc',   # "
+    '*/configurations*.inc', '*/utilization*.inc',  # LaTeX include files for utilization
     '*/idata/*',  # Unit test data source
+    '*/ip_user_files/sim_scripts/*',  # Vivado simulation scripts
     '*/MANIFEST.MF',  # Java packaging
+    '*/managed_ip_project/managed_ip_project.cache/*',  # Vivado core cruft
     '*/notes',  # Misc notes
     '*/odata/*',  # Unit test data destination
     '*/package-name',
     '*/package-id',
+    '*/project-registry/*',  # Don't scan registered projects outside this source tree
+    '*/projects/core/hdl/primitives/sync/xsim/*/xsim/*',  # Non-copyrighted Xilinx cores
     '*/__pycache__/*',
     '*/*.sh.example',
     '*/snippets/*',
     '*.test/test*/description',
     '*.test/test*/portmap',
     '*.test/test*/*.input',
+    '*.test/golden*',
     '*.test/test*/golden*',
-    '*/configurations*.inc', '*/utilization*.inc',  # LaTeX include files for utilization
+    '*/xilinx*/release/*',  # Symlinked versions of things in bad_paths above
+    '*/vivado_ila/*',
 )
 
 
@@ -233,7 +262,8 @@ def scanfunc_skip():
                 if reg.search(line) is not None:
                     logging.debug('%s: Found copyrighted regex "%s". Skipping.', filename, str(reg.pattern))
                     return True
-        if gbuff[0].strip().startswith('<?xml'):
+        ext = os.path.splitext(filename)[1][1:]
+        if gbuff[0].strip().startswith('<?xml') and ext not in extensions['xml']:
             return True
     return False
 
@@ -332,6 +362,8 @@ def smart_scan():
     # Skip shell declaration
     if gbuff[0].startswith("#!"):
         start = 2
+    if gbuff[0].startswith("<?xml"):
+        start = 2
     # Skip preprocessor commands and comments
     while any([x in gbuff[start-1] for x in ('not used by RPM-based',
                                              '#ifdef',
@@ -341,7 +373,7 @@ def smart_scan():
                                              '#include',
                                              '#warning',
                                              '#error',
-                                             )]):
+                                            )]):
         start += 1
     # Check the first 40 lines
     end = start
@@ -425,14 +457,16 @@ def process():
             # Delete the old
             del gbuff[start-1:end]
             fast_insert = True
-        else: # Not "already"
+        else:  # Not "already"
             print_highlighted()
             print(color.BOLD + "\nLine to insert block (or '.' for auto)? " + color.END, end='')
             start = input()
             if start == '.':  # "fast insert" which means 1,n,y,save
                 start = 1
-                # Check for shell shebang or LaTeX document class
-                if gbuff[0].startswith("#!") or gbuff[0].strip().startswith(r'\documentclass'):
+                # Check for shell shebang, LaTeX document class, or XML header
+                if (gbuff[0].startswith("#!") or
+                    gbuff[0].strip().startswith(r'\documentclass') or
+                    gbuff[0].startswith("<?xml")):
                     start = 2
                 fast_insert = True
                 logging.warning('%s: User-requested fast insert at line %d.', filename, start)
@@ -477,7 +511,7 @@ if len(sys.argv) < 2:
         print("No file(s) given on command line. Attempting auto-scan.")
         logging.warning("No file(s) given on command line. Attempting auto-scan.")
     # Use extend to keep first value (the script name)
-    myargv.extend(subprocess.check_output(['find', '.', '-type', 'f']).rstrip().split('\n'))
+    myargv.extend(subprocess.check_output(['find', '-L', '.', '-type', 'f']).rstrip().split('\n'))
 for filename in sorted(myargv[1:]):
     try:
         gbuff = []

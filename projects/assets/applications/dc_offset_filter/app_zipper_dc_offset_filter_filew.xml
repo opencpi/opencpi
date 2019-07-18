@@ -8,10 +8,8 @@
   <Instance Component='ocpi.assets.devices.si5351'/>
   <!-- <Instance Component='ocpi.core.devices.clock_gen' Slave='si5351'/> -->
   <Instance Component='ocpi.assets.devices.qadc' model='hdl'>
-    <Property Name="messageSize" Value="16352"/>
   </Instance>
   <Instance Component="ocpi.assets.dsp_comps.dc_offset_filter">
-    <Property Name="messageSize" Value="16352"/>
     <Property Name="bypass" Value="true"/>
     <Property Name="update" Value="true"/>
     <Property Name="tc" Value="1"/>

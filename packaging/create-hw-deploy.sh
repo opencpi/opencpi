@@ -28,13 +28,13 @@ if [ -z "$1" -o -z "$2" ]; then
 fi
 
 output_path="$1"
-platform="$2"
-specific_rcc="$3"
+hdl_platform="$2"
+hdl_rcc_platform="$3"
 if [ ! -d $output_path ]; then
   echo "Parameter given for output_path does not exist. Please make sure to run create-sw-deploy.sh before this script"
   exit 1
 fi
-if [ -z $OCPI_CDK_DIR ]; then
+if [ -z "$OCPI_CDK_DIR" ]; then
   echo "Need to set \$OCPI_CDK_DIR before running this script"
   exit 1
 fi
@@ -45,11 +45,9 @@ fi
 #   files needed for deployment
 #   pdfs
 #   system.xml
-echo "Adding files for hw platform: $platform"
+echo "Adding files for hw platform: $hdl_platform"
 # Get the rcc platform that corresponds with the hdl_platform
 # and put it in hdl_rcc_platform
-read -r hdl_platform hdl_platform_dir hdl_rcc_platform <<<$($OCPI_CDK_DIR/../tools/cdk/scripts/getHdlPlatform.sh $platform)
-[ -n "$specific_rcc" ] && hdl_rcc_platform=$specific_rcc
 [ "$hdl_rcc_platform" = - ] && hdl_rcc_platform=no_sw
 opencpi_output_path=$output_path/$hdl_platform/sdcard-$hdl_rcc_platform/opencpi
 mkdir -p $opencpi_output_path
@@ -57,17 +55,21 @@ mkdir -p $opencpi_output_path
 if [ "$hdl_rcc_platform" != "no_sw" ]; then
   for item in $output_path/$hdl_rcc_platform/opencpi/*; do
     if [[ $item = *deploy* ]]; then
-      cp -LR $item/$hdl_rcc_platform/* $opencpi_output_path/..
+      cp -R $item/$hdl_rcc_platform/* $opencpi_output_path/..
     else
-      cp -LR $item $opencpi_output_path
+      cp -R $item $opencpi_output_path
       if [[ $item = **opencpi/$hdl_rcc_platform** ]]; then
         mv $opencpi_output_path/$hdl_rcc_platform/system.xml $opencpi_output_path
         mv $opencpi_output_path/$hdl_rcc_platform/*_*setup.sh $opencpi_output_path
+	( shopt -s nullglob &&
+	  for f in $opencpi_output_path/$hdl_rcc_platform/*.conf; do
+            mv $f $opencpi_output_path
+	  done)
       fi
     fi
   done
 fi
-file_list=($($OCPI_CDK_DIR/../packaging/prepare-package-list.sh deploy $platform))
+file_list=($($OCPI_CDK_DIR/../packaging/prepare-package-list.sh deploy $hdl_platform))
 for file in ${file_list[@]}; do
   edited_file=${file#"cdk/"}
   edited_file=${edited_file#"runtime/"}
@@ -75,25 +77,29 @@ for file in ${file_list[@]}; do
     [[ $file != *deploy* ]] && mkdir -p $opencpi_output_path/$edited_file
   else
     [[ $file = *deploy* ]] \
-      && cp -LR $file/!($hdl_platform-deploy) $opencpi_output_path/.. \
+      && cp -LR $file/$hdl_rcc_platform/!($hdl_platform-deploy) $opencpi_output_path/.. \
       || (cp -LR $file $opencpi_output_path/$(dirname $edited_file) &&
            [ -d $file ] && mkdir -p $opencpi_output_path/$edited_file)
   fi
 done
-mv $opencpi_output_path/$hdl_platform/system.xml $opencpi_output_path
+mv $opencpi_output_path/$hdl_platform/$hdl_rcc_platform/system.xml $opencpi_output_path
 # Combine hardware platform udev-rules and one obtained from prepare-package.sh
 mkdir -p $output_path/$hdl_platform/host-udev-rules
-mv $opencpi_output_path/udev-rules/* $opencpi_output_path/../../host-udev-rules
-rmdir $opencpi_output_path/udev-rules
+[ -e $opencpi_output_path/udev-rules ] \
+  && mv $opencpi_output_path/udev-rules/* $opencpi_output_path/../../host-udev-rules \
+  && rmdir $opencpi_output_path/udev-rules
 [ -d $opencpi_output_path/$hdl_platform ] \
-  && ([ -d $opencpi_output_path/$hdl_platform ] && mv $opencpi_output_path/$hdl_platform/udev-rules/* $opencpi_output_path/../../host-udev-rules &&
-      rmdir $opencpi_output_path/$hdl_platform/udev-rules;
-      rmdir $opencpi_output_path/$hdl_platform) \
+    && ([ -d $opencpi_output_path/$hdl_platform/$hdl_rcc_platform/udev-rules ] &&
+	    mv $opencpi_output_path/$hdl_platform/$hdl_rcc_platform/udev-rules/* \
+	       $opencpi_output_path/../../host-udev-rules &&
+	    rmdir $opencpi_output_path/$hdl_platform/$hdl_rcc_platform/udev-rules;
+	rmdir $opencpi_output_path/$hdl_platform/$hdl_rcc_platform
+	rm -rf $opencpi_output_path/$hdl_platform) \
 # Exit with 0 status so the script that calls this script does not complain
 exit 0
-# TODO Build pdfs for current platform AV-4538
+# TODO Build pdfs for current platform AV-4538 AV-4817
 #[ -e $output_path/$hdl_platform/pdfs ] && rm -rf $output_path/$hdl_platform/pdfs
-#$OCPI_CDK_DIR/../doc/av/tex/generator/genDocumentation.sh --repopath $OCPI_CDK_DIR/../ --outputpath $output_path/$hdl_platform/pdfs --dirsearch "$hdl_platform_dir"
+#$OCPI_CDK_DIR/../doc/generator/genDocumentation.sh --repopath $OCPI_CDK_DIR/../ --outputpath $output_path/$hdl_platform/pdfs --dirsearch "$hdl_platform_dir"
 ## Removing unnecessary files
 #find $output_path/$hdl_platform/pdfs/ ! -name "*.pdf" -type f -delete
 ## Removing empty directories caused by above

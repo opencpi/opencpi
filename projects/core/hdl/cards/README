@@ -1,6 +1,9 @@
 This directory contains information about cards.
-The specs directory contains:
+
+The specs subdirectory contains:
+
 1. slot type definitions
+
 2. card definition files, which define individual cards
    -- refer to slot definitions (which type of slot this card plugs into)
       in hdl/plaforms/specs
@@ -10,4 +13,6 @@ The specs directory contains:
       that these signals follow the pattern: <slotname>_<std_signa_name>
 
 3. device workers that are only found on cards and are not already in hdl/cards.
+
+4. proxies to support device workers that are unique to a card.
 

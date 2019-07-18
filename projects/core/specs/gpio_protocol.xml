@@ -1,0 +1,12 @@
+<!-- GPIO Protocol  -->
+<Protocol datavaluegranularity="2">
+  <!-- The protocol contains a data and mask. The mask allows setting GPIO pins on or off in a single operation.-->
+  <!-- In order for a GPIO pin to take on the value of a set data bit, the corresponding mask bit has to be set. -->
+  <!-- For example if mask_data = 0x00010003, the mask = 0x0001 and data = 0x0003. This would set GPIO pin 0 to 1. -->
+  <Operation Name="gpio" >
+    <Argument name="mask_data" type="Struct" >
+      <member name="data" type="uShort"/>
+      <member name="mask" type="uShort"/>
+    </Argument>
+  </Operation>
+</Protocol>

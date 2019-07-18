@@ -52,7 +52,8 @@ namespace OR = OCPI::Remote;
   CMD_OPTION(loopback  , L,    Bool,    0,   "Allow discovery on the local/loopback subnet") \
   CMD_OPTION(onlyloopback, O,  Bool,    0,   "Allow discovery ONLY on local/loopback subnet") \
   CMD_OPTION(list,       C,    Bool,    0,   "Show available containers") \
-  CMD_OPTION(only_platforms,,  Bool,    0,   "modifies the list command to show only platforms")\
+  CMD_OPTION(only_platforms,,  Bool,    0,   "Modifies the list command to show only platforms")\
+  CMD_OPTION(max_callers,m,    ULong,   0,   "Quits server after connection count (probes included)")\
 
 // FIXME: local-only like ocpihdl simulate?
 #include "CmdOption.h"
@@ -158,6 +159,8 @@ static int mymain(const char **) {
   if (options.list()) {
     OA::ContainerManager::list(options.only_platforms());
     return 0;
+  } else if (options.only_platforms()) {
+    options.exitbad("--only-platforms given without --list/-C");
   }
   assert(OCPI::Library::Library::s_firstLibrary);
   for (unsigned n = 1; n < options.processors(); n++) {
@@ -168,9 +171,9 @@ static int mymain(const char **) {
   const char *addrFile = options.addresses();
   if (!addrFile)
     addrFile = getenv("OCPI_SERVER_ADDRESSES_FILE");
-  if (!addrFile)
-    addrFile = getenv("OCPI_SERVER_ADDRESS_FILE"); // deprecated
   RemoteContainerServer server(addrFile);
+  if (options.max_callers())
+    server.set_maxCallers(options.max_callers());
   if (options.error().length() || server.run(options.error()))
     options.bad("Container server error");
   if (options.remove())

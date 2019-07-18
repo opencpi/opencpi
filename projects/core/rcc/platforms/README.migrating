@@ -1,7 +1,7 @@
-Migration of software platforms from 1.3 to 1.4
+Migration of software platforms from 1.3 to 1.4 and beyond
 
-Prior to 1.4, software platforms were defined in projects/core/rcc/platforms.
-With 1.4, they can be in the rcc/platforms directory of any project.
+Prior to 1.4, ALL software platforms were defined in projects/core/rcc/platforms.
+With 1.4, they can be in the rcc/platforms directory of ANY project.
 The Platform Development Guide defines how software platforms are defined in 1.4.
 
 Here is a list of the files used to define a software platform in 1.3 and how they have changed in 1.4.
@@ -39,10 +39,10 @@ With the "yumlist" option, the packages are the same but suitable for "yum insta
 ppp-target.mk
 
 In 1.3 this file was undisciplined and set various variables for compilation on this platform.
-In 1.4 it is renamed ppp.mk, and is must more disciplined and well-defined.
+In 1.4 it is renamed ppp.mk, and is much more disciplined and well-defined.
 In 1.4 the defaults are what is appropriate for centos6.
-To transition, follow the definitions in the platform development document, using the settings in
-a 1.3 ppp-target.mk file as input.
+To transition, follow the definitions in the platform development document and include/platform-defaults.mk,
+using the settings in the source 1.3 ppp-target.mk file as input.
 
 ppp-target.sh
 
@@ -67,7 +67,7 @@ might see in a development environment since development systems depend on the r
 
 The new file ppp.exports allows a software platform to "add and subtract" from the standard framework exports.
 The + and = lines have the same meaning as in the (1.4) Project.exports
-See the platform development guide for more details about this file.
+See the Platform Development Guide for more details about this file.
 
 Also, in 1.4, the ppp.mk file can define additional platform-specific prerequisites for a platform, such as a cross compiler.
 If the ppp.mk file does specify such prerequisites (say "preq"), then there must be an installation script

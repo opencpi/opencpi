@@ -995,6 +995,9 @@ module mkWSIPatternWorker4B(wciS0_Clk,
        metaReqInFlightF_i_notEmpty__59_AND_metaBram_s_ETC___d875,
        splaF_i_notEmpty__011_AND_IF_splaF_first__012__ETC___d1044;
 
+  // eof =                          opcode == 0       &&     byteen == 0  &&          reqlast
+  assign wsiM0_MDataInfo[0] = wsiM_reqFifo_q_0[7:0] == 0 && wsiM_reqFifo_q_0[11:8] == 0 && wsiM_reqFifo_q_0[57];
+  
   // value method wciS0_sResp
   assign wciS0_SResp = wci_wslv_respF_q_0[33:32] ;
 

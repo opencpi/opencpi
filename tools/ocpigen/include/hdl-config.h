@@ -36,6 +36,7 @@ struct DevInstance {
   std::string m_name;
   mutable std::vector<uint64_t> m_connected;
   OCPI::Util::Assembly::Properties m_instancePVs; // parameters beyond those spec'd in platform
+  Worker *m_worker; // worker that is parameterized (sort of redundant with assy instance)
   DevInstance(const Device &d, const Card *c, const Slot *s, bool control,
 	      const DevInstance *parent);
   const char *cname() const { return m_name.c_str(); }
@@ -50,12 +51,13 @@ typedef DevInstances::const_iterator DevInstancesIter;
 typedef std::vector<const Card*> Plugged;
 
 class HdlHasDevInstances {
+  Worker &m_parent;
 protected:
   const HdlPlatform  &m_platform;
   Plugged      &m_plugged;
   DevInstances  m_devInstances; // instantiated in this config (or container)
-  HdlHasDevInstances(const HdlPlatform &platform, Plugged &plugged)
-    : m_platform(platform), m_plugged(plugged) {}
+ HdlHasDevInstances(const HdlPlatform &platform, Plugged &plugged, Worker &parent)
+   : m_parent(parent), m_platform(platform), m_plugged(plugged) {}
   DevInstances &devInstances() { return m_devInstances; }
   const char *
   parseDevInstances(ezxml_t xml, const char *parentFile, Worker *parent,

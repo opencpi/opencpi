@@ -39,19 +39,25 @@ if test "$OCPI_CDK_DIR" = ""; then
   # CUSTOMIZE THIS LINE FOR YOUR ENVIRONMENT
   # Second arg is shared file system mount point on development system
   # Third argument is opencpi dir relative to mount point
-  # Fourth argument is time server for the (old) time protocol used by the rdate command
+  # Fourth argument is backup time server for the time protocol used by the ntp command
   # Fifth arg is timezone spec - see "man timezone" for the format.
   source /mnt/card/opencpi/zynq_net_setup.sh $1 /opt/opencpi cdk time.nist.gov EST5EDT,M3.2.0,M11.1.0
   # mkdir -p /mnt/ocpi_core
-  # mount -t nfs -o udp,nolock,soft,intr $1:/home/user/core /mnt/ocpi_core
+  # mount -t nfs -o udp,nolock,soft,intr $1:/home/user/ocpi_projects/core /mnt/ocpi_core
   # mkdir -p /mnt/ocpi_assets
-  # mount -t nfs -o udp,nolock,soft,intr $1:/home/user/ocpi_assets /mnt/ocpi_assets
+  # mount -t nfs -o udp,nolock,soft,intr $1:/home/user/ocpi_projects/assets /mnt/ocpi_assets
+  # mkdir -p /mnt/ocpi_assets_ts
+  # mount -t nfs -o udp,nolock,soft,intr $1:/home/user/ocpi_projects/assets_ts /mnt/ocpi_assets_ts
+  # Below this line other projects can be included
+  # Here is a template of including a BSP project
+  # mkdir -p /mnt/bsp_<bsp_name>
+  # mount -t nfs -o udp,nolock,soft,intr $1:/home/user/ocpi_projects/bsp_<bsp_name> /mnt/bsp_<bsp_name>
   # add any commands to be run only the first time this script is run
 
   break # this script will be rerun recursively by setup.sh
 fi
 # Below this (until "done") is optional user customizations
-alias ll='ls -lt'
+alias ll='ls -lt --color=auto'
 # Tell the ocpihdl utility to always assume the FPGA device is the zynq PL.
 export OCPI_DEFAULT_HDL_DEVICE=pl:0
 # Only override this file if it is customized beyond what is the default for the platform

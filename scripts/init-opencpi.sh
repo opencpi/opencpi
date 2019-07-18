@@ -33,6 +33,6 @@ if test ! -d exports; then
     exit 1
   fi
   # Ensure a skeletal exported CDK
-  ./scripts/makeExportLinks.sh - -
+  ./scripts/makeExportLinks.sh -b -
 fi
 mkdir -p prerequisites

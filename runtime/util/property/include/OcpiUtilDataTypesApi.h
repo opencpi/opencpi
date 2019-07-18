@@ -26,6 +26,7 @@
 #ifndef OCPI_UTIL_DATA_TYPES_API_H
 #define OCPI_UTIL_DATA_TYPES_API_H
 #include <stdint.h>
+#include <cassert>
 #include <limits>
 /*
   These are the "simple" scalar property data types we support
@@ -112,6 +113,21 @@ namespace OCPI {
 #else
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store) OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)
 #endif
+    // Structure to capture indexing arrays and sequences and navigating to struct members
+    // The only intended usage is in the initializer_list below
+    struct Access {
+      union {
+	size_t m_index;
+	const char *m_member;
+      };
+      bool m_number;
+      Access(size_t subscript)   : m_index(subscript), m_number(true) {} // get element
+      // Allow (signed) ints for convenience, including 0, which should not end up being NULL for const char*
+      Access(int subscript)      : m_index((assert(subscript >= 0), (size_t)subscript)), m_number(true) {}
+      Access(const char *member) : m_member(member), m_number(false) {}; // get member
+    };
+    typedef const std::initializer_list<Access> AccessList;
+    const AccessList emptyList; // because GCC 4.4 doesn't completely support init lists
   } // API
 } // OCPI
 #endif

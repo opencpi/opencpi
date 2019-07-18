@@ -1,8 +1,0 @@
-<tests spec="baudTracking-spec.xml">
-  <property name='BaudAvrCount' value='10'/>
-  <property name='bypass' value='false'/>
-  <!-- this one is rcc-implementation-specific -->
-  <property name='SPB' value='50'/>
-  <input port='in' file='../../../applications/FSK/idata/Os.jpeg' messagesize='8192'/>
-  <output port='out' view='view.sh'/>
-</tests>

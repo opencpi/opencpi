@@ -52,7 +52,7 @@ ifndef LibName
 LibName=$(CwdName)
 endif
 ifeq ($(origin Implementations),undefined)
-Implementations=$(foreach m,$(Models),$(wildcard *.$m))
+Implementations=$(filter-out $(ExcludeWorkers),$(foreach m,$(Models),$(wildcard *.$m)))
 endif
 ifeq ($(filter clean%,$(MAKECMDGOALS)),)
 $(shell mkdir -p lib; \
@@ -65,7 +65,7 @@ endif
 # by calling "make workersfile -C ../". Doing so will trigger the code block above
 # which is executed for all make rules except clean%
 workersfile:
-
+	$(AT): # nothing - just suppress message
 # we need to factor the model-specifics our of here...
 XmImplementations=$(filter %.xm,$(Implementations))
 RccImplementations=$(filter %.rcc,$(Implementations))
@@ -80,7 +80,7 @@ AssyImplementations=$(filter %.assy,$(Implementations))
 # must eval here hence ifeq
 ifeq ($(TestImplementations),)
   ifeq ($(origin Tests),undefined)
-    TestImplementations:=$(subst %/,%,$(dir $(wildcard *.test/Makefile)))
+    TestImplementations:=$(filter-out $(ExcludeTests),$(patsubst %/,%,$(dir $(wildcard *.test/Makefile))))
   else
     TestImplementations:=$(Tests)
   endif
@@ -214,6 +214,7 @@ workers: $(build_targets)
 $(OutDir)lib:
 	$(AT)mkdir $@
 speclinks: | $(OutDir)lib
+	$(AT): # do nothing to avoid warning
 	$(AT)$(foreach f,$(wildcard specs/*.xml),$(call MakeSymLink,$(f),$(OutDir)lib);)
 
 $(Models:%=$(OutDir)lib/%): | $(OutDir)lib

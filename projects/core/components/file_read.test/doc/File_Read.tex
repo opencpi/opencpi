@@ -87,13 +87,13 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.3}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\small{\docTitle}}
 \graphicspath{ {figures/} }
-
+\usepackage{longtable}
 \def\comp{file\_read}
 \def\Comp{File\ Read }
 \graphicspath{ {figures/} }
@@ -112,7 +112,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           &  v\docVersion \\
 	\hline
-	Release Date      &  September 2018 \\
+	Release Date      &  4/2019 \\
 	\hline
 	Component Library &   ocpi.core\\
 	\hline
@@ -121,6 +121,22 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	Tested Platforms  &  isim, xsim, modelsim, xilinx13\_3, xilinx13\_4, centos6, centos7\\
 	\hline
 \end{tabular}
+
+\begin{center}
+  \textit{\textbf{Revision History}}
+\end{center}
+\begin{longtable}{|p{\dimexpr0.15\textwidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.65\textwidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.2\textwidth-2\tabcolsep\relax}|}
+  \hline
+  \rowcolor{blue}
+  \textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+  \hline
+  v1.4 & Initial release. & 9/2019 \\
+  \hline
+  v1.5 & Changed all readable properties to readback and changed default value of MessageSize from 4096 to 0. Also updated the end of file descriptions with smart wrapper updates.  & 4/2019 \\
+  \hline
+\end{longtable}
 
 \section*{Functionality}
 \begin{flushleft}
@@ -138,6 +154,7 @@ If the number of bytes in the file is not an even multiple of the message size t
 remaining bytes are sent in a final shorter message. The granularity of messages can
 also be specified. This forces the message size to be a multiple of this value, and
 forces truncation of the final message to be a multiple of this value.
+\newpage
 \subsubsection*{Messaging Mode}
 In messaging mode, the contents of the file are interpreted as a sequence of defined
 messages, with an 8-byte header in the file itself preceding the payload for each message.
@@ -145,7 +162,7 @@ This header contains the length and opcode of the message, with the data content
 the message following the header. The length can be zero, meaning that a message
 will be sent with the indicated opcode, and the length of the message will be zero.\\
 \medskip \medskip
-\input{snippets/messaging_snippet.tex}
+\input{snippets/messaging_snippet}
 \subsection*{No Protocol}
 The port on the component has no protocol specified.  This means that the data file must be formatted to match the protocol of the input port of the connected worker.  For message mode this means only using opcodes and payloads in the file that correspond to the protocol of the connected component.  In data streaming mode the file structure needs to correspond to the opcode that is set by the \textit{opcode} property.
 \subsection*{Message Size/Buffers}
@@ -154,12 +171,11 @@ The protocol of the connected component needs to be taken into account when sele
 When the File\_Read component reaches the end of its input file, it will do one of three
 things:
 \begin{itemize}
-  \item send a zero-length message (ZLM) with an opcode set by the \textit{opcode} property (default).  See Zero Length Messages section.
+  \item send a end of file notification
   \item enter the ``done'' state with no further action, when the \textit{suppressEOF} property
 is true
   \item restart reading at the beginning of the file, when the \textit{repeat} property is true
 \end{itemize}
-\input{snippets/ZLM_snippet.tex}
 \end{flushleft}
 
 \section*{Worker Implementation Details}
@@ -196,16 +212,16 @@ Name                 & Type   & SequenceLength & ArrayDimensions & Accessibility
 fileName & string length:1024 & - & - & Initial & -  &- & The name of the file whose contents are sent out as raw data to the output port.
 \\
 \hline
-messagesInFile & bool  & - & - & Readable, Initial & -  &false & The flag that is used to turn on and off message mode. See section on Message Mode.
+messagesInFile & bool  & - & - & Initial & -  &false & The flag that is used to turn on and off message mode. See section on Message Mode.
 \\
 \hline
-opcode & uchar  & - & - & Readable, Initial & -  &0 & The Opcode that all the data in the datafile is sent in streaming mode. The opcode of the ZLM at the end of the file in messaging mode.
+opcode & uchar  & - & - & Initial & -  &0 & The Opcode that all the data in the datafile is sent in streaming mode. The opcode of the ZLM at the end of the file in messaging mode.
 \\
 \hline
-messageSize & ulong  & - & - & Readable, Initial & -  &4096 & The size of the messages in bytes that are created on the output port.  The connected worker's buffer needs to be big enough to take the data buffer that is being passed to the worker.  See Output Port section.
+messageSize & ulong  & - & - & Initial & -  &0 & The size of the messages in bytes that are created on the output port.  The connected worker's buffer needs to be big enough to take the data buffer that is being passed to the worker.  See Output Port section.
 \\
 \hline
-granularity & ulong  & - & - & Readable, Initial & -  &1 & The final message at the end of a file will truncated to be a multiple of this property's value in bytes.
+granularity & ulong  & - & - & Initial & -  &1 & The final message at the end of a file will truncated to be a multiple of this property's value in bytes.
 \\
 \hline
 repeat & bool  & - & - & Writeable & -  &- & The flag used to repeat the data file over and over.
@@ -234,16 +250,16 @@ badMessage & bool  & - & - & Volatile & -  &- & This flag is set by the worker i
 			\rowcolor{blue}
 			Type     & Name                      & Type  & SequenceLength & ArrayDimensions & Accessibility       & Valid Range & Default & Usage                                      \\
 			\hline
-			Spec Property & fileName & string  & - & - & Readable & -  &- & added Readable
+			Spec Property & fileName & string  & - & - & Readback & -  &- & added Readback
             \\
             \hline
-            Spec Property & suppressEOF & bool  & - & - & Readable & -  &- & added Readable
+            Spec Property & suppressEOF & bool  & - & - & Readback & -  &- & added Readback
             \\
             \hline
-            Property & CWD\_MAX\_LENGTH & ulong  & - & - & Paramater & -  & 256 & parameter for max string length for the cwd property
+            Property & CWD\_MAX\_LENGTH & ulong  & - & - & Paramater & -  & 512 & parameter for max string length for the cwd property
             \\
             \hline
-            Property & cwd & string length:CWD\_MAX\_LENGTH & - & - & Volatile & -  &- & the current working direactory of the application (this is required for the hdl version of this worker and cannot be detiermined automaticly)
+            Property & cwd & string length:CWD\_MAX\_LENGTH & - & - & Volatile & -  &- & the current working directory of the application (this is required for the hdl version of this worker and cannot be determined automatically)
             \\
             \hline
     \end{tabular}
@@ -256,12 +272,6 @@ badMessage & bool  & - & - & Volatile & -  &- & This flag is set by the worker i
 			\rowcolor{blue}
 			Type     & Name                      & Type  & SequenceLength & ArrayDimensions & Accessibility       & Valid Range & Default & Usage                                      \\
 			\hline
-			Spec Property & fileName & string  & - & - & Readable & -  &- & added Readable
-            \\
-            \hline
-            Spec Property & suppressEOF & bool  & - & - & Readable & -  &- & added Readable
-            \\
-            \hline
             Spec Property & messageSize & ulong  & - & - &  Volatile & -  &4096 & added Volatile
             \\
             \hline

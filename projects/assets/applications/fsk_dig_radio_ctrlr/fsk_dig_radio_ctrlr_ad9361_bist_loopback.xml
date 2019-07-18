@@ -1,0 +1,158 @@
+<!-- **** ONLY TO BE USED w/ ocpirun *****
+     20 seconds should be long enough for the app to run at the default sampling
+     rate
+     example usage: OCPI_LIBRARY_PATH=../../artifacts/:../../../core/artifacts ocpirun -t 20 fsk_dig_radio_ctrlr_ad9361_bist_loopback.xml
+-->
+<Application>
+
+  <!-- FSK modulation/TX algorithm workers (will connect to dig_radio_ctrlr
+       routing ID "TX0" workers) -->
+
+  <Instance Component="ocpi.core.file_read" Connect="mfsk_mapper">
+    <Property Name="fileName"       Value="idata/Os.jpeg"/>
+    <Property Name="messagesInFile" Value="false"/>
+    <Property Name="opcode"         Value="1"/>
+    <Property Name="granularity"    Value="1"/>
+  </Instance>
+  <Instance Component="ocpi.assets.comms_comps.mfsk_mapper" Model="hdl"
+                                                            Connect="zero_pad">
+    <Property Name="symbols" Value="-32768,32767"/>
+  </Instance>
+  <Instance Component="ocpi.assets.util_comps.zero_pad" Model="hdl"
+                                                        Connect="tx_fir_real">
+    <Property Name="num_zeros" Value="38"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.fir_real_sse" Name="tx_fir_real"
+                                                           Model="hdl"
+                                                           Connect="phase_to_amp_cordic">
+    <Property Name="taps" ValueFile="idata/tx_rrcos_taps.dat"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.phase_to_amp_cordic" Model="hdl"
+                                                                  Connect="dig_radio_ctrlr_TX0_cic_int">
+    <Property Name="magnitude"  Value="20000"/>
+    <Property Name="DATA_WIDTH" Value="16"/>
+    <Property Name="DATA_EXT"   Value="6"/>
+    <Property Name="STAGES"     Value="16"/>
+  </Instance>
+
+  <!-- FSK demodulation/RX algorithm workers (will connect to dig_radio_ctrlr
+       routing ID "RX0" workers) -->
+
+  <Connection>
+    <Port Instance="dig_radio_ctrlr_RX0_cic_dec" Name="out"/>
+    <Port Instance="rp_cordic"                   Name="in"/>
+  </Connection>
+  <Instance Component="ocpi.assets.dsp_comps.rp_cordic" Model="hdl"
+                                                        Connect="rx_fir_real">
+    <Property Name="DATA_WIDTH" Value="16"/>
+    <Property Name="DATA_EXT"   Value="6"/>
+    <Property Name="STAGES"     Value="16"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.fir_real_sse" Name="rx_fir_real"
+                                                           Model="hdl"
+                                                           Connect="baudTracking">
+    <Property Name="taps" ValueFile="idata/rx_rrcos_taps.dat"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.baudTracking" Connect="real_digitizer">
+    <Property Name="bypass"       Value="false"/>
+    <Property Name="SPB"          Value="39"/> <!-- samples/baud -->
+    <Property Name="BaudAvrCount" Value="10"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.real_digitizer" Connect="file_write">
+    <!-- look for 0xFACE sync pattern -->
+    <Property Name="need_sync" Value="true"/>
+
+    <!-- prints out when 0xFACE sync pattern is found -->
+    <Property Name="enable_printing" Value="true"/>
+  </Instance>
+  <Instance Component="ocpi.core.file_write">
+    <Property Name="fileName"       Value="odata/fsk_dig_radio_ctrlr_ad9361_bist_loopback.bin"/>
+    <Property Name="messagesInFile" Value="false"/>
+  </Instance>
+
+  <!-- radio frontend,command/control,tune/filter/decimate-related
+       workers/connections -->
+
+  <!-- must be instanced here in app XML as a workaround for AV-3799 -->
+  <Instance Component="ocpi.assets.devices.ad9361_spi"/>
+
+  <!-- dig_radio_ctrlr worker implementation is expected to require
+       control plane interface to ad9361_data_sub -->
+  <Instance Component="ocpi.assets.devices.ad9361_data_sub" Selection="LVDS_p == true"/>
+
+  <!-- dig_radio_ctrlr worker implementation is expected to require
+       control plane interface to ad9361_config -->
+  <Instance Component="ocpi.assets.devices.ad9361_config"/>
+
+  <Instance Component="ocpi.core.dig_radio_ctrlr" Selection='MAX_NUM_DATA_STREAMS_RX_p>=1 &&
+                                                             MAX_NUM_DATA_STREAMS_TX_p>=1 &&
+                                                             IS_SUPPORTED_RX_SAMPLES_COMPLEX_p'
+                                                  Slave="ad9361_config">
+
+    <Property Name="app_inst_name_ad9361_data_sub"   Value="ad9361_data_sub"/> <!-- TODO / FIXME remove this and use slave= -->
+
+    <!-- routing ID "TX0" -->
+    <Property Name="app_inst_name_TX0_qdac"          Value="dig_radio_ctrlr_TX0_qdac"/>
+    <Property Name="app_inst_name_TX0_complex_mixer" Value=""/>
+    <Property Name="app_inst_name_TX0_cic_int"       Value="dig_radio_ctrlr_TX0_cic_int"/>
+
+    <!-- routing ID "RX0" -->
+    <Property Name="app_inst_name_RX0_qadc"          Value="dig_radio_ctrlr_RX0_qadc"/>
+    <Property Name="app_inst_name_RX0_complex_mixer" Value="dig_radio_ctrlr_RX0_complex_mixer"/>
+    <Property Name="app_inst_name_RX0_cic_dec"       Value="dig_radio_ctrlr_RX0_cic_dec"/>
+
+    <Property Name="bist_loopback" Value="loopback_AD9361_internal"/>
+
+  </Instance>
+
+  <!-- worker(s) associated w/ dig_radio_ctrlr routing ID TX0 -->
+
+  <Instance Component="ocpi.assets.dsp_comps.cic_int" Name="dig_radio_ctrlr_TX0_cic_int"
+                                                      Model="hdl"
+                                                      Connect="dig_radio_ctrlr_TX0_qdac"
+                                                      To="in">
+    <Property Name="N"         Value="3"/>
+    <Property Name="M"         Value="1"/>
+    <Property Name="R"         Value="16"/> <!-- interpolation factor -->
+    <Property Name="ACC_WIDTH" Value="28"/>
+  </Instance>
+  <Instance Component="ocpi.assets.devices.qdac" Model="hdl"
+                                                 Name="dig_radio_ctrlr_TX0_qdac"/>
+
+  <!-- worker(s) associated w/ dig_radio_ctrlr routing ID RX0 -->
+
+  <Instance Component="ocpi.assets.dsp_comps.dc_offset_filter" Name="dig_radio_ctrlr_RX0_dc_offset_filter"
+                                                               Model="hdl"
+                                                               Connect="dig_radio_ctrlr_RX0_iq_imbalance_fixer">
+    <Property Name="bypass" Value="false"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.iq_imbalance_fixer" Name="dig_radio_ctrlr_RX0_iq_imbalance_fixer"
+                                                                 Model="hdl"
+                                                                 Connect="dig_radio_ctrlr_RX0_complex_mixer">
+    <Property Name="enable"                Value="true"/>
+    <Property Name="log2_averaging_length" Value="11"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.complex_mixer" Name="dig_radio_ctrlr_RX0_complex_mixer"
+                                                            Model="hdl"
+                                                            Connect="dig_radio_ctrlr_RX0_cic_dec">
+    <Property Name="NCO_DATA_WIDTH_p"   Value="12"/>
+    <Property Name="INPUT_DATA_WIDTH_p" Value="12"/>
+    <Property Name="mag"                Value="1024"/>
+    <Property Name="phs_init"           Value="0"/>
+    <Property Name="enable"             Value="false"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.cic_dec" Name="dig_radio_ctrlr_RX0_cic_dec"
+                                                      Model="hdl">
+    <Property Name="N"         Value="3"/>
+    <Property Name="M"         Value="1"/>
+    <Property Name="R"         Value="16"/> <!-- decimation factor -->
+    <Property Name="ACC_WIDTH" Value="28"/>
+  </Instance>
+
+  <!-- ad9361_adc worker must be instantiated last in app XML to avoid erroneous
+       CDC FIFO overrun -->
+  <Instance Component="ocpi.assets.devices.qadc" Name="dig_radio_ctrlr_RX0_qadc"
+                                                 Model="hdl"
+                                                 Connect="dig_radio_ctrlr_RX0_dc_offset_filter"/>
+
+</Application>

@@ -1,5 +1,5 @@
 This directory contains files relating to packaging OpenCPI for distribution.
-If the OpenCPI source tree is downloaded, and built, and used in place, there is no
+If the OpenCPI source tree is downloaded, built, and used in place, there is no
 "distribution" and nothing in this directory will be used.
 
 Since different target operating systems use different packaging systems, this directory
@@ -33,6 +33,6 @@ For RPM building we have:
       generic output of the prepare-package-list.sh script into what the rpmbuild process needs,
       which is to have a list of files and directories, and make a private copy of all files.
 
-   These may be moved to a subdirectory
+   These may be moved to a subdirectory in the future
 
 For each platform, distribution files will be placed in the target-<platform> subdirectory

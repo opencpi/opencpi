@@ -1,7 +1,8 @@
 <!-- 
  Matchstiq-Z1 PCA9535 Device Worker Proxy OCS
 -->
-<RccWorker language="c++" slave="pca9535.hdl" spec="matchstiq_z1_pca9535_proxy_spec">
+<RccWorker language="c++" slave="pca9535.hdl" spec="matchstiq_z1_pca9535_proxy_spec"
+	   OnlyPlatforms='xilinx13_3'>
   <!--This property is encoded: -->
   <!-- 0 = unfiltered -->
   <!-- 1 = 300  to 700  MHz -->

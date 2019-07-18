@@ -1,4 +1,4 @@
-These scripts are those that are run at the top level of the opencpi source tree that are not
+These scripts are those that are run at the top-level of the opencpi source tree that are not
 part of the CDK.  They are generally used for installing software or initializing the environment
 when building the core software in the source tree.
 

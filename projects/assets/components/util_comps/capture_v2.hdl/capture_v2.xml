@@ -2,7 +2,7 @@
   <StreamInterface Name="in"
                    DataWidth="32" NumberOfOpcodes="256" DataValueWidth="8"
                    ZeroLengthMessages="true"/>
-  <StreamInterface Name="out"
+  <StreamInterface Name="out" buffersize='in'
                    DataWidth="32" NumberOfOpcodes="256" DataValueWidth="8"
                    ZeroLengthMessages="true"/>
   <TimeInterface Name="time" SecondsWidth="32" FractionWidth="32"/>

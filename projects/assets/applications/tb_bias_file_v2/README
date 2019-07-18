@@ -1,0 +1,10 @@
+The tb_bias_file_v2 application utilizes the file_read, bias, and capture_v2 components.
+
+export OCPI_LIBRARY_PATH=/mnt/ocpi_assets/artifacts:/mnt/ocpi_core/artifacts
+ocpirun -d -v -x tb_bias_file_v2
+
+The input file to be read by file_read is the tb_bias_file_v2.xml. The file contains 708 bytes of data.
+
+The file_read component will send a 708 byte message.
+
+The bias component adds the bias value 0x01020304 to the data in the message.

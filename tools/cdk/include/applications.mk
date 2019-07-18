@@ -63,6 +63,6 @@ test:
 run:
 	$(call DOALL,Running,run)
 	$(AT)$(infox FILTER:$(FILTER))$(infox Applications:$(Applications))$(and $(filter %.xml,$(FILTER)),\
-	       echo ======== Running local XML application'(s)': $(filter %.xml,$(FILTER)) \
+	       echo "======== Running local XML application(s):" $(filter %.xml,$(FILTER)) \
                $(foreach a,$(basename $(filter %.xml,$(FILTER))),\
                 && echo "========= $(call OcpiRunXML,$a,x)" && $(call OcpiRunXML,$a)))

@@ -17,14 +17,14 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# TODO: integegrate more inline with ocpirun -A o get information instead of metadata file
+# TODO: integrate more inline with ocpirun -A to get information instead of metadata file
 
 from xml.etree import ElementTree as ET
 import os
 import sys
 import subprocess
-import hdltargets
-import ocpiutil
+sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
+import _opencpi.util as ocpiutil
 
 def addLibs(curRoot, libs):
     allWorkersLocal = False
@@ -92,35 +92,6 @@ def checkBuilt (primDir):
             if len(fileName) == 2 :
                 targets.append(fileName[1])
     retVal = targets
-    return retVal
-
-def checkBuiltAssy (assyName, workerDir):
-    fileList = os.listdir(workerDir)
-    platforms = []
-    containers = []
-    fileList_noxml = [x.strip('.xml') for x in fileList]
-    fileList_noxml = [x for x in fileList_noxml if not x.startswith("container-")]
-    platformList = [plat_obj.name for plat_obj in hdltargets.HdlPlatform.all()]
-    for fileName in fileList:
-        if fileName.startswith("container-"):
-            foundContainer = False;
-            for x in fileList_noxml:
-                if fileName.endswith(x):
-                    #print "adding to containers : " + x + " for " + fileName
-                    containers.append(x)
-                    foundContainer = True
-                    break
-            if (not foundContainer):
-                #print "adding to containers : base for " + fileName
-                containers.append("base")
-            for x in platformList:
-                if x in fileName:
-                    platforms.append(x)
-                    break
-            #print "filename is " + fileName
-    #print "platfroms" + str(platforms)
-    #print "containers" + str(containers)
-    retVal = list(zip(platforms, containers))
     return retVal
 
 def checkBuiltWorker (workerDir):
@@ -192,14 +163,9 @@ def addPlatforms (root, plats, dirName):
 
 def addAssemblies (root, assys, dirName):
     for a in assys:
-        built = checkBuiltAssy(a, dirName + '/' + a)
         #print "assemblies dir is: " + str(built)
         app = ET.SubElement(root, "assembly")
         app.set('name', a)
-        for platformStr, containerStr in built:
-                target = ET.SubElement(app, "built")
-                target.set('platform', platformStr)
-                target.set('container', containerStr)
 
 def addPrimitives (root, primitives, dirName):
     for a in primitives:
@@ -214,9 +180,9 @@ def addPrimitives (root, primitives, dirName):
 
 def isStale (myDir, force):
     retVal = True
-    # removed the functionality of this function to always return true because the find command 
+    # removed the functionality of this function to always return true because the find command
     # was taking longer to run then the regenerating of the metadata itself.  also the command
-    # stopped returning a string into find_output.  this could likely be fixed and optimized to 
+    # stopped returning a string into find_output.  this could likely be fixed and optimized to
     # fix these problems but not worth the time required right now
     '''find_output = ""
     if (force == False):
@@ -230,7 +196,7 @@ def isStale (myDir, force):
             if find_output != b'':
                 retVal = False
                 print ("is stale")
-        else: 
+        else:
             print ("metadata file does not exist yet")'''
 
     return retVal
@@ -289,7 +255,7 @@ def main():
 
         if os.path.isdir(mydir + "/applications"):
             apps = ET.SubElement(root, "applications")
-            sub_dirs = onlyfiles = [dir for dir in os.listdir(mydir + "/applications") 
+            sub_dirs = onlyfiles = [dir for dir in os.listdir(mydir + "/applications")
                                     if not os.path.isfile(os.path.join(mydir + "/applications", dir))]
             addApplications(apps, sub_dirs, mydir + "/applications")
 
@@ -353,7 +319,7 @@ def main():
                 addWorkers(retVal[1], subdirList, dirName)
 
         print("Updating project metadata...")
-        indent(root) 
+        indent(root)
         tree = ET.ElementTree(root)
         tree.write(mydir+"/project.xml")
     else:

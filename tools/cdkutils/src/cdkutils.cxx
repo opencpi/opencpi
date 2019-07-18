@@ -275,6 +275,10 @@ openOutput(const char *name, const char *outDir, const char *prefix, const char 
 void
 printgen(FILE *f, const char *comment, const char *file, bool orig, const char *endComment) {
   time_t now = time(0);
+  std::string escaped_file = file;
+  // -- in xml comments is invalid xml grammer so we remove it if it exists in the filename
+  while (escaped_file.find("--") != std::string::npos)
+    escaped_file.replace(escaped_file.find("--"), 2, "-\\-");
   char *ct = ctime(&now);
   ct[strlen(ct) - 1] = '\0';
   struct tm *local = localtime(&now);
@@ -283,7 +287,7 @@ printgen(FILE *f, const char *comment, const char *file, bool orig, const char *
 	  "%s BASED ON THE FILE: %s%s\n"
 	  "%s YOU %s EDIT IT%s\n",
 	  comment, orig ? "ORIGINALLY " : "", ct, local->tm_zone, endComment,
-	  comment, file, endComment,
+	  comment, escaped_file.c_str(), endComment,
 	  comment, orig ? "*ARE* EXPECTED TO" : "PROBABLY SHOULD NOT", endComment);
 }
 

@@ -21,8 +21,7 @@
 #ifndef _WORKER_PROP_PARSERS_FMCOMMS_2_3_RX_H
 #define _WORKER_PROP_PARSERS_FMCOMMS_2_3_RX_H
 
-#include "ocpi_component_prop_type_helpers.h" // ocpi_double_t, ocpi_bool_t
-
+#include "ocpi_component_prop_type_helpers.h"
 enum class ocpi_fmcomms_2_3_rx_duplex_mode_t {TDD, FDD};
 enum class ocpi_fmcomms_2_3_rx_SMA_channel_t {RX1A, RX2A};
 
@@ -34,9 +33,9 @@ enum class ocpi_fmcomms_2_3_rx_SMA_channel_t {RX1A, RX2A};
 // config struct property
 struct fmcomms_2_3_rx_config
 {
-  ocpi_double_t                     reference_clk_rate_Hz;
+  double                            reference_clk_rate_Hz;
   ocpi_fmcomms_2_3_rx_duplex_mode_t duplex_mode;
-  ocpi_bool_t                       are_using_REF_CLK_SMA;
+  bool                              are_using_REF_CLK_SMA;
   ocpi_fmcomms_2_3_rx_SMA_channel_t SMA_channel;
 };
 

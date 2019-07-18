@@ -1,0 +1,13 @@
+<HdlDevice language="vhdl" spec="matchstiq_z1_gp_out_em-spec" emulate="matchstiq_z1_gp_out.hdl">
+  <!-- Properties -->
+  <Property Name="numOutputSamples" Type="ulong" Writable="true" Description="Number of samples to send to ouput port"/>
+
+  <!-- Ports -->
+  <StreamInterface Name="out" DataWidth="32"  NumberOfOpcodes="256" ZeroLengthMessages="true"/>
+
+  <!-- DevSignals -->
+  <Supports Worker="matchstiq_z1_gp_out">
+    <Connect Port="dev_gp_em" To="dev_gp_em"/>
+  </Supports>
+
+</HdlDevice>

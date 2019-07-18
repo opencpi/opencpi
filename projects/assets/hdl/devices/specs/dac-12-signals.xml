@@ -1,10 +1,10 @@
-<signals>
-  <signal output='present'/>
+<Signals>
+  <Signal Name="present" Direction="out"/>
   <!-- all below signals are intended to exist in the DAC clock domain (which
        is not necessarily control clock domain) -->
-  <signal input='dac_clk'/>
-  <signal output='dac_ready'/>
-  <signal input='dac_take'/>
-  <signal output='dac_data_I' width='12'/>
-  <signal output='dac_data_Q' width='12'/>
-</signals>
+  <Signal Name="dac_clk" Direction="in"/>
+  <Signal Name="dac_ready" Direction="out"/>
+  <Signal Name="dac_take" Direction="in"/>
+  <Signal Name="dac_data_I" Direction="out" Width="12"/>
+  <Signal Name="dac_data_Q" Direction="out" Width="12"/>
+</Signals>

@@ -1,0 +1,4 @@
+<HdlAssembly>
+  <Instance Worker="bias_vhdl" connect='capture_v2' external='in'/>
+  <Instance Worker='capture_v2'/>
+</HdlAssembly>

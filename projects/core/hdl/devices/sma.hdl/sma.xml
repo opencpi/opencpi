@@ -1,26 +1,25 @@
-<HdlImplementation Name="sma" Language="Verilog" Pattern="%w%M%0_">
-  <xi:include href="sma_spec.xml"/>
-  <ControlInterface Sub32BitConfigProperties="true" SizeOfConfigSpace="4g" ControlOperations="initialize">
-    <Property Name="mesgCount" Readable="true"/>
-    <Property Name="abortCount" Readable="true"/>
-    <Property Name="dummy0" padding='true'/>
-    <Property Name="thisMesg" Readable="true"/>
-    <Property Name="lastMesg" Readable="true"/>
-    <Property Name="portStatus" Readable="true"/>
-    <Property Name="dummy1" padding='true'/>
-    <Property Name="wsiSpMesgCount" Readable="true"/>
-    <Property Name="wsiSiMesgCount" Readable="true"/>
-    <Property Name="wsiStBusyCount" Readable="true"/>
-    <Property Name="wsiMpMesgCount" Readable="true"/>
-    <Property Name="wsiMiMesgCount" Readable="true"/>
-    <Property Name="wsiMtBusyCount" Readable="true"/>
-    <Property Name="wmwtBeginCount" Readable="true"/>
-    <Property Name="wmwtPushCount" Readable="true"/>
-    <Property Name="wmwtFinalCount" Readable="true"/>
-    <Property Name="wmianyBusy" Readable="true"/>
-    <Property Name="FEED_C0DE" Readable="true"/>
-    <Property Name="smaCtrlInit" Parameter="true" default='0'/>
-  </ControlInterface>
+<HdlImplementation Name="sma" Language="Verilog" Pattern="%w%M%0_" spec="sma_spec.xml">
+  <Property Name="smaCtrl" readback="true" Writable="true"/>
+  <ControlInterface Sub32BitConfigProperties="true" SizeOfConfigSpace="4g" ControlOperations="initialize"/>
+  <Property Name="mesgCount" Readback="true"/>
+  <Property Name="abortCount" Readback="true"/>
+  <Property Name="dummy0" padding='true'/>
+  <Property Name="thisMesg" Readback="true"/>
+  <Property Name="lastMesg" Readback="true"/>
+  <Property Name="portStatus" Readback="true"/>
+  <Property Name="dummy1" padding='true'/>
+  <Property Name="wsiSpMesgCount" Readback="true"/>
+  <Property Name="wsiSiMesgCount" Readback="true"/>
+  <Property Name="wsiStBusyCount" Readback="true"/>
+  <Property Name="wsiMpMesgCount" Readback="true"/>
+  <Property Name="wsiMiMesgCount" Readback="true"/>
+  <Property Name="wsiMtBusyCount" Readback="true"/>
+  <Property Name="wmwtBeginCount" Readback="true"/>
+  <Property Name="wmwtPushCount" Readback="true"/>
+  <Property Name="wmwtFinalCount" Readback="true"/>
+  <Property Name="wmianyBusy" Readback="true"/>
+  <Property Name="FEED_C0DE" Readback="true"/>
+  <Property Name="smaCtrlInit" Parameter="true" default='0'/>
   <StreamInterface Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256" MaxMessageValues="8191"/>
   <StreamInterface Name="out"  ImpreciseBurst="True" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"  MaxMessageValues="8191"/>
   <MessageInterface Name="message"  ByteWidth="8" PreciseBurst="True" MFlagWidth="32" DataWidth="32" TalkBack="true" Bidirectional="true" MaxMessageValues="8193" master='true'/>

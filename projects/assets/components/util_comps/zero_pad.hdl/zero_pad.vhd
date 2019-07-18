@@ -30,7 +30,8 @@
 
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
-
+library util; use util.util.all;
+              
 architecture rtl of zero_pad_worker is
   signal message_wcnt_r    : unsigned(15 downto 0);
   signal doit              : bool_t;
@@ -38,7 +39,7 @@ architecture rtl of zero_pad_worker is
   signal output_valid      : std_logic;
   signal output_som        : std_logic;
   signal output_eom        : std_logic;
-  signal invalid_som_r     : std_logic;
+  signal take              : std_logic;
   signal zlm_detected      : std_logic;  
   signal data_eom          : std_logic;
 begin
@@ -46,25 +47,24 @@ begin
   doit_out <= ctl_in.is_operating and out_in.ready;
   
   -- WSI input interface outputs
-  in_out.take <= doit and 
+  in_out.take <= take;
+  take        <= doit and 
                  to_bool(message_wcnt_r=0); --Done adding zeros
 
   data_eom <= to_bool(message_wcnt_r=unsigned(props_in.num_zeros)); --Send eom on last zero
 
-  InvalidSom : process(ctl_in.clk)
-  begin
-    if rising_edge(ctl_in.clk) then
-      if its(in_in.valid) then
-        invalid_som_r <= '0';
-      else
-        if its(in_in.som) then
-          invalid_som_r <= '1';
-        end if;
-      end if;
-    end if;
-  end process;
-
-  zlm_detected <= (in_in.som or invalid_som_r) and in_in.eom and not in_in.valid;
+  -- Use zlm detector primitive to detect zlms and multicycle zlms
+  zlm_detector : util.util.zlm_detector
+  port map (
+    clk => ctl_in.clk,
+    reset => ctl_in.reset,
+    som => in_in.som,
+    valid => in_in.valid,
+    eom => in_in.eom,
+    ready => in_in.ready,
+    take => take,
+    eozlm_pulse => open,
+    eozlm => zlm_detected);
 
   MessageWordCount : process(ctl_in.clk)
   begin
@@ -94,10 +94,13 @@ begin
   end process;
 
     -- WSI output interface outputs
-  out_out.give          <= doit_out and (output_valid or output_som or output_eom);
-  output_valid          <= in_in.valid when message_wcnt_r=0 else doit_out;
+  out_out.give          <= doit_out and (output_valid or zlm_detected);
+  output_valid          <= (in_in.ready and in_in.valid and to_bool(message_wcnt_r=0)) or --Sending sample
+                           (to_bool(message_wcnt_r/=0));                                  --Sending zeros
   out_out.valid         <= output_valid;
-  output_som            <= to_bool(message_wcnt_r=0) when its(in_in.valid) else zlm_detected;
+  output_som            <= to_bool(message_wcnt_r=0) when its(in_in.ready) and its(in_in.valid)
+                           else bfalse when message_wcnt_r /= 0
+                           else zlm_detected;
   output_eom            <= data_eom when its(output_valid) else zlm_detected;
   out_out.som           <= output_som;
   out_out.eom           <= output_eom;

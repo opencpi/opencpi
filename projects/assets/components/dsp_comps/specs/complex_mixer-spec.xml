@@ -4,9 +4,9 @@
      Add port elements for i/o ports -->
 <ComponentSpec>
 
-  <Property Name="enable" Type="bool" Readable="true" Writable="true" Default="true"/>
+  <Property Name="enable" Type="bool" Writable="true" Default="true"/>
 
-  <Property Name="phs_inc" Type="Short" Readable="true" Writable="true" Default="-4096"/>
+  <Property Name="phs_inc" Type="Short" Writable="true" Default="-4096"/>
 
   <DataInterfaceSpec Name="in" Producer="false" Protocol="iqstream_protocol.xml"/>
   <DataInterfaceSpec Name="out" Producer="true" Protocol="iqstream_protocol.xml"/>

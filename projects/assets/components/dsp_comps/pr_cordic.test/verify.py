@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -30,21 +30,11 @@ The output of the circuit is a complex sinusoid (tone given a constant-phase inp
 with maximum amplitude as defined by the magnitude input.
 
 """
-import numpy as np
-import sys
 import os.path
+import sys
+import opencpi.colors as color
+import numpy as np
 
-class color:
-    PURPLE = '\033[95m'
-    CYAN = '\033[96m'
-    DARKCYAN = '\033[36m'
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    END = '\033[0m'
 
 def dispGetPeakErr(val,n):
 
@@ -96,7 +86,7 @@ print "*** Python: PR CORDIC ***"
 
 print "*** Validation of PR CORDIC output (binary data file) ***"
 if len(sys.argv) < 3:
-    print("Usage expected: output file, input file")
+    print(color.RED + color.BOLD + "Usage expected: output file, input file" + color.END)
     sys.exit(1)
 
 OFILE = sys.argv[1]

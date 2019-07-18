@@ -1,6 +1,5 @@
-<RccImplementation>
-  <xi:include href="blur_spec.xml"/>
+<RccWorker spec="blur_spec.xml">
   <Port Name="in" MinBuffers="3"/>
-</RccImplementation>
+</RccWorker>
 
 

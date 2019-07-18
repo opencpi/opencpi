@@ -1,4 +1,4 @@
-<HdlWorker Language="vhdl" Spec="cic_int-spec.xml">
+<HdlWorker Language="vhdl" Spec="cic_int-spec.xml" version='2'>
 
   <Property Name="VIVADO_ILA_p" Type="bool" Parameter="true" Readable="true" Default="false"/>
 
@@ -16,7 +16,7 @@
 
   <SpecProperty Name="DOUT_WIDTH" Parameter="true" Default="16"/>
 
-  <StreamInterface Name="in"  DataWidth="32" ZeroLengthMessages="true"/>
-  <StreamInterface Name="out" DataWidth="32" ZeroLengthMessages="true"/>
+  <StreamInterface Name="in"  DataWidth="32"/>
+  <StreamInterface Name="out" DataWidth="32" inserteom='1'/>
 
 </HdlWorker>

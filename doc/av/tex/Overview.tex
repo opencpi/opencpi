@@ -20,9 +20,11 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{OpenCPI Overview}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
-\input{snippets/LaTeX_Header.tex}
+\def\snippetpath{snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
 \setlength{\parindent}{0pt} % Don't indent all paragraphs
 \newcommand{\forceindent}{\leavevmode{\parindent=1em\indent}}
 \date{Version \docVersion} % Force date to be blank and override date with version

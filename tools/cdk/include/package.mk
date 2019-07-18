@@ -39,6 +39,11 @@ define OcpiCreatePackageId
 
 ###############################################################################
 # Determine where the 'lib' directory is relative to the current location
+# TODO this list of directory-types that are supported for where the 'lib/'
+#      directory might be should be a distributed list that is collected here.
+#      So, there should be some sort of flag that can be set in library.mk or
+#      hdl-platforms.mk for example that flags it as "a dir that can have lib/".
+#      This hardcoded list here is not very scalable.
 LibIsInCwd=$$(filter lib library %-platform %-platforms %-primitives,$$(call OcpiGetDirType,$$(or $1,./)))
 LibIsInParent=$$(filter lib library %-platform %-platforms %-primitives,$$(call OcpiGetDirType,$$(or $1,.)/../))
 
@@ -50,7 +55,8 @@ DirContainingLib=$$(if $$(LibIsInCwd),$$(or $1,.)/,$$(and $$(LibIsInParent),$$(o
 #   (if building from the worker level, <library>/Library.mk is included,
 #    but not <library>/Makefile)
 $$(foreach p,$$(shell [ -f $$(DirContainingLib)/Makefile ] && grep "^\s*Package\s*:\?=\s*.*" $$(DirContainingLib)/Makefile),\
-  $$(warning The Package variable can be set in either Project.mk, Library.mk, Platforms.mk or Platform.mk. Setting of Package= in 'Makefile' is deprecated and will not be supported in future releases.)\
+  $$(if $$(filter clean%,$$(MAKECMDGOALS)),,\
+    $$(warning The Package variable can be set in either Project.mk, Library.mk, Platforms.mk or Platform.mk. Setting of Package= in 'Makefile' is deprecated and will not be supported in future releases.))\
   $$(eval $$p))
 
 ###############################################################################

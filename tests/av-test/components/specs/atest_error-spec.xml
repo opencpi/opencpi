@@ -1,0 +1,31 @@
+<!-- Test all invalid combinations of accessibility to force error messages -->
+<ComponentSpec>
+  <!-- errors for all worker-only attributes -->
+  <property namew='noname'/>
+  <property name='badattr' param='1'/>
+  <property name='worker1' padding='1'/>
+  <property name='worker2' readable='1'/>
+  <property name='worker3' raw='1'/>
+  <property name='worker4' readback='1'/>
+  <property name='worker5' readback='1' readable='1'/>
+  <!-- errors for param could be: no value, any other accessibility or "default" -->
+  <property name='param0' parameter='1'/>
+  <property name='param1' parameter='1' default='1' value='1'/>
+  <property name='param2' parameter='1' initial='1'/>
+  <property name='param3' parameter='1' writable='1'/>
+  <property name='param4' parameter='1' volatile='1'/>
+  <!-- errors could be: any other accessibility except volatile -->
+  <property name='initial1' initial='1' value='1'/>
+  <property name='initial2' initial='1' writable='1'/>
+  <property name='initial3' initial='1'/>
+  <!-- errors could be: any other accessibility except volatile -->
+  <property name='writable1' writable='1' value='1'/>
+  <!-- errors could be: any value -->
+  <property name='readonlyconst1' value='1'/>
+  <property name='readonlyconst2' default='1'/>
+  <!-- errors could be: any value -->
+  <property name='readonlyvolatile1' volatile='1' readable='1'/>
+  <property name='readonlyvolatile2' volatile='1' value='1'/>
+  <property name='readonlyvolatile3' volatile='1' default='1'/>
+  <property name='readonlyvolatile4' padding='1' initial='1'/>
+</ComponentSpec>

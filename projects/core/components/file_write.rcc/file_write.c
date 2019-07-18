@@ -81,7 +81,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  //	*(uint32_t *)port->current.data);
 
  (void)timedOut;(void)newRunCondition;
- if (port->input.length == 0 && port->input.u.operation == 0 && props->stopOnEOF)
+ if (port->input.eof) // length == 0 && port->input.u.operation == 0 && props->stopOnEOF)
    return RCC_ADVANCE_DONE;
  if (props->messagesInFile) {
    struct {

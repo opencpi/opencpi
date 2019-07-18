@@ -1,0 +1,27 @@
+<!-- This worker is based on a good spec, and generates errors here
+     which is similar to the errors generated in the atest_error-spec.xml -->
+<RccWorker language='c++' spec='atest-spec'>
+
+  <!-- First: errors that can be generated when defining OWD properties that are not the same
+       errors as in a spec -->
+  <!-- no errors in this category yet -->
+  <!-- Second: errors that can be generated usinbg specproperty -->
+  <specproperty name='param0' parameter='1' value='5'/>
+  <specproperty name='param1' initial='1'/>
+  <specproperty name='param2' writable='1'/>
+  <!-- errors could be: any other accessibility except volatile -->
+  <specproperty name='initial' initial='1'  writesync='1' writeerror='1'/>
+  <!-- errors could be: any other accessibility except volatile -->
+  <specproperty name='writable1' writable='1'/>
+  <specproperty name='writable2' initial='1'/>
+  <specproperty name='writable3' parameter='1'/>
+  <!-- errors could be: any value -->
+  <specproperty name='readonlyconst' />
+  <!-- errors could be: any value -->
+  <specproperty name='readonlyvolatile' volatile='1' readerror='1' readsync='1'/>
+  <!-- errors could be: any other accessibility -->
+  <specproperty name='initialvolatile' initial='1' volatile='1'/>
+  <!-- errors could be: any other accessibility -->
+  <specproperty name='writablevolatile' writable='1' volatile='1'/>
+
+</RccWorker>

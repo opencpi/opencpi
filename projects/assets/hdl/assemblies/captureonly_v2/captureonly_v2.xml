@@ -1,0 +1,3 @@
+<HdlAssembly>
+  <Instance Worker="capture_v2" externals='true'/>
+</HdlAssembly>

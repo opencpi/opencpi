@@ -16,9 +16,17 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-RccStaticPrereqLibs=ad9361
+#RccStaticPrereqLibs=ad9361
 
 # Our "platform" functions that the ADI library calls
-SourceFiles=ad9361_platform.cc
+#SourceFiles=ad9361_platform.cc
 
+RccIncludeDirs+=./supporting/include/OCPIProjects/
+RccIncludeDirs+=./supporting/src/OCPIProjects/
+
+# This is the Makefile for worker ad9361_config_proxy.rcc
 include $(OCPI_CDK_DIR)/include/worker.mk
+
+# if someone happened to run doxygen, this will clean it up
+clean::
+	rm -rf supporting/html/ supporting/latex/

@@ -59,11 +59,15 @@ namespace OCPI {
       int m_maxFd;
       fd_set m_alwaysSet;
       unsigned m_sleepUsecs;
+      unsigned long m_maxCallers; // after this many callers, exit
+      unsigned long m_countCallers; // how many callers we have had
     public:
       Server(bool verbose, bool discoverable, bool loopback, bool onlyloopback,
 	     uint16_t port, const char *label, const char *addrFile, std::string &error);
       ~Server();
       bool run(std::string &error);
+      unsigned long set_maxCallers(const unsigned long new_max_callers);
+      unsigned long get_maxCallers() { return m_maxCallers; }
       //    protected:
     protected:
       std::string &discoveryInfo() { return m_discoveryInfo; }

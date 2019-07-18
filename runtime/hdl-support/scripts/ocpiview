@@ -17,16 +17,51 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+function help {
+  cat <<EOF
+
+The ocpiview command is a convenience script for viewing simulation results.
+--------------------------------------------------------------------------------
+usage: ocpiview [-h|-v] [<directory-path>]
+
+Execute in a directory containing either a simulation run, or a "simulations"
+folder (where the most recent run will be selected).
+
+Optionally pass in the <directory-path>.
+
+EOF
+  exit 0
+}
+
+# Let's catch the normal help options:
+# ocpiview -h         "$1" == -h
+# ocpiview -help      "$1" == -help
+# ocpiview --help     "$1" == --help
+# ocpiview -?         "$1" == -?
+
+[ "$1" == -h -o "$1" == -help -o "$1" == --help -o "$1" == -? ] && help
 
 source $OCPI_CDK_DIR/scripts/util.sh
+
+# Just to clear the positional parameters
+function do_source {
+    local f=$1
+    shift
+    source $f
+}
 
 if test "$1" = "-v"; then
   verbose=1
   shift
 fi
+
 if test "$1" != ""; then
-  cd $1
-  shift
+  if [ -d "$1" ]; then
+    cd $1
+  else
+    echo This is not a directory: "$1"
+    exit 1
+  fi
 fi
 
 if test -f isim.wdb; then
@@ -36,7 +71,7 @@ if test -f isim.wdb; then
     exit 1
   }
   set -e
-  . $OcpiXilinxIseDir/settings64.sh > /dev/null
+  do_source $OcpiXilinxIseDir/settings64.sh > /dev/null
   export LM_LICENSE_FILE=$OcpiXilinxLicenseFile
   exec isimgui -view isim.wdb
 elif test -f vsim.wlf; then

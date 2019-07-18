@@ -20,5 +20,5 @@ run:
 	./run_pytests.sh
 
 clean:
-	rm -rf mypj* ocpiutil_test_project0 project-registry
+	rm -rf mypj* ocpiutil_test_project0 project-registry utilization_proj
 

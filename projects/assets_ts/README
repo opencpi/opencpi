@@ -1,0 +1,17 @@
+This project was created in order to organize workers which are related to the
+ComplexShortWithMetadata protocol.
+
+The following workers have one or more ports which use this protocol directly:
+* components/cic_dec_ts.hdl/
+* components/complex_mixer_ts.hdl/
+* components/fir_complex_sse_ts.hdl/
+* hdl/devices/ad9361_adc_ts.hdl/
+
+The following device workers are near-copies of similar workers in the assets
+project. Each of fhese workers is necessary because it ultimately has a
+subdevice/slave relationship with ad9361_adc_ts.hdl or one of its subdevices.
+* hdl/devices/ad9361_adc_ts_sub.hdl (supports ad9361_adc_ts.hdl)
+* hdl/devices/ad9361_config_ts.hdl (supports ad9361_adc_ts_sub.hdl)
+* hdl/devices/ad9361_data_ts_sub.hdl (supports ad9361_config_ts.hdl)
+* hdl/devices/ad9361_spi_ts.hdl (supports ad9361_config_ts.hdl)
+* hdl/devices/ad9361_config_ts_proxy.hdl (ad9361_config_ts.hdl is its slave)

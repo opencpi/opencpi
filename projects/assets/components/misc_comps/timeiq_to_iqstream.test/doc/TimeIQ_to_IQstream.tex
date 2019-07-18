@@ -1,0 +1,163 @@
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+%----------------------------------------------------------------------------------------
+% Update the docTitle and docVersion per document
+%----------------------------------------------------------------------------------------
+\def\docTitle{Component Data Sheet}
+\def\docVersion{1.5}
+%----------------------------------------------------------------------------------------
+\def\snippetpath{../../../../../../doc/av/tex/snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
+\date{Version \docVersion} % Force date to be blank and override date with version
+\title{\docTitle}
+\lhead{\small{\docTitle}}
+
+\usepackage{longtable} % for long possibly multi-page tables
+
+\def\comp{timeiq\_to\_iqstream}
+\def\ecomp{timeiq_to_iqstream}
+\def\Comp{TimeIQ to IQstream}
+\graphicspath{ {figures/} }
+
+\begin{document}
+
+\section*{Summary - \Comp}
+\begin{tabular}{|c|M{13.5cm}|}
+	\hline
+	\rowcolor{blue}
+	                  &                        							\\
+	\hline
+	Name              & \comp                  							\\
+	\hline
+	Worker Type       & Application            							\\
+	\hline
+	Version           & \docVersion                  							\\
+	\hline
+	Release Date      & 4/2019           						\\
+	\hline
+	Component Library & ocpi.assets.misc\_comps					\\
+	\hline
+	Workers           & \comp.hdl              							\\
+	\hline
+	Tested Platforms  & isim, xsim, modelsim, zed, matchstiq\_z1, e3xx, alst4, ml605	\\
+	\hline
+\end{tabular}
+
+\section*{Functionality}
+\begin{flushleft}
+	The \Comp{} component adapts the TimeStamped\_IQ protocol to the iqstream protocol.
+\end{flushleft}
+
+\section*{Worker Implementation Details}
+\subsection*{\comp.hdl}
+\begin{flushleft}
+	The TimeStamped\_IQ protocol consists of multiple opcodes which include complex IQ samples, and the iqstream protocol consists only of complex IQ samples. The \comp{} worker inspects the opcode of the input port and only forwards data with the \texttt{samples} opcode.
+\end{flushleft}
+
+\section*{Block Diagrams}
+\subsection*{Top level}
+\begin{center}
+	\begin{tikzpicture}[% List of styles applied to all, to override specify on a case-by-case
+			every node/.style={
+				align=center,  		% use this so that the "\\" for line break works
+				minimum size=2cm	% creates space above and below text in rectangle
+			},
+			every edge/.style={draw,thick}
+		]
+		\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
+		\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in" \\ Signed complex samples\\ with other opcodes};
+		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out" \\ Signed complex samples};
+		\path[->]
+		(R3)edge []	node [] {} (R2)
+		(R2)edge []	node [] {} (R4)
+		;
+	\end{tikzpicture}
+\end{center}
+
+\section*{Source Dependencies}
+\subsection*{\comp.hdl}
+\begin{itemize}
+	\item bsp\_picoflexor/components/\comp.hdl/\comp.vhd
+\end{itemize}
+
+\begin{landscape}
+	\section*{Component Spec Properties}
+	There are no component spec properties for this component
+
+	\section*{Worker Properties}
+	There are no worker implementation-specific properties for this component
+
+	\section*{Component Ports}
+	\begin{scriptsize}
+		\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|c|M{9cm}|}
+			\hline
+			\rowcolor{blue}
+			Name & Producer & Protocol                       & Optional & Advanced & Usage                                  		\\
+			\hline
+			in   & false    & TimeStamped\_IQ-prot           & false    & -        & Signed complex samples plus other operations   \\
+			\hline
+			out  & true     & iqstream\_protocol			 & false    & -        & Signed complex samples 						\\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+	\section*{Worker Interfaces}
+	\subsection*{\comp.hdl}
+	\begin{scriptsize}
+		\begin{tabular}{|M{2cm}|M{1.5cm}|c|c|M{12cm}|}
+			\hline
+			\rowcolor{blue}
+			Type            & Name & DataWidth & Advanced   & Usage                                    		\\
+			\hline
+			StreamInterface & in   & 32        & - 			& Signed complex samples plus other operations	\\
+			\hline
+			StreamInterface & out  & 32        & - 			& Signed complex samples 						\\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+\end{landscape}
+
+\section*{Control Timing and Signals}
+\begin{flushleft}
+	The \comp worker{} uses the clock from the Control Plane and standard Control Plane signals.\\
+\end{flushleft}
+
+\begin{landscape}
+\section*{Worker Configuration Parameters}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/configurations.inc}
+\section*{Performance and Resource Utilization}
+\input{../../\ecomp.hdl/utilization.inc}
+\end{landscape}
+
+\section*{Test and Verification}
+\begin{flushleft}
+	The input file contains message metadata and uses three different opcodes from the TimeStamped\_IQ protocol, and is formatted in the following manner:
+	\begin{enumerate}
+	\item 8 byte \texttt{time} operation
+	\item 8 byte \texttt{interval} operation
+	\item 2880 byte \texttt{samples} operation
+	\item 8 byte \texttt{time} operation
+	\item 2880 byte \texttt{samples} operation
+	\end{enumerate}
+	The data in the samples operation is a ramp from 0 to 2087.\par\medskip
+	The expected output waveform is the identical ramp with all other operations removed. For verification, the output file is compared to a golden input file.
+\end{flushleft}
+\end{document}

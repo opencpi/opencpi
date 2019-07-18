@@ -2,6 +2,12 @@
      for AD9361 hardware configuration (register access and pin control). -->
 <HdlDevice language="vhdl" FirstRawproperty='general_spi_conf'>
   <ControlInterface Timeout="1024"/>
+
+  <!-- By design, this worker provides control and/or data plane functionality
+       that is never intended to be exposed by any other worker. Accordingly,
+       this worker defines the ComponentSpec element inside this OWD file, as
+       opposed to creating an OCS file including said functionality which could
+       be used by other workers. -->
   <ComponentSpec>
     <!-- Properties -->
     <!-- Note this is not volatile since it is determined in the container -->

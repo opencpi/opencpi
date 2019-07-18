@@ -10,13 +10,13 @@
                        been received on in port since either a) the last read of
                        max_I or b) the worker first went into the operating
                        state.
-     max_I             Max I value observed on in port. Value will be -32768 
+     max_I             Max I value observed on in port. Value will be -32768
                        when worker first enters the operating state and will be
                        reset to -32768 after each read. max_I_is_valid should
                        always be read prior to reading this property because
                        max_I_is_valid will immediately be set to false once
                        max_I is read.
-     max_Q             Max Q value observed on in port. Value will be -32768 
+     max_Q             Max Q value observed on in port. Value will be -32768
                        when worker first enters the operating state and will be
                        reset to -32768 after each read. max_Q_is_valid should
                        always be read prior to reading this property because
@@ -35,10 +35,10 @@
                                   Description="Indicates max_Q is valid."/>
   <Property Name="max_I" Type="short"
                          Volatile="true"
-                         Description="Max I value observed on in port."/>
+                         Description="Max I value observed on in port since last read."/>
   <Property Name="max_Q" Type="short"
                          Volatile="true"
-                         Description="Max Q value observed on in port."/>
+                         Description="Max Q value observed on in port since last read."/>
   <DataInterfaceSpec Name="in" Producer="false"
                                Protocol="iqstream_protocol.xml"/>
   <DataInterfaceSpec Name="out" Producer="true"

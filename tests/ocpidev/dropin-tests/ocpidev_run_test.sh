@@ -20,15 +20,17 @@
 set -e
 if [ -n "$HDL_TEST_PLATFORM" ]; then
    sims=$HDL_TEST_PLATFORM
+elif env | grep -q '^HdlPlatforms=$'; then
+   sims=
 else
    sims=(`ocpirun -C --only-platforms | grep '.*-.*sim' | sed s/^.*-//`)
-   [ -z "$sims" ] && {
-       echo This test requires a simulator for building, and there are none so we are skipping it.
-       exit 0
-  }
-  echo Available simulators are: ${sims[*]}, using $sims.
-  export HDL_TEST_PLATFORM=$sims
 fi
+[ -z "$sims" ] && {
+  echo This test requires a simulator for building, and there are none so we are skipping it.
+  exit 0
+}
+echo Available simulators are: ${sims[*]}, using $sims.
+export HDL_TEST_PLATFORM=$sims
 echo Using sim platform: $sims
 
 fail() {
@@ -36,10 +38,9 @@ fail() {
   exit 1
 }
 
-# OCPIDEV="coverage3 run --append ../../../tools/cdk/scripts/ocpidev_run.py -d ../../av-test"
-OCPIDEV="${OCPI_CDK_DIR}/scripts/ocpidev run -d ../../av-test"
+OCPIDEV="$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin/ocpidev run -d ../../av-test"
 
-${OCPI_CDK_DIR}/scripts/ocpidev build -d ../../av-test --hdl-platform $HDL_TEST_PLATFORM
+$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin/ocpidev build -d ../../av-test --hdl-platform $HDL_TEST_PLATFORM
 echo "Running Test 1"
 $OCPIDEV
 echo "Running Test 2"
@@ -82,14 +83,18 @@ $OCPIDEV test test_worker.test --only-platform $HDL_TEST_PLATFORM
 echo "Running Test 20"
 $OCPIDEV test test_worker --mode clean_all
 $OCPIDEV test test_worker.test --exclude-platform $HDL_TEST_PLATFORM
+echo "Running Test 21"
+$OCPIDEV test test_worker2 --hdl-library devices
+echo "Running Test 22"
+$OCPIDEV test test_worker3 -P dummy
 # need to add things we expect to fail to this test as well
 set +e
-echo "Running Test 21: Expecting Error"
+echo "Running Fail Test 1: Expecting Error"
 $OCPIDEV junk test_worker.test && fail
-echo "Running Test 22: Expecting Error"
+echo "Running Fail Test 2: Expecting Error"
 $OCPIDEV test test_worker -l components/dsp_comps && fail
-echo "Running Test 23: Expecting Error"
+echo "Running Fail Test 3: Expecting Error"
 $OCPIDEV test -l components/dsp_comps && fail
-echo "Running Test 24: Expecting Error"
+echo "Running Fail Test 4: Expecting Error"
 $OCPIDEV project --junk && fail
 echo "Tests Passed!"

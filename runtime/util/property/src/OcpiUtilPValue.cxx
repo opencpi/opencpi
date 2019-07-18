@@ -85,6 +85,8 @@ namespace OCPI {
       PVBool("polled"),
       PVULong("bufferCount"),
       PVULong("bufferSize"),
+      PVString("portBufferCount"), // internal usage since bufferCount/Size are overloaded for two types
+      PVString("portBufferSize"),
       PVUChar("index"),
       PVString("interconnect"),
       PVString("adapter"),
@@ -99,12 +101,22 @@ namespace OCPI {
       PVString("worker"),
       PVString("server"),
       PVString("container"),
+      PVString("selection"),
       PVEnd
     };
 
     PVULong PVEnd(0,0);
     const PValue *
     find(const PValue* p, const char* name) {
+      if (p)
+	for (; p->name; p++)
+	  if (!strcasecmp(p->name, name))
+	    return p;
+      return NULL;
+    }
+
+    PValue *
+    find(PValue* p, const char* name) {
       if (p)
 	for (; p->name; p++)
 	  if (!strcasecmp(p->name, name))
@@ -155,12 +167,15 @@ namespace OCPI {
 	    throw Error("Parameter \"%s\" value for \"%s\" is not a string", var, name);
 	  if (p->vString[0] != '=') {
 	    size_t len = strlen(var);
-	    if (!strncasecmp(var, p->vString, len) && p->vString[len] == '=') {
+	    const char *match = p->vString;
+	    if (match[0] == '?')
+	      match++;
+	    if (!strncasecmp(var, match, len) && match[len] == '=') {
 	      if (specific)
 		throw Error("Parameter \"%s\" for instance \"%s\" is specified more than once",
 			    name,  var);
 	      specific = true;
-	      val = p->vString + len + 1;
+	      val = match + len + 1;
 	    }
 	  } else if (!specific)
 	    val = p->vString + 1;
@@ -198,9 +213,9 @@ namespace OCPI {
     PValueList::PValueList(const PValue *params, const PValue *override) : m_list(NULL) {
       add(params, override);
     }
-    
+
     PValueList::
-    PValueList(const PValueList &other) 
+    PValueList(const PValueList &other)
       : m_list(NULL) {
       add(other.m_list);
     }
@@ -346,11 +361,18 @@ namespace OCPI {
       delete [] oldp;
     }
     const char *PValueList::
-    add(const char *name, const char *value) {
+    add(const char *name, const char *value, bool override) {
       PValue newp;
       const char *err;
       if ((err = parseParam(name, value, newp)))
 	return err;
+      if (override) {
+	PValue *p = find(m_list, name);
+	if (p) {
+	  *p = newp;
+	  return NULL;
+	}
+      }
       add(newp);
       return NULL;
     }

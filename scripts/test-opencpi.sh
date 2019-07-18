@@ -25,7 +25,7 @@
 # 1. Framework tests that do not deal with projects at all.
 # 2. Tests that might test project tools, but not using the builtin projects
 # 3. Tests using the built-in projects
-minimal_tests="os datatype load-drivers container driver"
+minimal_tests="driver os datatype load-drivers container"
 network_tests="assets"
 dev_tests="swig python av ocpidev core inactive"
 alltests="$minimal_tests $network_tests $dev_tests"
@@ -126,7 +126,7 @@ for t in $TESTS; do
     assets)
       echo ======================= Running Application tests in project/assets
       if [ -z "$runtime" ] ; then
-        make -C $OCPI_CDK_DIR/../projects/assets/applications run
+        make -C $OCPI_CDK_DIR/../project-registry/ocpi.assets/applications run
       else
         (cd $OCPI_CDK_DIR/../projects/assets/applications; ./run.sh)
       fi;;

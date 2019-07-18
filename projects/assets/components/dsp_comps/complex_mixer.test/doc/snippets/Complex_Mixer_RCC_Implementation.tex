@@ -1,0 +1,18 @@
+\subsection*{\comp.rcc}
+\begin{flushleft}
+The RCC worker leverages liquid-dsp v1.2 and its \textit{nco} class to generate the internal NCO used in the algorithm. OpenCPI provides RPMs for installing liquid-dsp, which must be installed in order to build and run this worker.  More information on this liquid-dsp module can be seen in the online documentation: \href{http://liquidsdr.org/doc/nco/}{liquid-dsp}.  \\
+	In the RCC version of this component the samples are converted from fixed point to floating point numbers in order to do that math on a GPP. This conversion introduces a small amount of error in the output data and should be accounted for when it is used in an application.  The conversion equations are as follows:
+
+	\begin{equation} \label{eq:iq_float}
+  		iq\_float = \frac{iq\_fixed}{2^{15} -1}
+	\end{equation}
+
+    \begin{equation} \label{eq:iq_fixed}
+  		iq\_fixed = {iq\_float}*(2^{15} -1)
+	\end{equation}
+
+	In the RCC worker a conversion needs to be done for the phase increment to adhere to the way the HDL phase increment is implemented.  The conversion was done in the RCC version of this component because the division operation is very resource intensive in HDL.  The conversion from the component property to the liquid-dsp interface input property is as follows:
+	\begin{equation} \label{eq:rcc_phase_inc}
+  		liquid\_phs\_inc = phs\_inc*\frac{2\pi}{0x7FFF*2}
+	\end{equation}
+\end{flushleft}

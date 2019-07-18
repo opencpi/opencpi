@@ -21,25 +21,24 @@ $(if $(realpath $(OCPI_CDK_DIR)),,\
 
 include $(OCPI_CDK_DIR)/include/util.mk
 
-override OcpiRunArgs+= -t 2
+ifeq ($(origin OcpiRunArgs),undefined)
+  OcpiRunArgs= -t 2
+endif
 
 # To restrict the applications that are built or run, you can set the Applications
 # variable to the specific list of which ones you want to build and run, e.g.:
+#             cic_int_dc_offset_iq_imbalance_mixer_cic_dec \
+
 Applications=bias.xml \
-             cic_int_dc_offset_iq_imbalance_mixer_cic_dec \
              copy.xml \
-             file-bias-capture.xml \
              hello.xml \
              nothing.xml \
-             pattern-bias-file.xml \
-             pattern.xml \
              proxybias.xml \
              ptest.xml \
-             tb_bias_file.xml \
-             tb_bias.xml \
              testbias2.xml \
              testbias5.xml \
-             testbias.xml 
+             iqstream_max_calculator_test \
+             testbias.xml
 
 # These are not yet runnable via 'make run'
 #Applications+=FSK \
@@ -61,11 +60,6 @@ runbias: export OCPI_LIBRARY_PATH=$(OcpiGetDefaultLibraryPath)
 runbias:
 	$(PF) $(OcpiRunBefore) ocpirun $(OcpiRunArgs) -v -d bias 2>&1 | tee xml_bias_run.log $(OcpiRunAfter)
 	$(PF) $(OcpiRunBefore) ocpirun $(OcpiRunArgs) -v -d -pbias=biasValue=0 bias 2>&1 | tee xml_bias_withvalue_run.log $(CMP) $(OcpiRunAfter)
-	$(PF) $(OcpiRunBefore) ocpirun $(OcpiRunArgs) -v -d pattern-bias-file 2>&1 | tee xml_pattern-bias-file_run.log $(OcpiRunAfter)
-	$(PF) $(OcpiRunBefore) ocpirun $(OcpiRunArgs) -v -d -mcapture=rcc file-bias-capture 2>&1 | tee xml_file-bias-capture_run.log $(OcpiRunAfter)
-	$(PF) $(OcpiRunBefore) ocpirun $(OcpiRunArgs) -v -d pattern 2>&1 | tee xml_pattern_run.log $(OcpiRunAfter)
-	$(PF) $(OcpiRunBefore) ocpirun $(OcpiRunArgs) -v -d -mcapture=rcc tb_bias 2>&1 | tee xml_tb_bias_run.log $(OcpiRunAfter)
-	$(PF) $(OcpiRunBefore) ocpirun $(OcpiRunArgs) -v -d tb_bias_file 2>&1 | tee xml_tb_bias_file_run.log $(OcpiRunAfter)
 	$(PF) $(OcpiRunBefore) ocpirun $(OcpiRunArgs) -v -d testbias 2>&1 | tee xml_testbias_run.log $(OcpiRunAfter)
 	$(PF) $(OcpiRunBefore) ocpirun $(OcpiRunArgs) -v -d -pbias=biasValue=0 testbias 2>&1 | tee xml_testbias_withvalue_run.log $(CMP) $(OcpiRunAfter)
 

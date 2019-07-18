@@ -20,9 +20,11 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Acronyms and Definitions}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
-\input{snippets/LaTeX_Header.tex}
+\def\snippetpath{snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\small{\docTitle}}
@@ -30,7 +32,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 %----------------------------------------------------------------------------------------
 \begin{document}
 \maketitle
-\thispagestyle{fancy}
 \newpage
 \begin{center}
   \textit{\textbf{Revision History}}
@@ -50,6 +51,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
       \hline
       v1.4 & Updated for OpenCPI Release 1.4 & 9/2018 \\
       \hline
+      v1.5 & Updated for OpenCPI Release 1.5 & 4/2019 \\
+      \hline
     \end{tabularx}
   \end{table}
   \par
@@ -63,7 +66,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \item[ACI] \textit{Application} Control Interface
 \item[ARM] Advanced RISC Machine
 \item[AV] ANGRYVIPER Team: sometimes used as prefix on ticket numbers within code
-\item[AXI] Advanced eXtensible Interface
+\item[AXI] \textit{Advanced eXtensible Interface}
 % \item[CBD] \textit{Component}-Based Development
 \item[BSP] \textit{Board Support Package}
 \item[CDK] \textit{Component Development Kit}
@@ -97,11 +100,19 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \newpage
 \section{Definitions}
 \begin{description}[style=nextline]
+\item[Accessibility]
+See \textit{configuration property accessibility}.
+
 \item[Adapter Worker]
-\textit{Worker} used when two connected workers are not connectable in some way due to different interface choices in the OWD.  Adapter workers are normally inserted automatically as needed, \textit{e.g.} between a \textit{worker} that has a 16-bit bus and one with a 32-bit one.
+\textit{Worker} used when two connected workers are not connectable in some way due to different interface choices in the \textit{OWD}.
+Adapter workers are normally inserted automatically as needed, \textit{e.g.} between a \textit{worker} that has a 16-bit bus and one with a 32-bit one.
+
+\item[Advanced eXtensible Interface (AXI)]
+Industry-standard bus used by ARM processors.
 
 \item[Application]
-In this context of Component-Based Development, an \textit{application} is a composition or assembly of \textit{components} that, as a whole, perform some useful function. The term ``application'' can also be an adjective to distinguish functions or code from infrastructure to support the execution of a component-based application, \textit{e.g.} a \textit{device worker} vs. an \textit{application worker}.
+\subitem[noun] In this context of Component-Based Development, an \textit{application} is a composition or assembly of \textit{components} that, as a whole, perform some useful function.
+\subitem[adjective] The term ``application'' can also be used to distinguish functions or code from infrastructure to support the execution of a component-based application, \textit{e.g.} a \textit{device worker} vs. an \textit{application worker}.
 
 \item[Application Specification (OAS)]
 An XML document that describes the collection of \textit{components} along with their interconnections and configuration properties in an OpenCPI \textit{application}.
@@ -117,9 +128,6 @@ A file containing executable code for one or more \textit{workers}  for a specif
 
 \item[Authoring Model]
 One of several ways of creating \textit{component} implementations in a specific language using a specific API between the component and its execution environment.  Existing models include RCC and HDL. %, and OCL.
-
-\item[AXI (Advanced eXtensible Interface)]
-Industry-standard bus used by ARM processors.
 
 \item[Board Support Package]
 A \textit{project} that defines all items needed to enable OpenCPI on a given hardware and/or software \textit{platform}. This includes, but is not limited to, \textit{platform workers}, \textit{device workers}, configuration of software cross-compilers, etc.
@@ -146,7 +154,18 @@ An XML document that describes both \textit{configuration properties} and zero o
 \end{minipage}
 
 \item[Configuration Properties]
-Named values of a \textit{worker} that may be read or written by \textit{control software}. Their values indicate or control aspects of the \textit{worker}'s operation. Reading and writing these property values may or may not have side effects on the operation of the \textit{worker}. Configuration properties with side effects can be used for custom worker control. Each \textit{worker} may have its own, possibly unique, set of configuration properties. They may include hardware resources such registers, memory, and state.
+\subitem See also \textit{configuration property accessibility}.
+
+Named values of a \textit{worker} that may be read or written by \textit{control software}.
+Their values indicate or control aspects of the \textit{worker}'s operation.
+Reading and writing these property values may or may not have side effects on the operation of the \textit{worker}.
+Configuration properties with side effects can be used for custom worker control.
+Each \textit{worker} may have its own, possibly unique, set of configuration properties.
+They may include hardware resources such registers, memory, and state.
+
+\item[Configuration Property Accessibility]
+Declarations within an \textit{OCS} or \textit{OWD} that indicate \textbf{when} it is valid to read from or write to a \textit{configuration property}.
+The various accessibility attributes (defined in the \textit{Component Development Guide}) establish the rules in relation to the \textit{worker}'s \textit{lifecycle} or declare the property as fixed at build-time (see \textit{Parameter}).
 
 \item[Containers]
 OpenCPI infrastructure element that ``contains,'' manages, and executes a set of application \textit{workers}. Logically, the container ``surrounds'' the workers, mediating all interactions between the \textit{workers} and the rest of the system.
@@ -158,7 +177,7 @@ A fixed set of control operations that every \textit{worker} has. The control as
 Control and configuration interfaces for runtime \textit{lifecycle} control and configuration of \textit{worker} instances at runtime.
 
 \item[Control Software (AKA Control Application AKA Control Agent)]
-The entity that is exercising control using the ACI. Encompasses the various aspects of how \textit{control software}, usually running in a centralized host processing environment, can control \textit{worker} instances at runtime via the \textit{control plane}.
+The entity that is exercising control using the \textit{ACI}. Encompasses the various aspects of how \textit{control software}, usually running in a centralized host processing environment, can control \textit{worker} instances at runtime via the \textit{control plane}.
 
 \item[Core]
 The \textit{project} containing the default \textit{workers} and infrastructure VHDL for the framework to operate.
@@ -193,13 +212,13 @@ The HDL simulator that Xilinx provides with their ISE software.
 % \item[Kernel]
 % A function declared in a program and executed on an OpenCL device.
 
-\begin{minipage}{\textwidth}
 \item[Lifecycle Model]
+\begin{minipage}{\textwidth}
 The control states each \textit{worker} may be in and \textit{control operations} which generally change the state a worker is in, effecting a state transition:\\
 \begin{figure}[H]
 \begin{center}
 \includegraphics[scale=0.5]{./figures/controlops.jpg}
-\caption{The OpenCPI \textit{lifecycle model} of \textbf{all} \textit{workers}}
+\caption{The OpenCPI lifecycle model of \textbf{all} \textit{workers}}
 \label{fig:lifecycle}
 \end{center}
 \end{figure}
@@ -258,6 +277,9 @@ The set of all summary attributes, whether inferred from the messages specified 
 
 \item[RCC Authoring Model]
 \textit{Authoring model} used by the C or C++ language \textit{workers} that execute on general purposes processors (GPPs). The ``Resource Constrained'' prefix indicates the limited set of library calls a worker should use; see the ``OpenCPI RCC Development Guide'' for more information.
+
+\item[Registry]
+See \textit{Project Registry}.
 
 \item[Run Condition]
 When a \textit{worker} has a combination of \textit{port readiness} and/or some amount of time has passed. Determined by the worker's \textit{container}.

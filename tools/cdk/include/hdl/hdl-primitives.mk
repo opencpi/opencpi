@@ -57,7 +57,7 @@ MyMake=$(MAKE) $(and $(HdlTargets),HdlTargets="$(HdlTargets)") --no-print-direct
 ifdef ImportCoreDirs
   # this will set ImportCores
   include $(OCPI_CDK_DIR)/include/hdl/hdl-import-cores.mk
-endif	
+endif
 ifdef PrimitiveCores
 Cores:=$(PrimitiveCores)
 endif
@@ -88,7 +88,6 @@ uninstall:
 
 define MakeCoreOrLib
 	$(AT)$(call MyMake,$@)
-	$(AT)$(call MyMake,$@) install
 endef
 
 $(Libs):

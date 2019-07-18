@@ -21,9 +21,12 @@
 #ifndef _TEST_APP_MINS_H
 #define _TEST_APP_MINS_H
 
+#include <sstream> // std::ostringstream
+#include <string> // std::string
 #include "OcpiApi.hh" // OCPI::API namespace
-#include "ocpi_component_prop_type_helpers.h" // ocpi_..._t types
 #include "test_app_common.h"// APP_DEFAULT_... macros, did_pass_test_expected_value_<prop>() functions
+
+namespace OA = OCPI::API;
 
 bool did_pass_test_ocpi_app_min_value_rf_gain_dB()
 {
@@ -60,9 +63,9 @@ bool did_pass_test_ocpi_app_min_value_rf_gain_dB()
       OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "rf_gain_dB");
       p.setDoubleValue(1.);
     }
-    did_pass = did_pass_test_expected_value_frequency_MHz(app, 1299.999999, (ocpi_ulonglong_t) 1299999999);
+    did_pass = did_pass_test_expected_value_frequency_MHz(app, 1299.999999, (OA::ULongLong) 1299999999);
     if(!did_pass) { return false; }
-    did_pass = did_pass_test_expected_value_rf_gain_dB(app, 1., (ocpi_long_t) 1);
+    did_pass = did_pass_test_expected_value_rf_gain_dB(app, 1., (OA::Long) 1);
     if(!did_pass) { return false; }
 
     {
@@ -82,9 +85,9 @@ bool did_pass_test_ocpi_app_min_value_rf_gain_dB()
       if(!did_pass) { return false; }
       p.setDoubleValue(-3.);
     }
-    did_pass = did_pass_test_expected_value_frequency_MHz(app, 2400., (ocpi_ulonglong_t) 2400000000);
+    did_pass = did_pass_test_expected_value_frequency_MHz(app, 2400., (OA::ULongLong) 2400000000);
     if(!did_pass) { return false; }
-    did_pass = did_pass_test_expected_value_rf_gain_dB(app, -3., (ocpi_long_t) -3);
+    did_pass = did_pass_test_expected_value_rf_gain_dB(app, -3., (OA::Long) -3);
     if(!did_pass) { return false; }
 
     {
@@ -103,9 +106,9 @@ bool did_pass_test_ocpi_app_min_value_rf_gain_dB()
       TEST_EXPECTED_VAL(did_pass, true);
       p.setDoubleValue(-10.);
     }
-    did_pass = did_pass_test_expected_value_frequency_MHz(app, 4000.000001, (ocpi_ulonglong_t) 4000000001);
+    did_pass = did_pass_test_expected_value_frequency_MHz(app, 4000.000001, (OA::ULongLong) 4000000001);
     if(!did_pass) { return false; }
-    did_pass = did_pass_test_expected_value_rf_gain_dB(app, -10., (ocpi_long_t) -10);
+    did_pass = did_pass_test_expected_value_rf_gain_dB(app, -10., (OA::Long) -10);
     if(!did_pass) { return false; }
  
     app.stop();
@@ -122,40 +125,29 @@ bool did_pass_test_ocpi_app_min_value_bb_gain_dB()
 {
   printf("TEST: min     value for bb_gain_dB\n");
 
-  try
-  {
-  OCPI::API::Application app(APP_DEFAULT_FMCOMMS2_XML, NULL);
-  app.initialize();
-  app.start();
-  OCPI::API::Property pp(app, APP_DEFAULT_XML_INST_NAME_RX, "bb_gain_min_dB");
-  double min = pp.getValue<double>();
+  auto rx = APP_DEFAULT_XML_INST_NAME_RX;
 
-  std::ostringstream oss;
-  oss << std::setprecision(17) << min;
-  app.setProperty("rx", "bb_gain_dB", oss.str().c_str()); // test for exception
-  }
-  catch (std::string &e)
-  {
-    fprintf(stderr, "Exception thrown: %s\n", e.c_str());
-    return false;
-  }
+  std::vector<std::string> apps;
+  apps.push_back(APP_DEFAULT_FMCOMMS2_XML);
+  apps.push_back(APP_DEFAULT_FMCOMMS3_XML);
 
-  try
-  {
-  OCPI::API::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
-  app.initialize();
-  app.start();
-  OCPI::API::Property pp(app, APP_DEFAULT_XML_INST_NAME_RX, "bb_gain_min_dB");
-  double min = pp.getValue<double>();
+  for(auto it = apps.begin(); it != apps.end(); ++it) {
+    try
+    {
+      OCPI::API::Application app(*it, NULL);
+      app.initialize();
+      app.start();
 
-  std::ostringstream oss;
-  oss << std::setprecision(17) << min;
-  app.setProperty("rx", "bb_gain_dB", oss.str().c_str()); // test for exception
-  }
-  catch (std::string &e)
-  {
-    fprintf(stderr, "Exception thrown: %s\n", e.c_str());
-    return false;
+      double min = app.getPropertyValue<double>(rx, "bb_gain_min_dB");
+
+      // test for exception
+      app.setPropertyValue<double>(rx, "bb_gain_dB", min);
+    }
+    catch (std::string &e)
+    {
+      fprintf(stderr, "Exception thrown: %s\n", e.c_str());
+      return false;
+    }
   }
 
   return did_pass_test_ocpi_app_default_value_bb_gain_dB();
@@ -175,7 +167,7 @@ bool did_pass_test_ocpi_app_min_value_frequency_MHz()
       OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "frequency_MHz");
       p.setDoubleValue(2400.);
 
-      did_pass = did_pass_test_expected_value_frequency_MHz(app, 2400., (ocpi_ulonglong_t) 2400000000);
+      did_pass = did_pass_test_expected_value_frequency_MHz(app, 2400., (OA::ULongLong) 2400000000);
       if(!did_pass) { return false; }
 
       {
@@ -184,7 +176,8 @@ bool did_pass_test_ocpi_app_min_value_frequency_MHz()
 
       std::ostringstream oss;
       oss << std::setprecision(17) << min;
-      app.setProperty("rx", "frequency_MHz", oss.str().c_str()); // test for exception
+      std::string tmp_str(oss.str());
+      app.setProperty("rx", "frequency_MHz", tmp_str.c_str()); // test for exception
       }
    
       app.stop();
@@ -198,7 +191,7 @@ bool did_pass_test_ocpi_app_min_value_frequency_MHz()
       OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "frequency_MHz");
       p.setDoubleValue(70.);
 
-      did_pass = did_pass_test_expected_value_frequency_MHz(app, 70., (ocpi_ulonglong_t) 70000000);
+      did_pass = did_pass_test_expected_value_frequency_MHz(app, 70., (OA::ULongLong) 70000000);
       if(!did_pass) { return false; }
 
       {
@@ -207,7 +200,8 @@ bool did_pass_test_ocpi_app_min_value_frequency_MHz()
 
       std::ostringstream oss;
       oss << std::setprecision(17) << min;
-      app.setProperty("rx", "frequency_MHz", oss.str().c_str()); // test for exception
+      std::string tmp_str(oss.str());
+      app.setProperty("rx", "frequency_MHz", tmp_str.c_str()); // test for exception
       }
    
       app.stop();
@@ -224,71 +218,43 @@ bool did_pass_test_ocpi_app_min_value_frequency_MHz()
 bool did_pass_test_ocpi_app_min_value_sample_rate_MHz()
 {
   printf("TEST: min     value for sample_rate_MHz\n");
-  bool did_pass;
-  try
-  {
+
+  auto rx = APP_DEFAULT_XML_INST_NAME_RX;
+
+  std::vector<std::string> apps;
+  apps.push_back(APP_DEFAULT_FMCOMMS2_XML);
+  apps.push_back(APP_DEFAULT_FMCOMMS3_XML);
+
+  for(auto it = apps.begin(); it != apps.end(); ++it) {
+    try
     {
-      OCPI::API::Application app(APP_DEFAULT_FMCOMMS2_XML, NULL);
+      OCPI::API::Application app(*it, NULL);
       app.initialize();
       app.start();
 
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "sample_rate_MHz");
+      bool did_pass;
 
-      //! @todo TODO/FIXME comment back on once bug is fixed where framework doesn't remove precision
-      //p.setDoubleValue(2.083334); // assumes FIR is disabled
+      //! @todo / FIXME comment back on once bug is fixed where framework doesn't remove precision
+      //app.setPropertyValue<double>(rx, "sample_rate_MHz", 2.083334); // assumes FIR is disabled
+      //did_pass = did_pass_test_expected_value_sample_rate_MHz(app, 2.083334, (OA::ULong) 2083334); // assumes FIR is disabled
 
-      p.setDoubleValue(2.08334); // assumes FIR is disabled
+      app.setPropertyValue<double>(rx, "sample_rate_MHz", 2.08334); // assumes FIR is disabled
+      did_pass = did_pass_test_expected_value_sample_rate_MHz(app, 2.08334, (OA::ULong) 2083340); // assumes FIR is disabled
 
-      //! @todo TODO/FIXME comment back on once bug is fixed where framework doesn't remove precision
-      //did_pass = did_pass_test_expected_value_sample_rate_MHz(app, 2.083334, (ocpi_ulong_t) 2083334); // assumes FIR is disabled
-      did_pass = did_pass_test_expected_value_sample_rate_MHz(app, 2.08334, (ocpi_ulong_t) 2083340); // assumes FIR is disabled
-      if(!did_pass) { return false; }
-
-      {
-      OCPI::API::Property pp(app, APP_DEFAULT_XML_INST_NAME_RX, "sample_rate_min_MHz");
-      double min = pp.getValue<double>();
-
-      std::ostringstream oss;
-      oss << std::setprecision(17) << min;
-      app.setProperty("rx", "sample_rate_MHz", oss.str().c_str()); // test for exception
+      if(!did_pass) {
+        return false;
       }
-   
-      app.stop();
-    }
 
+      double min = app.getPropertyValue<double>(rx, "sample_rate_min_MHz");
+
+      // test for exception
+      app.setPropertyValue<double>(rx, "sample_rate_MHz", min);
+    }
+    catch (std::string &e)
     {
-      OCPI::API::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
-      app.initialize();
-      app.start();
-
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "sample_rate_MHz");
-
-      //! @todo TODO/FIXME comment back on once bug is fixed where framework doesn't remove precision
-      //p.setDoubleValue(2.083334);
-
-      p.setDoubleValue(2.08334);
-
-      //! @todo TODO/FIXME comment back on once bug is fixed where framework doesn't remove precision
-      //did_pass = did_pass_test_expected_value_sample_rate_MHz(app, 2.083334, (ocpi_ulong_t) 2083334);
-      did_pass = did_pass_test_expected_value_sample_rate_MHz(app, 2.08334, (ocpi_ulong_t) 2083340);
-      if(!did_pass) { return false; }
-
-      {
-      OCPI::API::Property pp(app, APP_DEFAULT_XML_INST_NAME_RX, "sample_rate_min_MHz");
-      double min = pp.getValue<double>();
-
-      std::ostringstream oss;
-      oss << std::setprecision(17) << min;
-      app.setProperty("rx", "sample_rate_MHz", oss.str().c_str()); // test for exception
-      }
- 
-      app.stop();
+      fprintf(stderr, "Exception thrown: %s\n", e.c_str());
+      return false;
     }
-  }
-  catch (std::string &e)
-  {
-    fprintf(stderr, "Exception thrown: %s\n", e.c_str());
-    return false;
   }
 
   return true;
@@ -298,40 +264,29 @@ bool did_pass_test_ocpi_app_min_value_rf_cutoff_frequency_MHz()
 {
   printf("TEST: min     value for rf_cutoff_frequency_MHz\n");
 
-  try
-  {
-  OCPI::API::Application app(APP_DEFAULT_FMCOMMS2_XML, NULL);
-  app.initialize();
-  app.start();
-  OCPI::API::Property pp(app, APP_DEFAULT_XML_INST_NAME_RX, "rf_cutoff_frequency_min_MHz");
-  double min = pp.getValue<double>();
+  auto rx = APP_DEFAULT_XML_INST_NAME_RX;
 
-  std::ostringstream oss;
-  oss << std::setprecision(17) << min;
-  app.setProperty("rx", "rf_cutoff_frequency_MHz", oss.str().c_str()); // test for exception
-  }
-  catch (std::string &e)
-  {
-    fprintf(stderr, "Exception thrown: %s\n", e.c_str());
-    return false;
-  }
+  std::vector<std::string> apps;
+  apps.push_back(APP_DEFAULT_FMCOMMS2_XML);
+  apps.push_back(APP_DEFAULT_FMCOMMS3_XML);
 
-  try
-  {
-  OCPI::API::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
-  app.initialize();
-  app.start();
-  OCPI::API::Property pp(app, APP_DEFAULT_XML_INST_NAME_RX, "rf_cutoff_frequency_min_MHz");
-  double min = pp.getValue<double>();
+  for(auto it = apps.begin(); it != apps.end(); ++it) {
+    try
+    {
+      OCPI::API::Application app(*it, NULL);
+      app.initialize();
+      app.start();
 
-  std::ostringstream oss;
-  oss << std::setprecision(17) << min;
-  app.setProperty("rx", "rf_cutoff_frequency_MHz", oss.str().c_str()); // test for exception
-  }
-  catch (std::string &e)
-  {
-    fprintf(stderr, "Exception thrown: %s\n", e.c_str());
-    return false;
+      double min = app.getPropertyValue<double>(rx, "rf_cutoff_frequency_min_MHz");
+
+      // test for exception
+      app.setPropertyValue<double>(rx, "rf_cutoff_frequency_MHz", min);
+    }
+    catch (std::string &e)
+    {
+      fprintf(stderr, "Exception thrown: %s\n", e.c_str());
+      return false;
+    }
   }
 
   return did_pass_test_ocpi_app_default_value_rf_cutoff_frequency_MHz();
@@ -340,59 +295,36 @@ bool did_pass_test_ocpi_app_min_value_rf_cutoff_frequency_MHz()
 bool did_pass_test_ocpi_app_min_value_bb_cutoff_frequency_MHz()
 {
   printf("TEST: min     value for bb_cutoff_frequency_MHz\n");
-  bool did_pass;
-  try
-  {
+
+  auto rx = APP_DEFAULT_XML_INST_NAME_RX;
+
+  std::vector<std::string> apps;
+  apps.push_back(APP_DEFAULT_FMCOMMS2_XML);
+  apps.push_back(APP_DEFAULT_FMCOMMS3_XML);
+
+  for(auto it = apps.begin(); it != apps.end(); ++it) {
+    try
     {
-      OCPI::API::Application app(APP_DEFAULT_FMCOMMS2_XML, NULL);
+      OCPI::API::Application app(*it, NULL);
       app.initialize();
       app.start();
 
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "bb_cutoff_frequency_MHz");
-      p.setDoubleValue(2.8);
+      double min = app.getPropertyValue<double>(rx, "bb_cutoff_frequency_min_MHz");
 
-      did_pass = did_pass_test_expected_value_bb_cutoff_frequency_MHz(app, 2.8, (ocpi_ulong_t) 2800000);
-      if(!did_pass) { return false; }
+      // test for exception
+      app.setPropertyValue<double>(rx, "bb_cutoff_frequency_MHz", min);
 
-      {
-      OCPI::API::Property pp(app, APP_DEFAULT_XML_INST_NAME_RX, "bb_cutoff_frequency_min_MHz");
-      double min = pp.getValue<double>();
-
-      std::ostringstream oss;
-      oss << std::setprecision(17) << min;
-      app.setProperty("rx", "bb_cutoff_frequency_MHz", oss.str().c_str()); // test for exception
+      bool did_pass;
+      did_pass = did_pass_test_expected_value_bb_cutoff_frequency_MHz(app, 0.28, (OA::ULong) 280000);
+      if(!did_pass) {
+        return false;
       }
-   
-      app.stop();
     }
-
+    catch (std::string &e)
     {
-      OCPI::API::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
-      app.initialize();
-      app.start();
-
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "bb_cutoff_frequency_MHz");
-      p.setDoubleValue(2.8);
-
-      did_pass = did_pass_test_expected_value_bb_cutoff_frequency_MHz(app, 2.8, (ocpi_ulong_t) 2800000);
-      if(!did_pass) { return false; }
- 
-      {
-      OCPI::API::Property pp(app, APP_DEFAULT_XML_INST_NAME_RX, "bb_cutoff_frequency_min_MHz");
-      double min = pp.getValue<double>();
-
-      std::ostringstream oss;
-      oss << std::setprecision(17) << min;
-      app.setProperty("rx", "bb_cutoff_frequency_MHz", oss.str().c_str()); // test for exception
-      }
-   
-      app.stop();
+      fprintf(stderr, "Exception thrown: %s\n", e.c_str());
+      return false;
     }
-  }
-  catch (std::string &e)
-  {
-    fprintf(stderr, "Exception thrown: %s\n", e.c_str());
-    return false;
   }
 
   return true;

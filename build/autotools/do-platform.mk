@@ -109,7 +109,7 @@ install:
 	$(AT) rm -r -f staging
 	$(AT) $(and $(OcpiCrossCompile),\
 	        PATH=$(patsubst %/,%,$(dir $(OcpiCrossCompile))):$$PATH;) \
-                $(MAKE) OcpiThisPlatform=$(OcpiThisPlatform) install
+                $(MAKE) -j1 OcpiThisPlatform=$(OcpiThisPlatform) install
 
 clean:
 	$(AT) make clean

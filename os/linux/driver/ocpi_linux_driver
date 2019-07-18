@@ -43,13 +43,16 @@ elif [ -x /sbin/udevadm ] ; then
 RELOAD="/sbin/udevadm control --reload-rules"
 elif [ -x /usr/bin/udevadm ] ; then
 RELOAD="/usr/bin/udevadm control --reload-rules"
-elif [ -x /sbin/mdev ] ; then
+elif [ -x /sbin/mdev -o -x /root/opencpi/bin/mdev ] ; then
 # Note: blank RELOAD used to assume mdev below
 RELOAD=
 SUDO=
 RULESFILE=mdev-$MODNAME.rules
+MDEVLOC="/sbin/mdev"
+# mdev is stored in /root/opencpi/bin/mdev for epiq_matchstiq
+[ -x /root/opencpi/bin/mdev ] && MDEVLOC="/root/opencpi/bin/mdev"
 else
- echo Error: None of /sbin/udevcontrol, /{sbin,usr/bin}/udevadm, or /sbin/mdev were found as executables.
+ echo Error: None of /sbin/udevcontrol, /{sbin,usr/bin}/udevadm, or {/sbin,/root/opencpi/bin}/mdev were found as executables.
  exit 1
 fi
 # Don't run sudo if already root
@@ -190,7 +193,7 @@ if [ $1 = status ] ; then
 fi
 if [ "$RELOAD" = '' ] ; then
   # This next line is missing on some mdev platforms and should already be set on other platforms
-  echo /sbin/mdev > /proc/sys/kernel/hotplug
+  echo $MDEVLOC > /proc/sys/kernel/hotplug
   if grep -s ocpi= /etc/mdev.conf; then
     echo The mdev config already has OpenCPI rules.
   else

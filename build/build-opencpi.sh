@@ -37,7 +37,7 @@ if [ -n "$OcpiCrossCompile" -a -z "$OcpiKernelDir" ]; then
   echo I.e. the OcpiKernelDir variable is not set in the software platform definition.
   echo Thus building the OpenCPI kernel device driver for $OCPI_TARGET_PLATFORM is skipped.
 else
-  echo Next, we will built the OpenCPI kernel device driver for $OCPI_TARGET_PLATFORM
+  echo Next, we will build the OpenCPI kernel device driver for $OCPI_TARGET_PLATFORM
   make driver
 fi
 echo ================================================================================
@@ -62,5 +62,7 @@ echo Now we will build the tests and examples for $OCPI_TARGET_PLATFORM
 make -C projects/core test
 make -C projects/assets applications
 make -C projects/inactive applications
+# ensure any framework exports that depend on built projects happen
+make exports Platforms=$OCPI_TARGET_PLATFORM
 echo ================================================================================
 echo OpenCPI has been built for $OCPI_TARGET_PLATFORM, with software components, examples and kernel driver

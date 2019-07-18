@@ -263,10 +263,10 @@ while read path opts; do
   includes=" $(find -H $path $exclude -type d -a -name include) $xincludes" 
   includes="$(for i in $includes; do echo @srcdir@/$i; done)"
   sources=$(find -H $path $exclude -not -name "*_main.c*" -a -not -name "*_[sS]tubs.c*" -a \
-                         \( -name "*.cxx" -o -name "*.cc" -o -name "*.c" \))
-  stubs=$(find -H $path $exclude -name "*_[sS]tubs.c" -o -name "*_[sS]tubs.cxx")
-  swig=$(find -H $path $exclude -path "*/src/*.i")
-  programs=$(find -H $path $exclude -name "*_main.cxx")
+                         \( -name "[^.#]*.cxx" -o -name "[^.#]*.cc" -o -name "[^.#]*.c" \))
+  stubs=$(find -H $path $exclude -name "[^.#]*_[sS]tubs.c" -o -name "[^.#]*_[sS]tubs.cxx")
+  swig=$(find -H $path $exclude -path "*/src/[^.#]*.i")
+  programs=$(find -H $path $exclude -name "[^.#]*_main.cxx")
   [ -n "$verbose" ] && echo for $path sources are \"$sources\"  >&2
   lname=${library//-/_}
   ldadd=$libs

@@ -29,6 +29,7 @@ endif
 # SKIP_TEST if the test should not run
 -include localinclude.mk
 
+ECHO=/bin/echo
 WORKER=advanced_pattern
 ifneq (,$(filter testrun,$(MAKECMDGOALS)))
 ifeq (,$(VG))
@@ -38,6 +39,8 @@ SIM_TIME?=30
 $(warning SIM_TIME is currently $(SIM_TIME)s; this might not be sufficient under valgrind!)
 endif
 endif
+
+# NOTE: This is probably broken for remote tests. Consider it local-only at this time.
 
 RCCWORKER=$(WORKER).rcc
 space:=
@@ -50,15 +53,13 @@ ifneq (,$(filter verify,$(MAKECMDGOALS)))
 export NO_AUTOCONFIG_WARNING=1
 endif
 
-# include ../zero_padding.test/setup.mk
-
 RCC_CONTAINERS?=$(shell echo "$(CONTAINERS)" | grep -c rcc)
 
 DEBUG=-d -v
 # DEBUG+=-l 11
 
-.SILENT: tests test verify testgen testrun testverify clean generate.sh verify.sh all runtest runtests run verifytest generate build prepare
-.PHONY: tests test verify testgen testrun testverify clean all runtest runtests run verifytest generate build prepare
+.SILENT: tests test verify testgen testrun testverify clean generate.sh verify.sh all runtest runtests run verifytest generate build prepare testrun_wrapper testverify_wrapper testgen_wrapper
+.PHONY: tests test verify testgen testrun testverify clean all runtest runtests run verifytest generate build prepare testrun_wrapper testverify_wrapper testgen_wrapper
 
 # Map to "standard" targets:
 all: build
@@ -74,8 +75,9 @@ build: testgen_wrapper
 prepare: testgen_wrapper
 
 testgen_wrapper:
-	$(foreach tst, $(TESTS), echo -n "Generating $(tst): " && \
-	  $(MAKE) -f ../Makefile -sC $(tst) testgen && \
+	$(foreach tst, $(TESTS), $(ECHO) -n "Generating $(tst): " && \
+	  cat $(tst)/description && \
+	  $(MAKE) -f ../Makefile -sC $(tst) --no-print-directory testgen && \
 	  ) true
 
 testrun_wrapper:
@@ -83,13 +85,15 @@ ifneq (,$(IP))
 	@echo "wrapper not written to handle remote!"
 	@false
 endif
-	$(foreach tst, $(TESTS), echo "Running $(tst): " && \
-	  $(MAKE) -f ../Makefile -sC $(tst) testrun OCPI_HDL_SIMULATORS= && \
+	$(foreach tst, $(TESTS), $(ECHO) -n "Running $(tst): " && \
+	  cat $(tst)/description && \
+	  $(MAKE) -f ../Makefile -sC $(tst) --no-print-directory testrun OCPI_HDL_SIMULATORS= && \
 	  ) true
 
 testverify_wrapper:
-	$(foreach tst, $(TESTS), echo "Verifying $(tst): " && \
-	  $(MAKE) -f ../Makefile -sC $(tst) testverify && \
+	$(foreach tst, $(TESTS), $(ECHO) -n "Verifying $(tst): " && \
+	  cat $(tst)/description && \
+	  $(MAKE) -f ../Makefile -sC $(tst) --no-print-directory testverify && \
 	  ) true
 
 TESTS?=$(sort $(wildcard test_[0-9]*))
@@ -121,7 +125,6 @@ verify.sh:
 
 ifeq (,$(SKIP_TEST))
 testgen: generate.sh verify.sh
-	cat description
 	rm -rf odata
 	mkdir odata
 	./generate.sh > generate.log
@@ -147,14 +150,14 @@ endif
 
 tests: clean
 ifneq (,$(IP))
-	$(foreach tst, $(TESTS), echo -n "Executing $(tst): " && \
+	$(foreach tst, $(TESTS), $(ECHO) -n "Executing $(tst): " && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testgen && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testrun REMOTE=1 TEST=$(tst) && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testverify && \
 	  ) true
 else
 ifneq ($(RCC_CONTAINERS),0)
-	$(foreach tst, $(TESTS), echo -n "Executing ${tst}: " && \
+	$(foreach tst, $(TESTS), $(ECHO) -n "Executing ${tst}: " && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testgen && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testrun OCPI_HDL_SIMULATORS= && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testverify && \

@@ -32,6 +32,7 @@ namespace OCPI {
       static pthread_key_t s_threadKey;
     public:
       Driver() throw();
+      void configure(ezxml_t xml);
     private:
       ~Driver() throw();
       OCPI::Container::Container *
@@ -49,8 +50,9 @@ namespace OCPI {
       // This is virtual because it is called in a driver and this means there is no undefined
       // reference at the call site.
       virtual bool
-      probeServer(const char *server, bool verbose, const char **exclude, char *containers,
-		  bool discoveryOnly, std::string &error);
+        probeServer(const char *server, bool verbose, const char **exclude, char *containers,
+                    bool discoveryOnly, std::string &error),
+        useServers(const OCPI::API::PValue *params, bool verbose, std::string &error);
       unsigned
       search(const OCPI::API::PValue* props, const char **exclude, bool discoveryOnly);
     };

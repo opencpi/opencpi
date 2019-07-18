@@ -1,0 +1,5 @@
+<HdlAssembly>
+  <instance worker="pattern_v2" connect='bias_param'/>
+  <instance Worker="bias_param" connect='capture_v2' paramconfig='1'/>
+  <instance worker="capture_v2"/>
+</HdlAssembly>

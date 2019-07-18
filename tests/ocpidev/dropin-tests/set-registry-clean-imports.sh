@@ -39,7 +39,9 @@ test "$(readlink imports)" == "../$reg"
 
 ocpidev set registry
 source $OCPI_CDK_DIR/scripts/util.sh # needed for getProjectRegistryDir
-test "$(ocpiReadLinkE imports)" == "$(getProjectRegistryDir)"
+default_reg=$(getProjectRegistryDir)
+test "$(ocpiReadLinkE imports)" == "$(ocpiReadLinkE $default_reg)"
+echo "after"
 make cleanimports
 test -z "$(ls imports 2>/dev/null)"
 

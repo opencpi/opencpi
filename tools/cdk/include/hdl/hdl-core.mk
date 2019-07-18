@@ -42,7 +42,7 @@ ifndef HdlSkip
 
 ifndef HdlCores
 ifdef Core
-HdlCores:=$(Core)	
+HdlCores:=$(Core)
 else
 HdlCores:=$(CwdName)
 endif
@@ -71,10 +71,13 @@ else
 CoreFile=$(Core)$(HdlBin)
 endif
 endif
+ifndef HdlInstallDir
+  HdlInstallDir:=../lib
+endif
 HdlCoreInstallDir=$(HdlInstallDir)/$1
-HdlCoreInstallDirs=$(HdlCores:$(HdlInstallDir)/%)
-$(HdlCoreInstallDirs): | $(HdlInstallDir)
-	$(AT)mkdir $@
+HdlCoreInstallDirs=$(HdlCores:%=$(HdlInstallDir)/%)
+# $(HdlCoreInstallDirs): | $(HdlInstallDir)
+#	$(AT)mkdir $@
 
 ################################################################################
 # First get the black box source file.  We need to get this even if this
@@ -128,8 +131,8 @@ endif
 
 ifdef HdlToolRealCore
 # Install the core, however it was buit
-install_cores: $(HdlStubSources) | $(HdlCoreInstallDirs)
-	$(AT)echo Installing core for targets: $(HdlActualTargets)
+install_cores: $(HdlStubSources) build | $(HdlCoreInstallDirs)
+	$(AT)echo Installing core\(s\) \"$(HdlCores)\" for targets: $(HdlActualTargets)
 	$(AT)for f in $(HdlActualTargets); do \
 	  $(foreach c,$(HdlCores),$(strip \
 	    $(call ReplaceIfDifferent,$(OutDir)target-$$f/$c$(HdlBin),$(strip \
@@ -162,6 +165,8 @@ endif # for building a real core
 ifneq ($(Imports)$(ImportCore)$(ImportBlackBox),)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-import.mk
 endif # imports
+
+all: install
 else
 install:
 endif # HdlSkip

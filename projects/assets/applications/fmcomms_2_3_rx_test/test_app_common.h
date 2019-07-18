@@ -22,7 +22,6 @@
 #define _TEST_APP_COMMON_H
 
 #include "OcpiApi.hh" // OCPI::API namespace
-#include "ocpi_component_prop_type_helpers.h" // ocpi_..._t types
 #include "worker_prop_parsers_ad9361_config_proxy.h" // ad9361_config_proxy_rx_rf_gain_t
 #include "test_helpers.h" // TEST_EXPECTED_VAL(), TEST_EXPECTED_VAL_DIFF()
 
@@ -34,16 +33,18 @@
 #define APP_DEFAULT_XML_INST_NAME_DATA_SUB "ad9361_data_sub"
 #define APP_DEFAULT_XML_INST_NAME_ADC_SUB  "ad9361_adc_sub"
 
+namespace OA = OCPI::API;
+
 bool did_pass_test_expected_value_tx_rf_gain_dB(
-    OCPI::API::Application& app,
+    OA::Application& app,
     double expected_val,
-    ocpi_ulong_t expected_ad9361_config_proxy_val)
+    OA::ULong expected_ad9361_config_proxy_val)
 {
   std::string prop("rf_gain_dB");
   try
   {
     {
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_TX, prop.c_str());
+      OA::Property p(app, APP_DEFAULT_XML_INST_NAME_TX, prop.c_str());
       double actual_tx_val = p.getDoubleValue();
       TEST_EXPECTED_VAL_DIFF(actual_tx_val, expected_val, 0.5);
     }
@@ -52,8 +53,7 @@ bool did_pass_test_expected_value_tx_rf_gain_dB(
       std::string str;
       app.getProperty(APP_DEFAULT_XML_INST_NAME_PROXY, "tx_attenuation", str);
       ad9361_config_proxy_tx_attenuation_t tx_attenuation;
-      const char* err = parse(str.c_str(), tx_attenuation);
-      if(err != 0) { printf("%s",err); return false; }
+      parse(str.c_str(), tx_attenuation);
       TEST_EXPECTED_VAL(tx_attenuation[0], expected_ad9361_config_proxy_val);
     }
   }
@@ -65,22 +65,22 @@ bool did_pass_test_expected_value_tx_rf_gain_dB(
 }
 
 bool did_pass_test_expected_value_tx_frequency_MHz(
-    OCPI::API::Application& app,
+    OA::Application& app,
     double expected_val,
-    ocpi_ulonglong_t expected_ad9361_config_proxy_val)
+    OA::ULongLong expected_ad9361_config_proxy_val)
 {
   std::string prop("frequency_MHz");
   try
   {
     {
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_TX, prop.c_str());
+      OA::Property p(app, APP_DEFAULT_XML_INST_NAME_TX, prop.c_str());
       double actual_tx_val = p.getDoubleValue();
       TEST_EXPECTED_VAL_DIFF(actual_tx_val, expected_val, 0.000004769); // rounding up from 4.768 in fmcomms_2_3_rx.xml
     }
 
     {
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_PROXY, "tx_lo_freq");
-      ocpi_ulonglong_t actual_ad9361_config_proxy_val = p.getULongLongValue();
+      OA::Property p(app, APP_DEFAULT_XML_INST_NAME_PROXY, "tx_lo_freq");
+      OA::ULongLong actual_ad9361_config_proxy_val = p.getULongLongValue();
       //TEST_EXPECTED_VAL(actual_ad9361_config_proxy_val, expected_ad9361_config_proxy_val);
       TEST_EXPECTED_VAL_DIFF((double)actual_ad9361_config_proxy_val, (double)expected_ad9361_config_proxy_val, 4.769); // rounding up from 4.768 in fmcomms_2_3.xml
     }
@@ -93,22 +93,22 @@ bool did_pass_test_expected_value_tx_frequency_MHz(
 }
 
 bool did_pass_test_expected_value_tx_bb_cutoff_frequency_MHz(
-    OCPI::API::Application& app,
+    OA::Application& app,
     double expected_val,
-    ocpi_ulong_t expected_ad9361_config_proxy_val)
+    OA::ULong expected_ad9361_config_proxy_val)
 {
   std::string prop("bb_cutoff_frequency_MHz");
   try
   {
     {
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_TX, prop.c_str());
+      OA::Property p(app, APP_DEFAULT_XML_INST_NAME_TX, prop.c_str());
       double actual_tx_val = p.getDoubleValue();
       TEST_EXPECTED_VAL_DIFF(actual_tx_val, expected_val, 0.01); // just trying 10 kHz step for now
     }
 
     {
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_PROXY, "tx_rf_bandwidth");
-      ocpi_ulong_t actual_ad9361_config_proxy_val = p.getULongValue();
+      OA::Property p(app, APP_DEFAULT_XML_INST_NAME_PROXY, "tx_rf_bandwidth");
+      OA::ULong actual_ad9361_config_proxy_val = p.getULongValue();
       TEST_EXPECTED_VAL(actual_ad9361_config_proxy_val, expected_ad9361_config_proxy_val);
     }
   }
@@ -120,15 +120,15 @@ bool did_pass_test_expected_value_tx_bb_cutoff_frequency_MHz(
 }
 
 bool did_pass_test_expected_value_rf_gain_dB(
-    OCPI::API::Application& app,
+    OA::Application& app,
     double expected_rx_val,
-    ocpi_long_t expected_ad9361_config_proxy_val)
+    OA::Long expected_ad9361_config_proxy_val)
 {
   std::string prop("rf_gain_dB");
   try
   {
     {
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, prop.c_str());
+      OA::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, prop.c_str());
       double actual_rx_val = p.getDoubleValue();
       TEST_EXPECTED_VAL_DIFF(actual_rx_val, expected_rx_val, 0.5);
     }
@@ -137,8 +137,7 @@ bool did_pass_test_expected_value_rf_gain_dB(
       std::string str;
       app.getProperty(APP_DEFAULT_XML_INST_NAME_PROXY, "rx_rf_gain", str);
       ad9361_config_proxy_rx_rf_gain_t rx_rf_gain;
-      const char* err = parse(str.c_str(), rx_rf_gain);
-      if(err != 0) { printf("%s",err); return false; }
+      parse(str.c_str(), rx_rf_gain);
       TEST_EXPECTED_VAL(rx_rf_gain[0], expected_ad9361_config_proxy_val);
     }
   }
@@ -150,14 +149,14 @@ bool did_pass_test_expected_value_rf_gain_dB(
 }
 
 bool did_pass_test_expected_value_bb_gain_dB(
-    OCPI::API::Application& app,
+    OA::Application& app,
     double expected_rx_val)
 {
   std::string prop("bb_gain_dB");
   try
   {
     {
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, prop.c_str());
+      OA::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, prop.c_str());
       double actual_rx_val = p.getDoubleValue();
       // some wiggle room due to double precision rounding 0.00000000000001 was
       // arbitrarily chosen to be "very little wiggle room"
@@ -172,22 +171,22 @@ bool did_pass_test_expected_value_bb_gain_dB(
 }
 
 bool did_pass_test_expected_value_frequency_MHz(
-    OCPI::API::Application& app,
+    OA::Application& app,
     double expected_rx_val,
-    ocpi_ulonglong_t expected_ad9361_config_proxy_val)
+    OA::ULongLong expected_ad9361_config_proxy_val)
 {
   std::string prop("frequency_MHz");
   try
   {
     {
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, prop.c_str());
+      OA::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, prop.c_str());
       double actual_rx_val = p.getDoubleValue();
       TEST_EXPECTED_VAL_DIFF(actual_rx_val, expected_rx_val, 0.000004769); // rounding up from 4.768 in fmcomms_2_3_rx.xml
     }
 
     {
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_PROXY, "rx_lo_freq");
-      ocpi_ulonglong_t actual_ad9361_config_proxy_val = p.getULongLongValue();
+      OA::Property p(app, APP_DEFAULT_XML_INST_NAME_PROXY, "rx_lo_freq");
+      OA::ULongLong actual_ad9361_config_proxy_val = p.getULongLongValue();
       //TEST_EXPECTED_VAL(actual_ad9361_config_proxy_val, expected_ad9361_config_proxy_val);
       TEST_EXPECTED_VAL_DIFF((double)actual_ad9361_config_proxy_val, (double)expected_ad9361_config_proxy_val, 4.769); // rounding up from 4.768 in fmcomms_2_3.xml
     }
@@ -200,22 +199,22 @@ bool did_pass_test_expected_value_frequency_MHz(
 }
 
 bool did_pass_test_expected_value_sample_rate_MHz(
-    OCPI::API::Application& app,
+    OA::Application& app,
     double expected_rx_val,
-    ocpi_ulong_t expected_ad9361_config_proxy_val)
+    OA::ULong expected_ad9361_config_proxy_val)
 {
   std::string prop("sample_rate_MHz");
   try
   {
     {
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, prop.c_str());
+      OA::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, prop.c_str());
       double actual_rx_val = p.getDoubleValue();
       TEST_EXPECTED_VAL_DIFF(actual_rx_val, expected_rx_val, 0.0000005);
     }
 
     {
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_PROXY, "rx_sampling_freq");
-      ocpi_ulong_t actual_ad9361_config_proxy_val = p.getULongValue();
+      OA::Property p(app, APP_DEFAULT_XML_INST_NAME_PROXY, "rx_sampling_freq");
+      OA::ULong actual_ad9361_config_proxy_val = p.getULongValue();
       TEST_EXPECTED_VAL(actual_ad9361_config_proxy_val, expected_ad9361_config_proxy_val);
     }
   }
@@ -227,14 +226,14 @@ bool did_pass_test_expected_value_sample_rate_MHz(
 }
 
 bool did_pass_test_expected_value_rf_cutoff_frequency_MHz(
-    OCPI::API::Application& app,
+    OA::Application& app,
     double expected_rx_val)
 {
   std::string prop("rf_cutoff_frequency_MHz");
   try
   {
     {
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, prop.c_str());
+      OA::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, prop.c_str());
       double actual_rx_val = p.getDoubleValue();
       // some wiggle room due to double precision rounding 0.00000000000001 was
       // arbitrarily chosen to be "very little wiggle room"
@@ -249,22 +248,22 @@ bool did_pass_test_expected_value_rf_cutoff_frequency_MHz(
 }
 
 bool did_pass_test_expected_value_bb_cutoff_frequency_MHz(
-    OCPI::API::Application& app,
+    OA::Application& app,
     double expected_rx_val,
-    ocpi_ulong_t expected_ad9361_config_proxy_val)
+    OA::ULong expected_ad9361_config_proxy_val)
 {
   std::string prop("bb_cutoff_frequency_MHz");
   try
   {
     {
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, prop.c_str());
+      OA::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, prop.c_str());
       double actual_rx_val = p.getDoubleValue();
       TEST_EXPECTED_VAL_DIFF(actual_rx_val, expected_rx_val, 0.01); // just trying 10 kHz step for now
     }
 
     {
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_PROXY, "rx_rf_bandwidth");
-      ocpi_ulong_t actual_ad9361_config_proxy_val = p.getULongValue();
+      OA::Property p(app, APP_DEFAULT_XML_INST_NAME_PROXY, "rx_rf_bandwidth");
+      OA::ULong actual_ad9361_config_proxy_val = p.getULongValue();
       TEST_EXPECTED_VAL(actual_ad9361_config_proxy_val, expected_ad9361_config_proxy_val);
     }
   }

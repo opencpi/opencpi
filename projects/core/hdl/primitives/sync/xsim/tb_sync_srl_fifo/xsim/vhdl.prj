@@ -1,0 +1,6 @@
+vhdl xil_defaultlib "../../../sync_srl_fifo.vhd"
+vhdl xil_defaultlib "../UUT_jig.vhd"
+vhdl xil_defaultlib "../../../src_sim/sim_source.vhd"
+vhdl xil_defaultlib "../../../src_sim/sim_verify.vhd"
+vhdl xil_defaultlib "../UUT_tb.vhd"
+nosort

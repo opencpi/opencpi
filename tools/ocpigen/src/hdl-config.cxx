@@ -32,7 +32,7 @@ namespace OE = OCPI::Util::EzXml;
 DevInstance::
 DevInstance(const Device &d, const Card *c, const Slot *s, bool control,
 	    const DevInstance *parent)
-  : device(d), card(c), slot(s), m_control(control), m_parent(parent) {
+  : device(d), card(c), slot(s), m_control(control), m_parent(parent), m_worker(NULL) {
   m_connected.resize(d.m_deviceType.m_ports.size(), 0);
   if (slot) {
     m_name = slot->cname();
@@ -92,7 +92,13 @@ addDevInstance(const Device &dev, const Card *card, const Slot *slot,
 	  return err;
       }
   devInstance = &di;
-  return dev.m_deviceType.parseDeviceProperties(xml, di.m_instancePVs);
+  if ((err = dev.m_deviceType.parseDeviceProperties(xml, di.m_instancePVs)))
+    return err;
+  // Now that we have the instancePVs, we can create a worker that is parameterized for this
+  // device instance;
+  di.m_worker = Worker::create(dev.m_deviceType.m_file.c_str(), m_parent.m_file.c_str(), NULL, NULL, &m_parent,
+			       &di.m_instancePVs, 0, err);
+  return err;
 }
 
 const char *HdlHasDevInstances::
@@ -152,7 +158,7 @@ parseDevInstance(const char *device, ezxml_t x, const char *parentFile, Worker *
   } else if (!(dev = m_platform.findDevice(device)))
     return OU::esprintf("There is no device named \"%s\" on this platform",
 			device);
-      
+
   const DevInstance *di;
   assert((card && slot) || (!card && !slot));
   if (control && !dev->m_deviceType.m_canControl)
@@ -339,7 +345,7 @@ emitSubdeviceConnections(std::string &assy,  DevInstances *baseInstances) {
 	    // We ASSUME that the indices in the config are contiguous and start at 0
 	    // FIXME:  remove this constraint
 	    for (size_t i = 0; i < supPort.m_count; i++)
-	      if (sdi->m_connected[supOrdinal] & (1 << i)) {
+	      if (sdi->m_connected[supOrdinal] & (1u << i)) {
 		assert(i != supIndex);
 		if (i < supIndex)
 		  index--;
@@ -347,7 +353,7 @@ emitSubdeviceConnections(std::string &assy,  DevInstances *baseInstances) {
 		unconnected++; // count how many were unconnected in the config
 	    assert(unconnected > 0 && index < unconnected);
 	  } else // the subdevice is where the device is, so record the connection
-	    sdi->m_connected[supOrdinal] |= 1 << supIndex;
+	    sdi->m_connected[supOrdinal] |= 1u << supIndex;
 	  OU::formatAdd(assy, " index='%zu'", index);
 	} else if (!inConfig) {
 	  // supporting connection is not indexed, and is local,which means it is connected whole
@@ -423,7 +429,7 @@ create(ezxml_t xml, const char *knownPlatform, const char *xfile, Worker *parent
 HdlConfig::
 HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const char *&err)
   : Worker(xml, xfile, "", Worker::Configuration, parent, NULL, err),
-    HdlHasDevInstances(pf, m_plugged),
+    HdlHasDevInstances(pf, m_plugged, *this),
     m_platform(pf), m_sdpWidth(1) {
   if (err ||
       (err = OE::checkAttrs(xml, IMPL_ATTRS, HDL_TOP_ATTRS,
@@ -499,7 +505,6 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
 		"  </connection>\n",
 		m_platform.cname());
   // 3. To and from time clients
-  unsigned tIndex = 0;
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
     const ::Device &d = (*dii).device;
     for (PortsIter pi = d.deviceType().ports().begin();
@@ -509,16 +514,16 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
 	OU::formatAdd(assy,
 		      "  <connection>\n"
 		      "    <port instance='time_server' name='time'/>\n"
-		      "    <port instance='time_client%u' name='time'/>\n"
+		      "    <port instance='%s_time_client' name='time'/>\n"
 		      "  </connection>\n",
-		      tIndex);
+		      (*dii).cname());
 	// connection from the time client to the device worker
 	OU::formatAdd(assy,
 		      "  <connection>\n"
-		      "    <port instance='time_client%u' name='wti'/>\n"
+		      "    <port instance='%s_time_client' name='wti'/>\n"
 		      "    <port instance='%s' name='%s'/>\n"
 		      "  </connection>\n",
-		      tIndex++, (*dii).cname(), (*pi)->pname());
+		      (*dii).cname(), (*dii).cname(), (*pi)->pname());
       }
   }
   // 4. To and from subdevices
@@ -542,7 +547,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
 	  (!p.m_master && (p.m_type == PropPort || p.m_type == DevSigPort))) {
 	size_t unconnected = 0, first = 0;
 	for (size_t i = 0; i < p.m_count; i++)
-	  if (!((*dii).m_connected[p.m_ordinal] & (1 << i))) {
+	  if (!((*dii).m_connected[p.m_ordinal] & (1u << i))) {
 	    if (!unconnected++)
 	      first = i;
 	  }
@@ -559,7 +564,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
       }
     }
   }
-  
+
   OU::formatAdd(assy, "</HdlPlatformAssembly>\n");
   // The assembly will automatically inherit all the signals, prefixed by instance.
   //  if (!attribute)
@@ -578,20 +583,19 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
   }
   if (err)
     return;
-  // Externalize all the device signals.
+  // Externalize all the device signals, and cross-reference device instances to assy instances
   unsigned n = 0;
   for (Instance *i = &m_assembly->m_instances[0]; n < m_assembly->m_instances.size(); i++, n++) {
-    for (SignalsIter si = i->m_worker->m_signals.begin(); si != i->m_worker->m_signals.end();
-	 si++) {
+    Worker &w = *i->m_worker;
+    for (SignalsIter si = w.m_signals.begin(); si != w.m_signals.end(); si++) {
       if ((**si).m_direction == Signal::UNUSED)
 	continue;
       Signal *s = new Signal(**si);
-      if (i->m_worker->m_type != Worker::Platform)
+      if (w.m_type != Worker::Platform)
 	OU::format(s->m_name, "%s_%s", i->cname(), (**si).m_name.c_str());
       m_signals.push_back(s);
       m_sigmap[s->cname()] = s;
-      ocpiDebug("Externalizing device signal '%s' for device '%s'", s->cname(),
-		i->m_worker->m_implName);
+      ocpiDebug("Externalizing device signal '%s' for device '%s'", s->cname(), w.m_implName);
     }
   }
 }

@@ -64,6 +64,7 @@ namespace OCPI {
       static bool
 	fillDiscoveryInfo(char *buf, size_t &length, std::string &error);
     private:
+      void clear();
       const char
 	*downloadFile(int wfd, uint64_t length),
 	*doSide(ezxml_t cx, OCPI::Container::Launcher::Port &p, const char *type),
@@ -76,6 +77,7 @@ namespace OCPI {
 	control(std::string &error),
 	discover(std::string &error),
 	doConnection(ezxml_t cx, OCPI::Container::Launcher::Connection &c, std::string &error),
+	appShutDown(std::string &error),
 	doLaunch(std::string &error);
     };
   }

@@ -1,5 +1,5 @@
 <tests duration='800' useHDLFileIo='true'>
-  <input port='in' script='generate.py' messagesize='8192'/>
+  <input port='in' stressorMode='full' script='generate.py'/>
   <output port='out' script='verify.py' disableBackpressure='false' view='view.sh'/>
   <property name='taps' generate='gen_lpf_taps.py'/>
   <property name='samplesPerBaud' test='true' value='50'/>

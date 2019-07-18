@@ -21,9 +21,11 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{OpenCPI\\ fmcomms\_2\_3\_rx.rcc Test App Guide}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
-\input{../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
+\def\snippetpath{../../../../../doc/av/tex/snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{fmcomms\_2\_3\_rx.rcc Test App Guide}
@@ -37,6 +39,22 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \begin{document}
 \maketitle
 %\thispagestyle{fancy}
+
+\begin{center}
+  \textit{\textbf{Revision History}}
+\end{center}
+\begin{longtable}{|p{\dimexpr0.15\textwidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.65\textwidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.2\textwidth-2\tabcolsep\relax}|}
+  \hline
+  \rowcolor{blue}
+  \textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+  \hline
+  v1.4 & Initial release. & 9/2018 \\
+  \hline
+  v1.5 & Version bump only. & 4/2019 \\
+  \hline
+\end{longtable}
 
 \section{Description}
 This application is intended to perform a hardware-in-the-loop test of the fmcomms\_2\_3\_rx.rcc worker. It tests to ensure that the default values and the expected possible min/max values are applied successfully for the various RF frontend parameters. It also tests that fmcomms\_2\_3\_rx.rcc property writes do not override the fmcomms\_2\_3\_tx.rcc worker property writes when both exist in the OAS. Note that RX data fidelity is not verified within this test.
@@ -84,7 +102,7 @@ The fmcomms\_2\_3\_rx.rcc endpoint proxy controls the ad9361\_config\_proxy.rcc 
 \begin{lstlisting}
 Calibration TIMEOUT (0x16, 0x10)
 \end{lstlisting}
-Neither of the ad9361\_config\_proxy.rcc/fmcomms\_2\_3\_rx.rcc workers yet implement a mechanism for overcomming this AD9361/No-OS shortcoming.
+Neither of the ad9361\_config\_proxy.rcc/fmcomms\_2\_3\_rx.rcc workers yet implement a mechanism for overcoming this AD9361/No-OS shortcoming.
 
 
 \end{document}

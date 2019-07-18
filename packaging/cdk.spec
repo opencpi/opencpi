@@ -67,8 +67,8 @@ AutoReqProv: no  # This must preceed the %description.  Go figure.
 %define      __strip %{RPM_CROSS_COMPILE}strip
 BuildArch:   noarch
 %define      _binaries_in_noarch_packages_terminate_build 0
-Requires:    %{name} = %{version}-%{release}
-Requires(pre,postun): %{name} = %{version}-%{release}
+Requires:             opencpi = %{version}
+Requires(pre,postun): opencpi = %{version}
 Obsoletes:   %{RPM_BASENAME}-platform-%{RPM_PLATFORM}
 %description
 This package contains the OpenCPI static libraries for cross-compiling
@@ -125,10 +125,6 @@ done
   %{__ln_s} -f %{prefix0}/cdk/scripts/ocpidev_bash_complete %{buildroot}%{prefix1}/$dir/$file
   echo %%{prefix1}/$dir/$file >> %{_builddir}/devel-files
 
-  # A very special case that will go away at some point
-  cp packaging/dist/projects/{new_project_source,README} %{buildroot}%{prefix0}/projects
-  echo %%{prefix0}/projects/new_project_source >> %{_builddir}/devel-files
-  echo %%{prefix0}/projects/README >> %{_builddir}/devel-files
 %endif
 
 ##########################################################################################
@@ -150,7 +146,7 @@ Prefix:     %{prefix0}
 Prefix:     %{prefix1}
 %description devel
 This package ensures that all requirements for OpenCPI development are
-installed. It also provides a useful development utilities.
+installed. It also provides useful development utilities.
 %{?RPM_HASH:ReleaseID: %{RPM_HASH}}
 
 %if !%{RPM_CROSS}
@@ -337,6 +333,15 @@ if [ "$RPM_INSTALL_PREFIX1" != %{prefix1} -o "$RPM_INSTALL_PREFIX0" != %{prefix0
   echo The user and group IDs of all files will be set to the login user and group. >&2
 fi
 %if !%{RPM_CROSS}
+  # Check global python3 symlink (AV-5477)
+  if test ! -x /usr/bin/python3; then
+    for sub in $(seq 9 -1 0); do
+      if [ -e /usr/bin/python3.${sub} ]; then
+        ln -s /usr/bin/python3.${sub} /usr/bin/python3
+        break
+      fi
+    done
+  fi
   # We need to relocate all the global files that point to other global files.
   # The files have been installed, but we must change them now.
   link=$RPM_INSTALL_PREFIX0/cdk/scripts/ocpidev_bash_complete

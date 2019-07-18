@@ -50,7 +50,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
 \newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
 %----------------------------------------------------------------------------------------
-% Various pacakges
+% Various packages
 %----------------------------------------------------------------------------------------
 \usepackage{hyperref} % for linking urls and lists
 \usepackage{graphicx} % for including pictures by file
@@ -90,7 +90,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.4}
+\def\docVersion{1.5}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -115,13 +115,13 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
   \hline
   Version           & v\docVersion \\
   \hline
-  Release Date      & October 2018 \\
+  Release Date      & 4/2019 \\
   \hline
   Component Library & ocpi.assets.util\_comps     \\
   \hline
   Workers           & \comp.rcc                  \\
   \hline
-  Tested Platforms  & linux-c7-x86\_64, linux-x13\_3-arm \\
+  Tested Platforms  & centos7, xilinx13\_3 (limited) \\
   \hline
 \end{tabular}
 \section*{Functionality}
@@ -179,7 +179,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \section*{Source Dependencies}
 \subsection*{\comp.rcc}
-\def\fpath{ocpiassets/components/util\_comps/\comp.rcc/}
+\def\fpath{$<$assets$>$/components/util\_comps/\comp.rcc/}
 \begin{itemize}
   \item \fpath\comp.cc
   \foreach \f in {
@@ -204,6 +204,7 @@ To build this component targeting a non-x86 platform, the vendor must provide th
 See the enclosed \verb+README+ file for more information, including how to add new platforms.
 
 \begin{landscape}
+  \newcounter{fnreadable}
   \section*{Component Spec Properties}
   \begin{minipage}{\textwidth}
     \renewcommand*\footnoterule{} % Remove separator line from footnote
@@ -212,56 +213,210 @@ See the enclosed \verb+README+ file for more information, including how to add n
     \begin{tabular}{|p{3.2cm}|p{1.5cm}|c|c|c|c|c|p{7cm}|}
       \hline
       \rowcolor{blue}
-      Name                          & Type      & SequenceLength & ArrayDimensions & Accessibility      & Valid Range & Default       & Usage \\
+      Name &
+      Type &
+      SequenceLength &
+      ArrayDimensions &
+      Accessibility &
+      Valid Range &
+      Default &
+      Usage \\
       \hline
-      \verb+outSocket+\footnote{This structure is only read at Component START to configure.} & Struct & - & - & Writable, Readable & - & - & TCP socket(s) to use for listening \\
+      \verb+outSocket+\footnote{This structure is only read at Component START to configure.} &
+      Struct &
+      - &
+      - &
+      Writable, Readable\footnote{``Readable'' is deprecated and superfluous here. It will be removed in a future release.}\setcounter{fnreadable}{\thempfootnote} &
+      - &
+      - &
+      TCP socket(s) to use for listening \\
       \hline
-      \verb+outSocket.address+      & String    & 16             & -               & ''                  & -           & \verb+0.0.0.0+ & Address/interface to use for port\footnote{The default listens on all interfaces.}, \textit{e.g.} \verb+127.0.0.1+ \\
+      \verb+outSocket.address+ &
+      String &
+      16 &
+      - &
+      '' &
+      - &
+      \verb+0.0.0.0+ &
+      Address/interface to use for port\footnote{The default listens on all interfaces.}, \textit{e.g.} \verb+127.0.0.1+ \\
       \hline
-      \verb+outSocket.expectedClients+      & UShort    & -             & -               & ''                  & Standard           & 0 & Number of clients required to be connected before \verb+run()+ method will proceed.\footnote{Probably useful only for testing and may incorrectly inhibit data flow.} \\
+      \verb+outSocket.expectedClients+ &
+      UShort &
+      - &
+      - &
+      '' &
+      Standard &
+      0 &
+      Number of clients required to be connected before \verb+run()+ method will proceed.\footnote{Probably useful only for testing and may incorrectly inhibit data flow.} \\
       \hline
-      \verb+outSocket.port+         & UShort    & -              & -               & ''                  & 1025 - 65535 & -            & Output port to use if all data should remain combined \footnote{ICANN reserves up to 49151.} \footnote{Attempting to use a port that is used by another process will cause a fatal error.} \\
+      \verb+outSocket.port+ &
+      UShort &
+      - &
+      - &
+      '' &
+      1025 - 65535 &
+      - &
+      Output port to use if all data should remain combined \footnote{ICANN reserves up to 49151.} \footnote{Attempting to use a port that is used by another process will cause a fatal error.} \\
       \hline
-      \verb+outSocket.ports+        & UShort    & -              & 256             & ''                  & -           & -             & A list of port numbers to listen on, with \verb+0+ indicating unused \footnote{See ``Performance and Resource Utilization.''} \footnote{This Property is only used when \texttt{port} is set to \texttt{0}.}\\
+      \verb+outSocket.ports+ &
+      UShort &
+      - &
+      256 &
+      '' &
+      - &
+      - &
+      A list of port numbers to listen on, with \verb+0+ indicating unused \footnote{See ``Performance and Resource Utilization.''} \footnote{This Property is only used when \texttt{port} is set to \texttt{0}.}\\
       \hline
-      \verb+outSocket+ \verb+.messagesInStream+ & Bool & -       & 256             & ''                  & -           & false         & Write out data in ``message'' mode with embedded opcode \\
+      \verb+outSocket+ \verb+.messagesInStream+ &
+      Bool &
+      - &
+      256 &
+      '' &
+      - &
+      false &
+      Write out data in ``message'' mode with embedded opcode \\
       \hline
-      \verb+current+                & Struct    & -              & -               & Volatile           & -           & -             & Current statistics for each opcode \\
+      \verb+current+ &
+      Struct &
+      - &
+      - &
+      Volatile &
+      - &
+      - &
+      Current statistics for each opcode \\
       \hline
-      \verb+current.Total+          & Struct    & -              & -               & ''                  & -           & -             & Statistics across \textit{all} opcodes \\
+      \verb+current.Total+ &
+      Struct &
+      - &
+      - &
+      '' &
+      - &
+      - &
+      Statistics across \textit{all} opcodes \\
       \hline
-      \verb+current.Total.bytes+    & ULongLong & -              & -               & ''                  & Standard    & -             & Number of bytes received \\
+      \verb+current.Total.bytes+ &
+      ULongLong &
+      - &
+      - &
+      '' &
+      Standard &
+      - &
+      Number of bytes received \\
       \hline
-      \verb+current.Total.messages+ & ULongLong & -              & -               & ''                  & Standard    & -             & Number of messages received \\
+      \verb+current.Total.messages+ &
+      ULongLong &
+      - &
+      - &
+      '' &
+      Standard &
+      - &
+      Number of messages received \\
       \hline
-      \verb+current.Opcode+         & Struct    & -              & 256             & ''                  & -           & -             & Statistics for \textit{each} opcode \\
+      \verb+current.Opcode+ &
+      Struct &
+      - &
+      256 &
+      '' &
+      - &
+      - &
+      Statistics for \textit{each} opcode \\
       \hline
-      \verb+current.Opcode.*+       & Various   & -              & ''               & -                  & -           & -             & Various\footnote{Internal structure equivalent to \texttt{current.Total} and not explicitly shown.} \\
+      \verb+current.Opcode.*+ &
+      Various &
+      - &
+      '' &
+      - &
+      - &
+      - &
+      Various\footnote{Internal structure equivalent to \texttt{current.Total} and not explicitly shown.} \\
       \hline
-      \verb+stopOn+                 & Struct    & -              & -               & Writable, Readable & -           & -             & Condition(s) required to have Worker report completion\footnote{Any matched condition will halt the processing.} \\
+      \verb+stopOn+ &
+      Struct &
+      - &
+      - &
+      Writable, Readable\footnotemark[\thefnreadable] &
+      - &
+      - &
+      Condition(s) required to have Worker report completion\footnote{Any matched condition will halt the processing.} \\
       \hline
-      \verb+stopOn.Total+           & Struct    & -              & -               & ''                  & -           & -             & Stops if any non-zero value is exceeded when counting \textit{all} data received \\
+      \verb+stopOn.Total+ &
+      Struct &
+      - &
+      - &
+      '' &
+      - &
+      - &
+      Stops if any non-zero value is exceeded when counting \textit{all} data received \\
       \hline
-      \verb+stopOn.Total.bytes+     & ULongLong & -              & -               & ''                  & Standard    & 0             & Stop on number of bytes received \\
+      \verb+stopOn.Total.bytes+ &
+      ULongLong &
+      - &
+      - &
+      '' &
+      Standard &
+      0 &
+      Stop on number of bytes received \\
       \hline
-      \verb+stopOn.Total.messages+  & ULongLong & -              & -               & ''                  & Standard    & 0             & Stop in number of messages received \\
+      \verb+stopOn.Total.messages+ &
+      ULongLong &
+      - &
+      - &
+      '' &
+      Standard &
+      0 &
+      Stop in number of messages received \\
       \hline
-      \verb+stopOn.Opcode+          & Struct    & -              & 256             & ''                  & -           & -             & Stops if any non-zero value is exceeded when counting data received using a specific opcode \\
+      \verb+stopOn.Opcode+ &
+      Struct &
+      - &
+      256 &
+      '' &
+      - &
+      - &
+      Stops if any non-zero value is exceeded when counting data received using a specific opcode \\
       \hline
-      \verb+stopOn.Opcode.*+        & Various   & -              & -               & ''                  & -           & -             & Various\footnote{\label{stopon}Internal structure equivalent to \texttt{stopOn.Total} and not explicitly shown.} \\
+      \verb+stopOn.Opcode.*+ &
+      Various &
+      - &
+      - &
+      '' &
+      - &
+      - &
+      Various\footnote{\label{stopon}Internal structure equivalent to \texttt{stopOn.Total} and not explicitly shown.} \\
       \hline
-      \verb+stopOn.Any+             & Struct    & -              & -               & ''                  & -           & -             & Stops if any non-zero value is exceeded when counting data received using any single opcode \\
+      \verb+stopOn.Any+ &
+      Struct &
+      - &
+      - &
+      '' &
+      - &
+      - &
+      Stops if any non-zero value is exceeded when counting data received using any single opcode \\
       \hline
-      \verb+stopOn.Any.*+           & Various   & -              & -               & ''                  & -           & -             & Various\footnotemark[\getrefnumber{stopon}] \\
+      \verb+stopOn.Any.*+ &
+      Various &
+      - &
+      - &
+      '' &
+      - &
+      - &
+      Various\footnotemark[\getrefnumber{stopon}] \\
       \hline
-      \verb+stopOn.ZLM+             & UShort    & -              & -               & ''                  & 0 - 256     & 0             & Stops if a \textbf{Z}ero \textbf{L}ength \textbf{M}essage is received using a given opcode.\footnote{Default is opcode 0; set to invalid opcode 256 if this feature is \textit{not} desired.} \\
+      \verb+stopOn.ZLM+ &
+      UShort &
+      - &
+      - &
+      '' &
+      0 - 256 &
+      0 &
+      Stops if a \textbf{Z}ero \textbf{L}ength \textbf{M}essage is received using a given opcode.\footnote{Default is opcode 0; set to invalid opcode 256 if this feature is \textit{not} desired.} \\
       \hline
     \end{tabular}
   \end{scriptsize}
   \end{minipage}
   \section*{Worker Properties}
   \subsection*{\comp.rcc}
-  Control Operations\footnote{All TCP connections are terminated in the \textbf{Stop} state, while listening ports are opened in the \textbf{Start} state. If the Component is \textbf{Stop}ped, any clients will be \emph{disconnected} (i.e.\ not paused) and must reconnect after it is \textbf{Start}ed.} Start, Stop
+  Control Operations\footnote{All TCP connections are terminated in the \textbf{Stop} state, while listening ports are opened in the \textbf{Start} state. If the Component is \textbf{Stop}ped, any clients will be \emph{disconnected} (\textit{i.e.} not paused) and must reconnect after it is \textbf{Start}ed.} Start, Stop
 
   \section*{Component Ports}
   \begin{scriptsize}
@@ -284,6 +439,7 @@ See the enclosed \verb+README+ file for more information, including how to add n
 \section*{Performance and Resource Utilization}
 
 \subsubsection*{\comp.rcc}
+\iffalse
 \begin{scriptsize}
   \begin{tabular}{|c|c|c|}
     \hline
@@ -299,14 +455,15 @@ See the enclosed \verb+README+ file for more information, including how to add n
   \end{tabular}
 \end{scriptsize}
 \medskip
-
+\fi
 Each listening port requires system resources, such as an open file descriptor. When opening more than a handful of ports, the user may need to use \verb+ulimit+ to increase the number of open file descriptors. To do this temporarily, the command \verb+ulimit -n 2048+ can \textit{sometimes} fix the currently running shell. Consult the documentation for your Operating System to permanently increase the limit for all processes.
 \medskip
 
 TCP connections have a large overhead when compared to other transport processes, such as the OpenCPI internal messaging system. Currently, this component \textbf{does not} combine Messages to optimize the outbound connection, \textit{e.g.} taking into account TCP Maximum Segment Size (MSS). It is \textit{highly} recommended that users of this Component use a minimum message size of 4K or combine multiple messages in some way in an upstream Component.
 \medskip
 
-Data buffers are not returned to the framework nor sent out the optional ``out'' port until all TCP clients have received their data. This may result in throttling or a possible denial-of-service attack if a malicious client connects but never accepts data.
+Data buffers are not returned to the framework nor sent out the optional ``out'' port until \textit{all} TCP clients have acknowledged receipt of their data.
+This may result in throttling or a possible denial-of-service attack if a malicious client connects but never accepts data.
 
 \section*{Test and Verification}
 

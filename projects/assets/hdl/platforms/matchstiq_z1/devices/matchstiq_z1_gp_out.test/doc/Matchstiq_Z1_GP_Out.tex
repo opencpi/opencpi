@@ -1,0 +1,345 @@
+\documentclass{article}
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+\author{} % Force author to be blank
+%----------------------------------------------------------------------------------------
+% Paper size, orientation and margins
+%----------------------------------------------------------------------------------------
+\usepackage{geometry}
+\geometry{
+	letterpaper,			% paper type
+	portrait,				% text direction
+	left=.75in,				% left margin
+	top=.75in,				% top margin
+	right=.75in,			% right margin
+	bottom=.75in			% bottom margin
+ }
+%----------------------------------------------------------------------------------------
+% Header/Footer
+%----------------------------------------------------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy} % required for fancy headers
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0.5pt}
+\rhead{\small{ANGRYVIPER Team}}
+%----------------------------------------------------------------------------------------
+% Appendix packages
+%----------------------------------------------------------------------------------------
+\usepackage[toc,page]{appendix}
+%----------------------------------------------------------------------------------------
+% Defined Commands & Renamed Commands
+%----------------------------------------------------------------------------------------
+\renewcommand{\contentsname}{Table of Contents}
+\renewcommand{\listfigurename}{List of Figures}
+\renewcommand{\listtablename}{List of Tables}
+\newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
+\newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
+%----------------------------------------------------------------------------------------
+% Various packages
+%----------------------------------------------------------------------------------------
+\usepackage{hyperref} % for linking urls and lists
+\usepackage{graphicx} % for including pictures by file
+\usepackage{listings} % for coding language styles
+\usepackage{rotating} % for sideways table
+\usepackage{pifont}   % for sideways table
+\usepackage{pdflscape} % for landscape view
+%----------------------------------------------------------------------------------------
+% Table packages
+%----------------------------------------------------------------------------------------
+\usepackage{longtable} % for long possibly multi-page tables
+\usepackage{tabularx} % c=center,l=left,r=right,X=fill
+\usepackage{float}
+\floatstyle{plaintop}
+\usepackage[tableposition=top]{caption}
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{M}[1]{>{\centering\arraybackslash}m{#1}}
+%----------------------------------------------------------------------------------------
+% Block Diagram / FSM Drawings
+%----------------------------------------------------------------------------------------
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,fit,positioning}
+\usetikzlibrary{automata} % used for the fsm
+\usetikzlibrary{calc} % For duplicating clients
+\usepgfmodule{oo} % To define a client box
+%----------------------------------------------------------------------------------------
+% Colors Used
+%----------------------------------------------------------------------------------------
+\usepackage{colortbl}
+\definecolor{blue}{rgb}{.7,.8,.9}
+\definecolor{ceruleanblue}{rgb}{0.16, 0.32, 0.75}
+\definecolor{drkgreen}{rgb}{0,0.6,0}
+\definecolor{deepmagenta}{rgb}{0.8, 0.0, 0.8}
+\definecolor{cyan}{rgb}{0.0,0.6,0.6}
+\definecolor{maroon}{rgb}{0.5,0,0}
+\usepackage{multirow}
+%----------------------------------------------------------------------------------------
+% Update the docTitle and docVersion per document
+%----------------------------------------------------------------------------------------
+\def\docTitle{Component Data Sheet}
+\def\docVersion{1.5}
+%----------------------------------------------------------------------------------------
+\date{Version \docVersion} % Force date to be blank and override date with version
+\title{\docTitle}
+\lhead{\small{\docTitle}}
+
+\graphicspath{ {figures/} }
+
+\def\comp{Matchstiq\_Z1\_GP\_Out}
+\edef\ecomp{matchstiq_z1_gp_out}
+
+
+\begin{document}
+
+\section*{Summary - Matchstiq\_Z1\_GP\_Out}
+	\begin{tabular}{|c|M{13.5cm}|}
+		\hline
+		\rowcolor{blue}
+		• & • \\
+		\hline
+		Name & matchstiq\_z1\_gp\_out \\
+		\hline
+		Version & v1.5 \\
+		\hline
+		Release Date & 5/2019 \\
+		\hline
+		Component Library & ocpi.assets.platforms.matchstiq\_z1.devices \\
+		\hline
+		Workers & matchstiq\_z1\_gp\_out.hdl \\
+		\hline
+		Tested Platforms & xsim, matchstiq\_z1 \\
+		\hline
+	\end{tabular}
+	
+\begin{center}
+	\textit{\textbf{Revision History}}
+		\begin{table}[H]
+		\label{table:revisions} % Add "[H]" to force placement of table
+			\begin{tabularx}{\textwidth}{|c|X|l|}
+			\hline
+			\rowcolor{blue}
+			\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+		    \hline
+		    v1.5 & Initial Release & 5/2019 \\
+		    \hline
+			\end{tabularx}
+		\end{table}
+	\end{center}	
+	
+\section*{Functionality}
+\begin{flushleft}
+The Matchstiq-Z1 GP Out device worker controls the three GPIO pins, FPGA\_GPIO1, FPGA\_GPIO2, and FPGA\_GPIO3 present on the Matchstiq-Z1 platform. It is configured for general purpose output.
+
+\end{flushleft}
+
+\section*{Worker Implementation Details}
+\begin{flushleft}
+
+The Matchstiq-Z1 GP Out device worker can control the GPIO pins via the property \texttt{mask\_data}, it's (optional) input port, and the devsignal, \texttt{dev\_gp}. The devsignal only controls FPGA\_GPIO1, while the property and the (optional) port control all 3 pins. \newline
+
+The (optional) input port uses a protocol that has one opcode and contains data and a mask. See \texttt{gpio\_protocol.xml} in \path{ocpi.core/specs/gpio_protocol.xml}  for further details on the protocol. \newline
+
+The devsignal \texttt{dev\_gp} is controlled by the lime\_tx device worker through the lime\_tx's \texttt{dev\_txen\_dac\_in.txen} devsignal. This provides a way to control a device when transmit is enabled. By default FPGA\_GPIO1 is controlled by lime\_tx. When the Matchstiq-Z1 GP Out device worker is in the reset state, this signal is still controlled by lime\_tx. \newline
+
+All three ways of controlling the GPIO pins set the values of pins using a data and mask. In order for a GPIO pin to take on the value of a set data bit, the corresponding mask bit has to be set. The MSW of \texttt{mask\_data} and the data port data, must be the mask and LSW must be the data and the 3 LSB of the mask and data correspond to the three GPIO pins of the Matchstiq-Z1. \newline
+
+The \texttt{input\_mask} property provides a way for enabling or disabling the use of the property \texttt{"mask\_data"}; in port "data" and "mask"; or the devsignal "data" and "mask", if it desired to enable or disable any one of these ways of controlling the GPIO pins. By default all three are enabled.
+
+\end{flushleft}
+
+
+\section*{Block Diagrams}
+	\subsection*{Top level}
+	\makeatletter
+\newcommand{\gettikzxy}[3]{%
+  \tikz@scan@one@point\pgfutil@firstofone#1\relax
+  \edef#2{\the\pgf@x}%
+  \edef#3{\the\pgf@y}%
+}
+\makeatother
+\pgfooclass{clientbox}{ % This is the class clientbox
+    \method clientbox() { % The clientbox
+    }
+    \method apply(#1,#2,#3,#4) { % Causes the clientbox to be shown at coordinate (#1,#2) and named #3
+        \node[rectangle,draw=white,fill=white] at (#1,#2) (#3) {#4};
+    }
+}
+\pgfoonew \myclient=new clientbox()
+\begin{center}
+\begin{tikzpicture}[% List of styles applied to all, to override specify on a case-by-case
+					every node/.style={
+						align=center,  		% use this so that the "\\" for line break works
+						minimum size=1.5cm	% creates space above and below text in rectangle
+						},
+					every edge/.style={draw,thick}
+					]
+\node[rectangle,ultra thick,draw=black,fill=blue,minimum width=10 cm](R1){ Parameter Properties: \\ simulation\_p \\ \\ matchstiq\_z1\_gp\_out \\};
+		\node[rectangle,draw=white,fill=white](R2)[above= of R1]{Non-parameter Properties:\\ See property table};
+		\path[->]
+		(R2)edge []	node [] {} (R1)
+		(R1)edge []	node [] {} (R2)
+		;					
+		
+    \gettikzxy{(R1)}{\rx}{\ry}
+    \myclient.apply(\rx - 270,\ry + 20,C1, ``in'' StreamInterface \\  \texttt{(}connection optional\texttt{)} \\ mask and data \texttt{(}MSW: mask, LSW: data\texttt{)});
+    \path[<-]($(R1.west) + (-0 pt,+20 pt)$) edge [] node [] {} (C1);
+    \myclient.apply(\rx - 120,\ry-80,C1, ``dev\_gp'' \\ devsignal port \\ \texttt{(}see worker interfaces\texttt{)} );
+    \path[<-]($(R1.south) + (-120 pt,0)$) edge [] node [] {} (C1);
+    \myclient.apply(\rx + 0,\ry-80,C1, ``dev\_gp\_em'' \\ devsignal port \\ \texttt{(}see worker interfaces\texttt{)} );
+    \path[->]($(R1.south) + (0 pt,0)$) edge [] node [] {} (C1);
+\myclient.apply(\rx + 120,\ry-80,C1, Signals \\ see signals table);
+    \path[->]($(R1.south) + (120 pt,0)$) edge [] node [] {} (C1);
+
+\end{tikzpicture}
+\end{center}
+
+\section*{Source Dependencies}
+\subsection*{matchstiq\_z1\_gp\_out.hdl}
+	\begin{itemize}
+		\item assets/hdl/platforms/matchstiq\_z1/devices/matchstiq\_z1\_gp\_out.hdl/matchstiq\_z1\_gp\_out.vhd
+	\end{itemize}
+
+\subsection*{matchstiq\_z1\_gp\_out\_em.hdl}
+	\begin{itemize}
+		\item assets/hdl/platforms/matchstiq\_z1/devices/matchstiq\_z1\_gp\_out\_em.hdl/matchstiq\_z1\_gp\_out\_em.vhd
+\item assets/hdl/primitives/misc\_prims/misc\_prims\_pkg.vhd
+	      \subitem assets/hdl/primitives/misc\_prims/edge\_detector/src/edge\_detector.vhd
+\end{itemize}
+
+\begin{landscape}
+\section*{Worker Properties}
+
+\begin{flushleft}
+
+        \begin{scriptsize}
+        \begin{tabular}{|p{2.2cm}|p{1cm}|p{1cm}|p{2cm}|p{1.5cm}|p{2cm}|p{1.5cm}|p{1.5cm}|p{6cm}|}
+                \hline
+                \rowcolor{blue}
+                Name & Type & Default & SequenceLength & ArrayLength & ArrayDimensions & Parameter  & Accessibility & Usage \\
+                \hline
+                \verb+input_mask+ & uChar & 0x07 & - & - & - & false & Writable & Bitfield that allows enabling or disabling the use of the property "mask\_data"; in port "data" and "mask"; or the devsignal "data" and "mask". Bit 0 is the property, bit 1 is the in port, and bit 2 is the devsignal. If a bit is a 1 then the corresponding way of controlling the GPIO pin is enabled. \\
+                \hline
+                \verb+mask_data+ & uLong & 0 & - & - & - & false & Volatile, Writable & Bitfield containing the data to write the GPIO pins and the mask. The mask allows setting GPIO pins on or off in a single operation. The MSW must be the mask and LSW must be the data and the 3 LSB of the mask and data correspond to the 3 GPIO pins of the Matchstiq-Z1. For example if mask\_data = 0x00010003, the mask = 0x0001 and data = 0x0003. This would set gpio1 to 1. \\
+                \hline
+                \verb+simulation_p+ & bool & false & - & - & - & true & Readable & If true generate circuits for simulation logic. \\
+                \hline
+        \end{tabular}
+        \end{scriptsize}
+ 
+
+\end{flushleft}
+
+ 
+\section*{Component Ports}
+
+        \begin{scriptsize}
+                \begin{tabular}{|M{2.5cm}|M{2cm}|M{2cm}|M{3cm}|M{11cm}|}
+                        \hline
+                        \rowcolor{blue}
+                        Name & Protocol & Producer & Optional & Usage\\
+                        \hline
+                        in
+                        & gpio\_protocol
+                        & false
+                        & true
+                        & Data to write GPIO pins \\
+                        \hline
+                \end{tabular}
+			\end{scriptsize}
+			
+\section*{Worker Interfaces}
+\subsection*{matchstiq\_z1\_gp\_out.hdl}
+\begin{scriptsize}
+\begin{tabular}{|M{5cm}|M{4cm}|M{4cm}|c|M{6.5cm}|M{6cm}|}
+            \hline
+            \rowcolor{blue}
+            Type    & Name & DataWidth (b) & Advanced  & Usage     \\
+            \hline
+            StreamInterface & in   & 32  & - & Data to write GPIO pins \\
+           \hline
+
+\end{tabular}
+\end{scriptsize} \\ \\
+
+\begin{scriptsize}
+		\hskip-0.5cm \begin{tabular}{|p{3cm}|p{2cm}|p{1cm}|p{1.25cm}|p{1.25cm}|p{1cm}|p{1.4cm}|p{0.9cm}|p{7.2cm}|}
+			\hline
+			\rowcolor{blue}
+			Type                       & Name                            & Count & Optional & Master                & Signal                & Direction                  & Width                    & Description                                                                                                                  \\
+			\hline
+			\multirow{4}{*}{DevSignal{}} & \multirow{4}{*}{dev\_gp} & \multirow{4}{*}{1} & \multirow{4}{*}{True} & \multirow{4}{*}{False}  & data & Output & 1 & Controlled by dev\_txen\_dac\_in.txen within the lime\_tx device worker. Used to control GPIO1 pin. \\
+			\cline{6-9}
+			&             &        &     &      & mask     & Output     & 1      & Controlled by dev\_txen\_dac\_in.txen within the lime\_tx device worker. Used in logic for controlling FPGA\_GPIO1 pin. \\
+			\cline{6-9}
+			\hline
+			DevSignal     & dev\_gp\_em   & 1  & False & True & enable & Output & 1      & Controls when the matchstiq\_z1\_gp\_em device emulator should start sending messages. \\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+	
+\section*{Signals}
+	\begin{scriptsize}
+		\begin{tabular}{|M{2.5cm}|M{3cm}|M{6.5cm}|M{9.2cm}|}
+			\hline
+			\rowcolor{blue}
+			Name         & Type   & Width (b) & Description                       \\
+			\hline
+			gpio1    & out & 1 & Output to GPIO pins            \\
+			\hline
+			gpio2    & out & 1 & Output to GPIO pins            \\
+			\hline
+			gpio3    & out & 1 & Output to GPIO pins            \\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+\end{landscape}
+
+\section*{Control Timing and Signals}
+\begin{flushleft}
+The Matchstiq-Z1 GP Out device worker uses the clock from the Control Plane and standard Control Plane signals.
+\end{flushleft}
+
+\begin{landscape}
+\section*{Worker Configuration Parameters}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/configurations.inc}
+\section*{Performance and Resource Utilization}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/utilization.inc}
+\end{landscape}
+
+
+
+\section*{Test and Verification}
+\normalsize
+
+\begin{flushleft}
+
+The matchstiq\_z1\_gp\_out device worker unit has three test cases and utilizes the matchstiq\_z1\_gp\_out\_em device emulator. Case 1 tests controlling the GPIO pins via the \texttt{mask\_data} property, case 2 tests controlling them via the input port, and case 3 tests controlling via the \texttt{dev\_gp} devsignal. \newline
+
+For the mask\_data property and the data port, the tests that are done are: setting data bits high but not setting masks, setting data bits high and setting the appropriate mask bits high, clear data by setting data to 0x0000 and mask to 0x0007,
+and then set data bits high but only set some of the appropriate masks high.\newline
+
+For the devsignal the mask is held high but the data is toggled on and off. \newline
+  
+The \path{generate.py} script generates the input data and generates golden data files. For case 1 and 3 the input file is a 0 byte file since the input port data is ignored in these two cases. A \path{.golden.data} file is generated for each case. \newline
+
+The \path{verify.py} script checks that the output data matches the expected output data contained in the \path{.golden.data} files.
+
+\end{flushleft}
+\end{document}

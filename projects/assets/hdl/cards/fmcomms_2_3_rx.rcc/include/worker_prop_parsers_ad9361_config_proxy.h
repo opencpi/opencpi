@@ -33,24 +33,26 @@
 // in member of struct s (string is of format "<prop> <ocpi_t value>")
 #define OCPI_SSCANF_STRUCT(ptr,s,cnt,prop) ocpi_sscanf(ptr,&s.prop,cnt,#prop);
 
+namespace OA = OCPI::API;
+
 // this is C data structure representation of the ad9361_config_proxy worker's
 // ad9361_rf_phy struct property's clk_refin member
 struct ad9361_config_proxy_clk_refin
 {
-  ocpi_ulong_t rate;
+  OA::ULong rate;
 };
 
 // this is C data structure representation of the ad9361_config_proxy worker's
 // ad9361_rf_phy struct property's pdata member
 struct ad9361_config_proxy_pdata
 {
-  ocpi_bool_t  rx2tx2;
-  ocpi_bool_t  fdd;
-  ocpi_bool_t  use_extclk;
-  ocpi_ulong_t dcxo_coarse;
-  ocpi_ulong_t dcxo_fine;
-  ocpi_ulong_t rx1tx1_mode_use_rx_num;
-  ocpi_ulong_t rx1tx1_mode_use_tx_num;
+  OA::Bool  rx2tx2;
+  OA::Bool  fdd;
+  OA::Bool  use_extclk;
+  OA::ULong dcxo_coarse;
+  OA::ULong dcxo_fine;
+  OA::ULong rx1tx1_mode_use_rx_num;
+  OA::ULong rx1tx1_mode_use_tx_num;
 };
 
 // this is C data structure representation of the ad9361_config_proxy worker's
@@ -65,51 +67,51 @@ struct ad9361_config_proxy_ad9361_rf_phy
 // ad9361_init struct property
 struct ad9361_config_proxy_ad9361_init
 {
-  ocpi_ulong_t reference_clk_rate;
-  ocpi_uchar_t one_rx_one_tx_mode_use_rx_num;
-  ocpi_uchar_t one_rx_one_tx_mode_use_tx_num;
-  ocpi_uchar_t frequency_division_duplex_mode_enable;
-  ocpi_uchar_t xo_disable_use_ext_refclk_enable;
-  ocpi_bool_t  two_t_two_r_timing_enable;
-  ocpi_uchar_t pp_tx_swap_enable;
-  ocpi_uchar_t pp_rx_swap_enable;
-  ocpi_uchar_t tx_channel_swap_enable;
-  ocpi_uchar_t rx_channel_swap_enable;
-  ocpi_ulong_t delay_rx_data;
-  ocpi_ulong_t rx_data_clock_delay;
-  ocpi_ulong_t rx_data_delay;
-  ocpi_ulong_t tx_fb_clock_delay;
-  ocpi_ulong_t tx_data_delay;
+  OA::ULong reference_clk_rate;
+  OA::UChar one_rx_one_tx_mode_use_rx_num;
+  OA::UChar one_rx_one_tx_mode_use_tx_num;
+  OA::UChar frequency_division_duplex_mode_enable;
+  OA::UChar xo_disable_use_ext_refclk_enable;
+  OA::Bool  two_t_two_r_timing_enable;
+  OA::UChar pp_tx_swap_enable;
+  OA::UChar pp_rx_swap_enable;
+  OA::UChar tx_channel_swap_enable;
+  OA::UChar rx_channel_swap_enable;
+  OA::ULong delay_rx_data;
+  OA::ULong rx_data_clock_delay;
+  OA::ULong rx_data_delay;
+  OA::ULong tx_fb_clock_delay;
+  OA::ULong tx_data_delay;
 };
 
 // this is C data structure representation of the ad9361_config_proxy worker's
 // rx_gain_control_mode property
 typedef struct ad9361_config_proxy_rx_gain_control_mode_t
 {
-  ocpi_uchar_t  operator[](int i) const { return data[i]; }
-  ocpi_uchar_t& operator[](int i)       { return data[i]; }
-  ocpi_uchar_t  data[2];
+  OA::UChar  operator[](int i) const { return data[i]; }
+  OA::UChar& operator[](int i)       { return data[i]; }
+  OA::UChar  data[2];
 } ad9361_config_proxy_rx_gain_control_mode_t;
 
 // this is C data structure representation of the ad9361_config_proxy worker's
 // rx_rf_gain property
 typedef struct ad9361_config_proxy_rx_rf_gain_t
 {
-  ocpi_long_t  operator[](int i) const { return data[i]; }
-  ocpi_long_t& operator[](int i)       { return data[i]; }
-  ocpi_long_t  data[2];
+  OA::Long  operator[](int i) const { return data[i]; }
+  OA::Long& operator[](int i)       { return data[i]; }
+  OA::Long  data[2];
 } ad9361_config_proxy_rx_rf_gain_t;
 
 // this is C data structure representation of the ad9361_config_proxy worker's
 // tx_attenuation property
 typedef struct ad9361_config_proxy_tx_attenuation_t
 {
-  ocpi_ulong_t  operator[](int i) const { return data[i]; }
-  ocpi_ulong_t& operator[](int i)       { return data[i]; }
-  ocpi_ulong_t  data[2];
+  OA::ULong  operator[](int i) const { return data[i]; }
+  OA::ULong& operator[](int i)       { return data[i]; }
+  OA::ULong  data[2];
 } ad9361_config_proxy_tx_attenuation_t;
 
-const char* parse(const char* cstr_to_parse,
+void parse(const char* cstr_to_parse,
     struct ad9361_config_proxy_clk_refin& s, int* count = 0)
 {
   int tmp_count;
@@ -129,17 +131,17 @@ const char* parse(const char* cstr_to_parse,
   {
     *count = count_sum;
   }
-  return 0;
+  return;
 
   error:
     std::string err_str;
     err_str = "Malformed clk_refin struct string read ";
     err_str += "from 'ad9361_config_proxy' worker: '";
     err_str += std::string(cstr_to_parse) + "'";
-    return err_str.c_str();
+    throw err_str;
 }
 
-const char* parse(const char* cstr_to_parse,
+void parse(const char* cstr_to_parse,
     struct ad9361_config_proxy_pdata& s, int* count = 0)
 {
   int tmp_count;
@@ -225,24 +227,23 @@ const char* parse(const char* cstr_to_parse,
   {
     *count = count_sum;
   }
-  return 0;
+  return;
   
   error:
     std::string err_str;
     err_str = "Malformed pdata struct string read ";
     err_str += "from 'ad9361_config_proxy' worker: '";
     err_str += std::string(cstr_to_parse) + "'";
-    return err_str.c_str();
+    throw err_str;
 }
 
-const char* parse(const char* cstr_to_parse,
+void parse(const char* cstr_to_parse,
     struct ad9361_config_proxy_ad9361_rf_phy& s, int* count = 0)
 {
   int tmp_count;
   int count_sum = 0;
   int num_filled;
   char* ptr = (char*) cstr_to_parse;
-  char* err;
 
   // commence parsing
   // example string: "clk_refin {rate 40000000},pdata {rx2tx2 false,fdd true,use_extclk false,dcxo_coarse 8,dcxo_fine 5920,rx1tx1_mode_use_rx_num 1,rx1tx1_mode_use_tx_num 1}"
@@ -252,8 +253,7 @@ const char* parse(const char* cstr_to_parse,
   ptr += tmp_count;
   count_sum += tmp_count;
 
-  err = (char*) parse(ptr, s.clk_refin, &tmp_count);
-  if(err != 0) { goto error; }
+  parse(ptr, s.clk_refin, &tmp_count);
   ptr += tmp_count;
   count_sum += tmp_count;
 
@@ -273,8 +273,7 @@ const char* parse(const char* cstr_to_parse,
   ptr += tmp_count;
   count_sum += tmp_count;
 
-  err = (char*) parse(ptr, s.pdata, &tmp_count);
-  if(err != 0) { goto error; }
+  parse(ptr, s.pdata, &tmp_count);
   ptr += tmp_count;
   count_sum += tmp_count;
 
@@ -287,17 +286,17 @@ const char* parse(const char* cstr_to_parse,
   {
     *count = count_sum;
   }
-  return 0;
+  return;
   
   error:
     std::string err_str;
     err_str = "Malformed ad9361_rf_phy property value string read ";
     err_str += "from 'ad9361_config_proxy' worker: '";
     err_str += std::string(cstr_to_parse) + "'";
-    return err_str.c_str();
+    throw err_str;
 }
 
-const char* parse(const char* cstr_to_parse,
+void parse(const char* cstr_to_parse,
     struct ad9361_config_proxy_ad9361_init& s, int* count = 0)
 {
   int tmp_count;
@@ -471,83 +470,80 @@ const char* parse(const char* cstr_to_parse,
   {
     *count = count_sum;
   }
-  return 0;
+  return;
   
   error:
     std::string err_str;
     err_str = "Malformed ad9361_init property value string read ";
     err_str += "from 'ad9361_config_proxy' worker: '";
     err_str += std::string(cstr_to_parse) + "'";
-    return err_str.c_str();
+    throw err_str;
 }
 
-const char* parse(const char* cstr_to_parse,
+void parse(const char* cstr_to_parse,
     ad9361_config_proxy_rx_gain_control_mode_t& prop, int* count = 0)
 {
   // commence parsing
   // example string: "0,0"
 
-  std::vector<ocpi_uchar_t> tmp;
-  const char* err = parse(cstr_to_parse, tmp, count);
-  if(err != 0) { return err; }
+  std::vector<OA::UChar> tmp;
+  parse(cstr_to_parse, tmp, count);
   if(tmp.size() != 2) { goto error; }
   prop[0] = tmp[0];
   prop[1] = tmp[1];
 
-  return 0;
+  return;
 
   error:
     std::string err_str;
     err_str = "Malformed rx_gain_control_mode property value string read ";
     err_str += "from 'ad9361_config_proxy' worker: '";
     err_str += std::string(cstr_to_parse) + "'";
-    return err_str.c_str();
+    throw err_str;
 }
 
-const char* parse(const char* cstr_to_parse,
+void parse(const char* cstr_to_parse,
     ad9361_config_proxy_rx_rf_gain_t& prop, int* count = 0)
 {
   // commence parsing
   // example string: "1,1"
 
-  std::vector<ocpi_long_t> tmp;
-  const char* err = parse(cstr_to_parse, tmp, count);
-  if(err != 0) { return err; }
+  std::vector<OA::Long> tmp;
+  parse(cstr_to_parse, tmp, count);
   if(tmp.size() != 2) { goto error; }
   prop[0] = tmp[0];
   prop[1] = tmp[1];
 
-  return 0;
+  return;
 
   error:
     std::string err_str;
     err_str = "Malformed rx_rf_gain property value string read ";
     err_str += "from 'ad9361_config_proxy' worker: '";
     err_str += std::string(cstr_to_parse) + "'";
-    return err_str.c_str();
+    throw err_str;
 }
 
-const char* parse(const char* cstr_to_parse,
+void parse(const char* cstr_to_parse,
    ad9361_config_proxy_tx_attenuation_t& prop, int* count = 0)
 {
   // commence parsing
   // example string: "1000,1000"
 
-  std::vector<ocpi_ulong_t> tmp;
-  const char* err = parse(cstr_to_parse, tmp, count);
-  if(err != 0) { return err; }
+  std::vector<OA::ULong> tmp;
+  parse(cstr_to_parse, tmp, count);
   if(tmp.size() != 2) { goto error; }
   prop[0] = tmp[0];
   prop[1] = tmp[1];
 
-  return 0;
+  return;
 
   error:
     std::string err_str;
     err_str = "Malformed tx_attenuation property value string read ";
     err_str += "from 'ad9361_config_proxy' worker: '";
     err_str += std::string(cstr_to_parse) + "'";
-    return err_str.c_str();
+    throw err_str;
 }
 
 std::string to_string(const struct ad9361_config_proxy_ad9361_init & s)

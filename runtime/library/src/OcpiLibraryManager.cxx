@@ -330,7 +330,7 @@ namespace OCPI {
       buf[bufsize] = '\0';
       off_t fileLength, second, third;
       if ((fileLength = lseek(fd, 0, SEEK_END)) != -1 &&
-	  // I have no idea why the off_t caste below is required,
+	  // I have no idea why the off_t cast below is required,
 	  // but without it, the small negative number is not sign extended...
 	  // on MACOS gcc v4.0.1 with 64 bit off_t
 	  (second = lseek(fd, -(off_t)bufsize, SEEK_CUR)) != -1 &&
@@ -394,7 +394,7 @@ namespace OCPI {
 	throw OU::Error(20, "Cannot open or retrieve metadata from file \"%s\"", a_name);
       const char *err = setFileMetadata(a_name, metadata, l_mtime, l_length, metaLength);
       if (err)
-	throw OU::Error("Error processing metadata from artifact file: %s: %s", a_name, err);
+	throw OU::Error("Error processing metadata from artifact file [manager]: %s: %s", a_name, err);
     }
 
     const Implementation *Artifact::

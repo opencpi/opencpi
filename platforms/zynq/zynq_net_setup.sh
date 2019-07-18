@@ -19,6 +19,39 @@
 # If there is a "mynetsetup.sh" script in this directory it will run it after the
 # other setup items, and arrange for it to be run in any login scripts later
 # e.g. ssh logins
+
+# Set time using ntpd
+# If ntpd fails because it could not find ntp.conf fall back on time server
+# passed in as the first parameter
+set_time() {
+  if test "$1" != -; then
+    echo Attempting to set time from the time server
+    if test -f /etc/opencpi-release; then
+      read OCPI_TOOL_PLATFORM x < /etc/opencpi-release
+    else
+      echo No /etc/opencpi-release - assuming ZedBoard hardware
+      OCPI_TOOL_PLATFORM=zed
+    fi
+
+    # Calling ntpd without any options will run it as a dameon
+    OPTS=""
+    BUSYBOX_PATH="/mnt/card/opencpi/$OCPI_TOOL_PLATFORM/bin"
+    TIMEOUT=20
+    MSG="Succeeded in setting the time from /mnt/card/opencpi/ntp.conf"
+    if [ ! -e /mnt/card/opencpi/ntp.conf ]; then
+      OPTS="-p $1"
+      MSG="Succeeded in setting the time from $1"
+    fi
+    # AV-5422 Timeout ntpd command after $TIMEOUT in seconds
+    if $BUSYBOX_PATH/busybox timeout -t $TIMEOUT $BUSYBOX_PATH/ntpd -nq $OPTS; then
+      echo $MSG
+    else
+      echo ====YOU HAVE NO NETWORK CONNECTION and NO HARDWARE CLOCK====
+      echo Set the time using the '"date YYYY.MM.DD-HH:MM[:SS]"' command.
+    fi
+  fi
+}
+
 if test -z  "$5"; then
   echo You must supply at least 5 arguments to this script.
   echo Usage is: zynq_net_setup.sh '<nfs-ip-address> <nfs-share-name> <opencpi-dir> <time-server> <timezone> [<hdl-platform>]'
@@ -33,8 +66,7 @@ else
      echo No IP address was detected! No network or no DHCP.
      break;
   fi
-  echo Setting the time from time server: $4
-  rdate $4
+  set_time $4
   # Tell the kernel to make fake 32 bit inodes when 64 nodes come from the NFS server
   # This may change for 64 bit zynqs
   echo 0 > /sys/module/nfs/parameters/enable_ino64
@@ -62,13 +94,15 @@ else
     if test -f /etc/opencpi-release; then
       read OCPI_TOOL_PLATFORM x < /etc/opencpi-release
     else
-      echo No /etc/opencpi-release - assuming ZedBoard hardware
-      OCPI_TOOL_PLATFORM=zed
+      echo No /etc/opencpi-release - assuming xilinx13_3 software platform
+      OCPI_TOOL_PLATFORM=xilinx13_3
     fi
     export OCPI_TOOL_PLATFORM
     export OCPI_TOOL_OS=linux
     export OCPI_TOOL_DIR=\$OCPI_TOOL_PLATFORM
-    # As a default, access all built RCC artifacts from the core project
+    # As a default, access all built artifacts in the core project as well as
+    # the bare-bones set of prebuilt runtime artifacts for this SW platform
+    export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../project-registry/ocpi.core/exports/artifacts
     export OCPI_LIBRARY_PATH+=:$OCPI_CDK_DIR/\$OCPI_TOOL_PLATFORM/artifacts
     # Priorities for finding system.xml:
     # 1. If is it on the local system it is considered customized for this system - use it.
