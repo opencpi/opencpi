@@ -89,7 +89,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.5}
+\def\docVersion{1.6}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -111,15 +111,15 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		\hline
 		Name & \comp \\
 		\hline
-		Version & v1.5 \\
+		Version & v\docVersion \\
 		\hline
-		Release Date & 5/2019 \\
+		Release Date & 11/2019 \\
 		\hline
 		Component Library & ocpi.assets.util\_comps \\
 		\hline
 		Workers & \comp.hdl \\
 		\hline
-		Tested Platforms & xsim, isim, matchstiq\_z1 \\
+		Tested Platforms & xsim, isim, Matchstiq-Z1(PL), ZedBoard(PL) \\
 		\hline
 	\end{tabular}
 	
@@ -134,7 +134,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		    \hline
 		    v1.4 & Initial Release & 10/2018 \\
 		    \hline
-        v1.5 & \begin{itemize} \item Fixed incorrect property accessibility "Writable" and changed it to "Initial" for the \texttt{messagesToSend} property. \item Clarified that the opcode that is sent by the component is an 8 bit opcode. \end{itemize} & 5/2019 \\
+        v1.5 & \begin{itemize} \item Fixed incorrect property accessibility "Writable" and changed it to "Initial" for the \texttt{messagesToSend} property. \item Clarified that the opcode that is sent by the component is an 8 bit opcode. \end{itemize} & 4/2019 \\
+		    \hline
+		     v1.6 & Converted Worker to version 2 & 11/2019 \\
 		    \hline
 			\end{tabularx}
 		\end{table}
@@ -150,7 +152,7 @@ The \texttt{messages} property defines the record of messages to send, as well a
 For example: \newline
 
 When \texttt{messages} = \{4, 255\}, one message will be sent having 4 bytes of data and an opcode of 255. \newline
-When \texttt{messages} = \{8, 251\}, \{6, 250\}, two messages will be sent, the first having 8 bytes of data and an opcode of 251, and the second message having 6 bytes of data and an opcode of 250. \newline
+When \texttt{messages} = \{8, 251\}, \{12, 250\}, two messages will be sent, the first having 8 bytes of data and an opcode of 251, and the second message having 12 bytes of data and an opcode of 250. \newline
 
 Data to be sent with a message is defined by the \texttt{data} property and is referred to as the data buffer. The number of data words in the data buffer is the number of data bytes for the messages. \newline
 

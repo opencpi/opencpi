@@ -21,9 +21,11 @@ library ocpi; use ocpi.all, ocpi.types.all;
 library work; use work.platform_pkg.all; use work.time_client_co_defs.all; 
 entity time_client_co_rv is
   port(
-    time_in : in  time_service_t;
-    wti_in  : in  wti_in_t;
-    wti_out : out wti_out_t
+    wci_Clk     : in std_logic;
+    wci_Reset_n : in std_logic;
+    time_in     : in  time_service_t;
+    wti_in      : in  wti_in_t;
+    wti_out     : out wti_out_t
     );
 end entity time_client_co_rv;
 architecture rtl of time_client_co_rv is

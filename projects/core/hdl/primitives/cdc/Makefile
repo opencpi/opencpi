@@ -16,13 +16,5 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-if test "$#" -ne 2; then
-    echo "Correct usage is <numDataWords> <name of hdl platform>"
-    exit 1
-fi
-
-export OCPI_LIBRARY_PATH=../cust_test01
-./generate.py $1
-ocpidev -d ../cust_test01 build --hdl-assembly cust_test01 --hdl-platform $2
-ocpirun --dump-file "cust_test01.capture_v2.hdl.props" -v  cust_test_app.xml
-./verify.py cust_test01.capture_v2.hdl.props
+Libraries=fixed_float ocpi 
+include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk # we are a library of primitives

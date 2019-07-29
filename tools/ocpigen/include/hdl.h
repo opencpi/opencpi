@@ -20,8 +20,8 @@
 
 #ifndef HDL_H
 #define HDL_H
-#include <wip.h>
-
+#include "wip.h"
+#include "clock.h"
 class HdlDevice;
 typedef HdlDevice DeviceType;
 typedef std::list<DeviceType *>     DeviceTypes;

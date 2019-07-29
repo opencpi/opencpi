@@ -71,7 +71,7 @@ entity master is
     opcode           : in  std_logic_vector(opcode_width-1 downto 0);
     eof              : in  Bool_t; -- eof from worker, false if not driven
     give             : in  Bool_t := bfalse;
-    data             : in  std_logic_vector(n_bytes * byte_width-1 downto 0);
+    data             : in  std_logic_vector(n_bytes * max(1,byte_width)-1 downto 0);
     byte_enable      : in  std_logic_vector(n_bytes-1 downto 0) := (others => '1');
     som              : in  Bool_t := bfalse;
     eom              : in  Bool_t := bfalse;

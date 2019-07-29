@@ -1,0 +1,106 @@
+<build>
+  <configuration id='0'>
+    <parameter name='width_in' value='8'/>
+    <parameter name='width_out' value='16'/>
+  </configuration>
+  <configuration id='1'>
+    <parameter name='width_in' value='8'/>
+    <parameter name='width_out' value='32'/>
+  </configuration>
+  <configuration id='2'>
+    <parameter name='width_in' value='8'/>
+    <parameter name='width_out' value='64'/>
+  </configuration>
+  <configuration id='3'>
+    <parameter name='width_in' value='8'/>
+    <parameter name='width_out' value='128'/>
+  </configuration>
+  <configuration id='4'>
+    <parameter name='width_in' value='16'/>
+    <parameter name='width_out' value='8'/>
+  </configuration>
+  <configuration id='5'>
+    <parameter name='width_in' value='16'/>
+    <parameter name='width_out' value='32'/>
+  </configuration>
+  <configuration id='6'>
+    <parameter name='width_in' value='16'/>
+    <parameter name='width_out' value='64'/>
+  </configuration>
+  <configuration id='7'>
+    <parameter name='width_in' value='16'/>
+    <parameter name='width_out' value='128'/>
+  </configuration>
+  <configuration id='8'>
+    <parameter name='width_in' value='32'/>
+    <parameter name='width_out' value='8'/>
+  </configuration>
+  <configuration id='9'>
+    <parameter name='width_in' value='32'/>
+    <parameter name='width_out' value='16'/>
+  </configuration>
+  <configuration id='10'>
+    <parameter name='width_in' value='32'/>
+    <parameter name='width_out' value='64'/>
+  </configuration>
+  <configuration id='11'>
+    <parameter name='width_in' value='32'/>
+    <parameter name='width_out' value='128'/>
+  </configuration>
+  <configuration id='12'>
+    <parameter name='width_in' value='64'/>
+    <parameter name='width_out' value='8'/>
+  </configuration>
+  <configuration id='13'>
+    <parameter name='width_in' value='64'/>
+    <parameter name='width_out' value='16'/>
+  </configuration>
+  <configuration id='14'>
+    <parameter name='width_in' value='64'/>
+    <parameter name='width_out' value='32'/>
+  </configuration>
+  <configuration id='15'>
+    <parameter name='width_in' value='64'/>
+    <parameter name='width_out' value='128'/>
+  </configuration>
+  <configuration id='16'>
+    <parameter name='width_in' value='128'/>
+    <parameter name='width_out' value='8'/>
+  </configuration>
+  <configuration id='17'>
+    <parameter name='width_in' value='128'/>
+    <parameter name='width_out' value='16'/>
+  </configuration>
+  <configuration id='18'>
+    <parameter name='width_in' value='128'/>
+    <parameter name='width_out' value='32'/>
+  </configuration>
+  <configuration id='19'>
+    <parameter name='width_in' value='128'/>
+    <parameter name='width_out' value='64'/>
+  </configuration>
+  <configuration id='20'>
+    <parameter name='width_in' value='96'/>
+    <parameter name='width_out' value='32'/>
+  </configuration>
+  <configuration id='21'>
+    <parameter name='width_in' value='32'/>
+    <parameter name='width_out' value='96'/>
+  </configuration>
+  <configuration id='22'>
+    <parameter name='width_in' value='8'/>
+    <parameter name='width_out' value='8'/>
+  </configuration>
+  <configuration id='23'>
+    <parameter name='width_in' value='16'/>
+    <parameter name='width_out' value='16'/>
+  </configuration>
+  <configuration id='24'>
+    <parameter name='width_in' value='32'/>
+    <parameter name='width_out' value='32'/>
+  </configuration>
+  <configuration id='25'>
+    <parameter name='width_in' value='64'/>
+    <parameter name='width_out' value='64'/>
+  </configuration>
+</build>

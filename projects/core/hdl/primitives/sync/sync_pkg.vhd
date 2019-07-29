@@ -34,7 +34,7 @@ package sync is
 
   component sync_async_rst
     generic (
-      RSTDELAY : integer);
+      RSTDELAY : integer := 2);
     port (
       src_arst  : in  std_logic;
       dest_clk  : in  std_logic;
@@ -195,6 +195,23 @@ package sync is
       DEQ     : in  std_logic;
       FULL_N  : out std_logic;
       EMPTY_N : out std_logic);
+  end component;
+
+  component sync_fifo_gray is
+    generic (
+      DATAWIDTH : natural := 1;
+      DEPTH     : natural := 2;           --minimum 2
+      INDXWIDTH : natural := 1);          --minimum 1
+    port (
+      sCLK     : in  std_logic;
+      sRST     : in  std_logic;
+      sENQ     : in  std_logic;
+      sD_IN    : in  std_logic_vector(DATAWIDTH-1 downto 0);
+      sFULL_N  : out std_logic;
+      dCLK     : in  std_logic;
+      dDEQ     : in  std_logic;
+      dD_OUT   : out std_logic_vector(DATAWIDTH-1 downto 0);
+      dEMPTY_N : out std_logic);
   end component;
 
 end package sync;

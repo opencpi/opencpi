@@ -71,188 +71,196 @@
 
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.util.all; use ocpi.types.all; use ocpi.wci.all;
-architecture rtl of pattern_v2_worker is
 
+architecture rtl of worker is
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- Signals for pattern logic
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-constant msg_ptr_width_c : natural := width_for_max(to_integer(numMessagesMax*2) - 1); --Multiply numMessagesMax by 2 because there are 2 message fields
-constant data_ptr_width_c : natural := width_for_max(to_integer(numDataWords) - 1);
-signal byte_enable          : std_logic_vector(3 downto 0) := (others => '0');
-signal opcode               : std_logic_vector(7 downto 0) := (others => '0');
-signal bytes_left           : ulong_t := (others => '0'); -- Keep track of how many bytes that are left to send for current message
-signal messagesToSend       : ulong_t := (others => '0');
-signal msg_ptr             : unsigned(msg_ptr_width_c-1 downto 0) := (others => '0'); -- Pointer for messages buffer
-signal data_ptr             : unsigned(data_ptr_width_c-1 downto 0) := (others => '0'); -- Pointer for data buffer
-signal dataSent             : ulong_t := (others => '0');
-signal messagesSent         : ulong_t := (others => '0');
-signal finished             : std_logic := '0';   -- Used to to stop sending messages
+constant c_msg_ptr_width    : natural := width_for_max(to_integer(numMessagesMax*2) - 1); --Multiply numMessagesMax by 2 because there are 2 message fields
+constant c_data_ptr_width   : natural := width_for_max(to_integer(numDataWords) - 1);
+signal s_byte_enable        : std_logic_vector(3 downto 0) := (others => '0');
+signal s_opcode             : std_logic_vector(7 downto 0) := (others => '0');
+signal s_bytes_left         : ulong_t := (others => '0'); -- Keep track of how many bytes that are left to send for current message
+signal s_messagesToSend     : ulong_t := (others => '0');
+signal s_msg_ptr            : unsigned(c_msg_ptr_width-1 downto 0) := (others => '0'); -- Pointer for messages buffer
+signal s_data_ptr           : unsigned(c_data_ptr_width-1 downto 0) := (others => '0'); -- Pointer for data buffer
+signal s_dataSent           : ulong_t := (others => '0');
+signal s_messagesSent       : ulong_t := (others => '0');
+signal s_finished           : std_logic := '0';   -- Used to to stop sending messages
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- Signals for combinatorial logic
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-signal s_som_r               : std_logic := '0'; -- Used to drive out_som
+signal s_som_r               : std_logic := '0'; -- Used to drive s_out_som
 signal s_som_next_r          : std_logic := '0'; -- Used for logic for starting a message
-signal s_eom_r               : std_logic := '0'; -- Used to drive out_eom
+signal s_eom_r               : std_logic := '0'; -- Used to drive s_out_eom
 signal s_ready_r             : std_logic := '0'; -- Used to determine if ready to send message data
 signal s_valid_r             : std_logic := '0'; -- Used for combinatorial logic for out_valid
+signal s_give                : std_logic := '0'; -- Used for combinatorial logic for out_valid
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- Mandatory output port logic
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-signal data_ready_for_out_port : std_logic := '0';
-signal out_meta_is_reserved    : std_logic := '0';
-signal out_som                 : std_logic := '0';
-signal out_eom                 : std_logic := '0';
-signal out_valid               : std_logic := '0';
+signal s_data_ready_for_out_port : std_logic := '0';
+signal s_out_meta_is_reserved    : std_logic := '0';
+signal s_out_som                 : std_logic := '0';
+signal s_out_eom                 : std_logic := '0';
+signal s_out_valid               : std_logic := '0';
+signal s_out_eof                 : std_logic := '0';
 
 -- Takes in the argument bytes_left and outputs the appropriate byte_enable
 function read_bytes (bytes_left : ulong_t) return std_logic_vector is
-    variable result : std_logic_vector(3 downto 0) := (others => '0');
+    variable v_result : std_logic_vector(3 downto 0) := (others => '0');
     begin
         if bytes_left >= 4 then
-           result := "1111";
+           v_result := "1111";
         elsif bytes_left = 3 then
-           result := "0111";
+           v_result := "0111";
         elsif bytes_left = 2 then
-           result := "0011";
+           v_result := "0011";
         elsif bytes_left = 1 then
-           result := "0001";
+           v_result := "0001";
         elsif bytes_left = 0 then
-           result := (others => '0');
+           v_result := (others => '0');
         end if;
-        return result;
+        return v_result;
  end function read_bytes;
 
 begin
 
 
-props_out.messagesToSend <= messagesToSend;
-props_out.messagesSent <= messagesSent;
-props_out.dataSent <= dataSent;
+props_out.messagesToSend <= props_in.messagesToSend when ctl_in.state = INITIALIZED_e else
+                            s_messagesToSend;
+
+props_out.messagesSent <= s_messagesSent;
+props_out.dataSent <= s_dataSent;
 
 -- Mandatory output port logic, (note that
--- data_ready_for_out_port MUST be clock-aligned with out_out.data)
+-- s_data_ready_for_out_port MUST be clock-aligned with out_out.data)
 -- (note that reserved messages will be DROPPED ON THE FLOOR)
-out_out.give <= ctl_in.is_operating and out_in.ready and
-              (not out_meta_is_reserved) and data_ready_for_out_port;
+out_out.give <= s_give;
+
+s_give <= out_in.ready and (not s_out_meta_is_reserved) and s_data_ready_for_out_port;
 
 
-out_meta_is_reserved <= (not out_som) and (not out_valid) and (not out_eom);
-out_out.som   <= out_som;
-out_out.eom   <= out_eom;
-out_out.valid <= out_valid;
+s_out_meta_is_reserved <= (not s_out_som) and (not s_out_valid) and (not s_out_eom);
+out_out.som   <= s_out_som;
+out_out.eom   <= s_out_eom;
+out_out.valid <= s_out_valid;
+out_out.eof <= s_out_eof;
 
-out_som <= s_som_r;
+s_out_som <= s_som_r;
 
-out_eom <= s_eom_r;
+s_out_eom <= s_eom_r;
 
-out_valid <= ctl_in.is_operating and out_in.ready and
-                           data_ready_for_out_port and s_valid_r;
+s_out_valid <= out_in.ready and s_data_ready_for_out_port and s_valid_r;
 
-data_ready_for_out_port <= s_ready_r;
+s_data_ready_for_out_port <= s_ready_r;
 
-out_out.data <= std_logic_vector(props_in.data(to_integer(data_ptr)));
-out_out.byte_enable <= byte_enable;
-out_out.opcode <= opcode;
+out_out.data <= std_logic_vector(props_in.data(to_integer(s_data_ptr)));
+out_out.byte_enable <= s_byte_enable;
+out_out.opcode <= s_opcode;
+
+ctl_out.finished <= s_finished;
 
 
 -- This process handles the logic for the byte enable, opcode, som, eom, valid, and give for the
 -- current message. It handles decrementing the messagesToSend counter, incrementing the messages
--- buffer pointer, and messagesSent counter. It also handles when the worker should be stop sending messages
+-- buffer pointer, and s_messagesSent counter. It also handles when the worker should stop sending messages
 message_logic : process(ctl_in.clk)
 begin
   if rising_edge(ctl_in.clk) then
     if ctl_in.reset = '1' then
-      bytes_left  <= (others => '0');
-      byte_enable  <= (others => '0');
-      opcode <= (others => '0');
+      s_bytes_left  <= (others => '0');
+      s_byte_enable  <= (others => '0');
+      s_opcode <= (others => '0');
       s_ready_r <= '0';
       s_eom_r <=  '0';
       s_som_r <= '0';
       s_som_next_r <= '0';
       s_valid_r <= '0';
-      messagesToSend <= (others => '0');
-      finished <= '0';
-      msg_ptr <= (others => '0');
-      messagesSent <= (others => '0');
+      s_messagesToSend <= (others => '0');
+      s_finished <= '0';
+      s_msg_ptr <= (others => '0');
+      s_messagesSent <= (others => '0');
+      s_out_eof <= '0';
     -- Grab the value of messagesToSend once it gets it's initial value
-    elsif (ctl_in.state = INITIALIZED_e) then
-      messagesToSend <= props_in.messagesToSend;
-    elsif (ctl_in.is_operating = '1'and finished = '0' and out_in.ready = '1') then
+    elsif (ctl_in.control_op = START_e) then
+      s_messagesToSend <= props_in.messagesToSend;
+    elsif (s_finished = '0' and out_in.ready = '1') then
         -- Report an error if messagesToSend is greater than numMessagesMax
-        if (messagesToSend > numMessagesMax) then
+        if (s_messagesToSend > numMessagesMax) then
           report "messagesToSend is greater than numMessagesMax. messagesToSend must be less than or equal to numMessagesMax" severity failure;
         end if;
         s_som_r <= s_som_next_r;
         if s_eom_r = '1' then
             s_ready_r <= '0';
         end if;
-        -- No more messages to send so send a ZLM of opcode 0 and set the worker to be finished
-        if messagesToSend = 0 then
-            byte_enable <= (others=>'0');
-            opcode <= (others=>'0');
-            s_som_r <= '1';
-            s_eom_r <= '1';
+        -- No more messages to send. Send an eof
+        if s_messagesToSend = 0 then
+            s_byte_enable <= (others=>'0');
+            s_opcode <= (others=>'0');
+            s_som_r <= '0';
+            s_eom_r <= '0';
             s_ready_r <= '1';
             s_valid_r <= '0';
-            messagesSent <=  messagesSent + 1;
-            finished <= '1';
+            s_out_eof <= '1';
         -- Starting a message
-        elsif (bytes_left = 0 and s_som_next_r = '0') then
+        elsif (s_bytes_left = 0 and s_som_next_r = '0') then
             s_eom_r<= '0';
             s_som_next_r <= '1';
-            bytes_left <= props_in.messages(to_integer(msg_ptr));
-            opcode <= std_logic_vector(resize(props_in.messages(to_integer(msg_ptr+1)), opcode'length));
-            byte_enable <= read_bytes(props_in.messages(to_integer(msg_ptr)));
+            s_bytes_left <= props_in.messages(to_integer(s_msg_ptr));
+            s_opcode <= std_logic_vector(resize(props_in.messages(to_integer(s_msg_ptr+1)), s_opcode'length));
+            s_byte_enable <= read_bytes(props_in.messages(to_integer(s_msg_ptr)));
         -- Handle sending a message that is a ZLM
-        elsif (bytes_left = 0 and s_som_next_r = '1') then
+        elsif (s_bytes_left = 0 and s_som_next_r = '1') then
             s_som_next_r <= '0';
-            byte_enable <= (others=>'0');
+            s_byte_enable <= (others=>'0');
             s_eom_r <= '1';
             s_ready_r <= '1';
             s_valid_r <= '0';
-            msg_ptr <= msg_ptr + 2;
-            messagesToSend <= messagesToSend - 1;
-            messagesSent <=  messagesSent + 1;
+            s_msg_ptr <= s_msg_ptr + 2;
+            s_messagesToSend <= s_messagesToSend - 1;
+            s_messagesSent <=  s_messagesSent + 1;
         -- Keep track of how many bytes are left for the current message and set byte enable
-        elsif (bytes_left > 4) then
+        elsif (s_bytes_left > 4) then
             s_som_next_r <= '0';
-            bytes_left <= bytes_left - 4;
-            byte_enable <= (others => '1');
+            s_bytes_left <= s_bytes_left - 4;
+            s_byte_enable <= (others => '1');
             s_ready_r <= '1';
             s_valid_r <= '1';
         -- At the end of the message
-        elsif (bytes_left <= 4) then
+        elsif (s_bytes_left <= 4) then
             s_som_next_r <= '0';
-            bytes_left <= (others=>'0');
+            s_bytes_left <= (others=>'0');
             s_ready_r <= '1';
             s_valid_r <= '1';
             s_eom_r <= '1';
-            msg_ptr <= msg_ptr + 2;
-            messagesToSend <= messagesToSend - 1;
-            byte_enable <= read_bytes(bytes_left);
-            messagesSent <=  messagesSent + 1;
+            s_msg_ptr <= s_msg_ptr + 2;
+            s_messagesToSend <= s_messagesToSend - 1;
+            s_byte_enable <= read_bytes(s_bytes_left);
+            s_messagesSent <=  s_messagesSent + 1;
         end if;
-    -- Set s_ready_r low after ZLM of opcode 0 is sent
-    elsif (finished = '1' and out_in.ready = '1') then
+    -- Set set finished high and s_ready_r low after EOF is sent
+    elsif (s_out_eof = '1') then
+        s_finished <= '1';
         s_ready_r <= '0';
     end if;
   end if;
 end process;
 
--- The process handles incrementing the data buffer pointer and dataSent counter
+-- The process handles incrementing the data buffer pointer and s_dataSent counter
 data_logic : process(ctl_in.clk)
 begin
     if rising_edge(ctl_in.clk) then
       if ctl_in.reset = '1' then
-         data_ptr <= (others => '0');
-         dataSent <= (others => '0');
-      elsif (ctl_in.is_operating = '1'and finished = '0' and out_in.ready = '1' and out_valid = '1') then
-        dataSent <= dataSent + 1;
+         s_data_ptr <= (others => '0');
+         s_dataSent <= (others => '0');
+      elsif (s_finished = '0' and out_in.ready = '1' and s_out_valid = '1') then
+        s_dataSent <= s_dataSent + 1;
         if (props_in.dataRepeat = '1' and s_eom_r = '1') then
-            data_ptr <= (others => '0');
-        elsif (data_ptr < numDataWords-1) then
-            data_ptr <= data_ptr + 1;
+            s_data_ptr <= (others => '0');
+        elsif (s_data_ptr < numDataWords-1) then
+            s_data_ptr <= s_data_ptr + 1;
         end if;
       end if;
     end if;

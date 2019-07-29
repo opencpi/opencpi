@@ -7,12 +7,10 @@
   <!--
   This configuration will use up 94.29% (132 out 140 36Kb Blocks) of the Block RAM on the Zynq-7020
 
-  Since the raw property address (props_in.raw.address) is currently 16 bits wide and data and metadata are raw properties that contain 4 byte words,
-  the total address space for these properties is (2^16)/4. The framework does not throw an error when the total number of elements between the
-  two array properties exceeds (2^16)/4 so the properties will not be filled correctly. This failure is run time and the application will successfully
-  execute. Therefore the final property values for this configuration will not be correct because the total number elements between the 2 properties
-  is 100048 which exceeds (2^16)/4. Once AV-4254 is addressed to change the raw.address from 16 to 32, the new
-  address space limit will be (2^32)/4 and the final property values will be correct.
+  When unit testing the worker with this config, the framework verify_case script (which calls the verify script)
+  errors out because this config creates a large array and creates a long argument list for the verify_case script.
+  See AV-5611. Once AV-5610/AV-5611 are resolved uncomment this configuration.
+
   <configuration id='1'>
     <parameter name='numRecords' value='512'/>
     <parameter name='numDataWords' value='98000'/>

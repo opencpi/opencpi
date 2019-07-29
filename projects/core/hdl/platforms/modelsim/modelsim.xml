@@ -4,6 +4,7 @@
   <!-- All platform workers must provide these two ports -->
   <metadata master='true'/> <!-- access to container metadata via the platform worker -->
   <timebase master='true'/> <!-- providing a timebase for the time service -->
+  <cpmaster master='true'/>
   <sdp name='sdp' master='true'/>
   <!-- Declare and parameterize the time_server device worker for this platform -->
   <device worker='time_server'>

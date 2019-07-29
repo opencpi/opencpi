@@ -41,7 +41,7 @@ struct Connection {
   size_t m_count; // width of all attachments
   Connection(OU::Assembly::Connection *c, const char *name = NULL);
   const char *attachPort(InstancePort &ip, size_t index = 0); //, size_t count = 0);
-  void setClock(Clock &c);
+  bool setClock(Clock &c);
   const char *cname() const { return m_name.c_str(); }
 };
 typedef std::list<Connection*> Connections;

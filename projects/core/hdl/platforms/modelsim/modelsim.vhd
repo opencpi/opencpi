@@ -22,33 +22,74 @@
 -- This file initially contains the architecture skeleton for worker: modelsim
 
 library IEEE, ocpi, platform, sdp;
-use IEEE.std_logic_1164.all, ieee.numeric_std.all, ocpi.types.all, platform.platform_pkg.all,
-  sdp.all;
+use IEEE.std_logic_1164.all, ieee.numeric_std.all, ocpi.types.all, platform.platform_pkg.all, sdp.all;
 
 architecture rtl of modelsim_worker is
-  signal   ctl_clk          : std_logic;
-  signal   ctl_reset        : std_logic := '0';
-  signal   ctl_rst_n        : std_logic;
+  signal ctl_clk          : std_logic;
+  signal ctl_reset        : std_logic := '0';
+  signal ctl_reset_n      : std_logic;
+  signal sdp_clk          : std_logic;
+  signal sdp_reset        : std_logic := '0';
+  -- between the sim_sdp and sdp_node for control plane
+  signal sdp_sim_in       : sdp.sdp.s2m_t;
+  signal sdp_sim_out      : sdp.sdp.m2s_t;
+  signal sdp_sim_in_data  : dword_array_t(0 to to_integer(sdp_width)-1);
+  signal sdp_sim_out_data : dword_array_t(0 to to_integer(sdp_width)-1);
+  -- between sdp_node and sdp2cp_clk
+  signal sdp_cp_in        : sdp.sdp.s2m_t;
+  signal sdp_cp_out       : sdp.sdp.m2s_t;
+  signal sdp_cp_in_data   : dword_array_t(0 to to_integer(sdp_width)-1);
+  signal sdp_cp_out_data  : dword_array_t(0 to to_integer(sdp_width)-1);
 begin
-  ctl_rst_n <= not ctl_reset; -- for those that need it
+  ctl_reset_n        <= not ctl_reset;
   timebase_out.clk   <= ctl_clk;
   timebase_out.reset <= ctl_reset;
   timebase_out.ppsIn <= '0';
 
-  -- generate a clock
-  clock : sim_clk
+  -- generate clocks
+  control_clock : sim_clk
+    generic map(frequency => 100000000.0, offset => 0)
     port map(clk => ctl_clk, reset => ctl_reset);
+  sdp_clock : sim_clk
+    generic map(frequency => 120000000.0, offset => 3)
+    port map(clk => sdp_clk, reset => sdp_reset);
 
 
   sdp_sim_i : sdp.sdp.sdp_sim
     generic map(ocpi_debug => ocpi_debug,
                 sdp_width  => sdp_width)
-    port map(clk => ctl_clk,
-             reset => ctl_reset,
-             sdp_in => sdp_in,
-             sdp_out => sdp_out,
-             sdp_in_data => sdp_in_data,
-             sdp_out_data => sdp_out_data);
+    port map(clk => sdp_clk,
+             reset => sdp_reset,
+             sdp_in => sdp_sim_in,
+             sdp_out => sdp_sim_out,
+             sdp_in_data => sdp_sim_in_data,
+             sdp_out_data => sdp_sim_out_data);
+
+  sdp_node_i : component sdp.sdp.sdp_node_rv
+    port map( wci_Clk => ctl_clk,
+              wci_Reset_n => ctl_reset_n,
+              up_in => sdp_sim_out,
+              up_in_data => sdp_sim_out_data,
+              up_out => sdp_sim_in,
+              up_out_data => sdp_sim_in_data,
+              client_in => sdp_cp_in,
+              client_in_data => sdp_cp_in_data,
+              client_out => sdp_cp_out,
+              client_out_data => sdp_cp_out_data,
+              down_in => sdp_in,
+              down_in_data => sdp_in_data,
+              down_out => sdp_out,
+              down_out_data => sdp_out_data);
+
+  sdp2cp_clk_i : component sdp.sdp.sdp2cp_clk_rv
+    port map( wci_Clk => ctl_clk,
+              wci_Reset_n => ctl_reset_n,
+              cp_in => cp_in,
+              cp_out => cp_out,
+              sdp_in => sdp_cp_out,
+              sdp_in_data => sdp_cp_out_data,
+              sdp_out => sdp_cp_in,
+              sdp_out_data => sdp_cp_in_data);
 
   props_out.dna               <= (others => '0');
   props_out.nSwitches         <= (others => '0');

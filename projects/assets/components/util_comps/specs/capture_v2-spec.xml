@@ -5,9 +5,8 @@
   <Port Name="out" Producer="true" Optional="true"/>
 
   <Property Name="stopOnFull" Default="false" Type="bool" Initial="true" Description="
-  True - Stop capturing data and metadata when the data and metadata buffers are full. If the metadata buffer is full before the data
-  buffer, no more metadata and no more data will be captured. If the data buffer is full before the metadata buffer, no more data is
-  captured, but continue to capture metadata until the metadata buffer is full.
+  True - Stop capturing data and metadata when the data and metadata buffers are full. The data buffer will loop if it
+  is not full and the metadata buffer is not full. The metadata buffer will loop independently until it is not full.
   False - Wrap around and continue to capture data and metadata once the buffers are full.
   This stop functionality is independent of both the control plane 'stop' operation and 'finished' worker state."/>
 
@@ -15,10 +14,11 @@
 
   <Property Name="dataCount" Type="uLong" Volatile="true" Description="Counter of words captured."/>
 
-  <Property Name="numRecords" Parameter="true" Type="uLong" Default="256" Description="Number of metadata records/messages to be captured."/>
+  <Property Name="numRecords" Parameter="true" Type="uLong" Default="256" Description="This is the maximum number of metadata records
+  that may be captured for messages received (not necessarily the content)."/>
 
-  <Property Name="numDataWords" Parameter="true" Type="uLong"  Default="1024"  Description="Number of four byte data words stored in the data buffer.
-  If stopOnFull is true, meaning no wrap around, no more data will be captured once the data buffer is full."/>
+  <Property Name="numDataWords" Parameter="true" Type="uLong"  Default="1024"  Description="Maximum number of 32 bit data words that may be
+    stored in the data buffer. If stopOnFull is true, meaning no wrap around, no more data will be captured once the data buffer is full."/>
 
   <Property Name="numMetadataWords" Parameter="true" Type="uLong" Default="4" Description="Due to a limitation (AV-4292), cannot use constrained elements
   in unconstrained array declarations, so cannot directly set the second dimension for the metadata property to 4. The number of metadata words must
@@ -30,11 +30,12 @@
 
   <Property Name="dataFull" Type="bool" Default="false" Volatile="true" Initial="true" Description="Data buffer is full flag."/>
 
-  <Property Name="stopZLMOpcode" Type="uChar" Default="0" Initial="true" Description="Opcode associated with the ZLM which indicates the application is 'done'."/>
+  <Property Name="stopZLMOpcode" Type="uChar" Default="0" Initial="true" Description="Opcode associated with the ZLM which causes the worker to become finished."/>
 
-  <Property Name="stopOnZLM" Type="bool"  Default="false" Initial="true" Description="Indicates stopping on ZLM of stopZLMOpcode."/>
+  <Property Name="stopOnZLM" Type="bool"  Default="false" Initial="true" Description="Indicates causing the worker to become finished on ZLM of stopZLMOpcode."/>
 
-  <Property Name="stopOnEOF" Type="bool"  Default="true" Initial="true" Description="Indicates stopping on EOF."/>
+  <Property Name="stopOnEOF" Type="bool"  Default="true" Initial="true" Description="Indicates causing the worker to become finished on EOF. stopOnEOF is always
+  regarded as true now since the only reason to be false was the opcode-0-ZLM aliasing that no longer exists."/>
 
   <Property Name="metadata" Type="uLong" ArrayDimensions="numRecords, numMetadataWords" Volatile="true" Description="Multidimensional array containing metadata records."/>
 

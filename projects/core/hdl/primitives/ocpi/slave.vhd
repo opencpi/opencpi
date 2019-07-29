@@ -82,7 +82,7 @@ entity slave is
     ready            : out Bool_t; -- data can be taken
     -- user visible metadata
     som, eom, valid, eof, abort : out Bool_t;
-    data             : out  std_logic_vector(n_bytes*byte_width-1 downto 0);
+    data             : out  std_logic_vector(n_bytes*max(1,byte_width)-1 downto 0);
     -- only used if bytes are required (zlm or byte size < data width)
     byte_enable      : buffer std_logic_vector(n_bytes-1 downto 0);
     -- only used if precise is required
@@ -114,7 +114,7 @@ architecture rtl of slave is
   constant abort_bit   : natural := last_bit -1;
   constant burst_bits  : natural := abort_bit - 1;
   constant opcode_bits : natural := burst_bits - burst_width;
-  function pack(data   : std_logic_vector(data_width - 1 downto 0);
+  function pack(data   : std_logic_vector(max(data_width,1) - 1 downto 0);
                 enable : std_logic_vector(n_bytes - 1 downto 0);
                 last   : std_logic;
                 abort  : std_logic;
@@ -122,7 +122,11 @@ architecture rtl of slave is
                 opcode : std_logic_vector(max(1,opcode_width)-1 downto 0))
     return std_logic_vector is
   begin
-    return data & enable & last & abort & burst & opcode;
+    if data_width /= 0 then
+      return data & enable & last & abort & burst & opcode;
+    else
+      return enable & last & abort & burst & opcode;
+    end if;
   end pack;
 
   -- state of message processing
@@ -132,7 +136,7 @@ architecture rtl of slave is
   signal eom_added_r    : bool_t; -- an EOM was added to the last worker deque
   -- signals derived from OCP fed into the fifo (other than raw OCP signals)
   signal ocp_last       : std_logic;
-  signal ocp_data       : std_logic_vector(data_width - 1 downto 0);
+  signal ocp_data       : std_logic_vector(max(1,data_width) - 1 downto 0);
   signal ocp_busy_r     : bool_t; -- busy output to OCP
   -- input signals to the fifo;
   signal fifo_in        : std_logic_vector(fifo_width - 1 downto 0);
@@ -189,7 +193,9 @@ begin
   ----------------------------------
   -- fifo outputs and dequeing etc.
   fifo_eof     <= fifo_out(abort_bit) and at_end_r;
-  data         <= fifo_out(data_bits downto enable_bits+1);
+  gen0w: if data_width /= 0 generate
+    data       <= fifo_out(data_bits downto enable_bits+1);
+  end generate gen0w;
   byte_enable  <= fifo_out(enable_bits downto last_bit+1);
   fifo_eom    <= fifo_out(last_bit);
   burst_length <= fifo_out(burst_bits downto opcode_bits+1);

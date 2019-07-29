@@ -21,7 +21,7 @@
 #  $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_trn_v6_gtx_x4_250 \
 #  $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_hip_s4gx_gen2_x4_128
 # These are order-sensitive
-PrimitiveLibraries=bsv fixed_float ocpi util platform axi sdp sync
+PrimitiveLibraries=bsv fixed_float ocpi util cdc platform axi sdp sync
 # All cores here are imported
 PrimitiveCores=
 

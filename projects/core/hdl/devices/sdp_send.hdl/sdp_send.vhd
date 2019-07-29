@@ -19,7 +19,7 @@
 -- The SDP Sender, to take data from a WSI port, and put it in memory, making it available
 -- for someone to read it out and acknowledge that reading.
 
-library IEEE, ocpi, util, bsv, sdp;
+library IEEE, ocpi, util, bsv, sdp, cdc;
 use IEEE.std_logic_1164.all, ieee.numeric_std.all;
 use ocpi.types.all, ocpi.util.all, sdp.all, sdp.sdp.all;
 architecture rtl of worker is
@@ -92,6 +92,8 @@ architecture rtl of worker is
   signal eof_sent_r        : bool_t; -- input eof indication conveyed/enqueued
 
   -- SDP back side --
+  signal sdp_reset              : std_logic;
+  signal ctl2sdp_reset          : std_logic;
   signal bramb_addr             : bram_addr_t;
   signal bramb_addr_r           : bram_addr_t;
   signal bramb_out              : std_logic_vector(sdp_width_c*32-1 downto 0);
@@ -104,7 +106,7 @@ architecture rtl of worker is
   signal sdp_next_msg_addr      : bram_addr_t;
   signal sdp_msg_addr_r         : bram_addr_t;
   -- State that changes for each remote
-  type sdp_phase_t is (idle_e, data_e, meta_e, flag_e, between_remotes_e);
+  type sdp_phase_t is (idle_e, wait_e, data_e, meta_e, flag_e, between_remotes_e);
   signal sdp_remote_phase_r     : sdp_phase_t;
   subtype meta_dw_count_t is unsigned(meta_length_width_c-2 downto 0);
   signal sdp_msg_dws_left_r     : meta_dw_count_t;
@@ -114,6 +116,8 @@ architecture rtl of worker is
   signal sdp_segment_addr_r     : whole_addr_t;
   signal sdp_whole_addr         : whole_addr_t;
   signal sdp_segment_dws_left_r : meta_dw_count_t;
+  -- sdp clock domain versions of control signals
+  signal sdp_is_operating       : bool_t;
 
   ---- Global state
   signal buffer_size_fault_r : bool_t;
@@ -121,8 +125,8 @@ architecture rtl of worker is
   signal truncation_fault_r  : bool_t;
   signal operating_r         : bool_t; -- were we operating in the last cycle?
   signal messageCount        : ulong_t;
-  signal truncatedMessage    : ulong_t; -- first one
-  signal truncatedData       : ulong_t; -- first one
+  signal truncatedMessage_r  : ulong_t; -- first one
+  signal truncatedData       : bool_t; -- first one
   signal ctl_reset_n         : std_logic;
   signal sdp_reset_n         : std_logic;
   signal taking              : bool_t;
@@ -150,12 +154,10 @@ begin
   -- Take even if bad write to send the truncation error in the metadata
   taking             <= can_take and in_in.ready;
   in_out.take        <= taking;
+  in_out.clk         <= sdp_in.clk;
   ctl_out.finished   <= buffer_size_fault_r or doorbell_fault_r;
-  props_out.faults   <= resize(buffer_size_fault_r & doorbell_fault_r & truncation_fault_r,
-                               uchar_t'length);
+  props_out.faults(props_out.faults'length-1 downto 3) <= (others => '0');
   props_out.sdp_id   <= resize(sdp_in.id, props_out.sdp_id'length);
-  props_out.truncatedMessage <= truncatedMessage;
-  props_out.truncatedData    <= truncatedData;
   nbytes             <= be2bytes(in_in.byte_enable) when its(in_in.valid) else (others => '0');
   md_in.length       <= (resize(buffer_offset_r, meta_length_width_c) sll addr_shift_c) + nbytes;
   md_in.eof          <= in_in.eof;
@@ -163,14 +165,54 @@ begin
   md_in.opcode       <= in_in.opcode;
   md_enq             <= to_bool(its(can_take) and ((in_in.ready and its(in_in.eom)) or
                                                    (in_in.eof and not its(eof_sent_r))));
+  -- cross these bits from sdp clock domain to ctl clock domain
+  -- these are levels that do not relate to each other so the simplest multi-bit cdc is ok here
+  -- no input register is needed since these are already registered
+  fault_bits : component cdc.cdc.bits
+      generic map(
+        width => 3)
+      port map(
+        src_clk           => sdp_in.clk,
+        src_rst           => sdp_in.reset,
+        src_in(0)         => truncation_fault_r,
+        src_in(1)         => doorbell_fault_r,
+        src_in(2)         => buffer_size_fault_r,
+        dst_clk           => ctl_in.clk,
+        dst_rst           => ctl_in.reset,
+        unsigned(dst_out) => props_out.faults(2 downto 0));
+
+  truncatedData <= taking and in_in.valid and buffer_maxed_r;
+  -- cross from sdp clock domain to ctl clock domain
+  -- increment for each cycle where the input is high
+  trunc_data : component cdc.cdc.count_up
+    generic map(width => props_out.truncatedData'length)
+    port map   (src_clk           => sdp_in.clk,
+                src_rst           => sdp_in.reset,
+                src_in            => truncatedData, -- a count-up pulse
+                dst_clk           => ctl_in.clk,
+                dst_rst           => ctl_in.reset,
+                dst_out           => props_out.truncatedData);
+  -- This crosses clock domain (sdp->ctl), but it is an end-of-run debug thing so
+  -- proper CDC is unnecessary
+  props_out.truncatedMessage <= truncatedMessage_r;
+  -- trunc_mesg : component cdc.cdc.bits
+  --   generic map(width => props_out.truncatedMessage'length)
+  --   port map   (src_clk           => sdp_in.clk,
+  --               src_rst           => sdp_in.reset,
+  --               src_in            => std_logic_vector(truncatedMessage_r),
+  --               dst_clk           => ctl_in.clk,
+  --               dst_rst           => ctl_in.reset,
+  --               unsigned(dst_out) => props_out.truncatedMessage);
+
   -- Instance the message data BRAM
   -- Since the BRAM is single cycle, there is no handshake.
+  -- note this has different clocks on both ports which we do not need
   bram : component util.util.BRAM2
     generic map(PIPELINED  => 0,
                 ADDR_WIDTH => addr_width_c,
                 DATA_WIDTH => sdp_width_c * 32,
                 MEMSIZE    => memory_depth_c)
-    port map   (CLKA       => ctl_in.clk,
+    port map   (CLKA       => sdp_in.clk,
                 ENA        => '1',
                 WEA        => will_write,
                 ADDRA      => std_logic_vector(bram_addr_actual),
@@ -182,46 +224,47 @@ begin
                 ADDRB      => std_logic_vector(bramb_addr),
                 DIB        => slv0(sdp_width_c*32),
                 DOB        => bramb_out);
-  
-  -- wsi to sdp, telling SDP to send next buffer with this metadata
-  metafifo : component bsv.bsv.SyncFIFO
-   generic map(dataWidth    => metawidth_c,
-               depth        => roundup_2_power_of_2(max_buffers_c), -- must be power of 2
-               indxWidth    => width_for_max(roundup_2_power_of_2(max_buffers_c)-1))
-   port map   (sCLK         => ctl_in.clk,
-               sRST         => ctl_reset_n,
-               dCLK         => sdp_in.clk,
-               sENQ         => std_logic(md_enq),
-               sD_IN        => meta2slv(md_in),
-               sFULL_N      => md_not_full,
-               dDEQ         => md_deq,
-               dD_OUT       => md_out_slv,
-               dEMPTY_N     => md_not_empty);
+
+  -- wsi to sdp, telling SDP to send next buffer with this metadata, same clock domain
+  metafifo : component bsv.bsv.SizedFifo
+   generic map(p1Width      => metawidth_c,
+               p2depth      => roundup_2_power_of_2(max_buffers_c),
+               p3cntr_width => width_for_max(roundup_2_power_of_2(max_buffers_c)-1))
+   port map   (CLK     => sdp_in.clk,
+               RST     => sdp_reset_n,
+               ENQ     => std_logic(md_enq),
+               D_IN    => meta2slv(md_in),
+               FULL_N  => md_not_full,
+               DEQ     => md_deq,
+               D_OUT   => md_out_slv,
+               EMPTY_N => md_not_empty,
+               CLR     => '0');
 
   -- A sync fifo to carry doorbells to the SDP clock domain
-  -- doorbell to SDP, telling SDP that a destination buffer has become empty/available
-  flagfifo : component bsv.bsv.SyncFIFO
-   generic map(dataWidth    => remote_idx_t'length,
-               depth        => 2, -- must be power of 2
-               indxWidth    => width_for_max(2-1))
-   port map   (sCLK         => ctl_in.clk, -- maybe syncfifo later
-               sRST         => ctl_reset_n,
-               dCLK         => sdp_in.clk,
-               sENQ         => std_logic(flag_enq),
-               sD_IN        => std_logic_vector(flag_in_remote),
-               sFULL_N      => flag_not_full,
-               dDEQ         => flag_deq,
-               dD_OUT       => flag_out_slv,
-               dEMPTY_N     => flag_not_empty);
+  -- telling SDP that a destination buffer has become empty/available
+  -- control clock domain to sdp clock domain
+  flagfifo : component cdc.cdc.fifo
+   generic map(width       => remote_idx_t'length,
+               depth       => 2) -- must be power of 2
+   port map   (src_CLK     => ctl_in.clk, -- maybe syncfifo later
+               src_RST     => ctl_in.reset,
+               dst_CLK     => sdp_in.clk,
+               src_ENQ     => std_logic(flag_enq),
+               src_IN      => std_logic_vector(flag_in_remote),
+               src_FULL_N  => flag_not_full,
+               dst_DEQ     => flag_deq,
+               dst_OUT     => flag_out_slv,
+               dst_EMPTY_N => flag_not_empty);
 
   -- A sync pulse to carry buffer consumption events
   -- The sdp telling WSI that a local buffer has become empty
-  cpulse: component bsv.bsv.SyncPulse
-    port map  (sCLK         => sdp_in.clk,
-               sRST         => sdp_reset_n,
-               dCLK         => ctl_in.clk,
-               sEN          => md_deq,
-               dPulse       => buffer_consumed);
+--  cpulse: component bsv.bsv.SyncPulse
+--    port map  (sCLK         => sdp_in.clk,
+--               sRST         => sdp_reset_n,
+--               dCLK         => ctl_in.clk,
+--               sEN          => md_deq,
+--               dPulse       => buffer_consumed);
+  buffer_consumed <= md_deq;
   -- source side
   flag_enq       <= props_in.remote_doorbell_any_written;
 --  flag_in_remote <= props_in.raw.address(flag_in_remote'length-1+2 downto 2); -- ulongs/dws
@@ -230,11 +273,24 @@ begin
   flag_out       <= to_integer(remote_idx_t(flag_out_slv));
   flag_deq       <= flag_not_empty; -- output of FIFO always processed immediately
 
+  is_op : component cdc.cdc.bit
+    port map   (src_clk           => ctl_in.clk,
+                src_rst           => ctl_in.reset,
+                src_in            => ctl_in.is_operating,
+                src_en            => '1',
+                dst_clk           => sdp_in.clk,
+                dst_rst           => sdp_in.reset,
+                dst_out           => sdp_is_operating);
+  ctl2sdp_rst : component cdc.cdc.reset
+    port map   (src_rst           => ctl_in.reset,
+                dst_clk           => sdp_in.clk,
+                dst_rst           => ctl2sdp_reset);
+  sdp_reset <= sdp_in.reset or ctl2sdp_reset;
   -- the process going from wsi into the data bram and metadata fifo
-  wsi2bram : process(ctl_in.clk)
+  wsi2bram : process(sdp_in.clk)
   begin
-    if rising_edge(ctl_in.clk) then
-      if ctl_in.reset = '1' then
+    if rising_edge(sdp_in.clk) then
+      if sdp_reset = '1' then
         buffer_offset_r     <= (others => '0');
         buffer_maxed_r      <= bfalse;
         buffer_index_r      <= (others => '0');
@@ -243,20 +299,19 @@ begin
         buffer_size_fault_r <= bfalse;
         doorbell_fault_r    <= bfalse;
         truncation_fault_r  <= bfalse;
-        truncatedMessage    <= (others => '0');
-        truncatedData       <= (others => '0');
+        truncatedMessage_r  <= (others => '0');
         messageCount        <= (others => '0');
         eof_sent_r          <= bfalse;
       elsif not operating_r then
         -- initialization on first transition to operating.  poor man's "start".
-        if its(ctl_in.is_operating) then
+        if its(sdp_is_operating) then
           operating_r   <= btrue;
           if props_in.buffer_size > memory_bytes then
             buffer_size_fault_r <= btrue;
           end if;
         end if;
         buffer_avail_r <= resize(props_in.buffer_count, buffer_avail_r'length);
-      elsif not ctl_in.is_operating then
+      elsif not sdp_is_operating then
         operating_r <= bfalse;
       else
         if its(md_enq) then
@@ -279,9 +334,8 @@ begin
           if its(in_in.valid) then
             if its(buffer_maxed_r) then
               if not truncation_fault_r then
-                truncatedMessage <= messageCount;
+                truncatedMessage_r <= messageCount;
               end if;
-              truncatedData <= truncatedData + 1;
               truncation_fault_r <= '1';
             elsif buffer_offset_r = max_offset and not its(in_in.eom) then
               buffer_maxed_r <= btrue;
@@ -334,12 +388,12 @@ begin
   with sdp_remote_phase_r select sdp_whole_addr <=
     sdp_segment_addr_r                                  when data_e,
     sdp_remotes(to_integer(sdp_remote_idx_r)).meta_addr when meta_e,
-    sdp_remotes(to_integer(sdp_remote_idx_r)).flag_addr when flag_e | idle_e | between_remotes_e;
+    sdp_remotes(to_integer(sdp_remote_idx_r)).flag_addr when flag_e | idle_e | between_remotes_e | wait_e;
 
   sdp_out.sdp.header.addr    <= sdp_whole_addr(sdp.sdp.addr_width-1 downto 0);
   sdp_out.sdp.header.extaddr <= sdp_whole_addr(whole_addr_bits_c-1 downto sdp.sdp.addr_width);
   sdp_out.sdp.eop            <= sdp_last_in_segment;
-  sdp_out.sdp.valid          <= to_bool(sdp_remote_phase_r /= idle_e);
+  sdp_out.sdp.valid          <= to_bool(sdp_remote_phase_r /= idle_e and sdp_remote_phase_r /= wait_e);
   sdp_out.sdp.ready          <= bfalse;   -- we are write-only, never accepting an inbound frame
   sdp_out.dropCount          <= (others => '0');
 g0: for i in 0 to sdp_width_c-1 generate
@@ -478,7 +532,9 @@ g0: for i in 0 to sdp_width_c-1 generate
         sdp_msg_idx_r <= resize(props_in.buffer_count - 1, sdp_msg_idx_r'length);
       else
         if md_not_empty = '1' then
-          if sdp_remote_phase_r = idle_e then
+          if sdp_remote_phase_r = idle_e and md_out.length <= sdp_width_c*4 then
+            sdp_remote_phase_r <= wait_e; -- give a cycle for initial data to get through the BRAM
+          elsif sdp_remote_phase_r = idle_e or sdp_remote_phase_r = wait_e then
             if remote_is_ready(0) then
               -- We are starting to send a message to all remotes.  bram addr was already valid
               sdp_msg_addr_r <= sdp_next_msg_addr;

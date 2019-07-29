@@ -1,5 +1,4 @@
-<HdlDevice language="vhdl" version='2' Libraries='sdp platform axi'>
->
+<HdlDevice language="vhdl" version='2' Libraries='sdp platform axi cdc'>
   <componentspec/>
   <xi:include href='sdp-properties.xml'/>
   <!-- the number of messages that preceded the first one that was truncated -->
@@ -9,5 +8,5 @@
   <sdp name='sdp'/>
   <streaminterface implname='in'
 		   datawidth='sdp_width*32' numberofopcodes='256' datavaluewidth='8'
-		   zerolengthmessages='true'/>
+		   zerolengthmessages='true' myoutputclock='1'/>
 </HdlDevice>

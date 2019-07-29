@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -22,96 +22,87 @@ This script defines the functions used to validate the data captured by the Capt
 by the verify.py script.
 """
 
-# import os.path
-# import struct
 import sys
-import opencpi.colors as color
 import numpy as np
 
 
 # For testScenario 1
 def verify_metadataCount1(metadataCount):
-    # Because no messages were sent, metadataCount should be 1; 1 because a ZLM of opcode 0 is sent.
-    if metadataCount != 1:
-        print "    " + color.RED + color.BOLD + "FAIL, metadataCount is", metadataCount,  "while expected value is" + color.END, 1
+    # Because no messages were sent, metadataCount should be 0
+    if metadataCount != 0:
+        print ("    metadataCount is", metadataCount,  "while expected value is 0")
         sys.exit(1)
     else:
-        print "    PASS: metadataCount is correct"
+        print ("    metadataCount is correct")
 
 # For testScenario 2 and 4
 def verify_metadataCount2(metadataCount, numRecords, stopOnFull):
-        if stopOnFull == "false":
-            # metadataCount should be numRecords + 1, since made metadata full and got a ZLM of opcode 0
-            if metadataCount != numRecords+1:
-                print "    " + color.RED + color.BOLD + "FAIL, metadataCount is", metadataCount,  "while expected value is" + color.END, numRecords+1
-                sys.exit(1)
-            else:
-                print "    PASS: metadataCount is correct"
-        elif stopOnFull == "true":
-            if metadataCount != numRecords:
-                print "    " + color.RED + color.BOLD + "FAIL, metadataCount is", metadataCount,  "while expected value is" + color.END, numRecords
-                sys.exit(1)
-            else:
-                print "    PASS: metadataCount is correct"
+    # metadataCount should be numRecords because made metadata full
+    if metadataCount != numRecords:
+        print ("    metadataCount is", metadataCount,  "while expected value is", numRecords)
+        sys.exit(1)
+    else:
+        print ("    metadataCount is correct")
 
 # For testScenario 3
 def verify_metadataCount3(metadataCount, numRecords, stopOnFull):
     if (stopOnFull == "false"):
-        # metadataCount should be 3 because 2 messages are sent in this scenario and then there's a ZLM of opcode 0
-        if metadataCount != 3:
-            print "    " + color.RED + color.BOLD + "FAIL, metadataCount is", metadataCount,  "while expected value is" + color.END, 3
+        # metadataCount should be 2 messages are sent in this scenario
+        if metadataCount != 2:
+            print ("    metadataCount is", metadataCount,  "while expected value is 2")
             sys.exit(1)
         else:
-            print "    PASS: metadataCount is correct"
+            print ("    metadataCount is correct")
     elif (stopOnFull == "true"):
-        if numRecords >= 3:
-            # metadataCount should be 3 because 2 messages are sent in this scenario and then there's a ZLM of opcode 0
-            if metadataCount != 3:
-                print "    " + color.RED + color.BOLD + "FAIL, metadataCount is", metadataCount,  "while expected value is" + color.END, 3
-                sys.exit(1)
-            else:
-                print "    PASS: metadataCount is correct"
-        elif numRecords == 2:
-            # if numRecords is 2 then only 2 messages are captured when stopOnFull is true. So metadataCount is 2.
+        if numRecords >= 2:
+            # metadataCount should be 2 messages are sent in this scenario
             if metadataCount != 2:
-                print "    " + color.RED + color.BOLD + "FAIL, metadataCount is", metadataCount,  "while expected value is" + color.END, 2
+                print ("    metadataCount is", metadataCount,  "while expected value is 2")
                 sys.exit(1)
             else:
-                print "    PASS: metadataCount is correct"
+                print ("    metadataCount is correct")
         else:
             # if numRecords is 1 then only 1 messages is captured when stopOnFull is true. So metadataCount is 1.
             if metadataCount != 1:
-                print "    " + color.RED + color.BOLD + "FAIL, metadataCount is", metadataCount,  "while expected value is" + color.END, 1
+                print ("    metadataCount is", metadataCount,  "while expected value is 1")
                 sys.exit(1)
             else:
-                print "    PASS: metadataCount is correct"
+                print ("    metadataCount is correct")
 
+# For testScenario 5
+def verify_metadataCount4(metadataCount):
+    # Only one ZLM was sent so metadataCount should be 1
+    if metadataCount != 1:
+        print ("    metadataCount is", metadataCount,  "while expected value is 1")
+        sys.exit(1)
+    else:
+        print ("    metadataCount is correct")
 
-# For testScenario 1 and 2
+# For testScenario 1, 2, and 5
 def verify_dataCount1(dataCount):
     # dataCount should be 0 since no data sent in these scenarios
     if dataCount != 0:
-        print "    " + color.RED + color.BOLD + "FAIL, dataCount is", dataCount,  "while expected value is" + color.END, 0
+        print ("    dataCount is", dataCount,  "while expected value is 0")
         sys.exit(1)
     else:
-        print "    PASS: dataCount is correct"
+        print ("    dataCount is correct")
 
 # For testScenario 3
 def verify_dataCount2(dataCount, numDataWords, stopOnFull):
     if stopOnFull == "false":
         # This scenario sends numDataWords+1 amount of data, so dataCount should be numDataWords+1 when stopOnFull is false
         if dataCount != numDataWords+1:
-            print "    " + color.RED + color.BOLD + "FAIL, dataCount is", dataCount,  "while expected value is" + color.END, numDataWords+1
+            print ("    dataCount is", dataCount,  "while expected value is", numDataWords+1)
             sys.exit(1)
         else:
-            print "    PASS: dataCount is correct"
+            print ("    dataCount is correct")
     elif stopOnFull == "true":
         # For this scenario dataCount should be numDataWords when stopOnFull is true
         if dataCount != numDataWords:
-            print "    " + color.RED + color.BOLD + "FAIL, dataCount is", dataCount,  "while expected value is" + color.END, numDataWords
+            print ("    dataCount is", dataCount,  "while expected value is", numDataWords)
             sys.exit(1)
         else:
-            print "    PASS: dataCount is correct"
+            print ("    dataCount is correct")
 
 # For testScenario 4
 def verify_dataCount3(dataCount, numDataWords, metadataCount, numRecords,stopOnFull):
@@ -119,89 +110,57 @@ def verify_dataCount3(dataCount, numDataWords, metadataCount, numRecords,stopOnF
         # In this scenario, numDataWords amount of data is sent and then numRecords-5 amount of data is sent.
         # So when stopOnFull is true, dataCount should be numDataWords+numRecords-5
         if dataCount != numDataWords+numRecords-5:
-            print "    " + color.RED + color.BOLD + "FAIL, dataCount is", dataCount,  "while expected value is" + color.END, numDataWords+numRecords-5
+            print ("    dataCount is", dataCount,  "while expected value is", numDataWords+numRecords-5)
             sys.exit(1)
         else:
-            print "    PASS: dataCount is correct"
+            print ("    dataCount is correct")
     elif stopOnFull == "true":
         # For this scenario dataCount should be numDataWords when stopOnFull is true
         if dataCount != numDataWords:
-            print "    " + color.RED + color.BOLD + "FAIL, dataCount is", dataCount,  "while expected value is" + color.END, numDataWords
+            print ("    dataCount is", dataCount,  "while expected value is", numDataWords)
             sys.exit(1)
         else:
-            print "    PASS: dataCount is correct"
+            print ("    dataCount is correct")
 
 # For all testScenario
 def verify_status(metaFull, dataFull, dataCount, numDataWords,metadataCount, numRecords):
     # Neither data or metadata are full
     if (dataCount < numDataWords and metadataCount < numRecords):
         if (metaFull != "false" or dataFull != "false"):
-            print "    " + color.RED + color.BOLD + "FAIL, metaFull and/or dataFull are not correct"
-            print "    " + "metaFull and dataFull are " + metaFull + " and " + dataFull + " while expected values are" + color.END, "false and false"
+            print ("    metaFull and dataFull are " + metaFull + " and " + dataFull + " while expected values are false and false")
             sys.exit(1)
         else:
-            print "    PASS: status is correct"
+            print ("    status is correct")
     # Only metadata is full
     elif (metadataCount >= numRecords and dataCount < numDataWords):
         if (metaFull != "true" or dataFull != "false"):
-            print "    " + color.RED + color.BOLD + "FAIL, metaFull and/or dataFull are not correct"
-            print "    " + "metaFull and dataFull are " + metaFull + " and " + dataFull + " while expected values are" + color.END, "true and false"
+            print ("    metaFull and dataFull are " + metaFull + " and " + dataFull + " while expected values are true and false")
             sys.exit(1)
         else:
-            print "    PASS: status is correct"
+            print ("    status is correct")
     # Only data is full
     elif (dataCount >= numDataWords and metadataCount < numRecords):
         if (metaFull != "false" or dataFull != "true"):
-            print "    " + color.RED + color.BOLD + "FAIL, metaFull and/or dataFull are not correct"
-            print "    " + "metaFull and dataFull are " + metaFull + " and " + dataFull + " while expected values are" + color.END, "false and true"
+            print ("    metaFull and dataFull are " + metaFull + " and " + dataFull + " while expected values are false and true")
             sys.exit(1)
         else:
-            print "    PASS: status is correct"
+            print ("    status is correct")
     # Both data and metadata are full
     elif (dataCount >= numDataWords and metadataCount >= numRecords):
         if (metaFull != "true" or dataFull != "true"):
-            print "    " + color.RED + color.BOLD + "FAIL, metaFull and/or dataFull are not correct"
-            print "    " + "metaFull and dataFull are " + metaFull + " and " + dataFull + " while expected values are " + color.END, "true and true"
+            print ("    metaFull and dataFull are " + metaFull + " and " + dataFull + " while expected values are true and true")
             sys.exit(1)
         else:
-            print "    PASS: status is correct"
+            print ("    status is correct")
 
-
-# For testScenario 1
-def verify_metadata1(metadata, numRecords):
-    opcode = (metadata[0] & 0xFF000000) >> 24
-    messageSize = (metadata[0] & 0x00FFFFFF)
-    eom_fraction = metadata[1]
-    som_fraction = metadata[2]
-    # opcode and message size should both 0 since only a ZLM was sent
-    if opcode != 0:
-        print "    " + color.RED + color.BOLD + "FAIL, opcode is not correct"
-        print "    " + "For metadata record 1, ocpode is", opcode, "while expected value is" + color.END, "0"
-        sys.exit(1)
-    elif messageSize != 0:
-        print "    " + color.RED + color.BOLD + "FAIL, message size is not correct"
-        print "    " + "For metadata record 1, message size is", messageSize, "while expected value is" + color.END, "0"
-        sys.exit(1)
-    # Check that timestamps are non-zero
-    elif eom_fraction == 0:
-            print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, eom fraction time stamp is 0"  + color.END
-            sys.exit(1)
-    elif som_fraction == 0:
-        print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, som fraction time stamp is 0" + color.END
-        sys.exit(1)
-    else:
-        print   "    PASS: metadata is correct"
 
 # For testScenario 2
-def verify_metadata2(metadata, metadataCount, stopOnFull, numRecords):
+def verify_metadata1(metadata, metadataCount, stopOnFull, numRecords):
     eom_frac_prev = 0
     som_frac_prev = 0
     som_seconds_prev = 0
-    if stopOnFull == "true":
-        # Multiplying metadataCount by 4 because there are 4 metadata words
-        stop = 4*metadataCount
-    elif stopOnFull == "false":
-        stop = 4*(metadataCount-1)
+    # Multiplying metadataCount by 4 because there are 4 metadata words
+    stop = 4*metadataCount
     for x in range(0, stop, 4):
         opcode = (metadata[x] & 0xFF000000) >> 24
         messageSize = (metadata[x] & 0x00FFFFFF)
@@ -210,91 +169,50 @@ def verify_metadata2(metadata, metadataCount, stopOnFull, numRecords):
         som_seconds = metadata[x+3]
         # Check that timestamps are non-zero
         if eom_fraction == 0:
-                print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", eom fraction time stamp is 0"  + color.END
+                print ("    For metadata record " + str((x//4)+1) + ", eom fraction time stamp is 0" )
                 sys.exit(1)
         elif som_fraction == 0:
-            print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", som fraction time stamp is 0" + color.END
+            print ("    For metadata record " + str((x//4)+1) + ", som fraction time stamp is 0")
             sys.exit(1)
-        if x == 0:
-            if stopOnFull == "true":
-                # For this scenario when stopOnFull is true, message size should be 0, because 0 bytes were sent, and opcode should be 32
-                if opcode != 32:
-                    print "    " + color.RED + color.BOLD + "FAIL, opcode is not correct"
-                    print "    " + "For metadata record " + str((x/4)+1) + ", ocpode is", opcode, "while expected value is" + color.END, "32"
+
+        # All the messages sent were ZLMs of opcode 32, so message size should be 0 and opcode should be 32
+        if opcode != 32:
+            print ("    opcode is not correct")
+            print ("    For metadata record " + str((x//4)+1) + ", ocpode is", opcode, "while expected value is 32")
+            sys.exit(1)
+        elif messageSize != 0:
+            print ("    message size is not correct")
+            print ("    For metadata record " + str((x//4)+1) +  ", message size is", messageSize, "while expected value is 0")
+            sys.exit(1)
+        if x > 0:
+            # If seconds time stamp incremented, check for roll over
+            if som_seconds > som_seconds_prev:
+                if eom_frac_prev <= eom_fraction:
+                    print ("    For metadata record " + str((x//4)+1) + ", eom fraction time stamp did not roll over")
                     sys.exit(1)
-                elif messageSize != 0:
-                    print "    " + color.RED + color.BOLD + "FAIL, message size is not correct"
-                    print "    " + "For metadata record " + str((x/4)+1) +  ", message size is", messageSize, "while expected value is" + color.END, "0"
+                elif som_frac_prev <= som_fraction:
+                    print ("    For metadata record " + str((x//4)+1) + ", som fraction time stamp did not roll over")
                     sys.exit(1)
-            elif stopOnFull == "false":
-                # For this scenario when stopOnFull is false, there would have been a wrap around when the ZLM of opcode 0 was received
-                # so message size should be 0, because 0 bytes were sent, and opcode should be 0
-                if opcode != 0:
-                    print "    " + color.RED + color.BOLD + "FAIL, opcode is not correct"
-                    print "    " + "For metadata record " + str((x/4)+1) +  ", ocpode is", opcode, "while expected value is" + color.END, "0"
+            # Check that eom fraction and som fraction timestamps are incrementing
+            else:
+                if eom_fraction <= eom_frac_prev:
+                    print ("    For metadata record " + str((x//4)+1) + ", eom fraction time stamp is not incrementing")
                     sys.exit(1)
-                elif messageSize != 0:
-                    print "    " + color.RED + color.BOLD + "FAIL, message size is not correct"
-                    print "    " + "For metadata record " + str((x/4)+1) +  ", message size is", messageSize, "while expected value is" + color.END, "0"
+                elif som_fraction <= som_frac_prev:
+                    print ("    For metadata record " + str((x//4)+1) + ", som fraction time stamp is not incrementing")
                     sys.exit(1)
-                # When stopOnFull is false,  there would have been a wrap around when the ZLM of opcode 0 was received.
-                # If the final metadata record's seconds timestamp incremented then the first metadata word fractional timestamp should be smaller than the final metdata record's
-                # timestamp. Otherwise the first metadata records's fractional timestamps should be greater than the final metadata record's timestamp
-                if numRecords >= 2:
-                    if som_seconds > metadata[(numRecords*4)-1]:
-                        if metadata[(numRecords*4)-3] <= eom_fraction:
-                            print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, eom fraction time stamp is did not roll over"  + color.END
-                            sys.exit(1)
-                        elif metadata[(numRecords*4)-2] <= som_fraction:
-                            print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, som fraction time stamp is did not roll over" + color.END
-                            sys.exit(1)
-                    else:
-                        if eom_fraction <= metadata[(numRecords*4)-3]:
-                            print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, eom fraction time stamp is not incrementing"  + color.END
-                            sys.exit(1)
-                        elif som_fraction <= metadata[(numRecords*4)-2]:
-                            print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, som fraction time stamp is not incrementing" + color.END
-                            sys.exit(1)
-        else:
-            # All the messages sent were ZLMs of opcode 32, so message size should be 0 and opcode should be 32
-            if opcode != 32:
-                print "    " + color.RED + color.BOLD + "FAIL, opcode is not correct"
-                print "    " + "For metadata record " + str((x/4)+1) + ", ocpode is", opcode, "while expected value is" + color.END, "32"
-                sys.exit(1)
-            elif messageSize != 0:
-                print "    " + color.RED + color.BOLD + "FAIL, message size is not correct"
-                print "    " + "For metadata record " + str((x/4)+1) +  ", message size is", messageSize, "while expected value is" + color.END, "0"
-                sys.exit(1)
-            if ((stopOnFull == "true") or (stopOnFull == "false" and x > 4)):
-                # If seconds time stamp incremented, check for roll over
-                if som_seconds > som_seconds_prev:
-                    if eom_frac_prev <= eom_fraction:
-                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", eom fraction time stamp did not roll over" + color.END
-                        sys.exit(1)
-                    elif som_frac_prev <= som_fraction:
-                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", som fraction time stamp did not roll over" + color.END
-                        sys.exit(1)
-                # Check that eom fraction and som fraction timestamps are incrementing
-                else:
-                    if eom_fraction <= eom_frac_prev:
-                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", eom fraction time stamp is not incrementing" + color.END
-                        sys.exit(1)
-                    elif som_fraction <= som_frac_prev:
-                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", som fraction time stamp is not incrementing" + color.END
-                        sys.exit(1)
         eom_frac_prev = eom_fraction
         som_frac_prev = som_fraction
         som_seconds_prev = som_seconds
-    print   "    PASS: metadata is correct"
+    print ("    metadata is correct")
 
 # For testScenario 3
-def verify_metadata3(metadata, numRecords, numDataWords, stopOnFull):
+def verify_metadata2(metadata, numRecords, numDataWords, stopOnFull):
     eom_frac_prev = 0
     som_frac_prev = 0
     som_seconds_prev = 0
-    if numRecords >= 3:
-        stop = 4*3
-    elif numRecords == 2:
+    # Only sending 2 messages so check only 2 of the records if numRecords is 2 or greater
+    if numRecords >= 2:
         stop = 4*2
     else:
         stop = 4
@@ -306,119 +224,69 @@ def verify_metadata3(metadata, numRecords, numDataWords, stopOnFull):
         som_seconds = metadata[x+3]
         # Check that timestamps are non-zero
         if eom_fraction == 0:
-                print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", eom fraction time stamp is 0"  + color.END
+                print ("    For metadata record " + str((x//4)+1) + ", eom fraction time stamp is 0" )
                 sys.exit(1)
         elif som_fraction == 0:
-            print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", som fraction time stamp is 0" + color.END
+            print ("    For metadata record " + str((x//4)+1) + ", som fraction time stamp is 0")
             sys.exit(1)
-        if ((stopOnFull == "true") or (stopOnFull == "false" and numRecords >= 3)):
+        if ((stopOnFull == "true") or (stopOnFull == "false" and numRecords >= 2)):
             if x == 0:
                 # For this scenario when stopOnFull is true, the first metadata record's
                 # message size should be numDataWords*4 bytes, because numDataWords*4 bytes were sent, and opcode should be 255
                 if opcode != 255:
-                    print "    " + color.RED + color.BOLD + "FAIL, opcode is not correct"
-                    print "    " + "For metadata record " + str((x/4)+1) + ", ocpode is", opcode, "while expected value is" + color.END, "255"
+                    print ("    opcode is not correct")
+                    print ("    For metadata record " + str((x//4)+1) + ", ocpode is", opcode, "while expected value is 255")
                     sys.exit(1)
                 elif messageSize != numDataWords*4:
-                    print "    " + color.RED + color.BOLD + "FAIL, message size is not correct"
-                    print "    " + "For metadata record " + str((x/4)+1) +  ", message size is", messageSize, "while expected value is" + color.END, numDataWords*4
+                    print ("    message size is not correct")
+                    print ("    For metadata record " + str((x//4)+1) +  ", message size is", messageSize, "while expected value is", numDataWords*4)
                     sys.exit(1)
             else:
                 # The second metadata record's message size should be 4 bytes, because 4 bytes were sent, and opcode should be 255
                 if x == 4:
                     if opcode != 255:
-                        print "    " + color.RED + color.BOLD + "FAIL, opcode is not correct"
-                        print "    " + "For metadata record " + str((x/4)+1) + ", ocpode is", opcode, "while expected value is" + color.END, "255"
+                        print ("    opcode is not correct")
+                        print ("    For metadata record " + str((x//4)+1) + ", ocpode is", opcode, "while expected value is 255")
                         sys.exit(1)
                     elif messageSize != 4:
-                        print "    " + color.RED + color.BOLD + "FAIL, message size is not correct"
-                        print "    " + "For metadata record " + str((x/4)+1) +  ", message size is", messageSize, "while expected value is" + color.END, 4
-                        sys.exit(1)
-                # The third metadata record's message size should be 0 bytes, because a ZLM was received, and opcode should be 0
-                elif x == 8:
-                    if opcode != 0:
-                        print "    " + color.RED + color.BOLD + "FAIL, opcode is not correct"
-                        print "    " + "For metadata record " + str((x/4)+1) + ", ocpode is", opcode, "while expected value is" + color.END, "0"
-                        sys.exit(1)
-                    elif messageSize != 0:
-                        print "    " + color.RED + color.BOLD + "FAIL, message size is not correct"
-                        print "    " + "For metadata record " + str((x/4)+1) +  ", message size is", messageSize, "while expected value is" + color.END, "0"
+                        print ("    message size is not correct")
+                        print ("    For metadata record " + str((x//4)+1) +  ", message size is", messageSize, "while expected value is 4")
                         sys.exit(1)
                 # If seconds time stamp incremented, check for roll over
                 if som_seconds > som_seconds_prev:
                     if eom_frac_prev <= eom_fraction:
-                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", eom fraction time stamp did not roll over" + color.END
+                        print ("    For metadata record " + str((x//4)+1) + ", eom fraction time stamp did not roll over")
                         sys.exit(1)
                     elif som_frac_prev <= som_fraction:
-                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", som fraction time stamp did not roll over" + color.END
+                        print ("    For metadata record " + str((x//4)+1) + ", som fraction time stamp did not roll over")
                         sys.exit(1)
                 # Check that eom fraction and som fraction timestamps are incrementing
                 else:
                     if eom_fraction <= eom_frac_prev:
-                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", eom fraction time stamp is not incrementing" + color.END
+                        print ("    For metadata record " + str((x//4)+1) + ", eom fraction time stamp is not incrementing")
                         sys.exit(1)
                     elif som_fraction <= som_frac_prev:
-                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", som fraction time stamp is not incrementing" + color.END
+                        print ("    For metadata record " + str((x//4)+1) + ", som fraction time stamp is not incrementing")
                         sys.exit(1)
         elif stopOnFull == "false":
             if numRecords == 1:
-                # For this scenario when stopOnFull is false, there would have been a wrap around when the ZLM of opcode 0 was received
-                # so message size should be 0, because 0 bytes were sent, and opcode should be 0
-                if opcode != 0:
-                    print "    " + color.RED + color.BOLD + "FAIL, opcode is not correct"
-                    print "    " + "For metadata record " + str((x/4)+1) +  ", ocpode is", opcode, "while expected value is" + color.END, "0"
+                # For this scenario when stopOnFull is false, there would have been a wrap around when the second message was received
+                # The second metadata record's message size should be 4 bytes, because 4 bytes were sent, and opcode should be 255
+                if opcode != 255:
+                    print ("    opcode is not correct")
+                    print ("    For metadata record " + str((x//4)+1) + ", ocpode is", opcode, "while expected value is 255")
                     sys.exit(1)
-                elif messageSize != 0:
-                    print "    " + color.RED + color.BOLD + "FAIL, message size is not correct"
-                    print "    " + "For metadata record " + str((x/4)+1) +  ", message size is", messageSize, "while expected value is" + color.END, "0"
+                elif messageSize != 4:
+                    print ("    message size is not correct")
+                    print ("    For metadata record " + str((x//4)+1) +  ", message size is", messageSize, "while expected value is 4")
                     sys.exit(1)
-            elif numRecords == 2:
-                if x == 0:
-                    # Because a ZLM of opcode 0 gets sent and there is wrap around when stopOnFull is false, metadata[0] should be 0 bytes
-                    # and metdata[1] should be 0 for opcode 0
-                    if opcode != 0:
-                        print "    " + color.RED + color.BOLD + "FAIL, opcode is not correct"
-                        print "    " + "For metadata record " + str((x/4)+1) +  ", ocpode is", opcode, "while expected value is" + color.END, "0"
-                        sys.exit(1)
-                    elif messageSize != 0:
-                        print "    " + color.RED + color.BOLD + "FAIL, message size is not correct"
-                        print "    " + "For metadata record " + str((x/4)+1) +  ", message size is", messageSize, "while expected value is" + color.END, "0"
-                        sys.exit(1)
-                    # When stopOnFull is false,  there would have been a wrap around when the ZLM of opcode 0 was received.
-                    # If the 2nd metadata record's seconds timestamp incremented then the first metadata word fractional timestamp should be smaller than the 2nd metdata record's
-                    # timestamp. Otherwise the first metadata records's fractional timestamps should be greater than the 2nd metadata record's timestamp
-                    if som_seconds > metadata[7]:
-                        if metadata[5] <= eom_fraction:
-                            print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, eom fraction time stamp is did not roll over"  + color.END
-                            sys.exit(1)
-                        elif metadata[6] <= som_fraction:
-                            print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, som fraction time stamp is did not roll over" + color.END
-                            sys.exit(1)
-                    else:
-                        if eom_fraction <= metadata[5]:
-                            print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, eom fraction time stamp is not incrementing"  + color.END
-                            sys.exit(1)
-                        if som_fraction <= metadata[6]:
-                            print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, som fraction time stamp is not incrementing" + color.END
-                            sys.exit(1)
-                else:
-                    # The second metadata record's message size should be 4 bytes, because 4 bytes were sent, and opcode should be 255
-                    # Also check that eom fraction and som fraction timestamps are incrementing
-                    if opcode != 255:
-                        print "    " + color.RED + color.BOLD + "FAIL, opcode is not correct"
-                        print "    " + "For metadata record " + str((x/4)+1) + ", ocpode is", opcode, "while expected value is" + color.END, "255"
-                        sys.exit(1)
-                    elif messageSize != 4:
-                        print "    " + color.RED + color.BOLD + "FAIL, message size is not correct"
-                        print "    " + "For metadata record " + str((x/4)+1) +  ", message size is", messageSize, "while expected value is" + color.END, 4
-                        sys.exit(1)
         eom_frac_prev = eom_fraction
         som_frac_prev = som_fraction
         som_seconds_prev = som_seconds
-    print   "    PASS: metadata is correct"
+    print ("    metadata is correct")
 
 # For testScenario 4
-def verify_metadata4(metadata, metadataCount, numRecords, stopOnFull, numDataWords):
+def verify_metadata3(metadata, metadataCount, numRecords, stopOnFull, numDataWords):
     eom_frac_prev = 0
     som_frac_prev = 0
     som_seconds_prev = 0
@@ -431,124 +299,118 @@ def verify_metadata4(metadata, metadataCount, numRecords, stopOnFull, numDataWor
         som_seconds = metadata[x+3]
         # Check that timestamps are non-zero
         if eom_fraction == 0:
-                print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", eom fraction time stamp is 0"  + color.END
-                sys.exit(1)
-        elif som_fraction == 0:
-            print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", som fraction time stamp is 0" + color.END
+            print ("    For metadata record " + str((x//4)+1) + ", eom fraction time stamp is 0" )
             sys.exit(1)
+        elif som_fraction == 0:
+            print ("    For metadata record " + str((x//4)+1) + ", som fraction time stamp is 0")
+            sys.exit(1)
+
         if x == 0:
-            if stopOnFull == "true":
-                # For this scenario when stopOnFull is true, the first metadata record's
-                # message size should be 0 bytes and opcode should be 1
-                if opcode != 1:
-                    print "    " + color.RED + color.BOLD + "FAIL, opcode is not correct"
-                    print "    " + "For metadata record " + str((x/4)+1) +  ", ocpode is", opcode, "while expected value is" + color.END, "1"
+            # The first metadata record should contain opcode of 1 and messageSize of 0 bytes
+            if opcode != 1:
+                print ("    opcode is not correct")
+                print ("    For metadata record " + str((x//4)+1) +  ", ocpode is", opcode, "while expected value is 1")
+                sys.exit(1)
+            elif messageSize != 0:
+                print ("    message size is not correct")
+                print ("    For metadata record " + str((x//4)+1) +  ", message size is", messageSize, "while expected value is 0")
+                sys.exit(1)
+        elif x == 4:
+            # The second metadata record should contain opcode of 2 and messageSize of 0 bytes
+            if opcode != 2:
+                print ("    opcode is not correct")
+                print ("    For metadata record " + str((x//4)+1) +  ", ocpode is", opcode, "while expected value is 2")
+                sys.exit(1)
+            elif messageSize != 0:
+                print ("    message size is not correct")
+                print ("    For metadata record " + str((x//4)+1) +  ", message size is", messageSize, "while expected value is 0")
+                sys.exit(1)
+        elif x == 8:
+            # The third metadata record should contain opcode of 3 and messageSize of 4 bytes
+            if opcode != 3:
+                print ("    opcode is not correct")
+                print ("    For metadata record " + str((x//4)+1) +  ", ocpode is", opcode, "while expected value is 3")
+                sys.exit(1)
+            elif messageSize != 4:
+                print ("    message size is not correct")
+                print ("    For metadata record " + str((x//4)+1) +  ", message size is", messageSize, "while expected value is 4")
+                sys.exit(1)
+        elif x == 12:
+            # The second metadata record should contain opcode of 0 and messageSize of (numDataWords-1)*4 bytes
+            if opcode != 0:
+                print ("    opcode is not correct")
+                print ("    For metadata record " + str((x//4)+1) +  ", ocpode is", opcode, "while expected value is 0")
+                sys.exit(1)
+            elif messageSize != (numDataWords-1)*4:
+                print ("    message size is not correct")
+                print ("    For metadata record " + str((x//4)+1) +  ", message size is", messageSize, "while expected value is", (numDataWords-1)*4)
+                sys.exit(1)
+        elif x == 16:
+            # The third metadata record should contain opcode of 4 and messageSize of 0 bytes
+            if opcode != 4:
+                print ("    opcode is not correct")
+                print ("    For metadata record " + str((x//4)+1) +  ", ocpode is", opcode, "while expected value is 4")
+                sys.exit(1)
+            elif messageSize != 0:
+                print ("    message size is not correct")
+                print ("    For metadata record " + str((x//4)+1) +  ", message size is", messageSize, "while expected value is 0")
+                sys.exit(1)
+        elif x >= 20:
+            # The other metadata records should contain opcode of 0 and messageSize of 4 bytes
+            if opcode != 0:
+                print ("    opcode is not correct")
+                print ("    For metadata record " + str((x//4)+1) +  ", ocpode is", opcode, "while expected value is 0")
+                sys.exit(1)
+            elif messageSize != 4:
+                print ("    message size is not correct")
+                print ("    For metadata record " + str((x//4)+1) +  ", message size is", messageSize, "while expected value is 4")
+                sys.exit(1)
+        if x > 0:
+            # If seconds time stamp incremented, check for roll over
+            if som_seconds > som_seconds_prev:
+                if eom_frac_prev <= eom_fraction:
+                    print ("    For metadata record " + str((x//4)+1) + ", eom fraction time stamp did not roll over")
                     sys.exit(1)
-                elif messageSize != 0:
-                    print "    " + color.RED + color.BOLD + "FAIL, message size is not correct"
-                    print "    " + "For metadata record " + str((x/4)+1) +  ", message size is", messageSize, "while expected value is" + color.END, "0"
+                elif som_frac_prev <= som_fraction:
+                    print ("    For metadata record " + str((x//4)+1) + ", som fraction time stamp did not roll over")
                     sys.exit(1)
-            elif stopOnFull == "false":
-                # For this scenario when stopOnFull is false, there would have been a wrap around when the ZLM of opcode 0 was received
-                # so message size should be 0, because 0 bytes were sent, and opcode should be 0
-                if opcode != 0:
-                    print "    " + color.RED + color.BOLD + "FAIL, opcode is not correct"
-                    print "    " + "For metadata record " + str((x/4)+1) +  ", ocpode is", opcode, "while expected value is" + color.END, "0"
+            # Check that eom fraction and som fraction timestamps are incrementing
+            else:
+                if eom_fraction <= eom_frac_prev:
+                    print ("    For metadata record " + str((x//4)+1) + ", eom fraction time stamp is not incrementing")
                     sys.exit(1)
-                elif messageSize != 0:
-                    print "    " + color.RED + color.BOLD + "FAIL, message size is not correct"
-                    print "    " + "For metadata record " + str((x/4)+1) +  ", message size is", messageSize, "while expected value is" + color.END, "0"
+                elif som_fraction <= som_frac_prev:
+                    print ("    For metadata record " + str((x//4)+1) + ", som fraction time stamp is not incrementing")
                     sys.exit(1)
-                # When stopOnFull is false,  there would have been a wrap around when the ZLM of opcode 0 was received.
-                # If the final metadata record's seconds timestamp incremented then the first metadata word fractional timestamp should be smaller than the final metdata record's
-                # timestamp. Otherwise the first metadata records's fractional timestamps should be greater than the final metadata record's timestamp
-                if som_seconds > metadata[(numRecords*4)-1]:
-                    if metadata[(numRecords*4)-3] <= eom_fraction:
-                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, eom fraction time stamp is did not roll over"  + color.END
-                        sys.exit(1)
-                    elif metadata[(numRecords*4)-2] <= som_fraction:
-                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, som fraction time stamp is did not roll over" + color.END
-                        sys.exit(1)
-                else:
-                    if eom_fraction <= metadata[(numRecords*4)-3]:
-                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, eom fraction time stamp is not incrementing"  + color.END
-                        sys.exit(1)
-                    if som_fraction <= metadata[(numRecords*4)-2]:
-                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record 1, som fraction time stamp is not incrementing" + color.END
-                        sys.exit(1)
-        else:
-            if x == 4:
-                # The second metadata record should contain opcode of 2 and messageSize of 0 bytes
-                if opcode != 2:
-                    print "    " + color.RED + color.BOLD + "FAIL, opcode is not correct"
-                    print "    " + "For metadata record " + str((x/4)+1) +  ", ocpode is", opcode, "while expected value is" + color.END, "2"
-                    sys.exit(1)
-                elif messageSize != 0:
-                    print "    " + color.RED + color.BOLD + "FAIL, message size is not correct"
-                    print "    " + "For metadata record " + str((x/4)+1) +  ", message size is", messageSize, "while expected value is" + color.END, "0"
-                    sys.exit(1)
-            elif x == 8:
-                # The third metadata record should contain opcode of 3 and messageSize of 4 bytes
-                if opcode != 3:
-                    print "    " + color.RED + color.BOLD + "FAIL, opcode is not correct"
-                    print "    " + "For metadata record " + str((x/4)+1) +  ", ocpode is", opcode, "while expected value is" + color.END, "3"
-                    sys.exit(1)
-                elif messageSize != 4:
-                    print "    " + color.RED + color.BOLD + "FAIL, message size is not correct"
-                    print "    " + "For metadata record " + str((x/4)+1) +  ", message size is", messageSize, "while expected value is" + color.END, "4"
-                    sys.exit(1)
-            elif x == 12:
-                # The second metadata record should contain opcode of 0 and messageSize of (numDataWords-1)*4 bytes
-                if opcode != 0:
-                    print "    " + color.RED + color.BOLD + "FAIL, opcode is not correct"
-                    print "    " + "For metadata record " + str((x/4)+1) +  ", ocpode is", opcode, "while expected value is" + color.END, "0"
-                    sys.exit(1)
-                elif messageSize != (numDataWords-1)*4:
-                    print "    " + color.RED + color.BOLD + "FAIL, message size is not correct"
-                    print "    " + "For metadata record " + str((x/4)+1) +  ", message size is", messageSize, "while expected value is" + color.END, (numDataWords-1)*4
-                    sys.exit(1)
-            elif x == 16:
-                # The third metadata record should contain opcode of 4 and messageSize of 0 bytes
-                if opcode != 4:
-                    print "    " + color.RED + color.BOLD + "FAIL, opcode is not correct"
-                    print "    " + "For metadata record " + str((x/4)+1) +  ", ocpode is", opcode, "while expected value is" + color.END, "4"
-                    sys.exit(1)
-                elif messageSize != 0:
-                    print "    " + color.RED + color.BOLD + "FAIL, message size is not correct"
-                    print "    " + "For metadata record " + str((x/4)+1) +  ", message size is", messageSize, "while expected value is" + color.END, "0"
-                    sys.exit(1)
-            elif x >= 20:
-                # The other metadata records should contain opcode of 0 and messageSize of 4 bytes
-                if opcode != 0:
-                    print "    " + color.RED + color.BOLD + "FAIL, opcode is not correct"
-                    print "    " + "For metadata record " + str((x/4)+1) +  ", ocpode is", opcode, "while expected value is" + color.END, "0"
-                    sys.exit(1)
-                elif messageSize != 4:
-                    print "    " + color.RED + color.BOLD + "FAIL, message size is not correct"
-                    print "    " + "For metadata record " + str((x/4)+1) +  ", message size is", messageSize, "while expected value is" + color.END, "4"
-                    sys.exit(1)
-            if ((stopOnFull == "true") or (stopOnFull == "false" and x > 4)):
-                # If seconds time stamp incremented, check for roll over
-                if som_seconds > som_seconds_prev:
-                    if eom_frac_prev <= eom_fraction:
-                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", eom fraction time stamp did not roll over" + color.END
-                        sys.exit(1)
-                    elif som_frac_prev <= som_fraction:
-                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", som fraction time stamp did not roll over" + color.END
-                        sys.exit(1)
-                # Check that eom fraction and som fraction timestamps are incrementing
-                else:
-                    if eom_fraction <= eom_frac_prev:
-                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", eom fraction time stamp is not incrementing" + color.END
-                        sys.exit(1)
-                    elif som_fraction <= som_frac_prev:
-                        print "    " + color.RED + color.BOLD + "FAIL, for metadata record " + str((x/4)+1) + ", som fraction time stamp is not incrementing" + color.END
-                        sys.exit(1)
         eom_frac_prev = eom_fraction
         som_frac_prev = som_fraction
         som_seconds_prev = som_seconds
-    print   "    PASS: metadata is correct"
+    print ("    metadata is correct")
 
+# For testScenario 5
+def verify_metadata4(metadata, stopZLMOpcode):
+    opcode = (metadata[0] & 0xFF000000) >> 24
+    messageSize = (metadata[0] & 0x00FFFFFF)
+    eom_fraction = metadata[1]
+    som_fraction = metadata[2]
+
+    # opcode should be stopZLMOpcode and message size should be 0
+    if opcode != stopZLMOpcode:
+        print ("    opcode is not correct")
+        print ("    For metadata record 1, ocpode is", opcode, "while expected value is",  stopZLMOpcode)
+        sys.exit(1)
+    elif messageSize != 0:
+        print ("    Message size is not correct")
+        print ("    For metadata record 1, message size is", messageSize, "while expected value is 0")
+        sys.exit(1)
+    # Check that timestamps are non-zero
+    elif eom_fraction == 0:
+            print ("    For metadata record 1, eom fraction time stamp is 0")
+            sys.exit(1)
+    elif som_fraction == 0:
+        print ("    For metadata record 1, som fraction time stamp is 0")
+        sys.exit(1)
+    print   ("    metadata is correct")
 
 # For testScenario 3
 def verify_data1(odata, dataCount, numDataWords, stopOnFull):
@@ -563,9 +425,9 @@ def verify_data1(odata, dataCount, numDataWords, stopOnFull):
         for x in range(1, dataCount-1):
             idata[x] = x
     if np.array_equal(idata, odata):
-        print "    PASS: Input and output data match"
+        print ("    Input and output data match")
     else:
-        print "    " + color.RED + color.BOLD + "FAIL: Input and output data don't match" + color.END
+        print ("    Input and output data don't match")
         sys.exit(1)
 
 # For testScenario 4
@@ -586,7 +448,7 @@ def verify_data2(odata, stopOnFull, numDataWords, numRecords):
             idata[x] = x
 
     if np.array_equal(idata, odata):
-        print "    PASS: Input and output data match"
+        print ("    Input and output data match")
     else:
-        print "    " + color.RED + color.BOLD + "FAIL: Input and output data don't match" + color.END
+        print ("    Input and output data don't match")
         sys.exit(1)

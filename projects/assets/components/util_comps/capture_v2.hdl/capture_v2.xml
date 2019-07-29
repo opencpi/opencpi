@@ -1,9 +1,14 @@
-<HdlWorker Language="vhdl" Spec="capture_v2-spec" FirstRawProperty="metadata">
+<HdlWorker Language="vhdl" Spec="capture_v2-spec" DataWidth="32" Version='2'>
+
+  <SpecProperty Name="metadata" Raw="true"/>
+  <SpecProperty Name="data" Raw="true"/>
+
   <StreamInterface Name="in"
-                   DataWidth="32" NumberOfOpcodes="256" DataValueWidth="8"
+                   NumberOfOpcodes="256" DataValueWidth="8"
                    ZeroLengthMessages="true"/>
   <StreamInterface Name="out" buffersize='in'
-                   DataWidth="32" NumberOfOpcodes="256" DataValueWidth="8"
+                   NumberOfOpcodes="256" DataValueWidth="8"
                    ZeroLengthMessages="true"/>
+
   <TimeInterface Name="time" SecondsWidth="32" FractionWidth="32"/>
 </HdlWorker>

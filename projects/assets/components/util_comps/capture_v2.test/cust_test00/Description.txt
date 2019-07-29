@@ -1,3 +1,0 @@
-Test stopZLMOpcode property set to a value other than 0; in this test the stopZLMOpcode is 5. Use the run_test.sh script to generate the input data,
-build the hdl assembly, run the app for the test, and verify the output. The run_test.sh script requires the name of the hdl platform to build the
-custom test for, as an argument.

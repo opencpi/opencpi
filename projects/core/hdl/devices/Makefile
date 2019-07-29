@@ -31,17 +31,5 @@
 #
 # Remember that subdevices that support other devices must occur AFTER the devices they support
 # Similarly, emulators must occur after the devices they emulate
-Workers += \
-	sdp_node.hdl \
-	sdp_pipeline.hdl \
-	sdp_send.hdl \
-	sdp_receive.hdl \
-	sdp2cp.hdl \
-	sdp_term.hdl \
-	sma.hdl \
-	unoc2cp.hdl \
-	unoc_term.hdl \
-	ocdp.hdl \
-	time_server.hdl
 
 include $(OCPI_CDK_DIR)/include/library.mk

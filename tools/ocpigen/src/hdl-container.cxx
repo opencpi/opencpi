@@ -25,7 +25,6 @@
 #include "assembly.h"
 #include "hdl.h"
 #include "hdl-container.h"
-
 static void
 emitTimeClient(std::string &assy, const char *instance, const char *portName, Port *port = NULL) {
   OU::formatAdd(assy,
@@ -38,7 +37,7 @@ emitTimeClient(std::string &assy, const char *instance, const char *portName, Po
 		"    <port instance='pfconfig' name='time'/>\n"
 		"    <port instance='%s_%s_time_client' name='time'/>\n"
 		"  </connection>\n",
-		port && port->myClock && !port->clock->m_output ?  "_co" : "",
+		port && port->m_myClock && !port->m_clock->m_output ?  "_co" : "",
 		instance, portName,
 		instance, portName,
 		instance, portName,

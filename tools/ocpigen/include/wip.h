@@ -39,6 +39,7 @@
 #include "parameters.h"
 #include "port.h"
 #include "ocp.h"
+#include "clock.h"
 
 namespace OE=OCPI::Util::EzXml;
 namespace OU=OCPI::Util;
@@ -359,8 +360,6 @@ enum Endian {
 
 // This class represents a connection to a required worker
 
-typedef std::vector<Clock*> Clocks;
-typedef Clocks::const_iterator ClocksIter;
 typedef std::pair<std::string, std::string> StringPair;
 class Assembly;
 class HdlDevice;
@@ -432,7 +431,11 @@ class Worker : public OU::Worker {
 	   const char *outDir, Worker *parent, OU::Assembly::Properties *instancePropertyValues,
 	   size_t paramConfig, const char *&err);
   const Ports &ports() const { return m_ports; }
-  Clock &addClock();
+  const char *parseClocks();
+  const char *addClock(ezxml_t);
+  const char *addClock(const char *name, const char *direction, Clock *&clk);
+  Clock &addClock(const char *name, bool output = false);
+  Clock &addClock(const std::string &name, bool output = false) { return addClock(name.c_str(), output); }
   Clock &addWciClockReset();
   OU::Property *findProperty(const char *name) const;
   OU::Port *findMetaPort(const char *id, const OU::Port *except) const;

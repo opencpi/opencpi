@@ -199,7 +199,7 @@ function unpack {
   echo Unpacking download file $file into $directory.
   case $file in
     (*.tar.gz) tar xzf $file;;
-    (*.tar) tar xf $file;;
+    (*.tar|*.tar.bz2) tar xf $file;;
     (*.tar.xz) tar -x --xz -f $file;;
     (*.zip) unzip $file;;
     (*) echo Unknown suffix in $file.  Cannot unpack it.; exit 1

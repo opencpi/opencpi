@@ -36,12 +36,11 @@ WciPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
     err = "A control interface can not specify a separate clock";
     return;
   }
-  myClock = true;
+  m_myClock = true;
   addMyClock(m_master);
-  if (!m_master) {
+  m_worker->m_wciClock = m_clock;
+  if (!m_master)
     m_worker->m_wci = this;
-    m_worker->m_wciClock = clock;
-  }
   if (x &&
       ((err = OE::checkAttrs(x, GENERIC_IMPL_CONTROL_ATTRS, "ResetWhileSuspended", "Timeout",
 			     "Count", "Name", "Pattern", "master", (void *)0)) ||

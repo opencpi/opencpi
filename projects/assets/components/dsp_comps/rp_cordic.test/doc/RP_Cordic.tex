@@ -96,6 +96,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \lhead{\small{\docTitle}}
 
 \def\comp{rp\_cordic}
+\def\rcc_comp{rp\_cordic\_for\_fskapp}
 \edef\ecomp{rp_cordic}
 \def\Comp{Rectangular to Polar CORDIC}
 \graphicspath{ {figures/} }
@@ -108,7 +109,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\rowcolor{blue}
 	                  &                                                    \\
 	\hline
-	Name              & \comp                                              \\
+	Name              & \comp                    \\
 	\hline
 	Worker Type       & Application                                        \\
 	\hline
@@ -118,7 +119,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Component Library & ocpi.assets.dsp\_comps                              \\
 	\hline
-	Workers           & \comp.hdl                                          \\
+	Workers           & \comp.hdl, \rcc_comp.rcc                            \\
 	\hline
 	Tested Platforms  & xsim, isim, modelsim, alst4, ml605, ZedBoard(PL), Matchstiq-Z1(PL), E310(PL)\\
 	\hline
@@ -137,7 +138,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		\hline
 		v1.5 & & 4/2019 \\
 		\hline
-		v1.6 & Convert Worker to Version 2 HDL API & 11/2019 \\
+		v1.6 & Convert Worker to Version 2 HDL API & 5/2019 \\
+		\hline
+		v1.6 & Created rp\_cordic\_fsk\_app.rcc worker &  6/2019 \\
 		\hline
 		\end{tabularx}
 	\end{table}
@@ -169,7 +172,38 @@ The second circuit simply uses a subtractor to implement a $d\phi$ function, whi
 	d\phi = {2 \pi f dt} = {2 \pi f T_s} = \frac{2 \pi f}{F_s} = \frac{2 \pi f \frac{2^{DATAWIDTH-1}}{\pi}}{F_s} = \frac{2f*2^{DATAWIDTH-1}}{F_s}
 \end{equation}
 \newpage
+\subsection*{\rcc_comp.rcc}
+This RCC worker is intended to be used in an all-RCC worker version of the FSK application
+as it is currently implemented. Where components are incorrectly named to reflect their implementation, rather than based on their functionality, i.e. rp\_cordic vs rect\_polar.
+Additionally, this worker implements a secondary function (i.e. FM discriminator), which does not respect the component (1 function) model.
+For these reasons, and those discussed below, it is highly recommended that the usage of this RCC worker be limited to the all-RCC FSK applications and not used for new applications.
 
+This RCC (C++) worker is a work-a-like to the HDL worker, similarly named rp\_cordic.hdl.
+However, it does NOT implement a CORDIC algorithm (i.e. stages of shifts \& adds), but rather utilizes floating point cmath functions to calculate its output.
+Due to HDL worker implementation decisions, which affect performance, the RCC worker was required to implement additional (restrictive) functionality to emulate the HDL worker's behavior.
+
+The calculation that it does first is the phase of all incoming iq samples. Then iterates over the phase values and FM discriminates based on the current and next phase value. 
+The resulting output is given to the output port.
+
+For the magnitude calculation, the HDL implements magnitude as a volatile property, however for RCC workers accessing the property is only viable at the completion of the run method. 
+To reduce unnecessary computations the last sample that would be used to calculate the magnitude sets the property value.
+ 
+The HDL worker will not output the final samples depending on the number of CORDIC stages and pipleline stages. 
+To match the HDL implementation, the rcc worker implements a stage delay using a deque as a FIFO (m\_trailing\_data).
+The FIFO contains the previous input samples that would still be present in the HDL implementation's pipline. 
+Calculations are made when data is present in the FIFO and enough data on the input port is present to push more data out.
+Then on the input data phase calculations are made.
+Finally the remaining input data that would be delayed is passed to the FIFO to be used in the next calculation.  
+
+Memory optimization was made to load the FIFO only with samples known to be used on the next run method call.  Considerations were made to unload existing elements from the FIFO. 
+
+Limitations:  
+
+1) This worker currently does not work with stage delay set to zero. 
+To do so the fm\_discrimination calculation cannot be lookahead but instead looks back at the previous phase value for its calculation.
+A variable will have to be maintained of the previous phase value when fm discriminating.
+
+2) This worker does not implement the CORDIC (shifts-add) algorithm, but equivalent floating point math with fixed-point adjustments (using float to integer truncation).
 \section*{Block Diagrams}
 \subsection*{Top level}
 \begin{center}
@@ -201,7 +235,7 @@ None
 \section*{Source Dependencies}
 \subsection*{\comp.hdl}
 \begin{itemize}
-	\item projects/assets/components/dsp\_comps/rp\_cordic/rp\_cordic.vhd
+	\item projects/assets/components/dsp\_comps/rp\_cordic.hdl/rp\_cordic.vhd
 	\item projects/assets/hdl/primitives/dsp\_prims/dsp\_prims\_pkg.vhd
 	      \subitem projects/assets/hdl/primitives/dsp\_prims/cordic/src/cordic\_rp.vhd
 	      \subitem projects/assets/hdl/primitives/dsp\_prims/cordic/src/cordic.vhd
@@ -212,10 +246,15 @@ None
 	      \subitem projects/assets/hdl/primitives/util\_prims/pd/src/peakDetect.vhd
 \end{itemize}
 
+\subsection*{\rcc_comp.rcc}
+\begin{itemize}
+	\item projects/assets/components/dsp\_comps/\rcc_comp.rcc/\rcc_comp.rcc
+\end{itemize}
+
 \begin{landscape}
-	\section*{Component Spec Properties}
+\section*{Component Spec Properties}
 	\begin{scriptsize}
-		\begin{tabular}{|p{3cm}|p{1.5cm}|c|c|c|c|c|p{7cm}|}
+		\begin{longtable}{|p{3cm}|p{1.5cm}|c|c|c|c|c|p{7cm}|}
 			\hline
 			\rowcolor{blue}
 			Name               & Type   & SequenceLength & ArrayDimensions & Accessibility      & Valid Range & Default & Usage                                        \\
@@ -230,13 +269,13 @@ None
 			\hline
 			\verb+enable+      & Bool   & -              & -               & Writable & Standard    & true    & Enable(true) or bypass(false)                                      (Not implemented by Version 2) \\
 			\hline
-		\end{tabular}
+		\end{longtable}
 	\end{scriptsize}
 
 	\section*{Worker Properties}
 	\subsection*{\comp.hdl}
 	\begin{scriptsize}
-		\begin{tabular}{|p{3cm}|p{2cm}|c|c|c|c|c|c|p{6cm}|}
+		\begin{longtable}{|p{3cm}|p{2cm}|c|c|c|c|c|c|p{6cm}|}
 			\hline
 			\rowcolor{blue}
 			Type         & Name              & Type  & SequenceLength & ArrayDimensions & Accessibility & Valid Range & Default & Usage                                                    \\
@@ -254,7 +293,38 @@ None
 			Property     & \verb+magnitude+  & Short & -              & -               & Volatile      & Standard    & -       & Magnitude of I/Q vector. May be useful for gain control \\
 			\hline
 
-		\end{tabular}
+		\end{longtable}
+	\end{scriptsize}
+
+	\subsection*{\rcc_comp.rcc}
+	\begin{scriptsize}
+		\begin{longtable}{|p{\dimexpr0.125\linewidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.1\linewidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.05\linewidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.100\linewidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.100\linewidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.1\linewidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.1\linewidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.1\linewidth-2\tabcolsep\relax}
+                  |p{\dimexpr0.2\linewidth-2\tabcolsep\relax}|}
+			\hline
+			\rowcolor{blue}
+			Type         & Name              & Type  & SequenceLength & ArrayDimensions & Accessibility & Valid Range & Default & Usage                                                    \\
+			\hline
+			SpecProperty & \verb+DATA_WIDTH+ & -     & -              & -               & Parameter     & 16        & 16      & Added here to be a FSK workalike, the implementation does not use this. \\
+			\hline
+			SpecProperty & \verb+DATA_EXT+   & -     & -              & -               & Parameter     & 6           & 6       & CORDIC requirement, the implementation does not use this. \\
+			\hline
+			SpecProperty & \verb+STAGES+     & -     & -              & -               & Parameter     & 8-16        & 16      & Used to truncate data to match HDL implementation \\
+			\hline
+			Property     & \verb+magnitude+  & Short & -              & -               & Volatile      & Standard    & -       & Magnitude of I/Q vector. May be useful for gain control \\
+			\hline			
+			Property & \verb+AdditionalDelay+     & UChar     & -              & -               & Parameter     & Standard        & 8      & Additional number of delays over CORDIC stages (STAGES) to match HDL implementation.          \\
+			\hline
+			Property     & \verb+StageDelay+  & UChar & -              & -               & Parameter      & Standard    & STAGES + AdditionalDelay       & Number of delays to match HDL implementation. \\
+			\hline
+
+		\end{longtable}
 	\end{scriptsize}
 
 	\section*{Component Ports}

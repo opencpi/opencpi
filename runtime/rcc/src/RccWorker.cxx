@@ -229,7 +229,7 @@ static RCCBoolean
 rccWait(RCCPort* port, size_t max, unsigned usec )
 {
   // Not implemented yet
-  ocpiAssert("Not implemented yet" == false);
+  ocpiAssert("Not implemented yet" == NULL);
   ( void ) port;
   ( void ) max;
   ( void ) usec;

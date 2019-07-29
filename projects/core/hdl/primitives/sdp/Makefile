@@ -16,7 +16,8 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-HdlLibraries=ocpi fixed_float platform util axi
+HdlLibraries=ocpi fixed_float platform util axi cdc
 SourceFiles=sdp_pkg.vhd sdp_axi_pkg.vhd sdp_body.vhd unoc2sdp.vhd sdp_sim.vhd \
-            sdp2axi_rd.vhd sdp2axi_wd.vhd sdp2axi.vhd sdp2axi_rd.vhd
+            sdp2axi_rd.vhd sdp2axi_wd.vhd sdp2axi.vhd sdp2axi_rd.vhd sdp_node_rv.vhd \
+            sdp2cp_clk_rv.vhd
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk

@@ -90,7 +90,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.5}
+\def\docVersion{1.6}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -113,15 +113,15 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		\hline
 		Name & \comp \\
 		\hline
-		Version & v1.5 \\
+		Version & v\docVersion \\
 		\hline
-		Release Date & 5/2019 \\
+		Release Date & 11/2019 \\
 		\hline
 		Component Library & ocpi.assets.util\_comps \\
 		\hline
 		Workers & \comp.hdl \\
 		\hline
-		Tested Platforms & xsim, isim, matchstiq\_z1 \\
+		Tested Platforms & xsim, isim, Matchstiq-Z1(PL), ZedBoard(PL) \\
 		\hline
 	\end{tabular}
 
@@ -136,7 +136,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		    \hline
 		    v1.4 & Initial Release & 10/2018 \\
 		    \hline
-        v1.5 & \begin{itemize} \item Version bump.  \end{itemize} & 5/2019 \\
+        v1.5 & Version bump. & 4/2019 \\
+		    \hline
+		     v1.6 & Converted Worker to version 2 & 11/2019 \\
 		    \hline
 			\end{tabularx}
 		\end{table}
@@ -179,7 +181,7 @@ For example, given that last captured data buffer word is 0x0000005a: \newline
 
 The {\comp} component counts the number of metadata records (\texttt{metadataCount}) have been captured and how many data words have been captured (\texttt{dataCount}). It allows for the option to wrap around and continue to capture data and metadata once the buffers are full or to stop capturing data and metadata when the data and metadata buffers are full via the stoponFull property. \newline
 
-When \texttt{stopOnFull} is true (leading), data and metadata will be captured as long as the metadata buffer is not full. If the data buffer is full before the metadata buffer, metadata will still be captured until the metadata buffer is full. If the metadata buffer is full before the data buffer, no more metadata and no more data will be captured. When \texttt{stopOnFull} is false (trailing), there will be a wrap around when the data and metadata buffers are full and data and metadata will continue to be captured.  \newline
+When \texttt{stopOnFull} is true (leading), data and metadata will be captured as long as the metadata buffer is not full. The data buffer will loop if it is not full and the metadata buffer is not full. The metadata buffer will loop independently until it is not full. When \texttt{stopOnFull} is false (trailing), the data and metadata buffers loop independently. There will be a wrap around when the data and metadata buffers are full and data and metadata will continue to be captured.  \newline
 
 The component also has properties that keep track of whether or not the metadata and data buffers are full; \texttt{metaFull} and \texttt{dataFull}. \newline
 
@@ -228,16 +230,16 @@ The component also has properties that keep track of whether or not the metadata
 		Name & Type & Default & SequenceLength & ArrayLength & ArrayDimensions & Parameter  & Accessibility & Usage \\
 		\hline
 		\verb+stopOnFull+ & bool & false & - & - & - & false & Initial &
-		True - Stop capturing data and metadata when the data and metadata buffers are full. If the metadata buffer is full before the data buffer, no more metadata and no more data will be captured. If the data buffer is full before the metadata buffer, no more data is captured, but continue to capture metadata until the metadata buffer is full. \newline
+		True - Stop capturing data and metadata when the data and metadata buffers are full. The data buffer will loop if it is not full and the metadata buffer is not full. The metadata buffer will loop independently until it is not full. \newline
 		False - Wrap around and continue to capture data and metadata once the buffers are full. This stop functionality is independent of both the control plane 'stop' operation and 'finished' worker state.\\
 		\hline
 		\verb+metadataCount+ & uLong & - & - & - & - & false & Volatile & Counter of metadata records written.\\
 		\hline
 		\verb+dataCount+ & uLong & - & - & - & - & false & Volatile & Counter of words captured.\\
 		\hline
-		\verb+numRecords+ & uLong & 256 & - & - & - & true & - & Number of metadata records/messages to be captured. \\
+		\verb+numRecords+ & uLong & 256 & - & - & - & true & - & This is the maximum number of metadata records that may be captured for messages received (not necessarily the content). \\
 		\hline
-		\verb+numDataWords+ & uLong & 1024 & - & - & - & true & - & Number of four byte data words stored in the data buffer. If stopOnFull is true, meaning no wrap around, no more data will be captured once the data buffer is full.  \\
+		\verb+numDataWords+ & uLong & 1024 & - & - & - & true & - & Maximum number of 32 bit data words that may be stored in the data buffer. If stopOnFull is true, meaning no wrap around, no more data will be captured once the data buffer is full.  \\
 		\hline
 		\verb+numMetadataWords+ & uLong & 4 & - & - & - & true & - & Due to a limitation, cannot use constrained elements in unconstrained array declarations, so cannot directly set the second dimension for the metadata property to 4. The number of metadata words must always be 4, since there are four 4 byte words that are captured. The first metadata word is the opcode for the message and message size in bytes;opcode 8 MSB and message size 24 LSB. The second word is the fraction timestamp for the EOM. The third word is the fraction timestamp for the SOM. And the fourth word is the seconds timestamp for the SOM. So the default value must not be changed.  \\
 		\hline
@@ -245,11 +247,11 @@ The component also has properties that keep track of whether or not the metadata
 		\hline
 		\verb+dataFull+ & bool & false & - & - & - & false & Volatile, Initial & Data buffer is full flag.  \\
 		\hline
-		\verb+stopZLMOpcode+ & uChar & 0 & - & - & - & false & Initial & Opcode associated with the ZLM which indicates the application is 'done'.\\
+		\verb+stopZLMOpcode+ & uChar & 0 & - & - & - & false & Initial & Opcode associated with the ZLM which causes the worker to become finished.\\
 		\hline
-		\verb+stopOnZLM+ & bool & false & - & - & - & false & Initial & Indicates stopping on ZLM of stopZLMOpcode.\\
+		\verb+stopOnZLM+ & bool & false & - & - & - & false & Indicates causing the worker to become finished on ZLM of stopZLMOpcode. \\
 		\hline
-		\verb+stopOnEOF+ & bool & true & - & - & - & false & Initial & As of now, this indicates stopping on ZLM of opcode 0. In the future it is expected that OpenCPI will standardize a definition of EOF.\\
+		\verb+stopOnEOF+ & bool & true & - & - & - & false & Initial & Indicates causing the worker to become finished on EOF. stopOnEOF is always regarded as true now since the only reason to be false was the opcode-0-ZLM aliasing that no longer exists.\\
   		\hline
 		\verb+metadata+ & uLong & - & - & - & numRecords, numMetadataWords & false & Volatile & Multidimensional array containing metadata records.\\
 		\hline
@@ -287,14 +289,14 @@ The component also has properties that keep track of whether or not the metadata
 \section*{Worker Interfaces}
 \subsection*{\comp.hdl}
 \begin{scriptsize}
-\begin{tabular}{|M{2.5cm}|M{2.5cm}|M{3cm}|c|M{3.5cm}|M{3.5cm}|}
+\begin{tabular}{|M{2cm}|M{1.5cm}|M{3cm}|c|M{3.5cm}|M{3.5cm}|}
              \hline
              \rowcolor{blue}
              Type    & Name & DataWidth (b) & Advanced  & Usage     \\
              \hline
              StreamInterface & in   & 32  & DataValueWidth = 8, NumberOfOpcodes='256', ZeroLengthMessages = true  & Data input to capture \\
             \hline
-            StreamInterface & out   & 32  & DataValueWidth = 8, NumberOfOpcodes='256', ZeroLengthMessages = true  & Data from input passed to output unchanged \\
+            StreamInterface & out   & 32  & DataValueWidth = 8, NumberOfOpcodes='256', ZeroLengthMessages = true, InsertEOM="true"  & Data from input passed to output unchanged \\
             \hline
             TimeInterface & time  & 64 (32b sec MSW and 32b frac LSW) & - & Allows worker to capture timestamps \\
             \hline
@@ -316,28 +318,19 @@ The {\comp} worker uses the clock from the Control Plane and standard Control Pl
 \input{../../\ecomp.hdl/utilization.inc}
 \end{landscape}
 
-\section*{Limitations}
-
-Since the raw property address (props\_in.raw.address) is currently 16 bits wide and \texttt{data} and \texttt{metadata} are raw properties that contain 4 byte words, the total address space for these properties is 2\textsuperscript{16}/4. The framework does not throw an error when the total number of elements between the two array properties exceeds 2\textsuperscript{16}/4 so the properties will not be filled correctly. This failure is run time and the application will successfully execute. Once AV-4254 is addressed to change the raw.address from 16 to 32, the new address space limit will be 2\textsuperscript{32}/4.
 
 \section*{Test and Verification}
 \normalsize
 
 \begin{flushleft}
 
-The {\comp}-test.xml has a test property called \texttt{testScenario} that allows for four different test cases; testing sending no data, testing making only metadata full, testing making data full, testing sending multiple zlms (with different opcodes), a single word message, filling data and filling up metadata (for configurations where there are at least six metadata records).
+The capture\_v2-test.xml has a test property called \texttt{testScenario} that allows for five different test cases: testing sending no data; testing making only metadata full; testing making data full; testing sending multiple zlms (with different opcodes), a single word message, filling data and filling up metadata (for configurations where there are at least six metadata records); and test sending stopZLMOpcode opcode and no output port connected.
 \newline
 
 An input file is generated via \path{generate.py}. The \path{generate.py} script will output different input data based on the \texttt{testScenario} chosen.
 \newline
 
 The tests are verified by \path{verify.py} script. It checks that the \texttt{metadataCount}, \texttt{dataCount}, status(\texttt{metaFull} and \texttt{dataFull}), \texttt{metadata} and \texttt{data} match the expected results. \newline
-
-
-There are also some custom tests located in the {\comp}.test directory that tests things not currently supported by the test suite. These tests are: testing stopping on an opcode other than 0 (need to be able to set done='{\comp}' in the app xml to be able to test this) and testing the {\comp} with no output connected. The tests are built and run manually via a \path{run_test.sh} script.
-\newline
-
-The custom tests also have \path{generate.py} and \path{verify.py} scripts but they are simpler versions than the ones in the top level {\comp}.test directory or they are specific to the custom test.
 
 \end{flushleft}
 

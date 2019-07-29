@@ -98,7 +98,7 @@ $(foreach l,$(call Unique,\
 	          $(foreach f,$(call HdlGetFamily,$(or $(HdlTarget),$1)),\
 		    $(foreach v,$(call HdlGetTop,$f),$(infox VVV:$v)\
 	              $(if $(filter library,$(HdlMode)),,\
-			$(foreach p,$(foreach x,$(filter-out $(LibName),fixed_float ocpi util bsv),$(infox XXX:$x)$(call HdlSearchPrimitivePath,$x,,HLI)),$(infox PPP:$p)\
+			$(foreach p,$(foreach x,$(filter-out $(LibName),fixed_float ocpi util bsv cdc),$(infox XXX:$x)$(call HdlSearchPrimitivePath,$x,,HLI)),$(infox PPP:$p)\
 			  $(if $(wildcard $(call HdlLibraryRefDir,$p,$f,,HLI)),$p,\
 			    $(error Primitive library "$p" non-existent or not built for $f [$(call HdlLibraryRefDir,$p,$f,x,HLI2)])))))))),\
     $(infox HLI:returning $l)$l))

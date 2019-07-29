@@ -343,7 +343,7 @@ cleanprerequisites:
 # Goals that are about projects
 # A convenience to run various goals on all the projects that are here
 # Unfortunately, we need to know the order here.
-Projects=core assets inactive
+Projects=core assets inactive assets_ts
 ProjectGoals=cleanhdl cleanrcc cleanocl rcc ocl hdl applications run runtest hdlprimitives \
              hdlportable components cleancomponents test
 # These are not done in parallel since we do not know the dependencies

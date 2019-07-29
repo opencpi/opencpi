@@ -706,9 +706,9 @@ emitSignals(FILE *f, Language lang, bool useRecords, bool inPackage, bool inWork
   std::string init = lang == VHDL ? "  port (\n" : "";
   std::string last = init;
   if (m_type != Container)
-    for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
+    for (auto ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
       Clock &c = **ci;
-      if (!c.port && !c.m_internal) {
+      if (!c.m_port && !c.m_internal) {
 	if (last.empty())
 	  fprintf(f,
 		  "    %s Clock(s) not associated with one specific port:\n", comment);
@@ -1179,9 +1179,9 @@ emitDefsHDL(bool wrap) {
       m_ports[i]->emitVerilogPortParameters(f);
 #endif
     // Now we emit the declarations (input, output, width) for each module port
-    for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
+    for (auto ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
       Clock &c = **ci;
-      if (!c.port && !c.m_internal) {
+      if (!c.m_port && !c.m_internal) {
 	fprintf(f, "  %s      %s;\n", c.m_output ? "output" : "input", c.signal());
 	if (c.m_reset.size())
 	  fprintf(f, "  input      %s;\n", c.reset());
@@ -1413,9 +1413,9 @@ emitVhdlShell(FILE *f) {
 	  "  port map(\n");
   std::string last;
   if (m_type != Container)
-    for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
+    for (auto ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
       Clock *c = *ci;
-      if (!c->port) {
+      if (!c->m_port) {
 	fprintf(f, "%s    %s => %s", last.c_str(), c->signal(), c->signal());
 	last = ",\n";
 	if (c->m_reset.size()) {
@@ -1534,9 +1534,9 @@ emitVhdlSignalWrapper(FILE *f, const char *topinst) {
     std::string init = "    port map(\n";
     std::string last = init;
     if (m_type != Container)
-      for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
+      for (auto ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
 	Clock *c = *ci;
-	if (!c->port) {
+	if (!c->m_port) {
 	  if (last.empty())
 	    fprintf(f,
 		    "  -- Clock(s) not associated with one specific port:\n");
@@ -1614,9 +1614,9 @@ emitVhdlRecordWrapper(FILE *f) {
       fprintf(f, "\n    port map(\n");
       std::string last;
       if (m_type != Container)
-	for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
+	for (auto ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
 	  Clock *c = *ci;
-	  if (!c->port) {
+	  if (!c->m_port && !c->m_internal) {
 	    if (last.empty())
 	      fprintf(f,
 		      "  -- Clock(s) not associated with one specific port:\n");

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -24,7 +24,7 @@ Use this script to validate the data sent by the Pattern_v2 worker.
 import os.path
 import re
 import sys
-# import struct
+import struct
 import opencpi.colors as color
 import numpy as np
 
@@ -33,81 +33,99 @@ if len(sys.argv) != 2:
    print("Invalid arguments:  usage is: verify.py <output-file>")
    sys.exit(1)
 
-print "*** Validate output against expected data ***"
 
+logName = os.path.splitext(sys.argv[1])[0]
+logName = os.path.splitext(logName)[0] + ".log"
 
-logname = os.path.splitext(sys.argv[1])[0]
-logname = os.path.splitext(logname)[0] + ".log"
-
-logfile = open(logname, 'r')
-lines = logfile.read()
-logfile.close()
+logFile = open(logName, 'r')
+lines = logFile.read()
+logFile.close()
 
 dataRepeat = os.environ.get("OCPI_TEST_dataRepeat")
 messagesToSend = re.findall("pattern_v2.messagesToSend = \"(\d+)\".*", lines)
-messagesToSend_initial = int(messagesToSend[0])
-messagesToSend_final =  int(messagesToSend[1])
+messagesToSendInitial = int(messagesToSend[0])
+messagesToSendFinal =  int(messagesToSend[1])
 messagesSent = re.findall("pattern_v2.messagesSent = \"(\d+)\".*", lines)
-messagesSent_final = int(messagesSent[1])
+messagesSentFinal = int(messagesSent[1])
 dataSent = re.findall("pattern_v2.dataSent = \"(\d+)\".*", lines)
-dataSent_final = int(dataSent[1])
+dataSentFinal = int(dataSent[1])
 numMessagesMax = int(os.environ.get("OCPI_TEST_numMessagesMax"))
 
 
 obj1 = re.search("pattern_v2.messages = \"([^\"]*)\".*", lines)
 messages = [int(x) for x in obj1.group(1).replace("{", "").replace("}", "").split(',')]
 
-ofilename = open(sys.argv[1], 'rb')
-odata = np.fromfile(ofilename, dtype=np.uint32)
-ofilename.close()
+# Gets the opcode and data written to file
+def parse_odata(opcode, odata):
+    bytes = 0
+    with open(sys.argv[1], 'rb') as f:
+        for x in range(0, messagesToSendInitial):
+            # The contents for a message are arranged in file in this order: bytes,
+            # opcode, and then data for the message
+            bytes = struct.unpack("<I",f.read(4))[0]
+            opcode = np.append(opcode, struct.unpack("<I",f.read(4))[0])
+            for y in range(0, bytes//4):
+                odata = np.append(odata, struct.unpack("<I",f.read(4))[0])
+    return opcode, odata
 
 # Check that the final value of messagesToSend is 0
-if (messagesToSend_final != 0):
-    print '    ' + color.RED + color.BOLD + 'FAIL, the final value of messagesToSend = ', messagesToSend_final, 'while expected value is' + color.END, 0
+if (messagesToSendFinal != 0):
+    print ('    The final value of messagesToSend = ', messagesToSendFinal, 'while expected value is 0')
     sys.exit(1)
 else:
-    print '    PASS: The final value of messagesToSend is correct'
+    print ('    The final value of messagesToSend is correct')
 
 # Check that the final value of  messageSent is the correct value.
-# The correct value is messagesToSend_initial + 1 (plus 1 because there's a zlm of opcode 0 that is sent as well)
-if (messagesSent_final != messagesToSend_initial + 1):
-    print '    ' + color.RED + color.BOLD + 'FAIL, the final value of messagesSent = ', messagesSent_final, 'while expected value is' + color.END,  messagesToSend_initial+1
+if (messagesSentFinal != messagesToSendInitial):
+    print ('    The final value of messagesSent = ', messagesSentFinal, 'while expected value is',  messagesToSendInitial)
     sys.exit(1)
 else:
-    print '    PASS: The final value of messageSent is correct'
+    print ('    The final value of messageSent is correct')
 
 # Generate the expected data that was sent to compare to the output data and also grab the number
 # of data sent for each message
-msg_len = messagesToSend_initial*2
+# Multiplying messagesToSendInitial by 2 because there are 2 message fields
+messagesLength = messagesToSendInitial*2
 bytes = 0
+opcodesSent = np.array([], dtype=np.uint32)
 data = np.array([], dtype=np.uint32)
 start = 0
-for x in range(0, msg_len, 2):
+for x in range(0, messagesLength, 2):
     bytes = bytes + messages[x]
-    stop = messages[x]/4
+    opcodesSent = np.append(opcodesSent, messages[x+1])
+    stop = messages[x]//4
     if (dataRepeat == "true"):
         data = np.append(data, np.arange(0,stop))
     elif (dataRepeat == "false"):
         data = np.append(data, np.arange(start, start+stop))
         start += stop
 
+opcodeReceived = np.array([], dtype=np.uint32)
+odata = np.array([], dtype=np.uint32)
+
+opcodeReceived, odata = parse_odata(opcodeReceived, odata)
 
 # Divide by 4 because data is 4 byte data
-numData = bytes/4
+numData = bytes//4
 
 # Check that the final value of dataSent is correct
-if (dataSent_final != numData):
-    print '    ' + color.RED + color.BOLD + 'FAIL, the final value of dataSent = ', dataSent_final, 'while expected value is' + color.END,  numData
+if (dataSentFinal != numData):
+    print ('    The final value of dataSent = ', dataSentFinal, 'while expected value is',  numData)
     sys.exit(1)
 else:
-    print '    PASS: The final value of dataSent is correct'
+    print ('    The final value of dataSent is correct')
+
+# Check that opcodes sent match opcodes received
+if np.array_equal(opcodesSent, opcodeReceived):
+	print ('    opcodes sent match opcodes received')
+else:
+	print ('    opcodes sent do not all match opcodes received')
+	sys.exit(1)
+
 
 # Check that output data matches the input data
 if np.array_equal(data, odata):
-	print '    PASS: Input data and output data match'
+	print ('    Data sent and output data match')
 else:
-	print '    FAIL: Input data and output data do not match'
+	print ('    Data sent and output data do not match')
 	sys.exit(1)
-
-print '    Data matched expected results.'
-print '    ' + color.GREEN + color.BOLD + 'PASSED' + color.END

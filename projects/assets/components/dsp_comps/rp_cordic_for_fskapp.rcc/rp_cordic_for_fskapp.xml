@@ -1,0 +1,15 @@
+<RccWorker language='c++' spec='rp_cordic-spec' controlOperations="start">
+  <!-- DATA_WIDTH Added here to be a FSK workalike, the implementation does not use this. -->
+  <SpecProperty Name="DATA_WIDTH" Parameter="true" Default="16"/>
+  <!-- DATA_EXT Added here to be a FSK workalike, the implementation does not use this. -->
+  <SpecProperty Name="DATA_EXT" Parameter="true" Default="6" />
+  <!-- STAGES Added here to be a FSK workalike. Used to truncate data to match HDL implementation --> 
+  <SpecProperty Name="STAGES" Parameter="true" Default="16"/>
+
+  <Property Name="magnitude" Type="short" Volatile="true"
+            Description="Magnitude of the I/Q vector. May be useful for gain control."/>
+  <Property Name="AdditionalDelay" Type="uchar" Parameter="true" Value="8"
+            Description="Additional number of delays over CORDIC stages (STAGES) to match HDL implementation."/>
+  <Property Name="StageDelay" Type="uchar" Parameter="true" Value="STAGES+AdditionalDelay"
+            Description="Number of delays to match HDL implementation."/>
+</RccWorker>

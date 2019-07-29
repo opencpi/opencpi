@@ -110,30 +110,6 @@ finalizeHDL() {
   return NULL;
 }
 
-Clock &Worker::
-addWciClockReset() {
-  // If there is no control port, then we synthesize the clock as wci_clk
-  for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++)
-    if (!strcasecmp("wci_Clk", (*ci)->cname()))
-      return **ci;
-  Clock &clock = addClock();
-  clock.m_name = "wci_Clk";
-  clock.m_signal = "wci_Clk";
-  clock.m_reset = "wci_Reset_n";
-  m_wciClock = &clock;
-  return clock;
-}
-
-Clock *Worker::
-findClock(const char *a_name) const {
-  for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
-    Clock *c = *ci;
-    if (!strcasecmp(a_name, c->cname()))
-      return c;
-  }
-  return NULL;
-}
-
 const char *endians[] = {ENDIANS, NULL};
 
 const char *Worker::
@@ -193,20 +169,8 @@ parseHdlImpl(const char *a_package) {
     if (!m_wci->m_count)
       m_wci->m_count = 1;
   }
-  // Now we do clocks before interfaces since they may refer to clocks
-  for (ezxml_t xc = ezxml_cchild(m_xml, "Clock"); xc; xc = ezxml_cnext(xc)) {
-    if ((err = OE::checkAttrs(xc, "Name", "Signal", "Home", (void*)0)))
-      return err;
-    Clock &c = addClock();
-    const char *cp = ezxml_cattr(xc, "Name");
-    if (!cp)
-      return "Missing Name attribute in Clock subelement of HdlWorker";
-    c.m_name = cp;
-    cp = ezxml_cattr(xc, "Signal");
-    c.m_signal = cp ? cp : "";
-    if ((err = OE::getBoolean(xc, "output", &c.m_output)))
-      return err;
-  }
+  if ((err = parseClocks()))
+    return err;
   // Now that we have clocks roughly set up, we process the wci clock
   //  if (wci && (err = checkClock(xctl, wci)))
   //    return err;
@@ -242,13 +206,15 @@ parseHdlImpl(const char *a_package) {
   for (unsigned i = 0; i < m_ports.size(); i++)
     m_ports[i]->finalizeHdlDataPort(); // This will convert to a concrete impl type if not one yet
   // 2. Resolve clock references between ports
+  if (!m_wciClock)
+    addWciClockReset();
   for (unsigned i = 0; i < m_ports.size(); i++)
     if ((err = m_ports[i]->checkClock()))
       return err;
   // Now check that all clocks have a home and all ports have a clock
-  for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
+  for (auto ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
     Clock *c = *ci;
-    if (!c->port && c->m_signal.empty())
+    if (!c->m_port && c->m_signal.empty())
       c->m_signal = c->m_name;
   }
   if (emulate) {
@@ -285,8 +251,8 @@ parseHdlImpl(const char *a_package) {
   // now make sure clockPort references are sorted out and counts are non-zero
   for (unsigned i = 0; i < m_ports.size(); i++) {
     Port *p = m_ports[i];
-    if (p->clockPort)
-      p->clock = p->clockPort->clock;
+    if (p->m_clockPort != SIZE_MAX)
+      p->m_clock = m_ports[p->m_clockPort]->m_clock;
     if (p->m_count == 0)
       p->m_count = 1;
   }
@@ -385,7 +351,7 @@ parse(ezxml_t x, Worker *w) {
       return "Signal directions must be specified using the \"direction\" attribute when the "
 	"\"name\" attribute is used";
     if (!direction)
-      return "The \"direction\" attribute us required when the \"name\" attribute is present";
+      return "The \"direction\" attribute is required when the \"name\" attribute is present";
     if ((err = parseDirection(direction, &m_directionExpr, *w)))
       return err;
   } else {

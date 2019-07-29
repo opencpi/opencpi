@@ -55,13 +55,6 @@ const char *g_platform = 0, *g_device = 0, *load = 0, *g_os = 0, *g_os_version =
 bool g_dynamic = false;
 bool g_multipleWorkers = false;
 
-Clock &Worker::
-addClock() {
-  Clock &c = *new Clock;
-  c.ordinal = m_clocks.size();
-  m_clocks.push_back(&c);
-  return c;
-}
 // Check for implementation attributes common to data interfaces, several of which
 // are able to override protocol-determined values.
 // Take care of the case of implementation-specific ports (via implname);
@@ -700,20 +693,10 @@ initImplPorts(ezxml_t xml, const char *element, PortCreate &a_create) {
   unsigned
     nTotal = OE::countChildren(xml, element),
     ordinal = 0;
-  // Clocks depend on port names, so get those names in first pass(non-control ports)
-  for (ezxml_t x = ezxml_cchild(xml, element); x; x = ezxml_cnext(x), ordinal++) {
-#if 0
-
-    if (!ezxml_cattr(x, "name")) {
-      std::string name = prefix;
-      if (nTotal != 1)
-        OU::format(name, "%s%u", prefix, ordinal);
-      ezxml_set_attr_d(xml, "name", name.c_str());
-    }
-#endif
+  // Clocks depend on port names, so get those names in first pass (ocp ports)
+  for (ezxml_t x = ezxml_cchild(xml, element); x; x = ezxml_cnext(x), ordinal++)
     if (!a_create(*this, x, NULL, nTotal == 1 ? -1 : (int)ordinal, err))
       return err;
-  }
   return NULL;
 }
 
@@ -1205,10 +1188,6 @@ Parsed(ezxml_t xml,        // The xml for this entity
 }
 #endif
 
-Clock::
-Clock()
-  : port(NULL), ordinal(0), m_output(false), m_internal(false) {
-}
 
 const char *Worker::
 emitUuid(const OU::Uuid &) {

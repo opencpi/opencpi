@@ -16,5 +16,5 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-Libraries+=util_prims
-include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk
+# This is the Makefile for worker wsi_adapt_from_zero.hdl
+include $(OCPI_CDK_DIR)/include/worker.mk

@@ -25,6 +25,8 @@ library util;
 entity metadata_rv is
   generic(romwords : natural := 2048);
   port(
+    wci_Clk      : in std_logic;
+    wci_Reset_n  : in std_logic;
     metadata_in  : in  metadata_out_t;
     metadata_out : out metadata_in_t
     );
@@ -71,7 +73,7 @@ begin
     generic map(WIDTH    => 32,
                 SIZE     => romwords,
                 INITFILE => "metadatarom.dat")
-       port map(CLK      => metadata_in.clk,
+       port map(CLK      => wci_Clk,
                 ADDR     => addr,
                 DO       => dout);
   

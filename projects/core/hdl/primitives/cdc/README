@@ -1,0 +1,25 @@
+This CDC (clock domain crossing) library uses the following abbreviations:
+
+These prefixes are used
+src_ - the source/input clock domain that will be crossed to the destination domain
+dst_ - the destination clock domain that (most) outputs are in
+
+clk - clock
+rst - reset
+en  - enable
+in  - data inputs
+out - data outputs
+
+Parameters are:
+width - width of data path doing the cdc
+
+Usage is normally using:
+
+  library cdc;
+
+And then in your code use, e.g.:
+
+  something: component cdc.cdc.fifo ...
+
+If a module is called XXX it means that the module is an XXX that crosses from SRC to DST clock domains.
+

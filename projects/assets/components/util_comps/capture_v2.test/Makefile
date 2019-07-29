@@ -18,3 +18,6 @@
 
 # This is the Makefile for the test directory which tests component "capture_v2"
 include $(OCPI_CDK_DIR)/include/test.mk
+
+clean::
+	@rm -rf __pycache__

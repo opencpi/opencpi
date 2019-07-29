@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -26,7 +26,7 @@ Generate script
 """
 
 if len(sys.argv) != 2:
-    print("Invalid arguments:  usage is: generate.py <output-file>")
+    print ("Don't run this script manually, it is called by 'ocpidev test' or 'make test'")
     sys.exit(1)
 
 
@@ -106,6 +106,16 @@ def testScenario4():
 
     f.close()
 
+# Test no output port connected and sending a stopZLMOpcode opcode
+def testScenario5():
+    filename = sys.argv[1]
+    f = open(filename, 'wb')
+
+    # Send ZLM with stopZLMOpcode opcode
+    f.write(struct.pack("<I", 0))
+    f.write(struct.pack("<I", 255))
+
+    f.close()
 
 def main():
    if (testScenario == 1):
@@ -116,8 +126,10 @@ def main():
        testScenario3()
    elif (testScenario == 4):
        testScenario4()
+   elif (testScenario == 5):
+       testScenario5()
    else:
-       print("Error: Invalid testScenario")
+       print("Invalid testScenario: valid testScenario are 1, 2, 3 and 4")
        sys.exit(1)
 
 main()

@@ -57,7 +57,7 @@ DataPort(Worker &w, ezxml_t x, DataPort *sp, int ordinal, WIPType type, const ch
 			 m_dataWidth, OU::Port::cname(), m_dataValueWidth);
       return;
     }
-  } else if ((!m_dataWidth && m_dataValueWidth) || (m_dataWidth && m_dataValueWidth % m_dataWidth)) {
+  } else if (m_dataWidth && m_dataValueWidth % m_dataWidth) {
     err =  OU::esprintf("DataValueWidth (%zu) on port '%s' not a multiple of DataWidth (%zu)",
 			m_dataValueWidth, OU::Port::cname(), m_dataWidth);
     return;
@@ -247,7 +247,7 @@ finalize() {
     if ((!m_dataValueWidth && m_dataWidth) || (m_dataValueWidth && m_dataWidth % m_dataValueWidth))
       return OU::esprintf("DataWidth (%zu) on port '%s' not a multiple of DataValueWidth (%zu)",
 			  m_dataWidth, cname(), m_dataValueWidth);
-  } else if ((!m_dataWidth && m_dataValueWidth) || (m_dataWidth && m_dataValueWidth % m_dataWidth))
+  } else if (m_dataWidth && m_dataValueWidth % m_dataWidth)
     return OU::esprintf("DataValueWidth (%zu) on port '%s' not a multiple of DataWidth (%zu)",
 			m_dataValueWidth, cname(), m_dataWidth);
   // If messages are always a multiple of datawidth and we don't have zlms, bytes are datawidth

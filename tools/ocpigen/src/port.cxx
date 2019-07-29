@@ -18,7 +18,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <assert.h>
+#include <cassert>
+#include <climits>
 #include "hdl.h"
 #include "assembly.h"
 
@@ -28,7 +29,7 @@ Port::
 Port(Worker &w, ezxml_t x, Port *sp, int nameOrdinal, WIPType type, const char *defaultName,
      const char *&err)
   : m_internal(NULL), m_morphed(false), m_worker(&w), m_ordinal(0), m_count(0), m_master(false),
-    m_xml(x), m_type(type), pattern(NULL), clock(NULL), clockPort(NULL), myClock(false),
+    m_xml(x), m_type(type), pattern(NULL), m_clock(NULL), m_clockPort(SIZE_MAX), m_myClock(false),
     m_specXml(x) {
   if (sp) {
     // A sort of copy constructor from a spec port to an impl port
@@ -39,9 +40,9 @@ Port(Worker &w, ezxml_t x, Port *sp, int nameOrdinal, WIPType type, const char *
     m_countExpr = sp->m_countExpr;
     m_master = sp->m_master;
     m_specXml = sp->m_xml;
-    clock = sp->clock;
-    clockPort = sp->clockPort;
-    myClock = sp->myClock;
+    m_clock = sp->m_clock;
+    m_clockPort = sp->m_clockPort;
+    m_myClock = sp->m_myClock;
   } else {
     const char *name = ezxml_cattr(x, "Name");
     m_name = name ? name : "";
@@ -95,7 +96,7 @@ Port::
 Port(const Port &other, Worker &w, std::string &name, size_t count, const char *&err)
   : m_internal(&other), m_morphed(false), m_worker(&w), m_name(name), m_ordinal(w.m_ports.size()),
     m_count(count), m_master(other.m_master), m_xml(other.m_xml), m_type(other.m_type),
-    pattern(NULL), clock(NULL), clockPort(NULL), myClock(false), m_specXml(other.m_specXml)
+    pattern(NULL), m_clock(NULL), m_clockPort(SIZE_MAX), m_myClock(false), m_specXml(other.m_specXml)
 {
   err = NULL; // this is the base class for everything
   for (PortsIter pi = w.m_ports.begin(); pi != w.m_ports.end(); pi++)
@@ -270,50 +271,6 @@ doPatterns(unsigned nWip, size_t &maxPortTypeName) {
   return NULL;
 }
 
-Clock &Port::
-addMyClock(bool output) {
-  clock = &m_worker->addClock();
-  clock->m_name = pname();
-  clock->port = this;
-  clock->m_output = output;
-  myClock = true;
-  return *clock;
-}
-
-// Here are the cases for "clock" and "myclock":
-// 1. None: assume WciClock, and it there is not one from a WCI, make one.
-// 2. Clock, but not myclock, referring to a port: I'll have what he has.
-// 3. Clock, referring to a worker-level clock.
-// 4. myclock but not clock: define a clock for this port to own
-// Minimal error checking has already be done with early parsing.
-const char *Port::
-checkClock() {
-  if (clock)
-    return NULL;
-  const char *clockName = m_xml ? ezxml_cattr(m_xml, "Clock") : NULL;
-  if (clockName) {
-    Port *other = m_worker->findPort(clockName, this);
-    if (other) {
-      clockPort = other; // I'll have what she is having
-      clock = other->clock;
-    } else if (!(clock = m_worker->findClock(clockName)))
-      return OU::esprintf("Clock for interface \"%s\", \"%s\" is not defined for the worker",
-			  pname(), clockName);
-  } else if (myClock)
-    ; // clock already added
-  else if (needsControlClock()) {
-    if (m_worker->m_wci)
-      // If no clock specified, and we have a WCI slave port then use its clock indirectly
-      clockPort = m_worker->m_wci;
-    else if (m_worker->m_wciClock)
-      // If no clock specified, and no WCI slave, use a wciClock if it exists
-      clock = m_worker->m_wciClock;
-    else
-      clock = &m_worker->addWciClockReset();
-  }
-  return NULL;
-}
-
 void Port::
 emitPortDescription(FILE *f, Language lang) const {
   const char *comment = hdlComment(lang);
@@ -329,15 +286,15 @@ emitPortDescription(FILE *f, Language lang) const {
 	  comment, nbuf.c_str(), typeName(),
 	  nbuf.length() ? "s" : "", pname(), m_worker->m_implName,
 	  isOCP() ? "OCP " : "", masterIn() ? "slave" : "master");
-  if (clockPort)
+  if (m_clockPort != SIZE_MAX)
     fprintf(f, "  %s   Clock: uses the clock from interface named \"%s\"\n", comment,
-	    clockPort->pname());
-  else if (myClock)
+	    m_worker->m_ports[m_clockPort]->pname());
+  else if (m_myClock)
     fprintf(f, "  %s   Clock: this interface has its own clock, named \"%s\"\n", comment,
-	    clock->signal());
-  else if (clock)
+	    m_clock->signal());
+  else if (m_clock)
     fprintf(f, "  %s   Clock: this interface uses the worker's clock named \"%s\"\n", comment,
-	    clock->signal());
+	    m_clock->signal());
 }
 
 const char *Port::

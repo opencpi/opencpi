@@ -88,7 +88,7 @@ package wsi is
       ready            : out Bool_t; -- data can be taken
       -- user visible metadata
       som, eom, valid, eof, abort : out Bool_t;
-      data             : out std_logic_vector(byte_width*n_bytes-1 downto 0);
+      data             : out std_logic_vector(ocpi.util.max(1,byte_width)*n_bytes-1 downto 0);
       -- only used if bytes are required (zlm or byte size < data width)
       byte_enable      : buffer std_logic_vector(n_bytes-1 downto 0);
       -- only used if precise is required
@@ -150,7 +150,7 @@ package wsi is
       opcode           : in  std_logic_vector(opcode_width-1 downto 0);
       eof              : in  Bool_t; -- an EOF is pending from worker for this port
       give             : in  Bool_t := bfalse;
-      data             : in  std_logic_vector(n_bytes * byte_width-1 downto 0);
+      data             : in  std_logic_vector(n_bytes * ocpi.util.max(1,byte_width)-1 downto 0);
       byte_enable      : in  std_logic_vector(n_bytes-1 downto 0) := (others => '1');
       som              : in  Bool_t := bfalse;
       eom              : in  Bool_t := bfalse;

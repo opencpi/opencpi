@@ -116,7 +116,7 @@ type metadata_in_t is record
 end record metadata_in_t;
 
 type metadata_out_t is record
-  clk     : std_logic;
+  clk     : std_logic; -- THIS IS IGNORED AND IS ONLY HERE FOR COMPATIBILITY with platform workers
   romAddr : ushort_t;
   romEn   : bool_t;
 end record metadata_out_t;
@@ -331,10 +331,10 @@ end component unoc_cp_adapter;
 
 -- Component to drive the OCCP in a simulator
 component sim_clk is
-  port(
-    clk   : out std_logic;
-    reset : out bool_t
-    );
+  generic(frequency : real := 100000000.0;
+          offset    : natural := 0);
+  port   (clk   : out std_logic;
+          reset : out bool_t);
 end component sim_clk;
 
 component sim_dcp is
@@ -397,9 +397,11 @@ end record wti_out_t;
 
 component time_client_rv is
   port(
-    time_in : in  time_service_t;
-    wti_in  : in  wti_in_t;
-    wti_out : out wti_out_t
+    wci_Clk     : in std_logic;
+    wci_Reset_n : in std_logic;
+    time_in     : in  time_service_t;
+    wti_in      : in  wti_in_t;
+    wti_out     : out wti_out_t
     );
 end component time_client_rv;
 end package time_client_defs;
@@ -421,9 +423,11 @@ end record wti_out_t;
 
 component time_client_co_rv is
   port(
-    time_in : in  time_service_t;
-    wti_in  : in  wti_in_t;
-    wti_out : out wti_out_t
+    wci_Clk     : in std_logic;
+    wci_Reset_n : in std_logic;
+    time_in     : in  time_service_t;
+    wti_in      : in  wti_in_t;
+    wti_out     : out wti_out_t
     );
 end component time_client_co_rv;
 end package time_client_co_defs;
@@ -436,6 +440,8 @@ package metadata_defs is
 component metadata_rv is
   generic(romwords : natural := 2048);
   port(
+    wci_Clk      : in std_logic;
+    wci_Reset_n  : in std_logic;
     metadata_in  : in  metadata_out_t;
     metadata_out : out  metadata_in_t
     );

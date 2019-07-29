@@ -1070,12 +1070,18 @@ namespace {
         std::string app("<application");
         // the testrun.sh script has the name "file_write_from..." or "file_write" hardcoded, so
         // the name of the file_write is limited to those options
+
+// if (w.findPort(m_name.c_str())) {
+
+
         if ((optionals.size() >= nOutputs) && isOptional && !finishPort)
           OU::formatAdd(app, " done='%s'", dut);
         else if (nOutputs == 1)
           OU::formatAdd(app, " done='file_write'");
         else if (nOutputs > 1) {
-          if (finishPort) {
+          if (finishPort && wFirst->findPort(finishPort)) {
+            OU::formatAdd(app, " done='file_write_from_%s'", finishPort);
+          } else if (finishPort && emulator->findPort(finishPort)) {
             OU::formatAdd(app, " done='file_write_from_%s'", finishPort);
           } else {
             OU::formatAdd(app, " done='file_write_from_%s'", (firstEm ? firstEm : first)->pname());
@@ -1087,11 +1093,14 @@ namespace {
             if (!m_ports[n].m_port->isDataProducer()) {
               InputOutput &io = m_ports[n];
               if (!io.m_testOptional) {
-                OU::formatAdd(app, "  <instance component='ocpi.core.file_read' connect='%s_ms_%s'",
-                              dut, io.m_port->pname());
+                if (&io.m_port->worker() == emulator ) {
+                  OU::formatAdd(app, "  <instance component='ocpi.core.file_read' connect='%s_ms_%s'", em, io.m_port->pname());
+                } else {
+                  OU::formatAdd(app, "  <instance component='ocpi.core.file_read' connect='%s_ms_%s'", dut, io.m_port->pname());
+                }
                 if (io.m_messageSize)
                   OU::formatAdd(app, " buffersize='%zu'", io.m_messageSize);
-  	      app += ">\n";
+        	      app += ">\n";
                 std::string l_file;
                 if (io.m_file.size())
                   OU::formatAdd(l_file, "%s%s", io.m_file[0] == '/' ? "" : "../../", io.m_file.c_str());
@@ -1105,7 +1114,11 @@ namespace {
                 if (io.m_suppressEOF)
                   OU::formatAdd(app, "    <property name='suppressEOF' value='true'/>\n");
                 app += "  </instance>\n";
-                OU::formatAdd(app, "  <instance component='ocpi.core.metadata_stressor' name='%s_ms_%s' connect='%s'", dut, io.m_port->pname(), dut);
+                if (&io.m_port->worker() == emulator ) {
+                  OU::formatAdd(app, "  <instance component='ocpi.core.metadata_stressor' name='%s_ms_%s' connect='%s'", em, io.m_port->pname(), em);
+                } else {
+                  OU::formatAdd(app, "  <instance component='ocpi.core.metadata_stressor' name='%s_ms_%s' connect='%s'", dut, io.m_port->pname(), dut);
+                }
                 if (nInputs > 1)
                   OU::formatAdd(app, " to='%s'",  io.m_port->pname());
                 app += ">\n";
@@ -1135,13 +1148,14 @@ namespace {
               OU::formatAdd(app, "  <instance component='ocpi.core.backpressure'");
               if (nOutputs > 1) {
                 if (&p.worker() == emulator)
-                  OU::formatAdd(app, " name='bp_%s_%s' connect='file_write_%s_%s'", em,
-                                io.m_port->pname(), em, io.m_port->pname());
+                  OU::formatAdd(app, " name='bp_%s_%s' connect='file_write_from_%s'", em,
+                                io.m_port->pname(),  io.m_port->pname());
                 else
                   OU::formatAdd(app, " name='bp_%s_%s' connect='file_write_from_%s'", dut,
                                 io.m_port->pname(), io.m_port->pname());
-              } else
+              } else {
                 OU::formatAdd(app, " name='bp' connect='file_write'");
+              }
               app += ">\n";
               if (!io.m_disableBackpressure)
                 OU::formatAdd(app, "    <property name='enable_select' value='true'/>\n");
@@ -1151,7 +1165,7 @@ namespace {
               // the name of the file_write is limited to those options
               if (nOutputs > 1) {
                 if (&p.worker() == emulator)
-                  OU::formatAdd(app, " name='file_write_%s_%s'", em, io.m_port->pname());
+                  OU::formatAdd(app, " name='file_write_from_%s'", io.m_port->pname());
                 else
                   OU::formatAdd(app, " name='file_write_from_%s'", io.m_port->pname());
               }
@@ -1192,6 +1206,7 @@ namespace {
       }
       return NULL;
     }
+    
     // Generate the verification script for this case
     const char *
     generateVerification(const std::string &dir, Strings &files) {

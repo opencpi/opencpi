@@ -34,6 +34,7 @@
     const char *_aperr = addProperty(#name,OA::OCPI_##type,__VA_ARGS__); if (_aperr) return _aperr; \
   } while(0)
 
+// FIXME:  This class should have a base class for data that is not HDL
 class DataPort : public OcpPort, public OCPI::Util::Port {
  protected:
   // This constructor is used when data port is inherited

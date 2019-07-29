@@ -23,12 +23,15 @@ library ocpi; use ocpi.all, ocpi.types.all;
 library work; use work.platform_pkg.all;
 
 entity sim_clk is
+  generic (frequency : real := 100000000.0;
+           offset    : natural := 0);
   port(
     clk   : out std_logic := '0';
     reset : out std_logic := '1');
 end sim_clk;
 architecture rtl of sim_clk is
-  constant clk_half_period  : time := 5 ns;       -- 100 mhz
+  constant period_ns        : natural := natural(1000000000.0/frequency);
+  constant clk_half_period  : time := (period_ns/2) * 1 ns;       -- 100 mhz
   constant reset_clocks     : natural := 17;
   signal myclk              : std_logic := '0';
   signal myreset            : std_logic := '1';
@@ -40,9 +43,11 @@ begin
   clock : process
   begin
     myclk <= '0';
-    wait for clk_half_period;
+    wait for offset * 1 ns;
     myclk <= '1';
     wait for clk_half_period;
+    myclk <= '0';
+    wait for clk_half_period - offset * 1 ns;
   end process;
 
   -- generate a reset for some number of clocks

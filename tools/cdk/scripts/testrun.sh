@@ -51,6 +51,7 @@ ports=($*)
     exit $?
 }
 # docase <model> <worker> <case> <subcase> <timeout> <duration> <ports>
+
 function docase {
   [ -z "$Cases" ] || {
      local ok
@@ -79,12 +80,6 @@ function docase {
         [ ${#ports[@]} != 1 ] && output="$output""_from_$o"
         outputs="$outputs$output=fileName=$3.$4.$2.$1.$o.out"
       done
-    # else
-    #   for o in ${ports[@]}; do
-    #     output=" -pfile_write"
-    #     [ ${#ports[@]} != 1 ] && output="$output""_from_$o"
-    #     outputs="$outputs$output=fileName=$3.$4.$2.$1.$o.out"
-    #   done
     fi
 
     echo '  'Executing case "$3.$4" using worker $2.$1 on platform $platform... 1>&2

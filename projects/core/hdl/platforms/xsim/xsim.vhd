@@ -24,13 +24,10 @@
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
 library platform; use platform.platform_pkg.all;
-library xsim;
 architecture rtl of xsim_worker is
   signal   ctl_clk          : std_logic;
   signal   ctl_reset        : std_logic := '0';
-  signal   ctl_rst_n        : std_logic;
 begin
-  ctl_rst_n <= not ctl_reset; -- for those that need it
   timebase_out.clk   <= ctl_clk;
   timebase_out.reset <= ctl_reset;
   timebase_out.ppsIn <= '0';
@@ -48,7 +45,7 @@ begin
              sdp_out => sdp_out,
              sdp_in_data => sdp_in_data,
              sdp_out_data => sdp_out_data);
-    
+
   props_out.dna               <= (others => '0');
   props_out.nSwitches         <= (others => '0');
   props_out.switches          <= (others => '0');
@@ -57,7 +54,6 @@ begin
   props_out.nLEDs             <= (others => '0');
   props_out.UUID              <= metadata_in.UUID;
   props_out.romData           <= metadata_in.romData;
-  metadata_out.clk            <= ctl_clk;
   metadata_out.romAddr        <= props_in.romAddr;
   metadata_out.romEn          <= props_in.romData_read;
 end rtl;

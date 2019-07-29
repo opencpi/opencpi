@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -17,28 +16,5 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-import os.path
-import struct
-
-"""
-Generate script for testing output not connected
-"""
-
-if len(sys.argv) != 2:
-    print("Invalid arguments:  usage is: generate.py <numDataWords>")
-    sys.exit(1)
-
-filename = 'test.in'
-f = open(filename, 'wb')
-
-numDataWords = int(sys.argv[1])
-
-#Fill up data
-f.write(struct.pack("<I", numDataWords*4))
-f.write(struct.pack("<I", 0))
-
-for x in range(0, numDataWords):
-    f.write(struct.pack("<I", x))
-
-f.close()
+# This is the Makefile for worker wsi_adapt_to_zero.hdl
+include $(OCPI_CDK_DIR)/include/worker.mk

@@ -1,0 +1,14 @@
+<HdlImplementation language="vhdl" version='2' libraries='cdc'
+		   sourcefiles='../wsi_width_adapter.hdl/adapt_width.vhd'>
+  <ComponentSpec nocontrol='true'>
+    <!-- declare accommodating ports with 8-bit bytes, ZLMs, and max opcodes.-->
+    <DataInterfaceSpec Name="in"  Producer="false"
+		       datavaluewidth='8' zerolengthmessages='1' numberofopcodes='256'/>
+    <DataInterfaceSpec Name="out" Producer="true" buffersize='in'
+		       datavaluewidth='8' zerolengthmessages='1' numberofopcodes='256'/>
+    <property name='width_in' parameter='1' default='32'/>
+    <property name='width_out' parameter='1' default='32'/>
+  </ComponentSpec>
+  <streaminterface name='in' datawidth='width_in' myclock='1'/>
+  <streaminterface name='out' datawidth='width_out' myclock='1' workerEOF='1'/>
+</HdlImplementation>

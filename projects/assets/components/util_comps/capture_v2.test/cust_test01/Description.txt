@@ -1,4 +1,0 @@
-Test capture worker with output not connected. Use the run_test.sh script to generate the input data, build the hdl assembly,
-run the app for the test, and verify the output. The run_test.sh script requires the argument of numDataWords, the size of the data property
-for the current worker build configuration to pass to the generate.py script and requires the name of the hdl platform to build
-the custom test for, as an argument.

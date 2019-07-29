@@ -1,4 +1,4 @@
-<HdlImplementation language="vhdl">
+<HdlImplementation language="vhdl" version='2' sourceFiles='adapt_width.vhd'>
   <ComponentSpec nocontrol='true'>
     <!-- declare accommodating ports with 8-bit bytes, ZLMs, and max opcodes.-->
     <DataInterfaceSpec Name="in"  Producer="false"

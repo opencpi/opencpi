@@ -8,6 +8,19 @@ The next step will be to use more of C++11 when we stop supporting CentOS6, but 
 happening soon.  User code, either RCC C++ workers or ACI applications can use C++11 on
 newer systems, but it may not build or run on older systems such as CentOS6.
 
+Code under the runtime/ directory needs to be stricter and older than code under the tools/ directory.
+The runtime/ code must be compilable for targeted embedded systems, possibly with old compilers.
+
+Code under the tools/ directory may be allowed to use later versions of C++ since that code
+does not have to be built or run on targeted (cross-compiled) systems.
+
+At some point we will make that distinction and require later versions of compilers for
+development hosts, and this will likely coincide with stopping support for Centos6
+as a development host when Centos8 is released and supported.
+
+This would allow the tools/ code to use C++ corresponding to the default compiler supplied
+with Centos7 as an "oldest development host compiler".
+
 
 
 
