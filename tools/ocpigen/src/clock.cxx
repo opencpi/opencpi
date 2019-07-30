@@ -1,23 +1,3 @@
-/*
- * This file is protected by Copyright. Please refer to the COPYRIGHT file
- * distributed with this source distribution.
- *
- * This file is part of OpenCPI <http://www.opencpi.org>
- *
- * OpenCPI is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
- *
- * OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
-
 // methods about clocks, including methods of the Clock class itself.
 
 #include "wip.h"
@@ -30,16 +10,19 @@ parseClocks() {
   // Now we do clocks before interfaces since they may refer to clocks
   for (ezxml_t xc = ezxml_cchild(m_xml, "Clock"); xc; xc = ezxml_cnext(xc)) {
     const char *err;
-   if ((err = OE::checkAttrs(xc, "Name", "Signal", "Home", (void*)0)))
+    if ((err = OE::checkAttrs(xc, "Name", "Signal", "Home", "direction", "frequency", (void*)0)))
       return err;
-    const char *cp = ezxml_cattr(xc, "Name");
-    if (!cp)
+    const char
+      *name = ezxml_cattr(xc, "Name"),
+      *direction = ezxml_cattr(xc, "direction"),
+      *signal = ezxml_cattr(xc, "signal");
+    if (!name)
       return "Missing Name attribute in Clock subelement of HdlWorker";
-    Clock &c = addClock(cp);
-    cp = ezxml_cattr(xc, "Signal");
-    c.m_signal = cp ? cp : "";
-    if ((err = OE::getBoolean(xc, "output", &c.m_output)))
+    Clock *c;
+    if ((err = addClock(name, direction, c)))
       return err;
+    c->m_signal = signal ? signal : "";
+    return NULL;
   }
   return NULL;
 }

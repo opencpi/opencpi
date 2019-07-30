@@ -347,7 +347,7 @@ Projects=core assets inactive assets_ts
 ProjectGoals=cleanhdl cleanrcc cleanocl rcc ocl hdl applications run runtest hdlprimitives \
              hdlportable components cleancomponents test
 # These are not done in parallel since we do not know the dependencies
-DoProjects=set -e; $(foreach p,$(Projects),\
+DoProjects=set -e; . cdk/opencpi-setup.sh -r; $(foreach p,$(Projects),\
                      echo Performing $1 on project $p && \
                      $(MAKE) -C projects/$p $(if $(filter build,$1),,$1) &&) :
 .PHONY: $(ProjectGoals) testprojects

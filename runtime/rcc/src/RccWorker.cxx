@@ -609,8 +609,17 @@ run(bool &anyone_run) {
     OCPI_EMIT_REGISTER_FULL_VAR( "Worker Run", OCPI::Time::Emit::DT_u, 1, OCPI::Time::Emit::State, wre ); \
     OCPI_EMIT_STATE_CAT_NR_(wre, 1, OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_RUN_TIME);
     ocpiDebug("Running worker \"%s/%s\"", name().c_str(), OU::Worker::cname());
-    RCCResult rc = m_dispatch ?
-      m_dispatch->run(m_context, timedOut, &newRunCondition) : m_user->run(timedOut);
+    RCCResult rc;
+    try {
+      rc = m_dispatch ?
+	m_dispatch->run(m_context, timedOut, &newRunCondition) : m_user->run(timedOut);
+    } catch (std::string &e) {
+      throw OU::Error("RCC Worker \"%s/%s\" run method failed with exception: %s",
+		      name().c_str(), OU::Worker::cname(), e.c_str());
+    } catch (...) {
+      throw OU::Error("RCC Worker \"%s/%s\" run method failed with an unknown exception",
+		      name().c_str(), OU::Worker::cname());
+    }
     OCPI_EMIT_STATE_CAT_NR_(wre, 0, OCPI_EMIT_CAT_WORKER_DEV, OCPI_EMIT_CAT_WORKER_DEV_RUN_TIME);
     m_context->firstRun = false;
     if (m_user)

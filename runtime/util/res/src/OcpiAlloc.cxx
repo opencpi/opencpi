@@ -201,7 +201,7 @@ int OCPI::Util::MemBlockMgr::free( OCPI::Util::ResAddrType addr )
 
 
       m_pool->used -= (*it).size;
-      m_pool->free_list.push_back( Block( m_pool, (*it).size, addr, addr ) );
+      m_pool->free_list.push_back(Block(m_pool, (*it).size, (*it).addr, addr));
       m_pool->alloc_list.erase( it );
       m_pool->defrag();  
       // ocpiDebug("**** Free of = %" OCPI_UTIL_RESADDR_PRIx " used %zu", addr, m_pool->used);

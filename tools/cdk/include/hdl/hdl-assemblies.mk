@@ -45,7 +45,7 @@ endif
 # We use the "internal" versions of variables to allow subsidiary makefiles to
 # simply set those variables again
 ifeq ($(origin Assemblies),undefined)
-  Assemblies:=$(shell for i in *; do if test -d $$i; then echo $$i; fi; done)
+  Assemblies:=$(shell for i in *; do if test -d $$i -a -f $$i/Makefile; then echo $$i; fi; done)
 endif
 override Assemblies:=$(filter-out $(ExcludeAssemblies),$(Assemblies))
 

@@ -210,7 +210,7 @@
 	      else {
 		len = buf + sizeof(buf) - p8;
 		if (p8 != buf)
-		  memcpy(buf, p8, len);
+		  memmove(buf, p8, len);
 		// We've done as much as we can before opening the device, which
 		// does bad things to the Zynq PL
 		if ((xfd = ::open("/dev/xdevcfg", O_RDWR)) < 0)

@@ -57,10 +57,11 @@ begin
       if myreset = '1' then
         if reset_count < reset_clocks then
           reset_count <= reset_count + 1;
+          -- report "half: " & integer'image(integer(frequency)) & " " & integer'image(period_ns);
         else
           myreset <= '0';
         end if;
-      end if;   
+      end if;
     end if;
   end process;
 end architecture rtl;
