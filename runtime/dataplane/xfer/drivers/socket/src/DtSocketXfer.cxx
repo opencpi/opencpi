@@ -71,33 +71,17 @@ public:
       if (!colon || sscanf(colon+1, "%hu;", &m_portNum) != 1)
 	throw OU::Error("Invalid socket endpoint format in \"%s\"", protoInfo);
       // FIXME: we could do more parsing/checking on the ipaddress
-      m_ipAddress.assign(protoInfo, colon - protoInfo);
+      m_ipAddress.assign(protoInfo, OCPI_SIZE_T_DIFF(colon, protoInfo));
     } else {
-      const char *env = getenv("OCPI_TRANSFER_IP_ADDRESS"); // allow env for interface?
+      const char *env = getenv("OCPI_TRANSFER_IP_ADDRESS");
       if (env && env[0])
 	m_ipAddress = env;
       else {
 	ocpiDebug("Set OCPI_TRANSFER_IP_ADDRESS environment variable to set socket IP address");
-	// Use the IP address of the first connected, up, interface with ether MAC address
-	// Cannot use host name since remote systems might not have DNS
 	static std::string myAddr;
 	if (myAddr.empty()) {
 	  std::string error;
-	  OE::IfScanner ifs(error);
-	  OE::Interface eif;
-	  if (error.empty())
-	    while (ifs.getNext(eif, error)) {
-	      if (eif.connected && eif.up && !eif.loopback && eif.addr.isEther() &&
-		  eif.ipAddr.addrInAddr()) {
-		if ((env = getenv("OCPI_SOCKET_INTERFACE")) && strcasecmp(eif.name.c_str(), env))
-		  continue;
-		myAddr = eif.ipAddr.prettyInAddr();
-		ocpiInfo("Choosing our IP address, %s, using interface %s with MAC %s",
-			 myAddr.c_str(), eif.name.c_str(), eif.addr.pretty());
-		break;
-	      }
-	    }
-	  if (!error.empty())
+	  if (OE::IfScanner::findIpAddr(getenv("OCPI_SOCKET_INTERFACE"), myAddr, error))
 	    throw OU::Error("Cannot obtain a local IP address:  %s", error.c_str());
 	}
 	m_ipAddress = myAddr;
@@ -112,11 +96,24 @@ public:
 	m_portNum = 0;
 	ocpiDebug("Set the OCPI_TRANSFER_PORT environment variable to set socket IP port");
       }
-      OU::format(m_protoInfo, "%s:%u", m_ipAddress.c_str(), m_portNum);
+      setProtoInfo();
     }
     // Socket endpoints need an address space too in come cases, so we provide one by
     // simply using the mailbox number as the high order bits.
     m_address = (uint64_t)mailBox() << 32;
+  }
+private:
+  void
+  setProtoInfo() {
+      OU::format(m_protoInfo, "%s:%u", m_ipAddress.c_str(), m_portNum);
+  }
+  void
+  updatePortNum(uint16_t portNum) {
+    if (portNum != m_portNum) {
+      m_portNum = portNum;
+      setProtoInfo();
+      setName();
+    }
   }
   XF::SmemServices &createSmemServices();
 };
@@ -128,12 +125,6 @@ public:
   // Get our protocol string
   const char* getProtocol() { return "ocpi-socket-rdma"; }
   XF::XferServices &createXferServices(XF::EndPoint &source, XF::EndPoint &target);
-  static void setEndpointString(std::string &ep, const char *ipAddr, unsigned port,
-				size_t size, uint16_t mbox, uint16_t maxCount) {
-    OU::format(ep, "ocpi-socket-rdma:%s:%u;%zu.%" PRIu16 ".%" PRIu16,
-	       ipAddr, port, size, mbox, maxCount);
-  }
-
 protected:
   XF::EndPoint &
   createEndPoint(const char *protoInfo, const char *eps, const char *other, bool local,
@@ -246,9 +237,7 @@ public:
     }
     if (m_sep.m_portNum == 0) {
       // We now know the real port, so we need to change the endpoint string.
-      m_sep.m_portNum = m_server.getPortNo();
-      OU::format(m_sep.m_protoInfo, "%s:%u", m_sep.m_ipAddress.c_str(), m_sep.m_portNum);
-      m_sep.setName();
+      m_sep.updatePortNum(m_server.getPortNo());
       ocpiInfo("Finalizing socket endpoint with port: %s", m_sep.name().c_str());
     }
   }

@@ -31,6 +31,7 @@
 #include "XferException.h"
 #include "XferEndPoint.h"
 #include "XferFactory.h"
+#include "XferManager.h"
 
 namespace OU = OCPI::Util;
 
@@ -41,7 +42,7 @@ EndPoint(XferFactory &a_factory, const char *eps, const char *other, bool a_loca
 	 const OCPI::Util::PValue */*params*/)
   :  m_mailBox(0), m_maxCount(0), m_size(0), m_local(a_local), m_factory(a_factory),
      m_refCount(0), m_receiver(NULL), m_sMemServices(NULL), m_resourceMgr(NULL), m_comms(NULL),
-     m_address(0) {
+     m_context(XferManager::getFactoryManager().getEndPointContext()), m_address(0) {
   if (eps) {
     getUuid(eps, m_uuid);
     size_t psize;
@@ -94,7 +95,7 @@ void EndPoint::
 getProtocolFromString( const char* ep, std::string &proto )
 {
   const char *colon = strchr(ep, ':');
-  proto.assign(ep, colon ? colon - ep : strlen(ep));
+  proto.assign(ep, colon ? OCPI_SIZE_T_DIFF(colon, ep) : strlen(ep));
 }
 
 // static

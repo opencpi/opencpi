@@ -153,7 +153,17 @@ namespace OCPI {
       init(params);
     }
     ApplicationI::~ApplicationI() {
-      clear();
+      try {
+	clear();
+      } catch (std::string &e) {
+	ocpiBad("Exception during application shutdown: %s", e.c_str());
+      } catch (const char *e) {
+	ocpiBad("Exception during application shutdown: %s", e);
+      } catch (std::exception &e) {
+	ocpiBad("Exception during application shutdown: %s", e.what());
+      } catch (...) {
+	ocpiBad("Exception during application shutdown: unexpected exception");
+      }
     }
     void ApplicationI::clear() {
       m_assembly--;
@@ -1539,13 +1549,13 @@ namespace OCPI {
     void ApplicationI::stop() {
       ocpiDebug("Stopping master workers that are not slaves.");
       for (unsigned n = 0; n < m_nContainers; n++)
-        m_containerApps[n]->stop(true, false); // stop masters that are not slaves
+        m_containerApps[n]->stop(true, false); // start masters that are not slaves
       ocpiDebug("Stopping master workers that are also slaves.");
       for (unsigned n = 0; n < m_nContainers; n++)
-        m_containerApps[n]->stop(true, true);  // stop masters that are slaves
+        m_containerApps[n]->stop(true, true);  // start masters that are slaves
       ocpiDebug("Stopping workers that are not masters.");
       for (unsigned n = 0; n < m_nContainers; n++)
-        m_containerApps[n]->stop(false, false); // stop non-masters
+        m_containerApps[n]->stop(false, false); // start non-masters
     }
     void ApplicationI::
     setDelayedProperties() {

@@ -25,6 +25,7 @@
 #include <deque>
 #include <vector>
 #include "OcpiOsIovec.h"
+#include "OcpiOsTimer.h"
 #include "OcpiThread.h"
 #include "OcpiUtilSelfMutex.h"
 #include "XferDriver.h"
@@ -32,12 +33,10 @@
 #include "XferFactory.h"
 #include "XferServices.h"
 
-#define FRAME_SEQ_MASK 0xff
-
 // These declaration are shared among various datagram drivers
 namespace DataTransfer {
   namespace Datagram {
-  
+
 struct MsgHeader {
   enum MsgType {
     DATA=0,
@@ -53,7 +52,7 @@ struct MsgHeader {
   uint32_t   dataAddr;
   uint16_t   dataLen;
   uint8_t    type;
-  uint8_t    nextMsg;      
+  uint8_t    nextMsg;
 };
 
 struct Transaction;
@@ -64,45 +63,54 @@ struct FrameHeader {
   uint16_t ACKStart;
   uint8_t  ACKCount;
   uint8_t  flags;
-};    
+};
 #define FRAME_FLAG_HAS_MESSAGES 1
 
 // Not an official base class, just a convenience mix-in
 class Socket;
 class XferServices;
-class DGEndPoint : public OCPI::Util::Thread, protected virtual OCPI::Util::SelfMutex {
+class DGEndPoint : public DataTransfer::EndPoint, protected virtual OCPI::Util::SelfMutex {
   friend class Socket;
-  // These are the templates that have this as the local size, indexed by the remote side.
+  friend class SmemServices;
+  friend class XferServices;
+  // These are the connections that have this as the local side, indexed by the remote side.
   std::vector<XferServices *> m_xferServices;
-  bool m_loop;
 protected:
-  DGEndPoint() : m_xferServices(32), m_loop(true) {}
+  DGEndPoint(DataTransfer::XferFactory &a_factory, const char *eps, const char *other, bool a_local,
+	     size_t a_size, const OCPI::Util::PValue *params)
+    : DataTransfer::EndPoint(a_factory, eps, other, a_local, a_size, params), m_xferServices(32) {}
   ~DGEndPoint() {}
-  void addXfer(XferServices &s);
-  XferServices *xferServices(unsigned destId) {
-    ocpiAssert(destId < m_xferServices.size() );
-    ocpiAssert(m_xferServices[destId] );
+  void stop(); // stop all the underlying threads
+  void addXfer(XferServices &s, MailBox remote);
+  void delXfer(MailBox remote);
+  size_t xferServicesSize() {
+    OCPI::Util::SelfAutoMutex guard(this);
+    return m_xferServices.size(); // will only grow
+  }
+  XferServices *xferServices(size_t destId) {
+    OCPI::Util::SelfAutoMutex guard(this);
+    ocpiAssert(destId < m_xferServices.size());
     return m_xferServices[destId];
   }
-  void run();
-  void stop() { m_loop = false; join(); }
 };
 
 static const int MAX_MSGS = 10;  // FIXME can be calulated
 struct Frame {
-  uint64_t             send_time;
+  OCPI::OS::Time       send_time;
   uint16_t             msg_start, msg_count;
   bool                 is_free;
-  int                  resends;
+  unsigned             resends;
   FrameHeader          frameHdr;
+  uint16_t             valgrind_pad[3];
   unsigned             iovlen;
+  size_t               bytes_left;
   // This is defined in POSIX 1003..1g for those datagram systems that can
   // take advantage of that.
   struct OCPI::OS::IOVec iov[MAX_MSGS+1];
   Transaction         *transaction;
-  EndPoint            *endpoint; // where is this frame going to
+  Frame() : is_free(true), valgrind_pad{} {}
+  void prepare(uint16_t seq, size_t payload);
   void release();
-  Frame():is_free(true),resends(0),transaction(0){}
 };
 
 class SmemServices;
@@ -110,23 +118,16 @@ class XferServices;
 class Socket : public OCPI::Util::Thread {
   DGEndPoint   &m_lep;
   bool          m_run;
-  bool          m_joined;
-public:  
-  Socket(DGEndPoint &lep) : m_lep(lep), m_run(true), m_joined(false) {}
+  //  bool          m_joined;
+public:
+  Socket(DGEndPoint &lep) : m_lep(lep), m_run(true) {} //, m_joined(false) {}
   virtual ~Socket();
-  virtual void send(Frame &frame) = 0;
+  virtual void send(Frame &frame, DGEndPoint &destEp) = 0;
   // return bytes read and offset in buffer to use.  Returning zero is timeout
   virtual size_t receive(uint8_t *buf, size_t &offset) = 0;
   virtual uint16_t maxPayloadSize()=0;  // Maximum message size, total bytes
   virtual void start() = 0;
   inline void stop() { m_run = false; }
-  // Since we are stopped+joined when our smem is stopped, as well as destruction
-  inline void join() {
-    if (!m_joined) {
-      OCPI::Util::Thread::join();
-      m_joined = true;
-    }
-  }
   void run();
 };
 
@@ -140,33 +141,35 @@ public:
 };
 
 // active thread does background retransmissions
-    class SmemServices : public DataTransfer::SmemServices, public virtual OCPI::Util::SelfMutex {
-  Socket *m_socket;
-  char   *m_mem;
+class SmemServices : public DataTransfer::SmemServices, public OCPI::Util::Thread,
+		     public virtual OCPI::Util::SelfMutex {
+  DGEndPoint &m_ep;
+  Socket     *m_socket;
+  char       *m_mem;
+  bool        m_loop;
 public:
-  SmemServices(EndPoint& ep)
-    : DataTransfer::SmemServices(ep), m_socket(NULL), m_mem(NULL) {
+  SmemServices(DGEndPoint& ep)
+    : DataTransfer::SmemServices(ep), m_ep(ep), m_socket(NULL), m_mem(NULL), m_loop(true) {
     if (ep.local()) {
       m_mem = new char[ep.size()];
       memset(m_mem, 0, ep.size());
       m_socket = &static_cast<XferFactory *>(&ep.factory())->createSocket(ep);
       m_socket->start();
+      start();
     }
   };
-  virtual ~SmemServices ();
+  virtual ~SmemServices();
   OCPI::OS::int32_t attach(EndPoint* loc){ ( void ) loc; return 0;};
   OCPI::OS::int32_t detach(){ return 0;}
   void* map (DtOsDataTypes::Offset offset, size_t/* size */) {
     return &m_mem[offset];
   }
   OCPI::OS::int32_t unMap() { return 0;}
-  //  Socket *&socketServer() { return m_socket;}
-  inline void send(Frame &frame) { m_socket->send(frame); }
-  void start() {
-    if (m_socket)
-      m_socket->start();
-  }
+  inline void send(Frame &frame, DGEndPoint &dest) { m_socket->send(frame, dest); }
+  void run();
   void stop() {
+    m_loop = false;
+    join();
     if (m_socket) {
       m_socket->stop();
       m_socket->join();
@@ -177,7 +180,7 @@ public:
 class XferRequest;
 // Although the XferRequest represents a single contiguous RDMA request, it may be split up into
 // many datagram messages.
-struct Transaction { 
+struct Transaction {
   struct Message {
     MsgHeader hdr;
     void     *src_adr;
@@ -188,13 +191,13 @@ struct Transaction {
   unsigned            m_nMessagesTx;
   unsigned            m_nMessagesRx;
   uint32_t            m_tid;
+  Flag                *m_localFlagAddr;
   std::vector<Message>   m_messages;
   inline bool init() {return m_init;}
-  unsigned msgCount() {return m_nMessagesTx;}
-  Transaction() 
-    : m_init(false), m_nMessagesTx(0), m_nMessagesRx(0) {}
+  Transaction()
+  : m_init(false), m_nMessagesTx(0), m_nMessagesRx(0), m_tid(0), m_localFlagAddr(NULL) {}
   ~Transaction(){
-    ///FIXME: *********** free up the frames involved with this transaction      
+    ///FIXME: *********** free up the frames involved with this transaction
   }
   // nMessages is the estimated number of messages EXCLUSIVE of the flag transfer
   void init(size_t nMessages);
@@ -204,27 +207,13 @@ struct Transaction {
     return (m_nMessagesRx == m_nMessagesTx);
   };
 
-  inline void *srcPtr(unsigned  msg) {
-    ocpiAssert(msg < m_messages.size());
-    return m_messages[msg].src_adr;
-  }
-  inline MsgHeader *hdrPtr(unsigned msg) {
-    ocpiAssert(msg < m_messages.size());
-    return &m_messages[msg].hdr;
-  }
-  inline void ACK(int message ) {
+  inline void ACK(unsigned message) {
     m_messages[message].ack = true;
     m_nMessagesRx++;
-  }    
+  }
 };
 
 class XferRequest : public DataTransfer::XferRequest, private Transaction {
-#if 0
-  DtOsDataTypes::Offset         m_srcoffset;        // The source memory offset
-  DtOsDataTypes::Offset         m_dstoffset;        // The destination memory offset
-  size_t                        m_length;           // The length of the request in bytes
-  int                           m_tested4Complete;
-#endif
 public:
   virtual XferServices &parent() = 0;
   XferRequest(XFTemplate *temp)
@@ -235,14 +224,13 @@ public:
   DataTransfer::XferRequest::CompletionStatus getStatus();
   DataTransfer::XferRequest &group(DataTransfer::XferRequest* lhs);
   void modify(DtOsDataTypes::Offset new_offsets[], DtOsDataTypes::Offset old_offsets[]);
-  XferRequest* copy(DtOsDataTypes::Offset srcoff, 
-		    DtOsDataTypes::Offset dstoff, 
-		    size_t nbytes, 
+  XferRequest* copy(DtOsDataTypes::Offset srcoff,
+		    DtOsDataTypes::Offset dstoff,
+		    size_t nbytes,
 		    XferRequest::Flags flags);
 };
 
-class DropPktMonitor;
-class XferServices : public DataTransfer::XferServices, public OCPI::Util::SelfMutex {
+class XferServices : public DataTransfer::XferServices, virtual public OCPI::Util::SelfMutex {
   // So the destructor can invoke "remove"
   friend class XferRequest;
 
@@ -251,21 +239,20 @@ public:
   virtual ~XferServices ();
   virtual uint16_t maxPayloadSize()=0;  // Maximum message size, total bytes
 
-  void addFrameAck(FrameHeader *hdr);
-  void ack(unsigned count, unsigned start);
-  Frame *nextFreeFrame();
-  Frame &getFrame(size_t &bytes_left);
-  void releaseFrame(unsigned seq);
-  void post(Frame &t);
+  //Frame &nextFreeFrame();
+  Frame &getFrame();
+  void setAcks(Frame &f);
+  void post(Frame &f);
   void processFrame(FrameHeader *frame);
-  void checkAcks(uint64_t time, uint64_t timeout);
-  void sendAcks(uint64_t time_now, uint64_t timeout);
+  void checkAcks(OCPI::OS::Time time, OCPI::OS::Time timeout);
+  void sendAcks(OCPI::OS::Time time_now, OCPI::OS::Time timeout);
 
 private:
+  DGEndPoint   &m_lep, &m_rep; // local and remote
   struct FrameRecord {
     bool     acked;
-    uint32_t id;
-    FrameRecord():acked(false),id(0){}
+    uint32_t seq;
+    FrameRecord() : acked(false), seq(0) {}
   };
 
   struct MsgTransactionRecord {
@@ -273,7 +260,7 @@ private:
     uint16_t   numMsgsInTransaction;
     uint16_t   msgsProcessed;
     bool       in_use;
-    MsgTransactionRecord():in_use(false){}
+    MsgTransactionRecord() : in_use(false) {}
   };
 
   std::vector<Frame>       m_freeFrames;
@@ -281,8 +268,8 @@ private:
   uint16_t                 m_frameSeq;
   std::vector<FrameRecord> m_frameSeqRecord;
   std::vector<MsgTransactionRecord> m_msgTransactionRecord;
-  uint64_t m_last_ack_send;
-  unsigned m_frames_in_play;
+  OCPI::OS::Time m_last_ack_send;
+  unsigned m_transactions_in_play;
 };
   }
 }

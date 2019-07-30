@@ -48,7 +48,7 @@ namespace DataTransfer {
 
     class Socket;
     class XferFactory;
-    class EndPoint : public DG::DGEndPoint, public XF::EndPoint {
+    class EndPoint : public DG::DGEndPoint {
       OE::Address m_addr;
       std::string m_ifname;
       ocpi_sockaddr_t m_sockaddr;
@@ -58,12 +58,12 @@ namespace DataTransfer {
     protected:
       EndPoint(XF::XferFactory &a_factory, const char *protoInfo, const char *eps,
 	       const char *other, bool a_local, size_t a_size, const OU::PValue *params)
-	: XF::EndPoint(a_factory, eps, other, a_local, a_size, params) { 
+	: DG::DGEndPoint(a_factory, eps, other, a_local, a_size, params) { 
 	if (protoInfo) {
 	  m_protoInfo = protoInfo;
 	  const char *cp = strchr(protoInfo, '/');
 	  if (cp) {
-	    m_ifname.assign(protoInfo, cp - protoInfo);
+	    m_ifname.assign(protoInfo, OCPI_SIZE_T_DIFF(cp, protoInfo));
 	    protoInfo = cp + 1;
 	  }
 	  m_addr.setString(protoInfo);
@@ -72,31 +72,24 @@ namespace DataTransfer {
 					       OCPI_ETHER_RDMA
 					       ": invalid ethernet address in endpoint string");
 	} else {
-	  std::string a_ifname;
-	  if (other) {
+	  if (0) { // if (other) {
 	    const char *sp = strchr(other, '/');
-	    a_ifname.assign(other, sp - other);
+	    m_ifname.assign(other, OCPI_SIZE_T_DIFF(sp, other));
 	  } else {
 	    const char *l_name;
 	    if (!OU::findString(params, "interface", l_name))
 	      l_name = getenv("OCPI_ETHER_INTERFACE");
 	    if (!l_name)
 	      throw OU::Error(OCPI_ETHER_RDMA ": no interface specified");
+	    m_ifname = l_name;
 	  }
 	  // FIXME: use first/only interface if there is one?
 	  std::string error;
-	  OE::Interface ifc(a_ifname.c_str(), error);
+	  OE::Interface ifc(m_ifname.c_str(), error);
 	  if (error.size())
 	    throw OU::Error(OCPI_ETHER_RDMA ": bad ethernet interface: %s", error.c_str());
 	  OU::format(m_protoInfo, "%s/%s", ifc.name.c_str(), ifc.addr.pretty());
 	}
-      }
-      ~EndPoint() {
-	// FIXME:  this is generic behavior and belongs in a datagram endpoint base class
-	DG::SmemServices &sm = *static_cast<DG::SmemServices *>(&sMemServices());
-	sm.stop(); // stop the socket I/O
-	stop();
-	join();
       }
       // boilerplate
       XF::SmemServices &createSmemServices();
@@ -105,11 +98,10 @@ namespace DataTransfer {
     public:
       bool isCompatibleLocal(const char *remote) const {
 	std::string interface;
-	const char *sp = strchr(remote, '/');
-	if (!sp)
+	const char *sp;
+	if (!remote || !(sp = strchr(remote, '/')))
 	  return true;
-	//	  throw OU::Error("Badly formed ether-rdma endpoint: %s", remote);
-	interface.assign(remote, sp - remote);
+	interface.assign(remote, OCPI_SIZE_T_DIFF(sp, remote));
 	return m_ifname == interface;
       }
     };
@@ -135,12 +127,12 @@ namespace DataTransfer {
 	}
 	OCPI::Util::Thread::start();
       }
-      void send(DG::Frame &frame) {
+      void send(DG::Frame &frame, DG::DGEndPoint &destEp) {
 	// FIXME: multithreaded..
-	EndPoint *dep = static_cast<EndPoint *>(frame.endpoint);
 	std::string error;
 	for (unsigned n = 0; error.empty() && n < 10; n++) {
-	  if (m_socket->send(frame.iov, frame.iovlen, dep->addr(), 0, NULL, error))
+	  if (m_socket->send(frame.iov, frame.iovlen, static_cast<EndPoint *>(&destEp)->addr(), 0,
+			     NULL, error))
 	    return;
 	  ocpiDebug("Sending packet error: %s", error.size() ? error.c_str() : "timeout");
 	}

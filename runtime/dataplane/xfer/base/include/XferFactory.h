@@ -35,7 +35,7 @@ namespace DataTransfer {
   // FIXME unordered someday
   typedef std::map<TemplatePair, XferServices*> TemplateMap;
   typedef TemplateMap::iterator TemplateMapIter;
-  
+
   // This is the base class for a factory configuration sheet
   // that is common to the manager, drivers, and devices
   class FactoryConfig {
@@ -48,7 +48,7 @@ namespace DataTransfer {
     size_t m_retryCount;
     ezxml_t  m_xml; // the element that these attributes were parsed from
   };
-         
+
   // This class is the transfer driver base class.
   // All drivers indirectly inherit this by using the template class in DtDriver.h
   // Its parent relationship with actual devices is managed by that transfer driver
@@ -62,23 +62,16 @@ namespace DataTransfer {
     EndPoints m_endPoints;
   public:
     XferFactory(const char *);
-                 
+
     // Destructor
     virtual ~XferFactory();
-                 
+
+    void cleanForContext(void *context);
     // Configure from xml
     void configure(ezxml_t x);
 
     // Get our protocol string
     virtual const char* getProtocol()=0;
-#if 0
-    /***************************************
-     * This method is called on this factory to dertermine if it supports
-     * the specified endpoints.  This method may be called with either one
-     * of the endpoints equal to NULL.
-     ***************************************/
-    virtual bool supportsEndPoints(std::string& end_point1, std::string& end_point2);
-#endif                 
     bool supportsEndPoint(const char *name);
     EndPoint &getEndPoint(const char *endpoint, bool local=false, bool cantExist = false,
 			  size_t size = 0);
@@ -103,7 +96,7 @@ namespace DataTransfer {
     DtOsDataTypes::MailBox setNewMailBox(const char *other);
     void removeEndPoint(EndPoint &ep);
     XferServices &getTemplate(EndPoint &source, EndPoint &target);
-    void removeTemplate(XferServices &xfs);
+    //    void removeTemplate(XferServices &xfs);
 
     /***************************************
      *  Gets the first node specified by name, otherwise null

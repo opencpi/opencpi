@@ -32,7 +32,7 @@ namespace {
     protected:
       std::string sym_to_load, library_to_load;
       void SetUp() /* override */ {
-#ifdef OCPI_OS_linux
+#if  defined(OCPI_OS_linux) || defined(OCPI_OS_macos)
         library_to_load = "libm.";
         library_to_load += LoadableModule::suffix();
         sym_to_load = "atan";

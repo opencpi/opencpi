@@ -219,8 +219,8 @@ parse(ezxml_t px, const OU::Property *p, const Worker *worker, bool global) {
   // =============================================================================
   m_value.setType(prop); // not necessarily setting a value here, but we know the type
   if (values) {
-    if (m_valuesType)
-      delete m_valuesType;
+    // if (m_valuesType) This is now a memory leak: FIXME: write the copy-constructor
+    //       delete m_valuesType;
     m_valuesType = &prop.sequenceType();
     m_valuesType->m_default = new OU::Value(*m_valuesType);
     if ((err = m_valuesType->m_default->parse(values, NULL, false, NULL)))

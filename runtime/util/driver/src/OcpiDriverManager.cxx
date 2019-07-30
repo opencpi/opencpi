@@ -110,9 +110,15 @@ namespace OCPI {
 
     Driver *ManagerManager::
     loadDriver(const char *managerName, const char *driverName, std::string &err) {
-      Driver *driver = findDriver(managerName, driverName);
+      const char *dash = strchr(driverName, '-');
+      Driver *driver = findDriver(managerName, dash ? dash + 1 : driverName);
       if (driver)
 	return driver;
+      std::string file;
+      if (dash) {
+	file.assign(driverName, OCPI_SIZE_T_DIFF(dash, driverName));
+	driverName = file.c_str();
+      }
       std::string libDir, lib;
       OU::format(libDir, "%s/%s%s%s%s/lib", OU::getCDK().c_str(),
 		 OCPI_CPP_STRINGIFY(OCPI_PLATFORM),
@@ -144,7 +150,7 @@ namespace OCPI {
       if (!OS::LoadableModule::load(lib.c_str(), true, lme))
 	OU::format(err, "error loading the \"%s\" \"%s\" driver from \"%s\": %s",
 		   driverName, managerName, lib.c_str(), lme.c_str());
-      else if (!(driver = findDriver(managerName, driverName)))
+      else if (!(driver = findDriver(managerName, dash ? dash + 1 : driverName)))
 	OU::format(err,
 		   "after loading the \"%s\" \"%s\" driver from \"%s\": driver wasn't found",
 		   driverName, managerName, lib.c_str());

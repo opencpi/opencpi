@@ -636,7 +636,7 @@ emitRecordInterface(FILE *f, const char *implName) {
 	  in.c_str(), m_master ? "in" : "out",
 	  typeName(), pname(), implName,
 	  out.c_str(), m_master ? "out" : "in");
-  if (m_count > 1 || m_countExpr.length())
+  if (m_count || m_countExpr.length())
       fprintf(f,
 	      "  subtype %s_array_t is wci.raw_prop_%s_array_t(0 to ocpi_port_%s_count-1);\n"
 	      "  subtype %s_array_t is wci.raw_prop_%s_array_t(0 to ocpi_port_%s_count-1);\n",

@@ -105,6 +105,17 @@ init() {
 #endif
 }
 
+void Transport::
+cleanForContext(void *context) {
+  for (auto rei = m_remoteEndpoints.begin(); rei != m_remoteEndpoints.end();) {
+    XF::EndPoint &ep = *rei->second;
+    auto it = rei++;
+    if (ep.context() == context) {
+      ep.release();
+      m_remoteEndpoints.erase(it);
+    }
+  }
+}
 // This is called when we get a variably complete remote endpoint string
 // and need a local endpoint to talk to it.
 XF::EndPoint &Transport::

@@ -28,7 +28,6 @@
  *
  */
 
-#include "fasttime.h"
 #include "OcpiOsMisc.h"
 #include "OcpiOsAssert.h"
 #include "OcpiUtilMisc.h"
@@ -36,21 +35,39 @@
 
 namespace XF = DataTransfer;
 namespace OU = OCPI::Util;
+namespace OS = OCPI::OS;
 namespace DataTransfer {
   namespace DDT = DtOsDataTypes;
   namespace Datagram {
 
 const char *datagramsocket = "datagram-socket"; // name passed to inherited template class
-static const unsigned MAX_TRANSACTION_HISTORY = 512;  // Max records per source
-static const unsigned MAX_FRAME_HISTORY = 0xff; 
+static const unsigned
+  MAX_TRANSACTION_HISTORY = 512,  // transactions outstanding
+  MAX_FRAME_HISTORY = 256,        // max frames for retransmit
+  MAX_RESENDS = 10;               // max retries before squawking
 
 XferServices::
-XferServices(XferFactory &driver, EndPoint &source, EndPoint &target)
-  : XF::XferServices(driver, source, target),
-    m_freeFrames(FRAME_SEQ_MASK+1), m_frameSeq(1), m_frameSeqRecord(MAX_FRAME_HISTORY+1),
-    m_msgTransactionRecord(MAX_TRANSACTION_HISTORY)
+XferServices(XferFactory &driver, EndPoint &source, EndPoint &target) :
+  XF::XferServices(driver, source, target),
+  m_lep(*static_cast<DGEndPoint *>(source.local() ? &source : &target)),
+  m_rep(*static_cast<DGEndPoint *>(source.local() ? &target : &source)),
+  m_freeFrames(MAX_FRAME_HISTORY), m_frameSeq(1), m_frameSeqRecord(MAX_FRAME_HISTORY),
+  m_msgTransactionRecord(MAX_TRANSACTION_HISTORY), m_last_ack_send(OS::Time::now()),
+  m_transactions_in_play(0)
 {
-    m_last_ack_send = fasttime_getticks(); // thanks valgrind...
+  assert((source.local() && !target.local()) || (!source.local() && target.local()));
+  m_lep.addXfer(*this, m_rep.mailBox());
+}
+XferServices::
+~XferServices() {
+  ocpiDebug("DatagramXferServices::~DatagramXferServices entered");
+  // Shutdown the local endpoints threads before the endpoints are released since they callback
+  // to this object in their threads and we want to be locked
+  m_lep.delXfer(m_rep.mailBox());
+  // Note that members are destroyed before base classes,
+  // so our frames are destroyed, and then our children (xferrequests and transactions)
+  // which makes sense because frames refer to transactions
+  lock();
 }
 
 XferFactory::
@@ -97,17 +114,16 @@ copy(DtOsDataTypes::Offset srcoffs, DtOsDataTypes::Offset dstoffs, size_t nbytes
     // Finalize the transaction since we now have the flag transfer information
     // and we know how many messages were actually sent for the transaction,
     // essentially filling in the constant fields
-    uint32_t flag = *(uint32_t*)parent().from().sMemServices().map(srcoffs, 0);
+    m_localFlagAddr = (Flag *)parent().from().sMemServices().map(srcoffs, 0);
     Message *m = &m_messages[0];
     for (unsigned n = 0; n < m_nMessagesTx; n++, m++) {
-      m->hdr.transactionId = m_tid; 
+      m->hdr.transactionId = m_tid;
       m->hdr.numMsgsInTransaction = (uint16_t)(m_nMessagesTx == 1 ? 0 : m_nMessagesTx);
       m->hdr.flagAddr = OCPI_UTRUNCATE(uint32_t, dstoffs);
-      m->hdr.flagValue = flag;
     }
     return this;
   }
-    
+
   // For each transfer at this level we have a header and payload.  We may need to break it up into
   // multiple "messages".  Each message gets it own header so each one is self contained and can be
   // acted upon by the receiver without being dependent on previous messages (which could get lost).
@@ -122,7 +138,7 @@ copy(DtOsDataTypes::Offset srcoffs, DtOsDataTypes::Offset dstoffs, size_t nbytes
        nbytes -= length, src += length, dstoffs += OCPI_UTRUNCATE(DDT::Offset, length)) {
     length = nbytes > maxpl ? maxpl : nbytes;
     add(src, dstoffs, length);
-  }						
+  }
   return this;
 }
 
@@ -132,179 +148,85 @@ group(XF::XferRequest*xr) {
   return *xr; // FIXME: an error of some type?
 }
 
-XferServices::
-~XferServices() {
-  ocpiDebug("DatagramXferServices::~DatagramXferServices entered");
-  // Note that members are destroyed before base classes,
-  // so our frames are destroyed, and then our children (xferrequests and transactions)
-  // which makes sense because frames refer to transactions
-  lock();
-}
 
 void XferServices::
 post(Frame & frame) {
-  frame.send_time = fasttime_getticks();
+  frame.send_time = OS::Time::now();
   if (frame.msg_count)
     frame.frameHdr.flags |= FRAME_FLAG_HAS_MESSAGES;
-  static_cast<SmemServices *>(&m_from.sMemServices())->send(frame);
+  ocpiLog(9, "SendDG: seq %3u start %3u count %3u flags %u msgcount %2u", frame.frameHdr.frameSeq,
+	  frame.frameHdr.ACKStart, frame.frameHdr.ACKCount, frame.frameHdr.flags,
+	  frame.msg_count);
+  static_cast<SmemServices *>(&m_from.sMemServices())->send(frame, *static_cast<DGEndPoint*>(&m_to));
   // If there is nothing to ack (no messages) in this frame, free it as soon as it is sent.
   // The "send" is required to take it and not queue it (or at least copy it).
   if (!frame.msg_count)
     frame.release();
 }
 
-Frame *XferServices::  
-nextFreeFrame() {
-  OCPI::Util::SelfAutoMutex guard ( this );
-  uint16_t seq = m_frameSeq++;
-  uint16_t mseq = seq & FRAME_SEQ_MASK;
-  ocpiAssert( mseq < m_freeFrames.size() );
-  Frame & f = m_freeFrames[mseq];
-  ocpiAssert( f.is_free );
-  f.frameHdr.frameSeq = seq;
-  //printf("**** Our Frame Seq = %d\n", f.frameHdr.frameSeq );
-  f.is_free = false;
-  return &f;
-}
-
-// Here are frames that we sent that are being ACK'ed
 void XferServices::
-ack(unsigned count, unsigned start) {
-  for ( unsigned n=start; n<(start+count); n++ ) {
-    //      printf("ACKING frame id = %d\n", n);
-    releaseFrame ( n );
+sendAcks(OS::Time time_now, OS::Time timeout) {
+  OU::SelfAutoMutex guard(this);
+  if (m_acks.size() && (time_now - m_last_ack_send ) > timeout) {
+    ocpiDebug("acks %zu now %" PRIu64 " timeout %" PRIu64 " m_last_ack_send %" PRIu64,
+	      m_acks.size(), time_now.bits(), timeout.bits(), m_last_ack_send.bits());
+    post(getFrame());
   }
 }
 
-// This is the list of ACK's that we have to send
 void XferServices::
-addFrameAck(FrameHeader *hdr) {
-  OCPI::Util::SelfAutoMutex guard ( this );
-  m_acks.push_back( hdr->frameSeq );
-
-  //#define ACK_NOW
-#ifdef ACK_NOW
-  size_t bytes_left;
-  Frame & frame = getFrame( bytes_left );
-  frame.frameHdr.ackOnly = 1;
-  ss    post( frame );
-#endif
-
-}
-
-void XferServices::
-releaseFrame (unsigned seq) {	
-  unsigned mseq = seq & FRAME_SEQ_MASK;
-  Frame &f = m_freeFrames[mseq];
-  if (!f.is_free && f.frameHdr.frameSeq == seq)
-    m_freeFrames[mseq].release();
-  else
-    ocpiDebug("Received ack 0x%x when frame is %s with num 0x%x",
-	      seq, f.is_free ? "free" : "busy", f.frameHdr.frameSeq);
-}
-
-void XferServices::
-sendAcks(uint64_t time_now, uint64_t timeout) {
-  if (m_acks.size() && ( time_now - m_last_ack_send ) > timeout ) {
-    size_t bytes_left;
-    Frame & frame = getFrame( bytes_left );
-    post( frame );
+setAcks(Frame &f) {
+  // We will piggyback any pending acks here
+  f.frameHdr.ACKCount = 0;
+  if (m_acks.size()) {
+    m_last_ack_send = OS::Time::now();
+    uint16_t seq = f.frameHdr.ACKStart = m_acks.front();
+    do
+      m_acks.pop_front();
+    while (++f.frameHdr.ACKCount != UINT8_MAX && m_acks.size() && m_acks.front() == ++seq);
+    ocpiDebug("Sending ACKS: start %u count %u", f.frameHdr.ACKStart, f.frameHdr.ACKCount);
   }
 }
 
 Frame &XferServices::
-getFrame(size_t & bytes_left) {
-  OCPI::Util::SelfAutoMutex guard ( this );
-  Frame & frame = *nextFreeFrame(); 
+getFrame() {
+  OCPI::Util::SelfAutoMutex guard(this);
+  uint16_t
+    fseq = m_frameSeq++,
+    mseq = fseq & (MAX_FRAME_HISTORY-1);
+  ocpiAssert(mseq < m_freeFrames.size());
+  Frame &frame = m_freeFrames[mseq];
 
-  bytes_left = (int) maxPayloadSize();
-
+  frame.prepare(fseq, maxPayloadSize());
   frame.frameHdr.destId = m_to.mailBox();
   frame.frameHdr.srcId =  m_from.mailBox();
-  frame.frameHdr.flags = 0;
-  frame.frameHdr.ACKCount = 0;
-  frame.transaction = 0;
-  frame.msg_count = 0;
-  frame.msg_start = 0;
-  frame.endpoint = &m_to;
-  frame.iovlen = 0;
-
-  // We will piggyback any pending acks here
-  if ( m_acks.size() ) {
-    m_last_ack_send = fasttime_getticks();
-    frame.frameHdr.ACKStart = m_acks[0];
-    frame.frameHdr.ACKCount++;
-    m_acks.pop_front();
-    for ( unsigned  y=0; y<m_acks.size(); y++ ) {
-      if ( m_acks[y]  == (unsigned)(frame.frameHdr.ACKStart+1)) {
-	m_acks.pop_front();
-	y = 0;
-	frame.frameHdr.ACKCount++;
-	continue;
-      }
-      else {
-	break;
-      }
-    }
-  }
-
-  // This is a two byte pad for compatibility with the 14 byte ethernet header.
-  frame.iov[frame.iovlen].iov_base = (void*) &frame.frameHdr;
-  frame.iov[frame.iovlen].iov_len = 2;
-  frame.iovlen++;
-  frame.iov[frame.iovlen].iov_base = (void*) &frame.frameHdr;
-  frame.iov[frame.iovlen].iov_len = sizeof(frame.frameHdr);	
-  bytes_left -= ((int)frame.iov[1].iov_len + 2);
-  frame.iovlen++;
-		
+  setAcks(frame);
   return frame;
 }
 
 void XferRequest::
 post() {
-  size_t bytes_left;
-  uint16_t msg = 0;
-  Transaction & t = *this;
-  t.m_nMessagesRx = 0;
-  while ( msg < t.msgCount() ) {
-
-    // calculate the next message size
-    //      if ( (int)(sizeof(DatagramMsgHeader) + t.hdrPtr(msg)->dataLen) > bytes_left ) {
-    //	bytes_left = 0;
-    //      }
-
-    Frame & frame = parent().getFrame( bytes_left );
-    frame.transaction = &t;
-    frame.msg_start = msg;	  
-
-    // Stuff as many messages into the frame as we can
-    while (bytes_left > 0 && msg < t.msgCount()) {
-      size_t need = sizeof(MsgHeader) + ((t.hdrPtr(msg)->dataLen + 7) & ~7);
-      if ( bytes_left < need) {
-	ocpiAssert(msg > 0);
-	// Need a new frame
-	t.hdrPtr(msg-1)->nextMsg = false;
-	break;
-      }
-
-      frame.iov[frame.iovlen].iov_base = (void*) t.hdrPtr(msg);
-      frame.iov[frame.iovlen].iov_len = sizeof(MsgHeader);
-      frame.iovlen++;
-      frame.iov[frame.iovlen].iov_base = (void*) t.srcPtr(msg);
-      frame.iov[frame.iovlen].iov_len = t.hdrPtr(msg)->dataLen;
-      // Adjust the aligment so that the next header is on a 8 byte boundary
-      frame.iov[frame.iovlen].iov_len = (frame.iov[frame.iovlen].iov_len + 7) & ~7; 
-      frame.iovlen++;
-      bytes_left = bytes_left - (frame.iov[frame.iovlen-2].iov_len +
-				 frame.iov[frame.iovlen-1].iov_len);
-      t.hdrPtr(msg)->nextMsg = true;
-      msg++;
-      frame.msg_count++;
+  m_nMessagesRx = 0;
+  Message *m = &m_messages[0];
+  uint32_t flag = *m_localFlagAddr; // retrieve the possibly dynamic flag value for this message
+  for (unsigned nMsgs = 0; nMsgs < m_nMessagesTx; ) {
+    Frame &frame = parent().getFrame();
+    frame.transaction = this;
+    frame.msg_start = OCPI_UTRUNCATE(uint16_t, nMsgs);
+    OS::IOVec *iov = &frame.iov[frame.iovlen];
+    for (size_t msg_bytes;
+	 nMsgs < m_nMessagesTx &&
+	   frame.bytes_left >= (msg_bytes = sizeof(MsgHeader) + ((m->hdr.dataLen + 7u) & ~7u));
+	 frame.bytes_left -= msg_bytes, m++, nMsgs++, frame.msg_count++) {
+      m->hdr.nextMsg = true;
+      m->hdr.flagValue = flag;
+      *iov++ = { .iov_base = (void*)&m->hdr, .iov_len = sizeof(MsgHeader)};
+      *iov++ = { .iov_base = m->src_adr, .iov_len = msg_bytes - sizeof(MsgHeader)};
     }
-    t.hdrPtr(msg-1)->nextMsg = false;
-    parent().post( frame );
-    //      queFrame( frame );	  
-  }	
+    frame.iovlen = OCPI_UTRUNCATE(unsigned, OCPI_SIZE_T_DIFF(iov, frame.iov));
+    m[-1].hdr.nextMsg = false;
+    parent().post(frame);
+  }
 }
 
 volatile static uint32_t g_txId;
@@ -348,10 +270,9 @@ add(uint8_t *src, DtOsDataTypes::Offset dst_offset, size_t length) {
     struct in_addr  adrr  =  ((struct sockaddr_in *)&sad)->sin_addr;
 #endif
 
-  
-XF::XferRequest::CompletionStatus 
-XferRequest::getStatus() { 
-  // We only need to check the completion status of the flag transfer since it is gated on the 
+XF::XferRequest::CompletionStatus
+XferRequest::getStatus() {
+  // We only need to check the completion status of the flag transfer since it is gated on the
   // completion status of the data and meta-data transfers
   if (! complete())
     return XF::XferRequest::Pending;
@@ -360,6 +281,7 @@ XferRequest::getStatus() {
 
 void Socket::
 run() {
+  ocpiInfo("ENTERING DG SOCKET THREAD");
   try {
     while ( m_run ) {
       unsigned size =	maxPayloadSize();
@@ -372,7 +294,7 @@ run() {
       //#define DROP_FRAME
 #ifdef DROP_FRAME
       const char* env = getenv("OCPI_Datagram_DROP_FRAMES");
-      if ( env != NULL ) 
+      if ( env != NULL )
 	{
 	  static int dropit=1;
 	  static int dt = 300;
@@ -391,6 +313,8 @@ run() {
       if (xfs)
 	xfs->processFrame(header);
     }
+    ocpiInfo("EXISING DG SOCKET THREAD");
+
   }
   catch (std::string &s) {
     ocpiBad("Exception in socket background thread: %s", s.c_str());
@@ -413,201 +337,156 @@ Socket::
 SmemServices::
 ~SmemServices () {
   ocpiDebug("DatagramSmemServices::~DatagramSmemServices entered");
-  OU::SelfAutoMutex guard(this);
-  try {
-    stop();
-    delete [] m_mem;
-    // Thread already joined join();
-  }
-  catch( ... ) {
-  }
+  stop();
+  delete [] m_mem;
 }
 
-void 
-DGEndPoint::
+// send acknowledgements occasionally
+void SmemServices::
 run() {
-  const uint64_t timeout = 200 * 1000 * 1000;  // timeout in mSec
-  uint64_t time_now;
+  const OS::Time
+    checkTimeout(0, 200 * 1000 * 1000),
+    ackTimeout(0, 80 * 1000 * 1000);  // timeout in nSec
 
-  while ( m_loop ) {
-    // If we have not received an ACK after (timeout) send the frame again.
-    {
-      OU::SelfAutoMutex guard(this);
-      for (unsigned n=0; n < m_xferServices.size(); n++)
-	if (m_xferServices[n] != NULL) {
-	  time_now = fasttime_getticks();
-	  m_xferServices[n]->checkAcks(time_now, timeout);
-	  OCPI::OS::sleep(2);
-	  time_now = fasttime_getticks();
-	  m_xferServices[n]->sendAcks(time_now, timeout/3);
-	  OCPI::OS::sleep(2);
-	}
-    }
-    OCPI::OS::sleep(2);
-  }
-};
-
-void XferServices::    
-checkAcks( uint64_t time, uint64_t time_out ) {    
-  OCPI::Util::SelfAutoMutex guard ( this );
-  for ( unsigned n=0; n<m_freeFrames.size(); n++ ) {
-    if ( ! m_freeFrames[n].is_free ) {
-      if ( ( time - m_freeFrames[n].send_time ) > time_out ) {
-
-	// We are multi-threaded and this can happen if a post occurs after this
-	// method id called
-	if ( time > m_freeFrames[n].send_time ) {
-
-	  m_freeFrames[n].resends++;	    
-
-#ifdef LIMIT_RETRIES
-	  if ( m_freeFrames[n].resends < 4 ) {
-	    printf("***** &&&&& Found a dropped frame, re-posting \n");
-	    post( m_freeFrames[n] );
-	  }
-	  ss    else {
-	    ocpiAssert("Exceeded resend limit !!\n"==0);
-	  }
-#else
-	  post( m_freeFrames[n] );
-#endif
-	}
+  do {
+    for (size_t n = 0, max = m_ep.xferServicesSize(); n < max; ++n) {
+      OU::SelfAutoMutex epGuard(&m_ep);
+      XferServices *xfs = m_ep.xferServices(n);
+      if (xfs) {
+	OS::Time time_now = OS::Time::now();
+	xfs->checkAcks(time_now, checkTimeout);
+	OCPI::OS::sleep(2);
+	time_now = OS::Time::now();
+	xfs->sendAcks(time_now, ackTimeout);
+	OCPI::OS::sleep(2);
       }
     }
+    OCPI::OS::sleep(2);
+  } while (m_loop);
+}
+
+void XferServices::
+checkAcks(OS::Time time, OS::Time time_out) {
+  OCPI::Util::SelfAutoMutex guard(this);
+  for (unsigned n = 0; n < m_freeFrames.size(); n++) {
+    Frame &f = m_freeFrames[n];
+    if (!f.is_free && (time - f.send_time) > time_out && time > f.send_time) {
+      ocpiLog(9, "Resending datagram frame %u try %u", f.frameHdr.frameSeq, f.resends);
+      if (++f.resends > MAX_RESENDS)
+	ocpiBad("Datagram retransmissions exceeds %u for seq %u", MAX_RESENDS, f.frameHdr.frameSeq);
+      setAcks(f);
+      post(f);
+    }
   }
 }
 
-void XferServices::  
-processFrame(FrameHeader * header) {
+void XferServices::
+processFrame(FrameHeader *header) {
+  FrameRecord &seqRecord = m_frameSeqRecord[header->frameSeq & (MAX_FRAME_HISTORY-1)];
   OCPI::Util::SelfAutoMutex guard(this);
-  MsgHeader *msg;
 
-  // It is possible for the sender to duplicate frames by being too agressive with re-retries
-  // Dont process dups. 
-  if (  m_frameSeqRecord[ header->frameSeq & MAX_FRAME_HISTORY ].id == header->frameSeq ) {
-      
-    ocpiDebug("max history = %d, SID = %d, fqr size = %zd mask=%d, seq = %d this = %p", 
-	      MAX_FRAME_HISTORY, header->srcId,  m_frameSeqRecord.size(), 
-	      header->frameSeq&MAX_FRAME_HISTORY, header->frameSeq, this
-	      );
-
-    if (  ! m_frameSeqRecord[ header->frameSeq & MAX_FRAME_HISTORY ].acked  ) {
-      ocpiAssert("programming error, cant have dup without ACK "==0);
-    }	    
-
-    ocpiDebug("********  Found a duplicate frame, Ignoring it !!");
-    // Need to ACK the dup anyway
-    m_frameSeqRecord[ header->frameSeq & MAX_FRAME_HISTORY ].acked = true;
-    addFrameAck( header );
+  if (seqRecord.seq == header->frameSeq) {
+    // The sender may duplicate frames due to retries. Dont process dups, but ack them.
+    ocpiDebug("dup datagram: history = %u, SID = %u, fqr size = %zu seq=0x%x/%u",
+	      MAX_FRAME_HISTORY, header->srcId,  m_frameSeqRecord.size(), header->frameSeq,
+	      header->frameSeq);
+    ocpiAssert(seqRecord.acked);
+    ocpiAssert(header->flags & FRAME_FLAG_HAS_MESSAGES);
+    m_acks.push_back(header->frameSeq); // retransmnit ack
     return;
-
-  } else
-    m_frameSeqRecord[ header->frameSeq & MAX_FRAME_HISTORY ].id = header->frameSeq;
-
-  // This frame contains ACK responses	       
-  if ( header->ACKCount ) {
-    //      printf("Acking from %d, count = %d\n", header->ACKStart, header->ACKCount );
-    ack(  header->ACKCount, header->ACKStart );
+  }
+  for (unsigned count = header->ACKCount, seq = header->ACKStart; count; --count, ++seq) {
+    Frame &f = m_freeFrames[seq & (MAX_FRAME_HISTORY-1)];
+    if (!f.is_free && f.frameHdr.frameSeq == seq)
+      f.release();
+    else
+      ocpiDebug("Received ack 0x%x when frame is %s with num 0x%x",
+		seq, f.is_free ? "free" : "busy", f.frameHdr.frameSeq);
   }
   if (!(header->flags & FRAME_FLAG_HAS_MESSAGES))
     return;
+  seqRecord.acked = true;
+  seqRecord.seq = header->frameSeq;
+  m_acks.push_back(header->frameSeq);  // ack for the first time
 
-  // For our response
-  m_frameSeqRecord[header->frameSeq & MAX_FRAME_HISTORY].acked = true;
-  addFrameAck(header);
-
-  msg = reinterpret_cast<MsgHeader*>(&header[1]);
-  do {
-    MsgTransactionRecord & fr =
-      m_msgTransactionRecord[ (msg->transactionId & MAX_TRANSACTION_HISTORY) ];
-    if ( ! fr.in_use ) {
-      fr.in_use = true;
-      fr.msgsProcessed = 0;
-      m_frames_in_play++;
-      ocpiAssert( m_frames_in_play < MAX_TRANSACTION_HISTORY );
+  for (MsgHeader *msg = reinterpret_cast<MsgHeader*>(&header[1]); msg;
+       msg = msg->nextMsg ? (MsgHeader *)((uint8_t *)(msg + 1) + ((msg->dataLen + 7) & ~7)) : NULL) {
+    MsgTransactionRecord &tr = m_msgTransactionRecord[msg->transactionId & (MAX_TRANSACTION_HISTORY-1)];
+    if (!tr.in_use) {
+      tr.in_use = true;
+      tr.msgsProcessed = 0;
+      tr.transactionId = msg->transactionId;
+      tr.numMsgsInTransaction = msg->numMsgsInTransaction;
+      ocpiAssert(m_transactions_in_play < MAX_TRANSACTION_HISTORY);
+      m_transactions_in_play++;
     }
-    fr.transactionId = msg->transactionId;
-    fr.numMsgsInTransaction = msg->numMsgsInTransaction;	      
-
-    if (msg->numMsgsInTransaction != 0) {
-      ocpiDebug("Msg info -->  addr=%d len=%d tid=%d",
-		msg->dataAddr, msg->dataLen, msg->transactionId );
-      
-      switch ( msg->type ) {
-
-      case MsgHeader::DATA:
-      case MsgHeader::METADATA:
-	{
-
-	  char* dptr =(char*)from().sMemServices().map(msg->dataAddr, msg->dataLen);	  
-	  if ( msg->dataLen == 4 ) {
-
-#ifdef DEBUG_TxRx_Datagram
-	    printf(" FLAG -> Writing %d bytes to offset %d, tid=%d\n",  msg->dataLen, msg->dataAddr, msg->transactionId );
-	    int * v = (int*)&msg[1];
-	    printf("replacing flag value %d with %d\n", (int)*dptr, (int)*v);
-#endif
-	  }
-	  else {
-	    uint8_t *data = reinterpret_cast<uint8_t*>(&msg[1]);
-	    memcpy(dptr, data, msg->dataLen);
-	  }
-
-	}
-	break;
-
-	// Not yet handled
-      case MsgHeader::DISCONNECT:
-	break;	    
-	ocpiAssert("Unhandled Datagram message type"==0);
-      }
-
-      fr.msgsProcessed++;
+    if (msg->numMsgsInTransaction) { // there is message contents, not just a flag
+      memcpy((char*)from().sMemServices().map(msg->dataAddr, msg->dataLen),
+	     reinterpret_cast<uint8_t*>(&msg[1]), msg->dataLen);
+      tr.msgsProcessed++;
     }
-    // Close the transaction if needed
-    if ( fr.msgsProcessed == fr.numMsgsInTransaction ) {
-      char* dptr =(char*)m_from.sMemServices().map(msg->flagAddr, 4);	  
-
-#ifdef DEBUG_TxRx_Datagram
-      printf("**** Finalizing transaction %d, addr = %d, value = %d, old value=%d\n", 
-	     msg->transactionId, msg->flagAddr,msg->flagValue, *dptr);
-#endif
-
-      memcpy(dptr, &msg->flagValue, 4);
-      fr.in_use = false;
-      m_frames_in_play--;
+    ocpiDebug("Msg: addr=0x%x len=%u tid=%u seq=%u max %u now=%ufirst=%x", msg->dataAddr,
+	      msg->dataLen, msg->transactionId, header->frameSeq, msg->numMsgsInTransaction,
+	      tr.msgsProcessed, *(uint32_t*)&msg[1]);
+    if (tr.msgsProcessed == tr.numMsgsInTransaction) { // transaction is done
+      ocpiDebug("Finalizing datagram transaction %u, addr = 0x%x, value = 0x%x",
+		msg->transactionId, msg->flagAddr, msg->flagValue);
+      *(uint32_t *)m_from.sMemServices().map(msg->flagAddr, sizeof(uint32_t)) = msg->flagValue;
+      tr.in_use = false;
+      m_transactions_in_play--;
     }
-
-    if  ( msg->nextMsg ) {
-
-#ifdef DEBUG_TxRx_Datagram
-      printf("Got a multi message frame !!\n");
-#endif
-
-      uint8_t * d = (uint8_t*)&msg[1];
-      int len = (msg->dataLen +7) & ~7;
-      d += len;
-      msg = reinterpret_cast<MsgHeader*>(d);
-    }
-    else {
-      msg = NULL;
-    }
-
-  } while ( msg );	    
-
+  }
 }
 
 void DGEndPoint::
-addXfer(XferServices &s) {
-  if (s.to().mailBox() >= m_xferServices.size())
-    m_xferServices.resize(s.to().mailBox() + 8);
-  m_xferServices[s.to().mailBox()] = &s;
-  ocpiDebug("xfer service %p added with mbox %d", &s, s.to().mailBox());
+stop() {
+  // A lousy way to navigate back to our threads.
+  // FIXME: consolidate the two threads into one with receive timeouts, and put it under
+  // the endpoint class (when local).
+  static_cast<SmemServices*>(&sMemServices())->stop();
+}
+void DGEndPoint::
+addXfer(XferServices &s, MailBox remote) {
+  OCPI::Util::SelfAutoMutex guard(this);
+  if (remote >= m_xferServices.size())
+    m_xferServices.resize(remote + 8u);
+  m_xferServices[remote] = &s;
+  ocpiDebug("xfer service %p added with mbox %d", &s, remote);
+}
+
+void DGEndPoint::
+delXfer(MailBox remote) {
+  OCPI::Util::SelfAutoMutex guard(this);
+  assert(remote < m_xferServices.size());
+  m_xferServices[remote] = NULL;
+  ocpiDebug("xfer service removed with mbox %d", remote);
+}
+
+void Frame::
+prepare(uint16_t seq, size_t payload) {
+  assert(is_free);
+  is_free = false;
+  frameHdr.flags = 0;
+  frameHdr.ACKCount = 0;
+  frameHdr.ACKStart = 0; // for valgrind...
+  frameHdr.frameSeq = seq;
+  transaction = NULL;
+  resends = 0;
+  msg_count = 0;
+  msg_start = 0;
+  bytes_left = payload;
+  // This is a two byte pad for compatibility with the 14 byte ethernet header.
+  iov[0].iov_base = (void *)&frameHdr;
+  iov[0].iov_len = 2;
+  iov[1].iov_base = (void *)&frameHdr;
+  iov[1].iov_len = sizeof(frameHdr);
+  iovlen = 2;
+  bytes_left -=  sizeof(frameHdr) + 2;
 }
 
 void Frame::
 release() {
-  // This can occur if we are too agressive with a retry and end up getting back Two ACK's 
+  // This can occur if we are too agressive with a retry and end up getting back Two ACK's
   // for the re-transmitted frame.
   if (is_free)
     return;

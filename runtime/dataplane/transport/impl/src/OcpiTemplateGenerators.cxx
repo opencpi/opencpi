@@ -577,34 +577,30 @@ void TransferTemplateGeneratorPattern1::createOutputTransfers( Port* s_port, Por
 	  DtOsDataTypes::Offset	metaOffset =
 	    output_offsets->metaDataOffset +
 	    s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferMetaData);
+	  uint32_t options = t_port->getMetaData()->m_descriptor.options;
 
-	  if (t_port->getMetaData()->m_descriptor.options & (1 << FlagIsMeta))
-	    ptransfer->copy(metaOffset + OCPI_OFFSETOF(DDT::Offset, RplMetaData, xferMetaData),
-			    input_offsets->metaDataOffset +
-			    s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, uint32_t), 
-			    sizeof(OCPI::OS::uint32_t),
-			    XferRequest::FlagTransfer);
-	  else {
+	  if (!(options & (1 << FlagIsMeta)))
 	    // Create the transfer that copys the output meta-data to the input meta-data
 	    ptransfer->copy(metaOffset,
 			    input_offsets->metaDataOffset +
 			    s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferMetaData),
 			    sizeof(OCPI::OS::int64_t),
 			    XferRequest::MetaDataTransfer);
-
-	    // Create the transfer that copys the output state to the remote input state
-	    ptransfer->copy(t_port->getMetaData()->m_descriptor.options & (1 << FlagIsCounting) ?
-			    metaOffset + OCPI_OFFSETOF(DDT::Offset, RplMetaData, timestamp) :
-			    output_offsets->localStateOffset +
-			    OCPI_SIZEOF(DDT::Offset, BufferState) * MAX_PCONTRIBS +
-			    s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferState),
-			    input_offsets->localStateOffset +
-			    s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferState),
-			    sizeof(BufferState),
-			    XferRequest::FlagTransfer);
-	  }
-        }
-        catch( ... ) {
+	  // The flag transfer which could be three things
+	  ptransfer->copy(// source offset, depends on mode
+			  options & (1 << FlagIsCounting) ?
+			  metaOffset + OCPI_OFFSETOF(DDT::Offset, RplMetaData, timestamp) :
+			  options & (1 << FlagIsMeta) ?
+			  metaOffset + OCPI_OFFSETOF(DDT::Offset, RplMetaData, xferMetaData) :
+			  output_offsets->localStateOffset +
+			  OCPI_SIZEOF(DDT::Offset, BufferState) * MAX_PCONTRIBS +
+			  s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferState),
+			  // destination offset
+			  input_offsets->localStateOffset +
+			  s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferState),
+			  sizeof(BufferState),
+			  XferRequest::FlagTransfer);
+        } catch( ... ) {
           FORMAT_TRANSFER_EC_RETHROW( s_port, t_port );
         }
 
@@ -732,26 +728,17 @@ createOutputTransfers(OCPI::DataTransport::Port* s_port,
         // Note that in the ActiveFlowControl mode we only send the state to indicate that our
         // buffer is ready for the remote actor to pull data.
         try {
-
-	  if (t_port->getMetaData()->m_descriptor.options & (1 << FlagIsMeta)) {
-	    ptransfer->copy(output_offsets->metaDataOffset +
-			    s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferMetaData) +
-			    OCPI_OFFSETOF(DDT::Offset, RplMetaData, xferMetaData),
-			    input_offsets->metaDataOffset +
-			    s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, uint32_t), 
-			    sizeof(OCPI::OS::uint32_t),
-			    XferRequest::FlagTransfer);
-	  } else {
-          // Create the transfer that copys the output state to the remote input state
-          ptransfer->copy (
-			   output_offsets->localStateOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferState),
-			   input_offsets->localStateOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferState),
-			   sizeof(BufferState),
-			   XferRequest::FlagTransfer );
-
-	  }
-        }
-        catch( ... ) {
+	  ptransfer->copy(t_port->getMetaData()->m_descriptor.options & (1 << FlagIsMeta) ?
+			  output_offsets->metaDataOffset +
+			  s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferMetaData) +
+			  OCPI_OFFSETOF(DDT::Offset, RplMetaData, xferMetaData) :
+			  output_offsets->localStateOffset +
+			  s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferState),
+			  input_offsets->localStateOffset +
+			  s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferState),
+			  sizeof(BufferState),
+			  XferRequest::FlagTransfer);
+        } catch( ... ) {
           FORMAT_TRANSFER_EC_RETHROW( s_port, t_port );
         }
 

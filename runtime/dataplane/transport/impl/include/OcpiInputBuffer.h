@@ -150,7 +150,7 @@ namespace OCPI {
       /**********************************
        * Get number of outputs that have written to this buffer
        *********************************/
-      virtual OCPI::OS::uint32_t getNumOutputsThatHaveProduced();
+      //      virtual OCPI::OS::uint32_t getNumOutputsThatHaveProduced();
 
       /**********************************
        * Is this a shadow buffer ?
@@ -163,6 +163,7 @@ namespace OCPI {
        *********************************/
       volatile BufferMetaData* getMetaDataByIndex( OCPI::OS::uint32_t idx );
 
+      void setInUse(bool in_use); // override default method in Buffer class
     protected:
 
       // Number of ports int the output port set

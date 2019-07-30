@@ -32,6 +32,7 @@
 #include "ContainerLauncher.h"
 #include "RemoteLauncher.h"
 #include "RemoteServer.h"
+#include "XferManager.h"
 
 namespace OX = OCPI::Util::EzXml;
 namespace OC = OCPI::Container;
@@ -61,10 +62,12 @@ namespace OCPI {
     Server::
     ~Server() {
       clear();
+      OC::Manager::cleanForContext(this);
     }
 
     bool Server::
     receive(bool &eof, std::string &error) {
+      DataTransfer::XferManager::getFactoryManager().setEndPointContext(this);
       if (m_downloading)
 	return download(error);
       if (OX::receiveXml(fd(), m_rx, m_buf, eof, error))

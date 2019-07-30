@@ -59,9 +59,7 @@ createXferRequest() {
 }
 XF::XferServices &XferFactory::
 createXferServices(XF::EndPoint &source, XF::EndPoint &target) {
-  XferServices &xfs = *new XferServices(source, target);
-  static_cast<EndPoint *>(&source)->addXfer(xfs);
-  return xfs;
+  return *new XferServices(source, target);
 }
 DG::Socket &XferFactory::
 createSocket(XF::EndPoint &source) {

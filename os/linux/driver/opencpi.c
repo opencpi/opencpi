@@ -541,8 +541,9 @@ get_dma_memory(ocpi_request_t *request, unsigned minor) {
 		       request->bus_addr);
     return err;
   }
-  log_debug("requested (%lx) reserved %lx @ %016llx\n", (unsigned long)request->needed,
-	    (unsigned long)request->actual, (unsigned long long)request->address);
+  log_debug("requested (%lx) reserved %lx @ %016llx bus %016llx\n", (unsigned long)request->needed,
+	    (unsigned long)request->actual, (unsigned long long)request->address,
+	    (unsigned long long)request->bus_addr);
   err = 0;
   return err;
 }
@@ -609,9 +610,9 @@ request_memory(struct file *file, ocpi_request_t *request) {
   if (spare)
     kfree(spare);
   if (err == 0)
-    log_debug("requested (%lx) reserved %lx @ %016llx\n",
+    log_debug("requested (%lx) reserved %lx @ %016llx bus %016llx\n",
 	      (unsigned long)request->needed, (unsigned long)request->actual,
-	      (unsigned long long)request->address);
+	      (unsigned long long)request->address, (unsigned long long)request->bus_addr);
   return err;
 }
 // ----------------------------------------------------------------------------------------------

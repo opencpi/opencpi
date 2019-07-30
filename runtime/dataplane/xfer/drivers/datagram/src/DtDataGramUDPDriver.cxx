@@ -35,6 +35,7 @@
 #include "OcpiOsSocket.h"
 #include "OcpiOsServerSocket.h"
 #include "OcpiOsAssert.h"
+#include "OcpiOsEther.h"
 #include "OcpiUtilMisc.h"
 #include "XferException.h"
 #include "DtDataGramXfer.h"
@@ -43,14 +44,15 @@
 
 namespace XF = DataTransfer;
 namespace OU = OCPI::Util;
+namespace OS = OCPI::OS;
 namespace DG = DataTransfer::Datagram;
+namespace OE = OCPI::OS::Ether;
 namespace DataTransfer {
 
   namespace UDP {
 
     class Socket;
-    class EndPoint : public DG::DGEndPoint, public XF::EndPoint 
-    {
+    class EndPoint : public DG::DGEndPoint {
       friend class Socket;
       friend class XferFactory;
       std::string m_ipAddress;
@@ -59,23 +61,34 @@ namespace DataTransfer {
     public:
       EndPoint(XF::XferFactory &a_factory, const char *protoInfo, const char *eps,
 	       const char *other, bool a_local, size_t a_size, const OU::PValue *params)
-	: XF::EndPoint(a_factory, eps, other, a_local, a_size, params) { 
+	: DG::DGEndPoint(a_factory, eps, other, a_local, a_size, params) { 
 	if (protoInfo) {
 	  m_protoInfo = protoInfo;
-	  char ipaddr[80];
-	  if (sscanf(protoInfo, "%[^;];%" SCNu16 ";", ipaddr, &m_portNum) != 2)
-	    throw DataTransfer::DataTransferEx( UNSUPPORTED_ENDPOINT, protoInfo);	  
-	  m_ipAddress = ipaddr;  
+	  // FIXME: this is redundant to what is in the socket driver.
+	  // Note that IPv6 addresses may have colons, even though colons are commonly used to
+	  // separate addresses from ports.  Since there must be a port, it will be after the last
+	  // colon.  There is also a convention that IPV6 addresses embedded in URLs are in fact
+	  // enclosed in square brackets, like [ipv6-addr-with-colons]:port
+	  // So this scheme will work whether the square bracket convention is used or not
+	  const char *colon = strrchr(protoInfo, ':');  // before the port
+	  if (!colon || sscanf(colon+1, "%hu;", &m_portNum) != 1)
+	    throw OU::Error("Invalid UDP datagram endpoint format in \"%s\"", protoInfo);
+	  // FIXME: we could do more parsing/checking on the ipaddress
+	  m_ipAddress.assign(protoInfo, OCPI_SIZE_T_DIFF(colon, protoInfo));
 	} else {
-	  std::string ep;
-	  char ip_addr[128];
-	  const char* env = getenv("OCPI_UDP_TRANSFER_IP_ADDR");
-	  if (!env || (env[0] == 0)) {
-	    ocpiDebug("Set OCPI_TRANSFER_IP_ADDR environment variable to set socket IP address");
-	    gethostname(ip_addr, 128); // FIXME: get a numeric address to avoid DNS problems
-	  } else
-	    strcpy(ip_addr, env);
-	  m_ipAddress = ip_addr;
+	  const char *env = getenv("OCPI_TRANSFER_IP_ADDRESS");
+	  if (env && env[0])
+	    m_ipAddress = env;
+	  else {
+	    ocpiDebug("Set OCPI_TRANSFER_IP_ADDRESS environment variable to set socket IP address");
+	    static std::string myAddr;
+	    if (myAddr.empty()) {
+	      std::string error;
+	      if (OE::IfScanner::findIpAddr(getenv("OCPI_SOCKET_INTERFACE"), myAddr, error))
+		throw OU::Error("Cannot obtain a local IP address:  %s", error.c_str());
+	    }
+	    m_ipAddress = myAddr;
+	  }
 	  const char* penv = getenv("OCPI_UDP_TRANSFER_PORT");
 	  if( !penv || (penv[0] == 0)) {
 	    ocpiDebug("Set the OCPI_TRANSFER_PORT environment variable to set socket IP port");
@@ -86,26 +99,25 @@ namespace DataTransfer {
 	      s_port = (uint16_t)atoi(penv);
 	    m_portNum = s_port++;
 	  }
-	  OU::format(m_protoInfo, "%s;%" PRIu16, m_ipAddress.c_str(), m_portNum);
+	  OU::format(m_protoInfo, "%s:%" PRIu16, m_ipAddress.c_str(), m_portNum);
 	}
 	memset(&m_sockaddr, 0, sizeof(m_sockaddr));
 	m_sockaddr.sin_family = AF_INET;
 	m_sockaddr.sin_port = htons(m_portNum);
-	inet_aton(m_ipAddress.c_str(), &m_sockaddr.sin_addr);
+	if (!inet_aton(m_ipAddress.c_str(), &m_sockaddr.sin_addr))
+	  throw OU::Error("Unable to parse/resolve internet address for UDP: %s", m_ipAddress.c_str());
       }
-    protected:
-      ~EndPoint() {
-	// FIXME:  this is generic behavior and belongs in a datagram endpoint base class
-	DG::SmemServices &sm = *static_cast<DG::SmemServices *>(&sMemServices());
-	sm.stop();
-	stop();
+    private:
+      void
+      setProtoInfo() {
+	OU::format(m_protoInfo, "%s:%u", m_ipAddress.c_str(), m_portNum);
       }
       inline struct sockaddr_in &sockaddr() { return m_sockaddr; }
       void updatePortNum(uint16_t portNum) {
 	if (portNum != m_portNum) {
 	  m_portNum = portNum;
 	  m_sockaddr.sin_port = htons(m_portNum);
-	  m_protoInfo = m_ipAddress.c_str();
+	  setProtoInfo();
 	  setName();
 	}
       }
@@ -149,10 +161,9 @@ namespace DataTransfer {
 	OCPI::Util::Thread::start();
       }
 
-      void send(DG::Frame &frame) {
+      void send(DG::Frame &frame, DG::DGEndPoint &destEp) {
 	// FIXME: multithreaded..
-	EndPoint *dep = static_cast<EndPoint *>(frame.endpoint);
-	m_msghdr.msg_name = &dep->sockaddr();
+	m_msghdr.msg_name = &static_cast<EndPoint *>(&destEp)->sockaddr();
 	// We are depending on structure compatibility
 	m_msghdr.msg_iov = (struct iovec *)frame.iov;
 	m_msghdr.msg_iovlen = frame.iovlen;
@@ -164,15 +175,13 @@ namespace DataTransfer {
 	size_t size = sizeof(struct sockaddr);
 	size_t n = m_server.recvfrom((char*)buffer, DATAGRAM_PAYLOAD_SIZE, 0, (char*)&sad, &size, 200);
 	offset = 0;
-#ifdef DEBUG_TxRx_Datagram
 	// All DEBUG
-	if (n != 0) {
+	if (OS::logWillLog(10) && n != 0) {
 	  int port = ntohs ( ((struct sockaddr_in *)&sad)->sin_port );
 	  char * a  = inet_ntoa ( ((struct sockaddr_in *)&sad)->sin_addr );
 	  ocpiDebug(" Recved %lld bytes of data on port %lld from addr %s port %d\n",
 		    (long long)n , (long long)m_server.getPortNo(), a, port);
 	}
-#endif
 	return n;
       }
     private:
