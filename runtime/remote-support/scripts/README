@@ -1,0 +1,46 @@
+These scripts support remote management of an OpenCPI container server.
+The fundamental executable is ocpiserve, which serves up containers for use by clients running applications.
+
+The two scripts here provide a layar of management on top of ocpiserve.
+
+The primary requirements are:
+
+1.  Minimize assumptions and requirements and dependencies and setup on the server machine itself.
+    !!No software installation is required.!!
+    Current requirements are ssh server, bash and tar and nothing else.
+
+2.  Operate/install/use the server in a sandbox that has no impact on any installed software,
+    opencpi or otherwise.  The only assumption is that no one else is using it (for now).
+
+I.e.: take a bare machine with software platform supported by OpenCPI that has ssh/bash/tar, and use it
+without installing anything.
+
+The two scripts are:
+
+ocpiremote - the client for controlling the server
+  (there is a ocpiremote C++ main program too - it is a placeholder, but it may not be necessary if
+   the bash script is ok, but the argument parsing should be our standard options).
+
+ocpi_server.sh - the server script for ocpiremote - not a persistent server
+  (maybe a better name:  the "control/admin server script" ocpi_server_admin
+
+ocpiremote has the typical:
+  <program> <options> <verbs>
+
+syntax like ocpihdl ocpidev etc.
+
+But it can take multiple verbs and executes them in sequence.
+
+TODOs:
+
+Eventually like all tools, have a standardized way to set options in environment variables.
+Ensure private key password-less usage.
+Protection for multiple clients colliding
+Any manipulation of the server for multi-cast discovery
+
+
+
+
+
+
+
