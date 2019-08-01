@@ -843,7 +843,7 @@ namespace OCPI {
 
     Assembly::External::
       External()
-      : m_index(0), m_count(1) {
+      : m_index(0), m_count(0) {
       m_role.m_knownRole = false;
       m_role.m_bidirectional = false;
       m_role.m_provider = false;
@@ -885,7 +885,7 @@ namespace OCPI {
       // Parse all attributes except the explicit ones here.
       const char *err;
       if ((err = OE::getNumber(x, "index", &m_index)) ||
-          (err = OE::getNumber(x, "count", &m_count, NULL, 1)) ||
+          (err = OE::getNumber(x, "count", &m_count)) ||
           (err = init(NULL, role.empty() ? NULL : role.c_str())))
         return err;
       return m_parameters.parse(pvl, x, "name", "url", "provider", "port", "instance", "index", "count", NULL);

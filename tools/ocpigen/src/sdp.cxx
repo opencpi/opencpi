@@ -75,7 +75,7 @@ emitRecordInterface(FILE *f, const char *implName) {
 	  "  subtype %s_data_t is dword_array_t(0 to to_integer(sdp_width)-1);\n",
 	  in.c_str(), out.c_str());
   // When we have a count, we define the data array type
-  if (m_count > 1 || m_countExpr.length())
+  if (isArray())
       fprintf(f,
 	      "  type %s_data_array_t is array(0 to ocpi_port_%s_count-1) of %s_data_t;\n"
 	      "  type %s_data_array_t is array(0 to ocpi_port_%s_count-1) of %s_data_t;\n",
@@ -100,12 +100,12 @@ emitRecordInterface(FILE *f, const char *implName) {
 	  typeName(), pname(), implName, out.c_str(), m_master ? "m2s" : "s2m");
   emitRecordArray(f);
   fprintf(f, "  subtype %s_data_t is dword_array_t(0 to integer(sdp_width)-1);\n", pname());
-  if (m_count > 1 || m_countExpr.length()) {
+  if (isArray()) {
     std::string scount;
     if (m_countExpr.length())
       OU::format(scount, "ocpi_port_%s_count", pname());
     else
-      OU::format(scount, "%zu", m_count);
+      OU::format(scount, "%zu", m_arrayCount);
     fprintf(f,
 	    "  type %s_data_array_t is array(0 to %s-1) of %s_data_t;\n"
 	    "  type %s_data_array_t is array(0 to %s-1) of %s_data_t;\n",
@@ -128,18 +128,17 @@ emitConnectionSignal(FILE *f, bool output, Language /*lang*/, bool /*clock*/, st
   m_worker->addParamConfigSuffix(suff);
   fprintf(f, "  signal %s : %s%s.%s_defs.%s%s_t;\n",
 	  signal.c_str(), m_worker->m_implName, suff.c_str(), m_worker->m_implName,
-	  output ? out.c_str() : in.c_str(),
-	  m_count > 1 || m_countExpr.length() ? "_array" : "");
-  //  if (m_count > 1 || m_countExpr.length())
+	  output ? out.c_str() : in.c_str(), isArray() ? "_array" : "");
+  //  if (m_arrayCount || m_countExpr.length())
   //    fprintf(f, "(0 to %s.%s_constants.ocpi_port_%s_count-1)", m_worker->m_implName,
   //	    m_worker->m_implName, pname());
   //  fprintf(f, ";\n");
   fprintf(f, "  signal %s_data : %s%s.%s_defs.%s_data%s_t;\n", signal.c_str(),
 	  m_worker->m_implName, suff.c_str(), m_worker->m_implName,
 	  output ? out.c_str() : in.c_str(),
-	  m_count > 1 || m_countExpr.length() ? "_array" : "");
+	  isArray() ? "_array" : "");
 #if 0
-  if (m_count > 1 || m_countExpr.length())
+  if (isArray())
       fprintf(f,
 	      "  signal %s : %s_%s_array_t;\n"
 	      "  signal %s_data : %s_%s_data_array_t;\n",
@@ -162,12 +161,12 @@ emitRecordSignal(FILE *f, std::string &last, const char *aprefix, bool inRecord,
   std::string in, out;
   OU::format(in, "%s_in_data", pname());
   OU::format(out, "%s_out_data", pname());
-  if (m_count > 1 || m_countExpr.length()) {
+  if (isArray()) {
     std::string scount;
     if (m_countExpr.length())
       OU::format(scount, "ocpi_port_%s_count", pname());
     else
-      OU::format(scount, "%zu", m_count);
+      OU::format(scount, "%zu", m_arrayCount);
     OU::format(last,
 	       "  %-*s : in  %s_array_t;\n"
 	       "  %-*s : out %s_array_t%%s",
@@ -217,10 +216,10 @@ emitPortSignal(FILE *f, bool any, const char *indent, const std::string &fName,
 		   signalPort->worker().m_implName, signalPort->pname(),
 		   external ? "_out" : "_in");
 	formal_data = formal + "_data";
-	if (index.empty() && (signalPort->m_count > 1 || signalPort->m_countExpr.length())) {
+	if (index.empty() && signalPort->isArray()) {
 	  formal += "_array";
 	  formal_data += "_array";
-	}	  
+	}
 	OU::formatAdd(formal, "_t(%s)", fName.c_str());
 	OU::formatAdd(formal_data, "_t(%s_data)", fName.c_str());
       }
@@ -231,14 +230,14 @@ emitPortSignal(FILE *f, bool any, const char *indent, const std::string &fName,
       } else {
 	OU::format(actual, "%s%s.%s_defs.%s%s_t(%s%s)",
 		   m_worker->m_implName, suff.c_str(), m_worker->m_implName,
-		   fName.c_str(), m_count > 1 || m_countExpr.length() ? "_array" : "",
+		   fName.c_str(), isArray() ? "_array" : "",
 		   aName.c_str(), index.c_str());
 	OU::format(actual_data, "%s%s.%s_defs.%s_data%s_t(%s_data%s)", m_worker->m_implName,
 		   suff.c_str(), m_worker->m_implName, fName.c_str(),
-		   m_count > 1 || m_countExpr.length() ? "_array" : "", aName.c_str(),
+		   isArray() ? "_array" : "", aName.c_str(),
 		   index.c_str());
       }
-    }    
+    }
   }
   Port::emitPortSignal(f, any, indent, formal, actual, empty, output, NULL, false);
   fprintf(f, ",\n");

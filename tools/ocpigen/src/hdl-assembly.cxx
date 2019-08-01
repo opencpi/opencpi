@@ -36,7 +36,7 @@ const char *Instance::
 initHDL(::Assembly &assy) {
   const char *err;
   if (!m_worker->m_noControl)
-      assy.m_nWCIs += m_worker->m_ports[0]->m_count;
+    assy.m_nWCIs += m_worker->m_ports[0]->count();
   if (assy.m_assyWorker.m_type == Worker::Container || 
       assy.m_assyWorker.m_type == Worker::Configuration) {
     if ((err = OE::getBoolean(m_xml, "emulated", &m_emulated)))
@@ -186,7 +186,6 @@ setClock(Clock &c) {
   }
   m_clock = &c; // set connection's clock
   if (m_external) {
-    // The external/assembly port might alerad
     assert(!m_external->m_instPort.m_port->m_clock ||
 	   m_external->m_instPort.m_port->m_clock == m_clock);
     m_external->m_instPort.m_port->m_clock = m_clock; // set external port's clock
@@ -559,8 +558,8 @@ createConnectionSignals(FILE *f, Language lang) {
   for (AttachmentsIter ai = m_attachments.begin(); ai != m_attachments.end(); ai++) {
     Connection &c = (*ai)->m_connection;
     for (AttachmentsIter cai = c.m_attachments.begin(); cai != c.m_attachments.end(); cai++)
-      if (&(*cai)->m_instPort != this && (*cai)->m_instPort.m_port->m_count > maxCount)
-	maxCount = (*cai)->m_instPort.m_port->m_count;
+      if (&(*cai)->m_instPort != this && (*cai)->m_instPort.m_port->count() > maxCount)
+	maxCount = (*cai)->m_instPort.m_port->count();
   }
   // Output side: generate signal except when external or connected only to external
   // Or when connected to a wider one
@@ -568,7 +567,7 @@ createConnectionSignals(FILE *f, Language lang) {
       !(m_attachments.size() == 1 &&
 	m_attachments.front()->m_connection.m_attachments.size() == 2 &&
 	m_attachments.front()->m_connection.m_external) &&
-      maxCount <= m_port->m_count &&
+      maxCount <= m_port->count() &&
       (m_port->m_type != TimePort || m_port->m_master)) {
     emitConnectionSignal(f, true, lang);
     // All connections should use this as their signal
@@ -579,11 +578,11 @@ createConnectionSignals(FILE *f, Language lang) {
       cName = m_signalOut;
     }
   }
-    
+
   // Input side: rare - generate signal when it aggregates members from others,
   // Like a WCI slave port array
-  if (m_port->m_count > 1 &&
-      ((maxCount && maxCount < m_port->m_count) || m_attachments.size() > 1)) {
+  if (m_port->m_arrayCount &&
+      ((maxCount && maxCount < m_port->count()) || m_attachments.size() > 1)) {
     emitConnectionSignal(f, false, lang);
     for (AttachmentsIter ai = m_attachments.begin(); ai != m_attachments.end(); ai++) {
       Connection &c = (*ai)->m_connection;
@@ -1255,8 +1254,8 @@ detach(Connection &c) {
 void InstancePort::
 emitTieoffAssignments(FILE *f) {
   // Tie off all indices with no connection
-  if (m_port->haveInputs() && m_port->m_count > 1 && m_attachments.size())
-    for (unsigned i = 0; i < m_port->m_count; i++) {
+  if (m_port->haveInputs() && m_port->m_arrayCount && m_attachments.size())
+    for (unsigned i = 0; i < m_port->m_arrayCount; i++) {
       bool connected = false;
       // For all connections to this port
       for (AttachmentsIter ai = m_attachments.begin();

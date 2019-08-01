@@ -291,10 +291,10 @@ emitVhdlShell(FILE *f, ::Port *wci) {
   std::string clockName(m_clock->signal());
   if (m_clock->m_port) {
     if (m_clock->m_output) {
-      if (isDataProducer())
-	clockName = m_clock->m_port->typeNameOut + "_temp."; // clk in temp bundle
+      if (m_clock->m_port->isDataProducer())
+	clockName = m_clock->m_port->typeNameOut + "_temp.";
       else
-	clockName = cname(), clockName += "_";       // clk in temp signal
+	clockName = m_clock->m_port->pname(), clockName += "_";
     } else
       clockName = m_clock->m_port->typeNameIn + ".";
     clockName += "Clk";

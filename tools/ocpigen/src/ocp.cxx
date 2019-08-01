@@ -195,7 +195,7 @@ emitSignals(FILE *f, Language lang, std::string &last, bool /*inPackage*/, bool 
   const char *comment = hdlComment(lang);
   bool mIn = masterIn();
   OcpSignalDesc *osd;
-  for (unsigned n = 0; n < m_count; n++) {
+  for (unsigned n = 0; n < count(); n++) {
     if (!m_myClock)
       fprintf(f,
 	      "  %s No Clk signal here. The \"%s\" interface uses \"%s\" as clock\n",
@@ -275,7 +275,7 @@ emitRecordInterface(FILE *f, const char *implName) {
   OU::format(out, typeNameOut.c_str(), "");
   emitDirection(f, implName, mIn, in);
   emitDirection(f, implName, !mIn, out);
-  if (m_count > 1)
+  if (m_arrayCount)
     emitRecordArray(f);
 }
 
@@ -358,7 +358,7 @@ doPatterns(unsigned nWip, size_t &maxPortTypeName) {
   if (m_clock && m_clock->m_port == this && m_clock->m_signal.empty()) {
     std::string sin;
     // ordinal == -2 means suppress ordinal
-    if ((err = doPattern(m_count > 1 ? 0 : -2, nWip, true, !masterIn(), sin)))
+    if ((err = doPattern(m_arrayCount ? 0 : -2, nWip, true, !masterIn(), sin)))
       return err;
     ocpiCheck(asprintf(&ocp.Clk.signal, "%s%s", sin.c_str(), "Clk") > 0);
     m_clock->m_signal = ocp.Clk.signal;
@@ -376,7 +376,7 @@ doPatterns(unsigned nWip, size_t &maxPortTypeName) {
 
 void OcpPort::
 emitVerilogSignals(FILE *f) {
-  for (unsigned n = 0; n < m_count; n++) {
+  for (unsigned n = 0; n < count(); n++) {
     OcpSignalDesc *osd = ocpSignals;
     std::string num;
     OU::format(num, "%u", n);
@@ -491,7 +491,7 @@ emitVHDLSignalWrapperPortMap(FILE *f, std::string &last) {
 
 void OcpPort::
 emitVHDLRecordWrapperSignals(FILE *f) {
-  for (unsigned n = 0; n < m_count; n++) {
+  for (unsigned n = 0; n < count(); n++) {
     std::string num;
     OU::format(num, "%u", n);
     std::string in, out;
@@ -516,7 +516,7 @@ emitVHDLRecordWrapperSignals(FILE *f) {
 }
 void OcpPort::
 emitVHDLRecordWrapperAssignments(FILE *f) {
-  for (unsigned n = 0; n < m_count; n++) {
+  for (unsigned n = 0; n < count(); n++) {
     std::string num;
     OU::format(num, "%u", n);
     std::string in, out;
@@ -530,7 +530,7 @@ emitVHDLRecordWrapperAssignments(FILE *f) {
 	if (os->value) {
 	  std::string rec;
 	  bool isOutput = osd == &ocpSignals[OCP_Clk] ? m_myClock && m_clock->m_output : os->master != masterIn();
-	  if (m_count > 1)
+	  if (m_arrayCount)
 	    OU::format(rec, "%s(%u).%s", isOutput ? out.c_str() : in.c_str(),
 		       n, osd->name);
 	  else
@@ -545,7 +545,7 @@ emitVHDLRecordWrapperAssignments(FILE *f) {
 }
 void OcpPort::
 emitVHDLRecordWrapperPortMap(FILE *f, std::string &last) {
-  for (unsigned n = 0; n < m_count; n++) {
+  for (unsigned n = 0; n < count(); n++) {
     std::string num;
     OU::format(num, "%u", n);
     std::string in, out;
@@ -596,15 +596,15 @@ emitConnectionSignal(FILE *f, bool output, Language lang, bool a_clock, std::str
       signal += "_clk";
     } else if (m_type == WCIPort && (m_master || w.m_assembly))
       OU::format(stype, "wci.wci_%s_%st", output ? "m2s" : "s2m",
-		 m_count > 1 ? "array_" : "");
+		 m_arrayCount ? "array_" : "");
     else {
       std::string lib(w.m_library);
       w.addParamConfigSuffix(lib);
       OU::format(stype, "%s.%s_defs.%s%s_t", lib.c_str(), w.m_implName, tname.c_str(),
-		 m_count > 1 ? "_array" : "");
+		 m_arrayCount ? "_array" : "");
     }
-    if (m_count > 1 && !a_clock)
-      OU::formatAdd(stype, "(0 to %zu)", m_count - 1);
+    if (m_arrayCount && !a_clock)
+      OU::formatAdd(stype, "(0 to %zu)", m_arrayCount - 1);
     // Make master the canonical type?
     fprintf(f,
 	    "  signal %s : %s;\n", signal.c_str(), stype.c_str());
@@ -726,7 +726,7 @@ ocpSignalPrefix(bool master, bool a_clock, Language lang, const Attachment &othe
   // Decide on our indexing.  We need an index if our attachment is a subset of
   // what we are connecting to, which is either another internal port or an external one.
   size_t index, top, count = 0; // count for indexing purpose
-  if (otherAt.m_instPort.m_port->m_count > c.m_count) {
+  if (otherAt.m_instPort.m_port->count() > c.m_count) {
     // We're connecting to something bigger: indexing is needed in this port binding
     count = c.m_count;
     index = otherAt.m_index;

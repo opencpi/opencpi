@@ -375,15 +375,15 @@ emitRecordSignal(FILE *f, std::string &last, const char *aprefix, bool inRecord,
     OU::format(in, typeNameIn.c_str(), "");
     OU::format(out, typeNameOut.c_str(), "");
     std::string index;
-    if (m_count > 1)
-      OU::format(index, "(0 to %zu)", m_count-1);
+    if (m_arrayCount)
+      OU::format(index, "(0 to %zu)", m_arrayCount-1);
     OU::format(last,
 	       "  %-*s : in  wci.wci_%s%s_t%s;\n"
 	       "  %-*s : out wci.wci_%s%s_t%s%%s",
 	       (int)w.m_maxPortTypeName, in.c_str(), m_master ? "s2m" : "m2s",
-	       m_count > 1 ? "_array" : "", index.c_str(),
+	       m_arrayCount ? "_array" : "", index.c_str(),
 	       (int)w.m_maxPortTypeName, out.c_str(), m_master ? "m2s" : "s2m",
-	       m_count > 1 ? "_array" : "", index.c_str());
+	       m_arrayCount ? "_array" : "", index.c_str());
   } else {
     OcpPort::emitRecordSignal(f, last, aprefix, inRecord, inPackage, inWorker, NULL,
 			      inWorker ? "(done=>btrue, others=>bfalse)" : NULL);

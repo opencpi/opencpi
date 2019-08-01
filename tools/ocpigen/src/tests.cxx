@@ -1040,9 +1040,9 @@ namespace {
         std::string file(dir + "/" + name);;
         unsigned nOutputs = 0, nInputs = 0, nEmIn = 0, nEmOut = 0, nWIn = 0, nWOut = 0;
         const DataPort *first = NULL, *firstEm = NULL;
-        for (unsigned n = 0; n < m_ports.size(); n++) {
-          const DataPort &p = *m_ports[n].m_port;
-          if (&p != NULL) {
+        for (unsigned n = 0; n < m_ports.size(); n++)
+          if (m_ports[n].m_port) {
+	    const DataPort &p = *m_ports[n].m_port;
             if (p.isDataProducer()) {
               if (!first)
                 first = &p;
@@ -1066,7 +1066,6 @@ namespace {
             }
             isOptional = m_ports[n].m_testOptional;
           }
-        }
         std::string app("<application");
         // the testrun.sh script has the name "file_write_from..." or "file_write" hardcoded, so
         // the name of the file_write is limited to those options

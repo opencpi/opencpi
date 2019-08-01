@@ -72,7 +72,7 @@ public:
   // These members are for spec ports
   std::string m_name;  // spec:
   size_t m_ordinal;    // spec:
-  size_t m_count;      // spec: FIXME: can this change in impl???
+  size_t m_arrayCount; // spec: 0 means no array.  FIXME: can this change in impl???
   std::string m_countExpr;
   bool m_master;       // spec
   ezxml_t m_xml;       // spec or impl
@@ -93,6 +93,9 @@ public:
   virtual Port &clone(Worker &w, std::string &name, size_t count,
 		      OCPI::Util::Assembly::Role *role, const char *&err) const;
   virtual ~Port();
+  // count whether an array or not
+  size_t count() const { return m_arrayCount ? m_arrayCount : 1; }
+  bool isArray() const { return m_arrayCount || !m_countExpr.empty(); }
   Worker &worker() const { return *m_worker; }
   const char *parseClock(ezxml_t);
   virtual const char *parse();    // second pass parsing for ports referring to each other

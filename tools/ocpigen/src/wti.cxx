@@ -59,9 +59,9 @@ WtiPort(const WtiPort &other, Worker &w , std::string &name, const char *&err)
 // Virtual constructor: the concrete instantiated classes must have a clone method,
 // which calls the corresponding specialized copy constructor
 Port &WtiPort::
-clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role */*role*/,
+clone(Worker &w, std::string &name, size_t a_count, OCPI::Util::Assembly::Role */*role*/,
       const char *&err) const {
-  assert(count <= 1);
+  assert(a_count <= 1);
   return *new WtiPort(*this, w, name, err);
 }
 

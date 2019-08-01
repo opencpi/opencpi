@@ -88,14 +88,14 @@ parseConnection(OU::Assembly::Connection &aConn) {
     OU::Assembly::Port &ap = *api;
     if ((err = findPort(ap, found)))
       return err;
-    if (ap.m_index + (c.m_count ? c.m_count : 1) > found->m_port->m_count)
+    if (ap.m_index + (c.m_count ? c.m_count : 1) > found->m_port->count())
       return OU::esprintf("invalid index/count (%zu/%zu) for connection %s, port %s of "
 			  "instance %s has count %zu",
 			  ap.m_index, c.m_count ? c.m_count : 1, c.m_name.c_str(),
 			  ap.m_name.empty() ? "<unknown>" : ap.m_name.c_str(),
 			  m_instances[ap.m_instance].m_worker->cname(),
-			  found->m_port->m_count);
-    size_t count = found->m_port->m_count - ap.m_index;
+			  found->m_port->count());
+    size_t count = found->m_port->count() - ap.m_index;
     if (count < minCount)
       minCount = count;
   }
@@ -128,19 +128,21 @@ parseConnection(OU::Assembly::Connection &aConn) {
     assert(c.m_attachments.size() == 1);
     InstancePort &intPort = c.m_attachments.front()->m_instPort; // intPort corresponds to ap
     assert(intPort.m_port);
-    if (ext.m_index + ext.m_count > intPort.m_port->m_count)
+    if (ext.m_index + ext.m_count > intPort.m_port->count())
       return OU::esprintf("External port '%s' can't have index/count %zu/%zu "
 			  "when internal port has count: %zu",
-			  ext.m_name.c_str(), ext.m_index, ext.m_count, intPort.m_port->m_count);
+			  ext.m_name.c_str(), ext.m_index, ext.m_count, intPort.m_port->count());
     // Create the external port of this assembly
     // Start with a copy of the port, then patch it
     ocpiDebug("Clone of port %s of instance %s of worker %s for assembly worker %s: %s/%zu/%zu",
 	      intPort.m_port->pname(), intPort.m_instance->cname(),
 	      intPort.m_port->worker().m_implName, m_assyWorker.m_implName,
-	      intPort.m_port->m_countExpr.c_str(), intPort.m_port->m_count,
+	      intPort.m_port->m_countExpr.c_str(), intPort.m_port->m_arrayCount,
 	      ext.m_count ? ext.m_count : c.m_count);
+    assert(ext.m_count <= intPort.m_port->count());
+    // The external port inherits the array-ness of the internal port if there is no "count".
     Port &p = intPort.m_port->clone(m_assyWorker, ext.m_name,
-				    ext.m_count ? ext.m_count : c.m_count,
+				    ext.m_count ? ext.m_count : intPort.m_port->m_arrayCount,
 				    &ext.m_role, err);
     if (err)
       return OU::esprintf("External connection %s for port %s of instance %s error: %s",
@@ -438,14 +440,14 @@ externalizePort(InstancePort &ip, const char *name, size_t *ordinal) {
   if (ordinal)
     OU::formatAdd(extName, "%zu", (*ordinal)++);
   Connection &c = *new Connection(NULL, extName.c_str());
-  c.m_count = p.m_count;
+  c.m_count = p.count();
   m_connections.push_back(&c);
   const char *err;
   ocpiDebug("Clone of port %s of instance %s of worker %s for assembly worker %s: %s/%zu",
 	    ip.m_port->pname(), ip.m_instance->cname(),
 	    ip.m_port->worker().m_implName, m_assyWorker.m_implName,
-	    ip.m_port->m_countExpr.c_str(), ip.m_port->m_count);
-  Port &extPort = p.clone(m_assyWorker, extName, p.m_count, NULL, err);
+	    ip.m_port->m_countExpr.c_str(), ip.m_port->m_arrayCount);
+  Port &extPort = p.clone(m_assyWorker, extName, p.m_arrayCount, NULL, err);
   if (err)
     return err;
   OU::Assembly::External *ext = new OU::Assembly::External;
@@ -629,7 +631,7 @@ void InstancePort::
 init(Instance *i, Port *p, OU::Assembly::External *ext) {
   m_instance = i;
   m_port = p;
-  m_connected.assign(p ? p->m_count : 1, false);
+  m_connected.assign(p ? p->count() : 1, false);
   if (p)
     p->initRole(m_role);
   // If the external port tells us the direction and we're bidirectional, capture it.

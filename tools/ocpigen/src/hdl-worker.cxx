@@ -1757,7 +1757,7 @@ emitImplHDL(bool wrap) {
   // Aliases for port-specific signals, or simple combinatorial "macros".
   for (unsigned i = 0; i < m_ports.size(); i++) {
     Port *p = m_ports[i];
-    for (unsigned n = 0; n < p->m_count; n++)
+    for (unsigned n = 0; n < p->count(); n++)
       p->emitImplAliases(f, n, lang);
   }
   if (m_language == VHDL) {

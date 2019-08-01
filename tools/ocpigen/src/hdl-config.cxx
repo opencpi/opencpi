@@ -368,7 +368,7 @@ emitSubdeviceConnections(std::string &assy,  DevInstances *baseInstances) {
 	    // and thus externalized.
 	    // We ASSUME that the indices in the config are contiguous and start at 0
 	    // FIXME:  remove this constraint
-	    for (size_t i = 0; i < supPort.m_count; i++)
+	    for (size_t i = 0; i < supPort.count(); i++)
 	      if (sdi->m_connected[supOrdinal] & (1u << i)) {
 		assert(i != supIndex);
 		if (i < supIndex)
@@ -381,8 +381,8 @@ emitSubdeviceConnections(std::string &assy,  DevInstances *baseInstances) {
 	  OU::formatAdd(assy, " index='%zu'", index);
 	} else if (!inConfig) {
 	  // supporting connection is not indexed, and is local,which means it is connected whole
-	  assert(supPort.m_count);
-	  uint64_t mask = ~(UINT64_MAX << supPort.m_count);
+	  assert(supPort.m_arrayCount);
+	  uint64_t mask = ~(UINT64_MAX << supPort.count());
 	  assert(!(sdi->m_connected[supOrdinal] & mask));
 	  sdi->m_connected[supOrdinal] |= mask;
 	}
@@ -571,21 +571,23 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
       if (p.isData() || p.m_type == NOCPort || p.m_type == SDPPort ||
 	  (!p.m_master && (p.m_type == PropPort || p.m_type == DevSigPort))) {
 	size_t unconnected = 0, first = 0;
-	for (size_t i = 0; i < p.m_count; i++)
+	for (size_t i = 0; i < p.count(); i++)
 	  if (!((*dii).m_connected[p.m_ordinal] & (1u << i))) {
 	    if (!unconnected++)
 	      first = i;
 	  }
 	// FIXME: (hard) this will not work if the connectivity is not simply contiguous.
 	// (at one end or the other).
-	if (unconnected)
+	if (unconnected) {
 	  OU::formatAdd(assy,
-			"  <external name='%s%s%s' instance='%s' port='%s' "
-			"index='%zu' count='%zu'/>\n",
+			"  <external name='%s%s%s' instance='%s' port='%s'",
 			p.m_type != NOCPort && p.m_type != SDPPort ? (*dii).cname() : "",
 			p.m_type != NOCPort && p.m_type != SDPPort ? "_" : "", p.pname(),
-			(*dii).cname(), p.pname(),
-			first, unconnected);
+			(*dii).cname(), p.pname());
+	  if (p.isArray())
+	    OU::formatAdd(assy, " index='%zu' count='%zu'", first, unconnected);
+	  assy += "/>\n";
+	}
       }
     }
   }

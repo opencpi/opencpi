@@ -166,8 +166,6 @@ parseHdlImpl(const char *a_package) {
   } else {
     if (!createPort<WciPort>(*this, xctl, NULL, -1, err))
       return err;
-    if (!m_wci->m_count)
-      m_wci->m_count = 1;
   }
   if ((err = parseClocks()))
     return err;
@@ -253,8 +251,6 @@ parseHdlImpl(const char *a_package) {
     Port *p = m_ports[i];
     if (p->m_clockPort != SIZE_MAX)
       p->m_clock = m_ports[p->m_clockPort]->m_clock;
-    if (p->m_count == 0)
-      p->m_count = 1;
   }
   return 0;
 }

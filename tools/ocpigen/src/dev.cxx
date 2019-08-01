@@ -51,9 +51,9 @@ DevSignalsPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
 
 // Our special copy constructor
 DevSignalsPort::
-DevSignalsPort(const DevSignalsPort &other, Worker &w, std::string &name, size_t count,
+DevSignalsPort(const DevSignalsPort &other, Worker &w, std::string &name, size_t a_count,
 	       const char *&err)
-  : Port(other, w, name, count, err) {
+  : Port(other, w, name, a_count, err) {
   if (err)
     return;
   m_signals = other.m_signals;
@@ -63,9 +63,9 @@ DevSignalsPort(const DevSignalsPort &other, Worker &w, std::string &name, size_t
 }
 
 Port &DevSignalsPort::
-clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *, const char *&err)
+clone(Worker &w, std::string &name, size_t a_count, OCPI::Util::Assembly::Role *, const char *&err)
   const {
-  return *new DevSignalsPort(*this, w, name, count, err);
+  return *new DevSignalsPort(*this, w, name, a_count, err);
 }
 
 void DevSignalsPort::
@@ -136,7 +136,7 @@ emitConnectionSignal(FILE *f, bool output, Language /*lang*/, bool /*clock*/, st
   m_worker->addParamConfigSuffix(suff);
   OU::format(tname, output ? typeNameOut.c_str() : typeNameIn.c_str(), "");
   OU::format(stype, "%s%s.%s_defs.%s%s_t", m_worker->m_library, suff.c_str(),
-	     m_worker->m_implName, tname.c_str(), m_count > 1 ? "_array" : "");
+	     m_worker->m_implName, tname.c_str(), m_arrayCount ? "_array" : "");
   fprintf(f,
 	  "  signal %s : %s;\n", signal.c_str(), stype.c_str());
 }
@@ -158,13 +158,13 @@ emitPortSignalsDir(FILE *f, bool output, const char *indent, bool &any, std::str
   for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++)
     if (((*si)->m_direction == Signal::IN && !output) ||
 	((*si)->m_direction == Signal::OUT && output))
-      for (size_t n = 0; n < m_count; n++) {
+      for (size_t n = 0; n < count(); n++) {
 	std::string myindex;
-	if (m_count > 1)
+	if (m_arrayCount)
 	  OU::format(myindex, "(%zu)", n);
 	std::string otherName = conn;
 	if (other) {
-	  if ((other && other->m_instPort.m_port->m_count > m_count) || m_count > 1)
+	  if (other->m_instPort.m_port->count() > count() || m_arrayCount)
 	    OU::formatAdd(otherName, "(%zu)", n + other->m_index);
 	  OU::formatAdd(otherName, ".%s", (*si)->m_name.c_str());
 	} else
@@ -208,7 +208,7 @@ emitExtAssignment(FILE *f, bool int2ext, const std::string &extName, const std::
   // We can't assume record type compatibility so we must assign individual signals.
   for (size_t n = 0; n < connCount; n++) {
     std::string ours = extName;
-    if (m_count > 1)
+    if (m_arrayCount)
       OU::formatAdd(ours, "(%zu)", extAt.m_index + n);
     std::string theirs = intName;
     OU::formatAdd(theirs, "(%zu)", intAt.m_index + n);

@@ -268,7 +268,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 	ocpiAssert(p.m_type == SDPPort || slave);
 #endif
 	uNocs.insert(std::make_pair(p.pname(),
-				    UNoc(p.pname(), p.m_type, m_config.sdpWidth(), p.m_count)));
+				    UNoc(p.pname(), p.m_type, m_config.sdpWidth(), p.count())));
       }
     }
   }
@@ -324,8 +324,8 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 		  "    <port instance='ocscp' name='wci'/>\n"
 		  "    <port instance='pfconfig' name='%s'/>\n"
 		  "  </connection>\n",
-		  p.m_count, p.pname());
-    nWCIs += p.m_count;
+		  p.count(), p.pname());
+    nWCIs += p.count();
   }
   if (m_appAssembly.m_assembly && m_appAssembly.m_assembly->m_instances.size() != 0) {
     // Instance the assembly and connect its wci
@@ -338,9 +338,9 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 		    "    <port instance='ocscp' name='wci' index='%zu'/>\n"
 		    "    <port instance='%s' name='%s'/>\n"
 		    "  </connection>\n",
-		    p.m_count, nWCIs,
+		    p.count(), nWCIs,
 		    m_appAssembly.m_implName, p.pname());
-      nWCIs += p.m_count;
+      nWCIs += p.count();
     }
   }
   if (icp && !cp) {

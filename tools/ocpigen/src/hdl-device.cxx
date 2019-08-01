@@ -672,13 +672,13 @@ parse(ezxml_t cx, Worker &w, Support &r) {
   if (m_sup_port->m_master == m_port->m_master)
     return OU::esprintf("Supported worker port \"%s\" has same role (master) as port \"%s\"",
 			to.c_str(), port.c_str());
-  if (m_sup_port->m_count > 1) {
+  if (m_sup_port->m_arrayCount) {
     if (!m_indexed)
-      return OU::esprintf("Supported worker port \"%s\" has count > 1, index must be specified",
+      return OU::esprintf("Supported worker port \"%s\" has count, index must be specified",
 			  to.c_str());
-    if (m_index >= m_sup_port->m_count)
+    if (m_index >= m_sup_port->count())
       return OU::esprintf("Supported worker port \"%s\" has count %zu, index (%zu) too high",
-			  to.c_str(), m_sup_port->m_count, m_index);
+			  to.c_str(), m_sup_port->count(), m_index);
   }
   // FIXME: check signal compatibility...
   return NULL;

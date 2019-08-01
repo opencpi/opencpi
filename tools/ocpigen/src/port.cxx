@@ -28,7 +28,7 @@
 Port::
 Port(Worker &w, ezxml_t x, Port *sp, int nameOrdinal, WIPType type, const char *defaultName,
      const char *&err)
-  : m_internal(NULL), m_morphed(false), m_worker(&w), m_ordinal(0), m_count(0), m_master(false),
+  : m_internal(NULL), m_morphed(false), m_worker(&w), m_ordinal(0), m_arrayCount(0), m_master(false),
     m_xml(x), m_type(type), pattern(NULL), m_clock(NULL), m_clockPort(SIZE_MAX), m_myClock(false),
     m_specXml(x) {
   if (sp) {
@@ -36,7 +36,7 @@ Port(Worker &w, ezxml_t x, Port *sp, int nameOrdinal, WIPType type, const char *
     m_morphed = true;
     m_name = sp->m_name;
     m_ordinal = sp->m_ordinal;
-    m_count = sp->m_count; // may be overridden?
+    m_arrayCount = sp->m_arrayCount; // may be overridden?
     m_countExpr = sp->m_countExpr;
     m_master = sp->m_master;
     m_specXml = sp->m_xml;
@@ -70,7 +70,7 @@ Port(Worker &w, ezxml_t x, Port *sp, int nameOrdinal, WIPType type, const char *
       return;
     }
     if ((err = OE::getBoolean(m_xml, "master", &m_master)) ||
-	(err = OE::getExprNumber(m_xml, "count", m_count, NULL, m_countExpr, &w)))
+	(err = OE::getExprNumber(m_xml, "count", m_arrayCount, NULL, m_countExpr, &w)))
       return;
     m_ordinal = w.m_ports.size();
   }
@@ -93,9 +93,9 @@ Port(Worker &w, ezxml_t x, Port *sp, int nameOrdinal, WIPType type, const char *
 // Note we don't clone the m_countExpr since the count must be resolved at the
 // instance's port in the assembly that we are cloning/externalizing.
 Port::
-Port(const Port &other, Worker &w, std::string &name, size_t count, const char *&err)
+Port(const Port &other, Worker &w, std::string &name, size_t a_count, const char *&err)
   : m_internal(&other), m_morphed(false), m_worker(&w), m_name(name), m_ordinal(w.m_ports.size()),
-    m_count(count), m_master(other.m_master), m_xml(other.m_xml), m_type(other.m_type),
+    m_arrayCount(a_count), m_master(other.m_master), m_xml(other.m_xml), m_type(other.m_type),
     pattern(NULL), m_clock(NULL), m_clockPort(SIZE_MAX), m_myClock(false), m_specXml(other.m_specXml)
 {
   err = NULL; // this is the base class for everything
@@ -126,7 +126,7 @@ parse() {
 const char *Port::
 resolveExpressions(OU::IdentResolver &ir) {
   return m_countExpr.length() ?
-    parseExprNumber(m_countExpr.c_str(), m_count, NULL, &ir) : NULL;
+    parseExprNumber(m_countExpr.c_str(), m_arrayCount, NULL, &ir) : NULL;
 }
 
 bool Port::
@@ -213,7 +213,7 @@ doPattern(int n, unsigned wn, bool in, bool master, std::string &suff, bool port
 	while (*s)
 	  s++;
 	// Port indices are not embedded in VHDL names since they are proper arrays
-	if (m_count > 1 || m_countExpr.length())
+	if (isArray())
 	  switch (n) {
 	  case -1:
 	    *s++ = '%';
@@ -275,11 +275,11 @@ void Port::
 emitPortDescription(FILE *f, Language lang) const {
   const char *comment = hdlComment(lang);
   std::string nbuf;
-  if (m_count > 1 || m_countExpr.length()) {
+  if (isArray()) {
     if (m_countExpr.length())
       nbuf = m_countExpr;
     else
-      OU::format(nbuf, " %zu", m_count);
+      OU::format(nbuf, " %zu", m_arrayCount);
   }
   fprintf(f,
 	  "\n  %s The%s %s interface%s named \"%s\", with \"%s\" acting as %s%s:\n",
@@ -366,20 +366,20 @@ emitRecordInterface(FILE */*f*/, const char */*implName*/) {}
 // first unless not needed
 void Port::
 emitRecordInterfaceConstants(FILE *f) {
-  if (m_count > 1 || m_countExpr.length())
+  if (isArray())
     fprintf(f, "  constant ocpi_port_%s_count : natural;\n", pname());
 }
 // This not DEFAULT behavior, but basic/common behavior and should be called
 // first unless not needed
 void Port::
 emitInterfaceConstants(FILE *f, Language lang) {
-  if (m_count > 1 || m_countExpr.length())
-    emitConstant(f, "ocpi_port_%s_count", lang, m_count);
+  if (isArray())
+    emitConstant(f, "ocpi_port_%s_count", lang, m_arrayCount);
 }
 
 void Port::
 emitRecordArray(FILE *f) {
-  if (m_count > 1 || m_countExpr.length()) {
+  if (isArray()) {
     std::string scount;
     OU::format(scount, "ocpi_port_%s_count", pname());
     if (haveInputs()) {
@@ -411,7 +411,7 @@ emitRecordSignal(FILE *f, std::string &last, const char *aprefix, bool /*useReco
     OU::format(last,
 	       "  %-*s : in  %s%s%s_t%%s",
 	       (int)m_worker->m_maxPortTypeName, in.c_str(), aprefix, in.c_str(),
-	       m_count > 1 || m_countExpr.length() ? "_array" : "");
+	       isArray() ? "_array" : "");
   }
   if (inWorker ? haveWorkerOutputs() : haveOutputs()) {
     if (last.size())
@@ -421,7 +421,7 @@ emitRecordSignal(FILE *f, std::string &last, const char *aprefix, bool /*useReco
     OU::format(last,
 	       "  %-*s : out %s%s%s_t%%s",
 	       (int)m_worker->m_maxPortTypeName, out.c_str(), aprefix, out.c_str(),
-	       m_count > 1 || m_countExpr.length() ? "_array" : "");
+	       isArray() ? "_array" : "");
   }
 }
 
@@ -517,7 +517,7 @@ emitPortSignals(FILE *f, const InstancePort &ip, Language /*lang*/, const char *
       }
     assert(otherAt);
     // Indexing is necessary only when we are smaller than the other
-    if (m_count < otherAt->m_instPort.m_port->m_count) {
+    if (m_arrayCount < otherAt->m_instPort.m_port->m_arrayCount) {
       if (c.m_count > 1)
 	OU::format(index, "(%zu to %zu)", otherAt->m_index, otherAt->m_index + c.m_count - 1);
       else
@@ -527,7 +527,7 @@ emitPortSignals(FILE *f, const InstancePort &ip, Language /*lang*/, const char *
     OU::format(sName, c.m_slaveName.c_str(), "");
 #if 0 // busted until m_count=0 indicates non-array ports properly
     // If the instance port is an array but the other is not, index the instance port
-    if ((m_count > 1 || !m_countExpr.empty()) && otherAt->m_instPort.m_port->m_count <= 1) {
+    if ((m_arrayCount || !m_countExpr.empty()) && otherAt->m_instPort.m_port->m_arrayCount <= 1) {
       in += "(0)";
       out += "(0)";
     }
@@ -558,10 +558,10 @@ emitPortSignal(FILE *f, bool any, const char *indent, const std::string &fName,
   fprintf(f, "%s%s => ", any ? indent : "", fName.c_str());
   if (aName.empty()) {
     const char *missing = m_master ? slaveMissing() : masterMissing();
-    if (m_count <= 1 && m_countExpr.empty())
-      fprintf(f, "%s", missing);
-    else
+    if (isArray())
       fprintf(f, "(others => %s)", missing);
+    else
+      fprintf(f, "%s", missing);
   } else
     fprintf(f, "%s%s", aName.c_str(), index.c_str());
 }
@@ -592,20 +592,20 @@ RawPropPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
 
 // Our special copy constructor
 RawPropPort::
-RawPropPort(const RawPropPort &other, Worker &w , std::string &name, size_t count,
+RawPropPort(const RawPropPort &other, Worker &w , std::string &name, size_t a_count,
 	    const char *&err)
-  : Port(other, w, name, count, err) {
+  : Port(other, w, name, a_count, err) {
   if (err)
     return;
 }
 
 Port &RawPropPort::
-clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *, const char *&err)
+clone(Worker &w, std::string &name, size_t a_count, OCPI::Util::Assembly::Role *, const char *&err)
   const {
-  RawPropPort *rpp = new RawPropPort(*this, w, name, count, err);
+  RawPropPort *rpp = new RawPropPort(*this, w, name, a_count, err);
   // We need to externalize the fact that the count was an expression, to preserve "array-ness"
   if (m_countExpr.length())
-    OU::format(rpp->m_countExpr, "%zu", count);
+    OU::format(rpp->m_countExpr, "%zu", a_count);
   return *rpp;
 }
 
@@ -636,7 +636,7 @@ emitRecordInterface(FILE *f, const char *implName) {
 	  in.c_str(), m_master ? "in" : "out",
 	  typeName(), pname(), implName,
 	  out.c_str(), m_master ? "out" : "in");
-  if (m_count || m_countExpr.length())
+  if (isArray())
       fprintf(f,
 	      "  subtype %s_array_t is wci.raw_prop_%s_array_t(0 to ocpi_port_%s_count-1);\n"
 	      "  subtype %s_array_t is wci.raw_prop_%s_array_t(0 to ocpi_port_%s_count-1);\n",
@@ -648,8 +648,8 @@ void RawPropPort::
 emitConnectionSignal(FILE *f, bool output, Language /*lang*/, bool /*clock*/, std::string &signal) {
   fprintf(f, "  signal %s : wci.raw_prop_%s%s_t",
 	  signal.c_str(), m_master == output ? "out" : "in",
-	  m_count > 1 || m_countExpr.length() ? "_array" : "");
-  if (m_count > 1 || m_countExpr.length()) {
+	  isArray() ? "_array" : "");
+  if (isArray()) {
     Worker &w = *m_worker;
     std::string lib(w.m_library);
     w.addParamConfigSuffix(lib);
@@ -674,8 +674,8 @@ CpPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
 
 // Our special copy constructor
 CpPort::
-CpPort(const CpPort &other, Worker &w , std::string &name, size_t count, const char *&err)
-  : Port(other, w, name, count, err) {
+CpPort(const CpPort &other, Worker &w , std::string &name, size_t a_count, const char *&err)
+  : Port(other, w, name, a_count, err) {
   if (err)
     return;
 }
@@ -683,9 +683,9 @@ CpPort(const CpPort &other, Worker &w , std::string &name, size_t count, const c
 // Virtual constructor: the concrete instantiated classes must have a clone method,
 // which calls the corresponding specialized copy constructor
 Port &CpPort::
-clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role */*role*/,
+clone(Worker &w, std::string &name, size_t a_count, OCPI::Util::Assembly::Role */*role*/,
       const char *&err) const {
-  return *new CpPort(*this, w, name, count, err);
+  return *new CpPort(*this, w, name, a_count, err);
 }
 
 void CpPort::
@@ -723,9 +723,9 @@ NocPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
 
 // Our special copy constructor
 NocPort::
-NocPort(const NocPort &other, Worker &w , std::string &name, size_t count,
+NocPort(const NocPort &other, Worker &w , std::string &name, size_t a_count,
 		const char *&err)
-  : Port(other, w, name, count, err) {
+  : Port(other, w, name, a_count, err) {
   if (err)
     return;
 }
@@ -733,9 +733,9 @@ NocPort(const NocPort &other, Worker &w , std::string &name, size_t count,
 // Virtual constructor: the concrete instantiated classes must have a clone method,
 // which calls the corresponding specialized copy constructor
 Port &NocPort::
-clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role */*role*/,
+clone(Worker &w, std::string &name, size_t a_count, OCPI::Util::Assembly::Role */*role*/,
       const char *&err) const {
-  return *new NocPort(*this, w, name, count, err);
+  return *new NocPort(*this, w, name, a_count, err);
 }
 
 void NocPort::
@@ -770,17 +770,17 @@ TimeServicePort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
 }
 // Our special copy constructor
 TimeServicePort::
-TimeServicePort(const TimeServicePort &other, Worker &w , std::string &name, size_t count,
+TimeServicePort(const TimeServicePort &other, Worker &w , std::string &name, size_t a_count,
 		const char *&err)
-  : Port(other, w, name, count, err) {
+  : Port(other, w, name, a_count, err) {
 }
 
 // Virtual constructor: the concrete instantiated classes must have a clone method,
 // which calls the corresponding specialized copy constructor
 Port &TimeServicePort::
-clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role */*role*/,
+clone(Worker &w, std::string &name, size_t a_count, OCPI::Util::Assembly::Role */*role*/,
       const char *&err) const {
-  return *new TimeServicePort(*this, w, name, count, err);
+  return *new TimeServicePort(*this, w, name, a_count, err);
 }
 
 void TimeServicePort::
@@ -867,17 +867,17 @@ TimeBasePort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
 }
 // Our special copy constructor
 TimeBasePort::
-TimeBasePort(const TimeBasePort &other, Worker &w , std::string &name, size_t count,
+TimeBasePort(const TimeBasePort &other, Worker &w , std::string &name, size_t a_count,
 		const char *&err)
-  : Port(other, w, name, count, err) {
+  : Port(other, w, name, a_count, err) {
 }
 
 // Virtual constructor: the concrete instantiated classes must have a clone method,
 // which calls the corresponding specialized copy constructor
 Port &TimeBasePort::
-clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role */*role*/,
+clone(Worker &w, std::string &name, size_t a_count, OCPI::Util::Assembly::Role */*role*/,
       const char *&err) const {
-  return *new TimeBasePort(*this, w, name, count, err);
+  return *new TimeBasePort(*this, w, name, a_count, err);
 }
 
 void TimeBasePort::
@@ -975,9 +975,9 @@ MetaDataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
 
 // Our special copy constructor
 MetaDataPort::
-MetaDataPort(const MetaDataPort &other, Worker &w , std::string &name, size_t count,
+MetaDataPort(const MetaDataPort &other, Worker &w , std::string &name, size_t a_count,
 		const char *&err)
-  : Port(other, w, name, count, err) {
+  : Port(other, w, name, a_count, err) {
   if (err)
     return;
 }
@@ -985,9 +985,9 @@ MetaDataPort(const MetaDataPort &other, Worker &w , std::string &name, size_t co
 // Virtual constructor: the concrete instantiated classes must have a clone method,
 // which calls the corresponding specialized copy constructor
 Port &MetaDataPort::
-clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role */*role*/,
+clone(Worker &w, std::string &name, size_t a_count, OCPI::Util::Assembly::Role */*role*/,
       const char *&err) const {
-  return *new MetaDataPort(*this, w, name, count, err);
+  return *new MetaDataPort(*this, w, name, a_count, err);
 }
 
 void MetaDataPort::
@@ -1044,7 +1044,7 @@ void Port::
 emitExtAssignment(FILE *f, bool int2ext, const std::string &extName, const std::string &intName,
 		  const Attachment &extAt, const Attachment &intAt, size_t connCount) const {
   std::string ours = extName;
-  if (connCount < m_count || m_countExpr.size()) {
+  if (isArray()) { //connCount < m_arrayCount || m_countExpr.size()) {
     if (connCount == 1)
       OU::formatAdd(ours, "(%zu)", extAt.m_index);
     else
