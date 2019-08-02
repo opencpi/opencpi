@@ -501,12 +501,22 @@ lastModified (const std::string & name)
  * File System Operations
  * ----------------------------------------------------------------------
  */
+// Helper internal-only functions for error checking:
+void ensureExists(const std::string &fname) {
+  if (!exists(fname)) throw std::string("File '" + fname + "' does not exist!");
+}
+
+void ensureNotExists(const std::string &fname) {
+  if (exists(fname)) throw std::string("File '" + fname + "' already exists!");
+}
 
 void
 rename (const std::string & srcName,
                              const std::string & destName)
   throw (std::string)
 {
+  ensureExists(srcName);
+  ensureNotExists(destName);
   std::string srcNativeName = toNativeName (srcName);
   std::string destNativeName = toNativeName (destName);
 
@@ -520,6 +530,8 @@ copy (const std::string & srcName,
       const std::string & destName)
   throw (std::string)
 {
+  ensureExists(srcName);
+  ensureNotExists(destName);
   std::string srcNativeName = toNativeName (srcName);
   std::string destNativeName = toNativeName (destName);
 
@@ -539,16 +551,17 @@ copy (const std::string & srcName,
   stat(srcNativeName.c_str(), &ins);
   stat(destNativeName.c_str(), &outs);
   // These next three are questionable...
-  if (ins.st_uid != outs.st_uid) throw std::string("File UID did not match!");
-  if (ins.st_gid != outs.st_gid) throw std::string("File GID did not match!");
-  if (ins.st_mode != outs.st_mode) throw std::string("File Mode did not match!");
-  if (ins.st_size != outs.st_size) throw std::string("File Size did not match!");
+  if (ins.st_uid != outs.st_uid) throw std::string("OCPI::OS::FileSystem::copy: File UID did not match!");
+  if (ins.st_gid != outs.st_gid) throw std::string("OCPI::OS::FileSystem::copy: File GID did not match!");
+  if (ins.st_mode != outs.st_mode) throw std::string("OCPI::OS::FileSystem::copy: File Mode did not match!");
+  if (ins.st_size != outs.st_size) throw std::string("OCPI::OS::FileSystem::copy: File Size did not match!");
 }
 
 void
 remove (const std::string & name)
   throw (std::string)
 {
+  ensureExists(name);
   std::string nativeName = toNativeName (name);
 
   if (unlink (nativeName.c_str())) {

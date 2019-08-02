@@ -63,7 +63,7 @@ code portability of real-time systems
 %else
 ##########################################################################################
 # Cross build package
-AutoReqProv: no  # This must preceed the %description.  Go figure.
+AutoReqProv: no  # This must preceed the "description" section
 %define      __strip %{RPM_CROSS_COMPILE}strip
 BuildArch:   noarch
 %define      _binaries_in_noarch_packages_terminate_build 0
@@ -76,6 +76,13 @@ for the %{RPM_PLATFORM} target platform, along with core components.
 
 %{?RPM_HASH:ReleaseID: %{RPM_HASH}}
 %endif
+
+%prep
+# Empty; rpmlint recommendeds it is present anyway
+
+%build
+# Empty; rpmlint recommendeds it is present anyway
+
 # suppress post processing that bytecompiles python for two reasons:
 # 1. We're doing it in general for all distributions so its already done
 # 2. We use non-system-default-version python and potentially mixed versions
@@ -101,7 +108,7 @@ done
   #    Really only needed with a dynamic library installation
   #    But we always have this directory (due to plugins and swigs), so it probably does no harm
   #    We could make it conditional for a slight performance optimization
-  #    Since prefix0 is relocatable, we re-do the file contents %postun
+  #    Since prefix0 is relocatable, we re-do the file contents in %%postun
 # we are disabling this until we sort out dynamic libraries
 %if 0
   dir=ld.so.conf.d file=opencpi.conf
@@ -114,8 +121,7 @@ done
   dir=profile.d file=opencpi.sh
   %{__mkdir_p} %{buildroot}%{prefix1}/$dir
   %{__ln_s} -f %{prefix0}/cdk/env/rpm_cdk.sh %{buildroot}%{prefix1}/$dir/$file
-  # RPM build does not accept %attr on symlinks
-  # echo "%%attr(644,root,root)" %%{prefix1}/$dir/$file >> %{_builddir}/runtime-files
+  # RPM build does not accept %%attr on symlinks here:
   echo %%{prefix1}/$dir/$file >> %{_builddir}/runtime-files
 
   # 3. Enable bash completion of our commands by dropping a script into a directory that
@@ -263,19 +269,19 @@ else
   # We are in relocated mode.
   if [ "$RPM_INSTALL_PREFIX1" = %{prefix1} -o "$RPM_INSTALL_PREFIX0" = %{prefix0} ]; then
      cat<<-EOF
-	This OpenCPI installation is partially relocated, which is not supported.
-	The %{prefix0} directory is relocated to $RPM_INSTALL_PREFIX0
-	The %{prefix1} directory is relocated to $RPM_INSTALL_PREFIX1
-	Either relocate both or neither
+    This OpenCPI installation is partially relocated, which is not supported.
+    The %{prefix0} directory is relocated to $RPM_INSTALL_PREFIX0
+    The %{prefix1} directory is relocated to $RPM_INSTALL_PREFIX1
+    Either relocate both or neither
 EOF
      exit 1
   fi
   cat<<-EOF
-	This OpenCPI installation is relocated.
-	The %{prefix0} directory is relocated to $RPM_INSTALL_PREFIX0
-	The %{prefix1} directory is relocated to $RPM_INSTALL_PREFIX1
-	The warnings about the "opencpi" user and group not existing can be ignored.
-	EOF
+    This OpenCPI installation is relocated.
+    The %{prefix0} directory is relocated to $RPM_INSTALL_PREFIX0
+    The %{prefix1} directory is relocated to $RPM_INSTALL_PREFIX1
+    The warnings about the "opencpi" user and group not existing can be ignored.
+EOF
 fi
 ##########################################################################################
 # The postinstall scriptlet for runtime
@@ -320,12 +326,12 @@ if [ "$RPM_INSTALL_PREFIX1" = %{prefix1} -a "$RPM_INSTALL_PREFIX0" = %{prefix0} 
   : || /sbin/ldconfig # not enabled until we sort out dynamic libraries
 else
   cat <<-EOF >&2
-	The OpenCPI installation being removed was relocated.
-	The %{prefix0} directory was relocated to $RPM_INSTALL_PREFIX0
-	The %{prefix1} directory was relocated to $RPM_INSTALL_PREFIX1
-	While in a global installation the %{prefix1} directory would not be removed,
-	in this relocated installation $RPM_INSTALL_PREFIX1 will be removed if empty.
-	EOF
+    The OpenCPI installation being removed was relocated.
+    The %{prefix0} directory was relocated to $RPM_INSTALL_PREFIX0
+    The %{prefix1} directory was relocated to $RPM_INSTALL_PREFIX1
+    While in a global installation the %{prefix1} directory would not be removed,
+    in this relocated installation $RPM_INSTALL_PREFIX1 will be removed if empty.
+EOF
   owner=`stat --format=%U $RPM_INSTALL_PREFIX1`
   if [ -z "$owner" -o "$owner" = root -o "$owner" = opencpi ]; then
     echo Owner of $RPM_INSTALL_PREFIX1 is \"$owner\".  It is not being deleted. >&2
@@ -342,24 +348,24 @@ if [ -n "${prefixes[0]}" -a -n "${prefixes[1]}" -a "${prefixes[0]}" != package -
      "${prefixes[0]}" != "$RPM_INSTALL_PREFIX0" -o \
      "${prefixes[1]}" != "$RPM_INSTALL_PREFIX1" \) ]; then
    cat <<-EOF >&2
-	The pre-existing OpenCPI runtime installation was relocated differently than is specified
-	for this opencpi-devel package installation, which is not allowed.
-	The existing runtime installation has:
-	    %{prefix0} relocated to ${prefixes[0]}
-	    %{prefix1} relocated to ${prefixes[1]}
-	while this installation is requested to be:
-	    %{prefix0} relocated to $RPM_INSTALL_PREFIX0
-	    %{prefix1} relocated to $RPM_INSTALL_PREFIX1
-	EOF
+    The pre-existing OpenCPI runtime installation was relocated differently than is specified
+    for this opencpi-devel package installation, which is not allowed.
+    The existing runtime installation has:
+        %{prefix0} relocated to ${prefixes[0]}
+        %{prefix1} relocated to ${prefixes[1]}
+    while this installation is requested to be:
+        %{prefix0} relocated to $RPM_INSTALL_PREFIX0
+        %{prefix1} relocated to $RPM_INSTALL_PREFIX1
+EOF
    exit 1
 fi
 if [ "$RPM_INSTALL_PREFIX1" != %{prefix1} -o "$RPM_INSTALL_PREFIX0" != %{prefix0} ]; then
   cat<<-EOF
-	This OpenCPI development installation is relocated consistent with the runtime install.
-	The %{prefix0} directory is relocated to $RPM_INSTALL_PREFIX0
-	The %{prefix1} directory is relocated to $RPM_INSTALL_PREFIX1
-	The warnings about the opencpi user and group not existing can be ignored.
-	EOF
+    This OpenCPI development installation is relocated consistent with the runtime install.
+    The %{prefix0} directory is relocated to $RPM_INSTALL_PREFIX0
+    The %{prefix1} directory is relocated to $RPM_INSTALL_PREFIX1
+    The warnings about the opencpi user and group not existing can be ignored.
+EOF
 fi
 ##########################################################################################
 # The postinstall scriptlet for devel

@@ -869,12 +869,9 @@ public:
 			 m_exec.c_str(), e);
     ocpiInfo("Bitstream %s has uuid %s", m_exec.c_str(), l_uuid.c_str());
     std::string untar;
-    OU::format(untar,
-	       "set -e; file=%s; "
-	       "xlength=`tail -1 $file | sed 's/^.*X//'` && "
-	       "trimlength=$(($xlength + ${#xlength} + 2)) && "
-	       "head -c -$trimlength < $file | tar -xzf - -C %s",
-	       m_exec.c_str(), m_dir.c_str());
+    // TODO: Instead of calling ocpixml here, we could use artifact_getPayload() ourselves to pipe to tar
+    OU::format(untar, "set -e; ocpixml strip %s - | tar -xzf - -C %s",
+               m_exec.c_str(), m_dir.c_str());
     ocpiDebug("Executing command to load bit stream for sim: %s", untar.c_str());
     int rc = system(untar.c_str());
     switch (rc) {

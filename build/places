@@ -87,7 +87,7 @@ runtime/remote -v
 # remote-support is not -n since ocpirun/ACI needs it
 runtime/remote-support -I runtime/remote/include
 runtime/rcc -v
-runtime/ocl -v -I runtime/ocl/include/CL 
+runtime/ocl -v -I runtime/ocl/include/CL
 runtime/ocl-support -n -I runtime/ocl/include -I runtime/ocl/include/CL
 runtime/hdl -v
 runtime/application

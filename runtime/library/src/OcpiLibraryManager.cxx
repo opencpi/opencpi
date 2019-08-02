@@ -27,6 +27,7 @@
 #include <set>
 #include "ocpi-config.h"
 #include "OcpiUtilException.h"
+#include "OcpiXmlEmbedded.h"
 #include "OcpiLibraryManager.h"
 #include "LibrarySimple.h"
 #include "OcpiComponentLibrary.h"
@@ -308,6 +309,19 @@ namespace OCPI {
     // The returned value must be deleted with delete[];
     char *Artifact::
     getMetadata(const char *name, std::time_t &mtime, uint64_t &length, size_t &metaLength) {
+      OE::extra_t extra_info;
+      std::string xml;
+      OE::artifact_getXML(name, xml, &extra_info);
+      // ocpiDebug("getMetadata: back from artifact_getXML for %s with XML length = %zu", name, xml.length());
+      if (!xml.length()) return NULL;
+      // It worked; now map results in a way caller expected it.
+      length = extra_info.filesize;
+      mtime = extra_info.timestamp.tv_sec;
+      metaLength = xml.length();
+      char *data = new char[metaLength+1];
+      strcpy (data, xml.c_str()); // Normally horribly unsafe, but we know buffer is OK.
+
+#if 0 // Keeping this around for a while in case there are problems with MacOS etc.
       char *data = 0;
       // nonblock so we don't hang on opening a FIFO
       // but we also don't want to waste time on a "stat" system call before "open"
@@ -358,11 +372,12 @@ namespace OCPI {
 	  }
       }
       (void) close(fd);
+#endif
       return data;
     }
 
     // Given metadata in string form, parse it up, shortly after construction
-    // The ownership of metadat is passed in here.
+    // The ownership of metadata is passed in here.
     const char *Artifact::
     setFileMetadata(const char *a_name, char *metadata, std::time_t a_mtime, uint64_t a_length,
 		    size_t metaLength) {

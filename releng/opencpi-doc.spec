@@ -35,6 +35,9 @@ PDFs and HTML index file installed into %{_pkgdocdir}
 Release ID: %{COMMIT_HASH}
 %endif
 
+%prep
+# Empty; rpmlint recommendeds it is present anyway
+
 %build
 cd %{SRC_BASE}
 make doc

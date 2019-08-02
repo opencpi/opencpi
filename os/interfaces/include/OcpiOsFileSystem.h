@@ -214,7 +214,7 @@ namespace OCPI {
        *               the path, and the iteration is complete.
        * \param[in] ignoreInvalid Whether invalid path elements, i.e.,
        *               file names that are extracted from the \a path but
-       *               can not be converted to native format (because
+       *               cannot be converted to native format (because
        *               fromNativeName() raises an exception) are
        *               ignored.  If false, then an exception is raised
        *               if an invalid file name is encountered.
@@ -388,7 +388,7 @@ namespace OCPI {
        * \param[in] srcName  The original file name.
        * \param[in] destName The new name for the file.
        *
-       * \throw std::string If the file can not be renamed.
+       * \throw std::string If the file cannot be renamed.
        */
 
       void rename (const std::string & srcName,
@@ -401,7 +401,7 @@ namespace OCPI {
        * \param[in] srcName  The original file name.
        * \param[in] destName The name for the new copy of the file.
        *
-       * \throw std::string If the file can not be renamed.
+       * \throw std::string If the file cannot be copied.
        */
 
       void copy (const std::string & srcName,
@@ -413,7 +413,7 @@ namespace OCPI {
        *
        * \param[in] name A file name.
        *
-       * \throw std::string if the file can not be removed.
+       * \throw std::string if the file cannot be removed.
        */
 
       void remove (const std::string & name)

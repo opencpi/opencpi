@@ -17,6 +17,13 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+for prog in sudo yum; do
+  if ! command -v $prog >/dev/null; then
+    echo "Could not find $prog - required program!"
+    exit 99
+  fi
+done
+
 ##########################################################################################
 # Install or list required and available packages for Centos6
 #

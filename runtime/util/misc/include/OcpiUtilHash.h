@@ -21,37 +21,67 @@
 /**
  * \file
  * \brief This file contains the Interface for hashing functions.
- *
- * Author: John F. Miller
- *
- * Date: 7/20/04
- *
- * Revision History:
- *
- *     05/09/2005 - Frank Pilhofer
- *                  Moved to OCPI::Util::Misc.
- *
  */
 
 #ifndef OCPI_COMMON_HASH
 #define OCPI_COMMON_HASH
 
+#include <array>
+#include <string>
+#include "sha256.h"
 
 namespace OCPI {
-        namespace Util {
+  namespace Util {
+    namespace Misc {
+      typedef std::array<unsigned char, 32> sha256_hash_t;
 
-                namespace Misc {
+      /**
+       * \brief Generate a hash code from the string.
+       */
+      unsigned int hashCode( const char* string );
 
-                        /**
-                         * \brief Generate a hash code from the string.
-                         */
+      /** \brief Wrapper to keep state of checksum */
+      class sha256_wrapper {
+        public:
+          sha256_wrapper();
+          ~sha256_wrapper();
+          const std::string to_string();
+          void add(const void *, const size_t);
+        protected:
+          bool done;
+          context_sha256_t ctx;
+        private:
+          // Don't allow copying
+          sha256_wrapper( const sha256_wrapper& );
+          sha256_wrapper& operator=( const sha256_wrapper& );
+      };
 
-                        unsigned int hashCode( const char* string );
+      /** \brief Wrapper to simplify "just give me SHA256 of this whole buffer" */
+      sha256_hash_t hashCode256(const void *, const size_t);
 
-                }
+      /** \brief Wrapper to simplify "just give me SHA256 of this C++ [contiguous] container" */
+      template <typename C>
+      inline sha256_hash_t hashCode256(const C &cont) {
+        return hashCode256(cont.data(), cont.length());
+      }
 
-        }
+      /** \brief Uses GMP to convert the 256-bit hash into a printable string */
+      const std::string sha256_to_string(const sha256_hash_t &);
+
+      /** \brief Generic wrapper to get string version of anything hashCode256 would take */
+      template <typename... T>
+      inline const std::string hashCode256_as_string(T... params) {
+        return sha256_to_string(hashCode256(params...));
+      }
+
+      /** \brief Helper function that will return the SHA256 checksum of a data file (up to a certain point) */
+      std::string sha256_file(const std::string &, const off_t = 0);
+
+      /** \brief Helper function that will return the SHA256 checksum of a data file (up to a certain point) */
+      std::string sha256_file(FILE *file, const off_t trunc = 0);
+
+    }
+  }
 }
 
 #endif
-

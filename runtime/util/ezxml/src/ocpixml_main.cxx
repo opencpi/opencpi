@@ -20,15 +20,20 @@
 
 // Replaces the original ocpixml script with C++ version (AV-2501)
 
+#include <unistd.h>
 #include <cstring> // strcmp
 #include <string>
+#include <memory>
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <map>
 #include <stdexcept>
+
+
 #include "OcpiXmlEmbedded.h"
 #include "OcpiOsFileSystem.h" // This is NOT fully OCPI::OS-enabled, e.g. path names, etc.
+#include "OcpiUtilException.h" // OU::Error
 
 namespace OX = OCPI::Util::EzXml;
 namespace OS = OCPI::OS;
@@ -39,14 +44,15 @@ namespace OS = OCPI::OS;
 "Commands are: \n"\
 "  get   - extract the XML from the file to standard output.\n"\
 "  strip - remove the XML from the file while copying artifact to <file2>.\n"\
-"  add   - add the XML file <file2> to the file, in place. file2 can be '-' for standard input.\n"
+"  add   - add the XML file <file2> to the file, in place.\n"\
+"  check - silently verify artifact's XML.\n"\
+"\n<file2> can be '-' to indicate standard input (add) or output (strip)\n"
 
 #define OCPI_OPTIONS \
     CMD_OPTION(log_level,  l, ULong,  0, "<log-level>\n" \
 	                               "set log level during execution, overriding OCPI_LOG_LEVEL")
 
 #include "CmdOption.h"
-
 
 static int mymain(const char **argv) {
   // C++11: const std::map<std::string, int> valid_verbs = {{"get",3}, {"strip",4}, {"add",4}};
@@ -89,28 +95,31 @@ static int mymain(const char **argv) {
 
   // get
   if (0 == strcmp("get", argv[0])) {
-    OX::artifact_getXML(argv[1], xml);
-    if (xml.empty()) {
+    if (!OX::artifact_getXML(argv[1], xml)) {
       std::cerr << "This file \"" << argv[1] << "\" is not an artifact file.\n";
-      return 1;
+      return EXIT_FAILURE;
     }
     std::cout << xml;
   }
 
   // check
   if (0 == strcmp("check", argv[0])) {
-    OX::artifact_getXML(argv[1], xml);
-    return xml.empty() ? 1 : 0;
+    return OX::artifact_getXML(argv[1], xml)?EXIT_SUCCESS:EXIT_FAILURE;
   }
 
   // strip
   if (0 == strcmp("strip", argv[0])) {
-    OS::FileSystem::copy(argv[1], argv[2]);
-    if (!OX::artifact_stripXML(argv[2])) {
-      std::cerr << "This file \"" << argv[1] << "\" is not an artifact file.\n";
-      OS::FileSystem::remove(argv[2]);
-      return 1;
+    if (0 == strcmp("-", argv[2])) { // Special case of stdout
+      if (isatty(fileno(stdout))) throw OCPI::Util::Error("Asked to write binary to a terminal!");
+      OX::artifact_getPayload(argv[1]);
+    } else {
+      OS::FileSystem::copy(argv[1], argv[2]);
+      if (!OX::artifact_stripXML(argv[2])) {
+        std::cerr << "This file \"" << argv[1] << "\" is not an artifact file.\n";
+        OS::FileSystem::remove(argv[2]);
+        return EXIT_FAILURE;
+      }
     }
   }
-  return 0;
+  return EXIT_SUCCESS;
 }

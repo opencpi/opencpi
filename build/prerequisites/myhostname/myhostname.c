@@ -25,8 +25,8 @@
 
 int gethostname(char *name, size_t len) {
   const char *myhostname = getenv("MYHOSTNAME");
-  if (!myhostname || len <= strlen(myhostname))
+  if (!myhostname || len <= (strlen(myhostname)+1))
     return EINVAL;
-  strcpy(name, myhostname);
+  strncpy(name, myhostname, len);
   return 0;
 }

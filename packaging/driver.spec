@@ -52,12 +52,18 @@ startup script that will rebuild the driver as needed.
 
 %{?RPM_HASH:ReleaseID: %{RPM_HASH}}
 
+%prep
+# Empty; rpmlint recommendeds it is present anyway
+
+%build
+# Empty; rpmlint recommendeds it is present anyway
+
 %install
 cd %{RPM_OPENCPI}
 set -e
 rm -r -f %{buildroot}%{prefix0}
 ./packaging/prepare-rpm-files.sh driver %{RPM_PLATFORM} "%{?RPM_CROSS:1}" \
-				 %{buildroot} %{prefix0} %{_builddir}
+                                        %{buildroot} %{prefix0} %{_builddir}
 
 # Do the global installation parts
 %{__mkdir_p} %{buildroot}/%{prefix1}
@@ -66,9 +72,9 @@ rm -r -f %{buildroot}%{prefix0}
 echo %%{prefix1}/opencpi-driver-check >> %{_builddir}/driver-files
 
 %files -f driver-files
-#%doc %{_prefix0}/README
-#%doc %{_prefix0}/COPYRIGHT
-#%doc %{_prefix0}/LICENSE.txt
+#%%doc %%{_prefix0}/README
+#%%doc %%{_prefix0}/COPYRIGHT
+#%%doc %%{_prefix0}/LICENSE.txt
 
 %pretrans
 # Check if the driver is currently loaded/running

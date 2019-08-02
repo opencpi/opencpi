@@ -28,7 +28,7 @@ AutoReqProv: no
 Name:           %{RPM_NAME}
 Requires(pre,postun):  opencpi = %{RPM_VERSION}
 Requires:               opencpi = %{RPM_VERSION}
-Requires:         opencpi-devel = %{RPM_VERSION} 
+Requires:         opencpi-devel = %{RPM_VERSION}
 Requires(post): hardlink
 BuildArch:      noarch
 Version:        %{RPM_VERSION}
@@ -49,6 +49,12 @@ Contains the content needed to deploy opencpi to %{RPM_PLATFORM}
 %if "x%{?RPM_HASH}" != "x"
 Release ID: %{RPM_HASH}
 %endif
+
+%prep
+# Empty; rpmlint recommendeds it is present anyway
+
+%build
+# Empty; rpmlint recommendeds it is present anyway
 
 %install
 %{__mkdir_p} %{buildroot}%{prefix0}/%{deploy_dir}/%{RPM_PLATFORM}

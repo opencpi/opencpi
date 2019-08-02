@@ -378,38 +378,39 @@ The valid goals that accept platforms (using RccPlatform(s) or Platforms(s)) are
      framework(default) - Build the framework for platforms and export them
      cleanframework     - Clean the specific platforms
      exports            - Redo exports, including for indicated platforms
-                        - This is cumulative;  previous exports are not removed
-                        - This does not export projects or do exports for projects
+                          - This is cumulative;  previous exports are not removed
+                          - This does not export projects or do exports for projects
      driver             - Build the driver(s) for the platform(s)
      testframework      - Test the framework, requires the projects be built
-                        - Runs component unit tests in core project, but not in others
+                          - Runs component unit tests in core project, but not in others
      cleandriver        - Clean the driver(s) for the platform(s)
      tar                - Create the tarball for the current cdk exports (exported platforms)
      rpm                - Create the binary/relocatable CDK RPM for the platforms
+                          - Use Package=driver option to create driver RPM
    Make goals for projects: (be selective using Projects=...)
      projects           - Build the projects for the platforms
      cleanprojects      - Clean all projects
      exportprojects     - Export all projects
    Other goals:
-     clean              - clean framework and projects, respecting Platforms and Projects
+     clean              - Clean framework and projects, respecting Platforms and Projects
      cleaneverything    - Clean as much as we can (framework and projects) without git cleaning
-                        - also distclean does this for historical/compatible reasons
-                        - ignores the Platform and Projects variables
-     prerequisites      - Forces a (re)build of the prerequisites for the specified platforms.
-                        - Downloads will be downloaded if they are not present already.
-     cleanprerequisites - Clean out all built, downloaded prerequisites.
-     doc                - Creates PDFs from LaTeX and Open/LibreOffice source.
-                        - Requires additional software and tries to help identify missing reqs.
+                          - also distclean does this for historical/compatible reasons
+                          - ignores the Platform and Projects variables
+     prerequisites      - Forces a (re)build of the prerequisites for the specified platforms
+                          - Downloads will be downloaded if they are not present already
+     cleanprerequisites - Clean out all built, downloaded prerequisites
+     doc                - Creates PDFs from LaTeX and Open/LibreOffice source
+                          - Requires additional software and tries to help identify missing reqs
 
 Variables that are useful for most goals:
 
 Platforms/Platform/RccPlatforms/RccPlatform: all specify software platforms
-  -- Useful for goals:  framework(default), exports, cleanframework, projects, exportprojects,
+  -- Useful for goals:  framework (default), exports, cleanframework, projects, exportprojects,
                         driver, cleandriver, prerequisites, tar, rpm
   -- Platforms can have build options/letters after a hyphen: d=dynamic, o=optimized
-     <platform>:    default static, debug build
+     <platform>:    default static,  debug build
      <platform>-d:  dynamic library, debug build
-     <platform>-o:  static library, optimized build
+     <platform>-o:  static library,  optimized build
      <platform>-do: dynamic library, optimized build
 
 Projects: specify projects (default is: $(Projects))
