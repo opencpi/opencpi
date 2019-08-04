@@ -92,8 +92,8 @@ OcpPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *d
 
 // Our special clone/copy constructor
 OcpPort::
-OcpPort(const OcpPort &other, Worker &w , std::string &name, size_t count, const char *&err)
-  : Port(other, w, name, count, err) {
+OcpPort(const OcpPort &other, Worker &w , std::string &name, size_t a_count, const char *&err)
+  : Port(other, w, name, a_count, err) {
   if (err)
     return;
 #if 0
@@ -725,19 +725,21 @@ ocpSignalPrefix(bool master, bool a_clock, Language lang, const Attachment &othe
     c.m_masterName : c.m_slaveName;
   // Decide on our indexing.  We need an index if our attachment is a subset of
   // what we are connecting to, which is either another internal port or an external one.
-  size_t index, top, count = 0; // count for indexing purpose
-  if (otherAt.m_instPort.m_port->count() > c.m_count) {
+  size_t index, top, l_count = 0; // count for indexing purpose
+  assert(c.m_count);
+  if (otherAt.m_instPort.m_port->count() > c.m_count ||
+      (otherAt.m_instPort.m_port->isArray() && !isArray())) {
     // We're connecting to something bigger: indexing is needed in this port binding
-    count = c.m_count;
+    l_count = c.m_count;
     index = otherAt.m_index;
-    top = index + count - 1;
+    top = index + l_count - 1;
   }
-  if (count) {
+  if (l_count) {
     std::string num, temp1;
     if (lang == Verilog)
       OU::format(num, "%zu", index);
     OU::format(temp1, cName.c_str(), num.c_str());
-    if (count > 1 && !a_clock) {
+    if ((l_count > 1 || isArray()) && !a_clock) {
       assert(lang == VHDL);
       OU::format(signal, "%s(%zu to %zu)", temp1.c_str(), index, top);
     } else {

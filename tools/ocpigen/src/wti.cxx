@@ -48,7 +48,7 @@ WtiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
 // Our special copy constructor
 WtiPort::
 WtiPort(const WtiPort &other, Worker &w , std::string &name, const char *&err)
-  : OcpPort(other, w, name, 1, err) {
+  : OcpPort(other, w, name, 0, err) {
   if (err)
     return;
   m_secondsWidth = other.m_secondsWidth;

@@ -381,7 +381,6 @@ emitSubdeviceConnections(std::string &assy,  DevInstances *baseInstances) {
 	  OU::formatAdd(assy, " index='%zu'", index);
 	} else if (!inConfig) {
 	  // supporting connection is not indexed, and is local,which means it is connected whole
-	  assert(supPort.m_arrayCount);
 	  uint64_t mask = ~(UINT64_MAX << supPort.count());
 	  assert(!(sdi->m_connected[supOrdinal] & mask));
 	  sdi->m_connected[supOrdinal] |= mask;

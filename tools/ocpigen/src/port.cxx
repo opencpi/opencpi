@@ -518,7 +518,7 @@ emitPortSignals(FILE *f, const InstancePort &ip, Language /*lang*/, const char *
     assert(otherAt);
     // Indexing is necessary only when we are smaller than the other
     if (m_arrayCount < otherAt->m_instPort.m_port->m_arrayCount) {
-      if (c.m_count > 1)
+      if (c.m_count > 1 || isArray())
 	OU::format(index, "(%zu to %zu)", otherAt->m_index, otherAt->m_index + c.m_count - 1);
       else
 	OU::format(index, "(%zu)", otherAt->m_index);
