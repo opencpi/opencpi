@@ -1,0 +1,4 @@
+<!-- GPO Device Emulator OCS -->
+<ComponentSpec>
+  <Port Name="out" Producer="true"/>
+</ComponentSpec>

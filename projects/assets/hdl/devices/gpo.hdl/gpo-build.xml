@@ -1,0 +1,50 @@
+<build>
+  <configuration id="0">
+    <Parameter Name="NUM_OUTPUTS" Value="1"/>
+  </configuration>
+  <configuration id="1">
+    <Parameter Name="NUM_OUTPUTS" Value="2"/>
+  </configuration>
+  <configuration id="2">
+    <Parameter Name="NUM_OUTPUTS" Value="3"/>
+  </configuration>
+  <configuration id="3">
+    <Parameter Name="NUM_OUTPUTS" Value="4"/>
+  </configuration>
+  <configuration id="4">
+    <Parameter Name="NUM_OUTPUTS" Value="5"/>
+  </configuration>
+  <configuration id="5">
+    <Parameter Name="NUM_OUTPUTS" Value="6"/>
+  </configuration>
+  <configuration id="6">
+    <Parameter Name="NUM_OUTPUTS" Value="7"/>
+  </configuration>
+  <configuration id="7">
+    <Parameter Name="NUM_OUTPUTS" Value="8"/>
+  </configuration>
+  <configuration id="8">
+    <Parameter Name="NUM_OUTPUTS" Value="9"/>
+  </configuration>
+  <configuration id="9">
+    <Parameter Name="NUM_OUTPUTS" Value="10"/>
+  </configuration>
+  <configuration id="10">
+    <Parameter Name="NUM_OUTPUTS" Value="11"/>
+  </configuration>
+  <configuration id="11">
+    <Parameter Name="NUM_OUTPUTS" Value="12"/>
+  </configuration>
+  <configuration id="12">
+    <Parameter Name="NUM_OUTPUTS" Value="13"/>
+  </configuration>
+  <configuration id="13">
+    <Parameter Name="NUM_OUTPUTS" Value="14"/>
+  </configuration>
+  <configuration id="14">
+    <Parameter Name="NUM_OUTPUTS" Value="15"/>
+  </configuration>
+  <configuration id="15">
+    <Parameter Name="NUM_OUTPUTS" Value="16"/>
+  </configuration>
+</build>

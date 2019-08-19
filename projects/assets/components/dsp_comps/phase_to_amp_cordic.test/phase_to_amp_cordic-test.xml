@@ -2,7 +2,7 @@
   <input port='in' stressorMode='full' script='generate.py' messageSize='8192'/>
   <output port='out' script='verify.py' view='view.sh'/>
   <property name='enable' values='0,1'/>
-  <property name='magnitude' values='16384'/>
+  <property name='magnitude' values='20000'/>
   <property name='CONSTANT_VALUE' test='true' values='2048,8192,16383'/>
   <!-- The FFT performed on the output data requires a large amount
        of samples to provided the necessary resolution for verification -->

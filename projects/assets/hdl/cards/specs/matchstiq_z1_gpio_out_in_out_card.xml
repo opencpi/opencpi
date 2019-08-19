@@ -1,0 +1,12 @@
+<!-- FPGA_GPIO1/2/3 = OUT/IN/OUT -->
+<Card Type="matchstiq_z1_gpio_slot">
+  <Device Worker="gpo" Name="gpo">
+    <Property Name="NUM_OUTPUTS" Value="2"/>
+    <Signal Name="gpo_pin(0)" Slot="FPGA_GPIO1"/>     <!-- Pin U6 -->
+    <Signal Name="gpo_pin(1)" Slot="FPGA_GPIO3"/>     <!-- Pin Y6 -->
+  </Device>
+  <Device Worker="gpi" Name="gpi">
+    <Property Name="NUM_INPUTS" Value="1"/>
+    <Signal Name="gpi_pin(0)" Slot="FPGA_GPIO2"/>     <!-- Pin Y10 -->
+  </Device>
+</Card>

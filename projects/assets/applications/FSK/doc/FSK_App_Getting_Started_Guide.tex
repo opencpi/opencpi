@@ -21,7 +21,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{OpenCPI\\ FSK App Getting Started Guide}
-\def\docVersion{1.5}
+\def\docVersion{1.6}
 %----------------------------------------------------------------------------------------
 \def\snippetpath{../../../../../doc/av/tex/snippets}
 \input{\snippetpath/includes}
@@ -67,6 +67,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 			\hline
 			v1.5 & Updated for OpenCPI Release 1.5 & 4/2019 \\
 			\hline
+			v1.6 & Updated to include \textit{filerw\_rcc} mode & 8/2019 \\
+			\hline
 			\end{tabularx}
 		\end{table}
 	\end{center}
@@ -79,18 +81,23 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \section{References}
 
-	This document assumes a basic understanding of the Linux command line (or ``shell'') environment.  The reference(s) in Table 1 can be used as an overview of OpenCPI and may prove useful.
+	This document assumes a basic understanding of the Linux command line (or ``shell'') environment.  The references in Table 1 can be used as an overview of OpenCPI and may prove useful.
 
 \def\myreferences{
 \hline
-FSK App\footnote{Provides details of the ``FSK App'' reference application} & \path{FSK_app.pdf} \\
+FSK App Guide\footnote{Provides details of the ``FSK App'' reference application used in this document} & \githubioFlat{assets/FSK\_app.pdf} \\
+\hline
+FSK App RCC Getting Started Guide\footnote{An RCC-only (software-only) implementation of \textit{this} guide} & \githubioFlat{assets/FSK\_App\_RCC\_Getting\_Started\_Guide.pdf} \\
 }
 \input{References_Table}
 
 \newpage
 \begin{flushleft}
 \section{Overview}
-This purpose of this document is to provide a compact set of instructions to build, run, and verify the OpenCPI FSK App reference application. While the FSK reference application supports several execution modes (filerw, txrx, bbloopback, rx, tx) and is supported on various systems, this guide will only discuss execution of the \textit{txrx} mode on the Epiq Solutions Matchstiq-Z1.
+This purpose of this document is to provide a compact set of instructions to build, run, and verify the OpenCPI Frequency Shift Keying Modulation (FSK) reference application (known as the ``FSK App'').
+While the FSK reference application supports several execution modes (\textit{filerw}, \textit{filerw\_rcc}, \textit{txrx}, \textit{bbloopback}, \textit{rx}, \textit{tx}) and is supported on various systems, this guide will only discuss execution of the \textit{txrx} mode on the Epiq Solutions Matchstiq-Z1.
+The \textit{filerw\_rcc} mode is introduced by the companion document \githubio[\textit{FSK App RCC Getting Started Guide}]{assets/FSK\_App\_RCC\_Getting\_Started\_Guide.pdf}.
+The definitive documentation for the FSK App, including the remaining modes, is the \githubio[\textit{FSK App Guide}]{assets/FSK\_app.pdf}.
 
 \section{Prerequisites}
 This document assumes that the OpenCPI framework and the appropriate  Xilinx Vivado tools have been installed. The application is supported on all of the OpenCPI platforms, but all of the examples shown here are for the Matchstiq-Z1 platform.
@@ -118,7 +125,7 @@ ocpidev build --rcc-platform xilinx13_3
 If successful, a directory name \textit{target-xilinx13\_3} will contain the FSK executable.
 
 \section{Running the Application}
-Prior to executing the application, ensure that the RX and TX ports of the platform are connected together via a coax cable, RF attenuation pads are not necessary for this test. The following steps describe setup and execution of the FSK in \textit{txrx mode} on the Matchstiq-Z1. The \textit{applications/FSK/Makefile} contains steps to execute the FSK in its other modes. To view these steps, open the Makefile in an editor or execute ``\textit{make show}'' in the FSK application's directory.
+Prior to executing the application, ensure that the RX and TX ports of the platform are connected together via a coax cable, RF attenuation pads are not necessary for this test. The following steps describe setup and execution of the FSK in \textit{txrx} mode on the Matchstiq-Z1. The \textit{applications/FSK/Makefile} contains steps to execute the FSK in its other modes. To view these steps, open the Makefile in an editor or execute ``\textit{make show}'' in the FSK application's directory.
 \subsection{Setting Up the Execution Platform}
 For embedded platforms (Matchstiq-Z1), connect to the platform via a serial port. Example syntax for establishing a connection can be seen below:
 \begin{verbatim}
@@ -162,7 +169,7 @@ To run the application, navigate to the \texttt{applications/FSK} directory and 
 \begin{verbatim}
 $ ./target-xilinx13_3/FSK txrx
 \end{verbatim}
-Reference the \textit{FSK\_app.pdf} for executing the various modes (filerw, tx, rx, txrx, bbloopback) of the FSK application. Ensure that OCPI\_LIBRARY\_PATH is configured, as provided, for the respective mode and platform. \\ \medskip
+Reference the \textit{FSK\_app.pdf} for executing the various modes (\textit{filerw}, \textit{filerw\_rcc}, \textit{tx}, \textit{rx}, \textit{txrx}, \textit{bbloopback}) of the FSK application. Ensure that OCPI\_LIBRARY\_PATH is configured, as provided, for the respective mode and platform. \\ \medskip
 
 \subsection{View the Results}
 After the application completes, the output can be found in the \texttt{applications/FSK/odata} directory. To view the results on the Development Host, navigate to the \texttt{applications/FSK} directory and execute the command:

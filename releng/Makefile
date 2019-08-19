@@ -69,9 +69,9 @@ ifeq "$(GIT_VERSION)" ''
   endif
   # Generate an increasing number for version comparisons (since git hashes aren't)
   # Number of 6-minute increments since release in 5 digits (rolls over >1/yr)
-  RELEASE_TAG=_$(shell printf %05d $(shell expr `date -u +"%s"` / 360 - 4273900))
+  RELEASE_TAG=_$(shell printf %05d $(shell expr `date -u +"%s"` / 360 - 4348953))
   # When bumping this, don't miss configure.ac as well (AV-3433)
-  RPM_VERSION:=1.5.0
+  RPM_VERSION:=1.6.0
 else
   # This is a specific version branch
   RELEASE_TAG=%{nil}

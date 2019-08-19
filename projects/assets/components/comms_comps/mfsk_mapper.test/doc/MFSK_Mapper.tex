@@ -146,7 +146,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \subsection*{\comp.hdl}
 The message size for the output is equal to DIN\_WIDTH\_p divided by the number of bits per symbol multiplied by 2.
 \subsection*{\comp.rcc}
-The message size for the output is equal to the input message size in bits divided by the number of bits per symbol multiplied by 2.
+This worker is a work-alike of the existing HDL implementation, which requires adding certain functionality to maintain compatibility but also adds forward-looking functionality to fix current deficiencies concerning byte swapping.
+The existing HDL worker currently swaps the order of the input bytes in 2-byte groupings.
+Therefore, this RCC worker implements byte swapping when the property \path{input_data_byte_grouping} is set to a value greater than 1 byte.
+A value of 2 represents the default behavior matching the HDL implementation.
+The resulting output of 2 is little endian ordering, \textit{e.g.} an input of \path{0xFACE} results in \path{0xCEFA} (Little endian) vs. the expected \path{0xFACE} (Big endian).
+% Therefore, transmitting \path{0xFACE} results in \path{0xCEFA}.
+Direct transmission matching the input (``non-byte-swapping'') is achieved when setting the property \path{input_data_byte_grouping} to 1.
+The message size for the output is equal to the input message size (in bits) divided by the number of bits per symbol multiplied by 2.
 
 \section*{Block Diagrams}
 \subsection*{Top level}
@@ -180,7 +187,7 @@ The message size for the output is equal to the input message size in bits divid
 \begin{landscape}
 	\section*{Component Spec Properties}
 	\begin{scriptsize}
-		\begin{tabular}{|p{2cm}|p{1.5cm}|c|c|c|p{1.5cm}|p{1cm}|p{7cm}|}
+		\begin{tabular}{|p{3cm}|p{1.5cm}|c|c|c|p{1.5cm}|p{1cm}|p{7cm}|}
 			\hline
 			\rowcolor{blue}
 			Name          	& Type  & SequenceLength & ArrayDimensions & Accessibility       & Valid Range 	& Default & Usage              	\\
@@ -188,6 +195,8 @@ The message size for the output is equal to the input message size in bits divid
 			\verb+M_p+    	& UChar & -              & -               & Readable, Parameter & 2,4       	& 2       & Number of FSK levels \\
 			\hline
 			\verb+symbols+  & Short & -              & M\_p            & Readable, Writable	 & Standard    	& -       & FSK symbol values 	\\
+			\hline
+			\verb+input_data_byte_grouping+  & UChar & -              & -            &  Initial	 & 1,2,4,8    	& 2       & Used to determine the number of bytes in a group of data to swap to little endian byte ordering. 	\\
 			\hline
 		\end{tabular}
 	\end{scriptsize}

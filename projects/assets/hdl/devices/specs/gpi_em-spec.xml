@@ -1,0 +1,4 @@
+<!-- GPI Device Emulator OCS -->
+<ComponentSpec>
+  <Port Name="em_in"/>
+</ComponentSpec>

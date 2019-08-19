@@ -207,7 +207,7 @@ public:
       double rate = get_tx_bit_rate_bps();
       std::cout << "TX Bit Rate            = " << rate << " bps\n";
     }
-    if(m_mode == "tx" || m_mode == "txrx" || m_mode == "filerw") {
+    if(m_mode == "tx" || m_mode == "txrx" || m_mode == "filerw" || m_mode == "filerw_rcc") {
       std::string value;
       m_app.getProperty("tx_fir_real","peak", value);
       std::cout << "TX FIR Real Peak       = " << value << "\n";
@@ -218,9 +218,9 @@ public:
 
   void print_rx_peak_values() {
 
-    if(m_mode == "rx" || m_mode == "txrx" || m_mode == "filerw") {
+    if(m_mode == "rx" || m_mode == "txrx" || m_mode == "filerw" || m_mode == "filerw_rcc") {
       std::string value;
-      if(m_mode != "filerw") {
+      if(m_mode != "filerw" && m_mode != "filerw_rcc") {
         m_app.getProperty("dc_offset_filter","peak", value);
         std::cout << "DC Offset Peak         = " << value << "\n";
         m_app.getProperty("iq_imbalance_fixer","peak", value);
@@ -240,7 +240,7 @@ public:
   void print_bytes_to_file(bool adc_overrun_flag) {
 
     // mode tx is the only one that doesn't write to a file
-    if(m_mode == "rx" || m_mode == "txrx" || m_mode == "filerw") {
+    if(m_mode == "rx" || m_mode == "txrx" || m_mode == "filerw" || m_mode == "filerw_rcc") {
       std::string value;
       m_app.getProperty("file_write", "bytesWritten", value);
       std::cout << "Bytes to file : " << value << "\n";
@@ -536,7 +536,7 @@ void throw_invalid_usage(const char *name, const std::string& error) {
   oss << error << "\n";
   oss << "Usage is: " << name << " <mode> <optional debug_mode>\n";
   oss << "    mode       # Test mode of the application. Valid ";
-  oss << "modes are 'rx', 'tx', 'txrx', 'filerw', or 'bbloopback'.\n";
+  oss << "modes are 'rx', 'tx', 'txrx', 'filerw', 'filerw_rcc', or 'bbloopback'.\n";
   oss << "    debug_mode # Optional debug mode which performs both ";
   oss << "an initial and final dump of all properties. Use 'd'.\n";
   oss << "Example: FSK filerw d\n";
@@ -581,7 +581,7 @@ args_t parse_and_validate_args(int argc, char** argv) {
   }
 
   // supported modes
-  std::vector<std::string> modes{"rx", "tx", "txrx", "bbloopback", "filerw"};
+  const std::vector<std::string> modes{"rx", "tx", "txrx", "bbloopback", "filerw", "filerw_rcc"};
   ret.mode.assign(argv[1]);
   throw_if_val_unsupported("mode", ret.mode, modes);
 

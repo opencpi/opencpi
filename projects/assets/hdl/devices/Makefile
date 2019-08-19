@@ -27,7 +27,10 @@
 # in this library belong in Library.mk
 
 Tests = \
-	lime_dac_ts.test 
+	gpi.test \
+	gpo.test \
+	lime_dac_ts.test
+
 
 # Build Ordering Rules:
 # 1) Subdevices that support other devices must occur AFTER the devices they support.
@@ -44,6 +47,10 @@ Workers = \
 	ad9361_spi.hdl \
 	cstest.hdl \
 	flash.hdl \
+	gpi.hdl \
+	gpi_em.hdl \
+	gpo.hdl \
+	gpo_em.hdl \
 	gps_uart.hdl \
 	lime_adc.hdl \
 	lime_dac_ts_em.hdl \
@@ -62,6 +69,6 @@ Workers = \
 	si5351_proxy.rcc \
 	stm_mc24c02.hdl \
 	tmp100.hdl \
-	tmp100_proxy.rcc 
+	tmp100_proxy.rcc
 
 include $(OCPI_CDK_DIR)/include/library.mk

@@ -1,0 +1,43 @@
+<tests useHDLFileIo='true' spec='gp_out'>
+
+  <!-- The GPO device worker is tested by controlling the GPIO pins via the mask_data property and data port.
+  They are all tested invidually in their own test case and the data port is the only test case that has input data generated.
+
+  For the mask_data property and the data port, the tests that are done are: setting data bits high but not setting masks,
+  setting data bits high and setting the appropriate mask bits high, and clearing data bits. -->
+
+  <property name='testCase' test='true'/>
+  <property name='numInputSamples' test='true'/>
+
+  <!-- Backpressure is disabled for all cases as backpressure is never applied to the "signal" interface. -->
+
+  <!-- Testing controlling GPIO pins via property -->
+  <case>
+    <input port='in' script='generate.py'/>
+    <output port='out' script='verify.py ../../golden.dat' disableBackpressure='true'/>
+    <property name='testCase' value='1'/>
+    <property Name='numOutputSamples' value='4'/>
+    <property name='mask_enable' value='0x01'/>
+    <property name='NUM_OUTPUTS' value='16'/>
+    <property name='mask_data'>
+      <set delay='0' value='0x0000FFFF'/>
+      <set delay='0.0001' value='0x00FF00FF'/>
+      <set delay='0.0002' value='0xFF00FF00'/>
+      <set delay='0.0003' value='0x00FF0000'/>
+      <set delay='0.0004' value='0xFF000000'/>
+    </property>
+  </case>
+
+  <!-- Testing controlling GPIO pins via port -->
+  <case>
+    <input port='in' script='generate.py'/>
+    <output port='out' script='verify.py ../../golden.dat' disableBackpressure='true'/>
+    <property name='testCase' value='2'/>
+    <property Name='numOutputSamples' value='4'/>
+    <property name='numInputSamples' value='5'/>
+    <property name='mask_enable' value='0x02'/>
+    <property name='NUM_OUTPUTS' value='16'/>
+  </case>
+
+
+</tests>

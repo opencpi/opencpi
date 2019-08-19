@@ -5,9 +5,9 @@
 <ComponentSpec>
 
   <Property Name='need_sync' Type='Bool' Readable='true' Default='true' Initial='true'/>
-
+  <Property Name="input_data_byte_grouping" Type="uchar" Default="2" Initial="true" Description="Used to determine the number of bytes in a group of data to swap to little endian byte ordering."/>
   <DataInterfaceSpec Name="in" Producer="false" Protocol="rstream_protocol.xml"/>
-  <DataInterfaceSpec Name="out" Producer="true" Protocol="rstream_protocol.xml"/>
+  <DataInterfaceSpec Name="out" Producer="true" />
 
 </ComponentSpec>
 

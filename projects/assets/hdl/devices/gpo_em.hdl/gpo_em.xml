@@ -1,0 +1,7 @@
+<HdlDevice language='vhdl' spec='gpo_em-spec' emulate='gpo.hdl' Version='2'>
+
+  <Property Name="numOutputSamples" Type="uShort" Writable="true" Description="Number of samples to send to output port"/>
+
+  <StreamInterface Name="out" DataWidth="32" ZeroLengthMessages="true" insertEOM="true"/>
+
+</HdlDevice>

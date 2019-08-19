@@ -1,0 +1,86 @@
+These scripts are used to manage a remote OpenCPI container server.
+
+Basic Usage:
+1) "ocpiremote.py load" on the host to send a server package to a remote device.
+2) "ocpiremote.py start" to start ocpiserve on the remote.
+3) "ocpirun -C ..." to check if the remote container is available.
+
+Overview:
+
+    +-------------------+                                        +----------------------------+
+    |       HOST        |                                        |         REMOTE DEVICE      |
+    |-------------------|                                        |----------------------------|
+ 0) |OCPI_CDK_DIR:      |                                     >) |~/<empty>                   |
+    |  ocpiserver.sh    |                                        |                            |
+    |  ocpiserve        |                                        |                            |
+    |  ...              |            +-------------+             |                            |
+    |                   |            | package.tar |             |                            |
+ 1) |ocpiremote.py load |  ------>   |-------------|  -------->) |~/sandbox/                  |
+    |                   |            |ocpiserver.sh|             |    ocpiserver.sh           |
+    |                   |            |ocpiserve    |             |    ocpiserve               |
+    |                   |            |...          |             |    ...                     |
+    |                   |            +-------------+             |                            |
+    |                   |                                        |                            |
+    |                   |                                        |                            |
+ 2) |ocpiremote.py start|  ----------------------------------->) |     ocpiserver.sh start    |
+    |                   |                                        |             |              |
+    |                   |                                        |             |              |
+    |                   |                                        |             v              |
+    |                   |                                        |     +----------------+     |
+    |                   |                                        |     |   ocpiserve    |     |
+    |                   |                                        |     +----------------+     |
+    |                   |                                        |     |Remote Container|     |
+    |                   |                                        |     |----------------|     |
+    |                   |                                        |     |                |     |
+ 3) |ocpirun -C -S ...  |  ----------------------------------------->  |                |     |
+    |                   |                                        |     |                |     |
+    | Container Found!  |  <-----------------------------------------  |                |     |
+    |                   |                                        |     |                |     |
+    |                   |                                        |     +----------------+     |
+    |                   |                                        |                            |
+    +-------------------+                                        +----------------------------+
+
+Background:
+
+These scripts support remote management of an OpenCPI container server.
+The fundamental executable is ocpiserve, which serves up containers for use by clients running applications.
+
+The two scripts here provide a layar of management on top of ocpiserve.
+
+The primary requirements are:
+
+1.  Minimize assumptions and requirements and dependencies and setup on the server machine itself.
+    !!No software installation is required.!!
+    Current requirements are ssh server, bash and tar and nothing else.
+
+2.  Operate/install/use the server in a sandbox that has no impact on any installed software,
+    opencpi or otherwise.  The only assumption is that no one else is using it (for now).
+
+I.e.: take a bare machine with software platform supported by OpenCPI that has ssh/bash/tar, and use it
+without installing anything.
+
+The two scripts are:
+
+ocpiremote.py - the client for controlling the server
+
+ocpiserver.sh - the server script for ocpiremote.py - not a persistent server
+  (maybe a better name:  the "control/admin server script" ocpi_server_admin
+
+ocpiremote.py has the typical:
+  <program> <options> <cmd> <cmd-options>
+
+
+TODOs:
+
+Eventually like all tools, have a standardized way to set options in environment variables.
+Ensure private key password-less usage.
+Protection for multiple clients colliding
+Any manipulation of the server for multi-cast discovery
+
+
+
+
+
+
+
+

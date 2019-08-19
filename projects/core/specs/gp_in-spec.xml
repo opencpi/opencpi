@@ -1,0 +1,6 @@
+<!-- GP In OCS -->
+<ComponentSpec>
+
+  <Port Name="out" Protocol="gpio_protocol.xml" Producer="true" Optional="true"/>
+
+</ComponentSpec>

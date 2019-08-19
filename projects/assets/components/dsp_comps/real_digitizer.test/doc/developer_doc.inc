@@ -14,7 +14,7 @@
   \hline
   Name              & \comp \\
   \hline
-  Latest Version    &  \docVersion (release date 4/2019) \\
+  Latest Version    &  \docVersion (release date 7/2019) \\
   \hline
 	Worker Type       & Application                              \\
   \hline
@@ -46,6 +46,8 @@
   v1.4 & Updated formatting, block diagram, and performance and resource utilization. Updated source dependencies to reflect new assets project directory name. & 9/2018 \\
   \hline
   v1.5 & Added \verb+enable_printing+ and \verb+sync_criteria_met+ properties to \comp{}.rcc. Also added functional diagram and xilinx13\_4 as a tested platform. & 4/2019 \\
+  \hline
+  v1.6 & Converted \comp{}.rcc from C to C++.  Added the \verb+sync_pattern+ property to \comp{}.rcc. Added 8, 16, 32 and 64 bit modes. Removed rstream\_protocol on output port which is handled in the default 16 bit mode.  Endianness byte swapping occurs for 16, 32 and 64 bit modes but not for the 8 bit mode. & 7/2019 \\
   \hline
 \end{longtable}
 
@@ -83,7 +85,7 @@ sync pattern 0xFACE found
 		\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
 		\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in'' \\ Signed real symbols (Q0.15)};
 		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' \\ Decoded bits packed into 16-bit words};
-		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+need_sync+, \\ \verb+enable_printing+, \\ \verb+sync_criteria_met+};
+		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+sync_pattern+, \\ \verb+need_sync+, \\ \verb+enable_printing+, \\ \verb+sync_criteria_met+};
 		\path[->]
 		(R3)edge []	node [] {} (R2)
 		(R2)edge []	node [] {} (R4)
@@ -109,7 +111,7 @@ sync pattern 0xFACE found
 \section*{Source Dependencies}
 \subsection*{\comp.rcc}
 \begin{itemize}
-	\item projects/assets/components/dsp\_comps/\comp.rcc/\comp.c
+	\item projects/assets/components/dsp\_comps/\comp.rcc/\comp.cc
 \end{itemize}
 %\subsection*{\comp.hdl}
 

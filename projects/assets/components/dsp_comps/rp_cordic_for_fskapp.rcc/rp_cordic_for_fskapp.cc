@@ -29,39 +29,39 @@
  * does not respect the component (1 function) model.
  * For these reasons, and those discussed below, it is highly recommended that the usage
  * of this RCC worker be limited to the all-RCC FSK applications and not used for new applications.
- * 
+ *
  * This RCC (C++) worker is a work-a-like to the HDL worker, similarly named rp_cordic.hdl.
  * However, it does NOT implement a CORDIC algorithm (i.e. stages of shifts & adds),
  * but rather utilizes floating point cmath functions to calculate its output.
  * Due to HDL worker implementation decisions, which affect performance, the RCC worker
  * was required to implements additional (restrictive) functionality to emulate the HDL worker's
  * behavior.
- * 
- * The calculations that it does first is the phase of all incoming iq samples. 
- * Then iterates over the phase values and FM discriminates the current and next phase value. 
+ *
+ * The calculations that it does first is the phase of all incoming iq samples.
+ * Then iterates over the phase values and FM discriminates the current and next phase value.
  * The resulting output is given to the output port
- * 
- * For the magnitude calculation the HDL implements magnitude as a volatile property 
- * however for rcc, accessing the property is only viable at the completion of the run method. 
+ *
+ * For the magnitude calculation the HDL implements magnitude as a volatile property
+ * however for rcc, accessing the property is only viable at the completion of the run method.
  * To reduce unnecessary computations the last sample that would be used to calculate the magnitude sets the property value.
- * 
- * The HDL worker will not output the final samples depending on the number of CORDIC stages and pipleline stages. 
+ *
+ * The HDL worker will not output the final samples depending on the number of CORDIC stages and pipleline stages.
  * To match the HDL implementation, the rcc worker implements a stage delay using a deque as a FIFO (m_trailing_data).
- * The FIFO contains the previous input samples that would still be present in the HDL implementation's pipline. 
+ * The FIFO contains the previous input samples that would still be present in the HDL implementation's pipline.
  * Calculations are made when data is present in the FIFO and enough data on the input port is present to push more data out.
  * Then on the input data phase calculations are made.
  * Finally the remaining input data that would be delayed is passed to the FIFO to be used in the next calculation.
- * 
+ *
  * Memory optimization was made to load the FIFO only with samples known to be used on the next run method call.
- * 
- * Considerations are made to unload existing elements from the FIFO 
- * 
- * Limitations:  
- * 1) This worker currently does not work with stage delay set to zero. 
- *      To do so the fm_discrimination calculation cannot be lookahead 
+ *
+ * Considerations are made to unload existing elements from the FIFO
+ *
+ * Limitations:
+ * 1) This worker currently does not work with stage delay set to zero.
+ *      To do so the fm_discrimination calculation cannot be lookahead
  *      but instead look back at the previous phase value for its calculation.
  *      A variable will have to be maintained of the previous phase value when fm discriminating
- * 2) This worker does not implement the CORDIC (shifts-add) algorithm, 
+ * 2) This worker does not implement the CORDIC (shifts-add) algorithm,
  *      but equivalent floating point math with fixed-point adjustments (using float to integer truncation)
 
  */
@@ -75,19 +75,19 @@ using namespace OCPI::RCC; // for easy access to RCC data types and constants
 using namespace Rp_cordic_for_fskappWorkerTypes;
 
 class Rp_cordic_for_fskappWorker : public Rp_cordic_for_fskappWorkerBase {
-  // Other implementations can use a variable datawidth however 
+  // Other implementations can use a variable datawidth however
   // this worker only outputs data in the 16 bit format to the rstream protocol
-  static const unsigned c_data_width = 16; 
+  static const unsigned c_data_width = 16;
   const float c_scaling_factor;
   long total_samples_out;
-  std::deque<IqstreamIqData> m_trailing_data;  
+  std::deque<IqstreamIqData> m_trailing_data;
 
 public:
   Rp_cordic_for_fskappWorker() : c_scaling_factor(pow(2,c_data_width - 1) / M_PI) { }
 
   RCCResult start() {
     if (RP_CORDIC_FOR_FSKAPP_STAGEDELAY == 0)
-    {  
+    {
       setError("RP_CORDIC_STAGEDELAY of 0 not implemented");
       return RCC_FATAL;
     }
@@ -112,12 +112,12 @@ public:
     auto samples_to_send = (samples_remaining_to_calculate >= RP_CORDIC_FOR_FSKAPP_STAGEDELAY) ?  samples_remaining_to_calculate - RP_CORDIC_FOR_FSKAPP_STAGEDELAY : 0;
 
     const IqstreamIqData* inData = in.iq().data().data();
-    int16_t* outData = out.data().real().data(); //phase_data  
+    int16_t* outData = out.data().real().data(); //phase_data
     out.data().real().resize(samples_to_send);
 
     if (willLog(OCPI_LOG_DEBUG))
     {
-      log(OCPI_LOG_DEBUG, "Trailing Data Counts %i" + m_trailing_data.size()); 
+      log(OCPI_LOG_DEBUG, "Trailing Data Counts %i" + m_trailing_data.size());
 
       for (auto itr = m_trailing_data.begin(); itr != m_trailing_data.end(); ++itr )
       {
@@ -126,14 +126,14 @@ public:
       }
     }
     // Edge condition: when more samples have been pushed to trailing data, may indicate more elements were added than necessary
-    if(m_trailing_data.size() > RP_CORDIC_FOR_FSKAPP_STAGEDELAY)
-    {  
+    if (m_trailing_data.size() > RP_CORDIC_FOR_FSKAPP_STAGEDELAY)
+    {
       setError("Trailing Data larger than stage delay, more samples (%d) were added than expected (%d)", m_trailing_data.size(),RP_CORDIC_FOR_FSKAPP_STAGEDELAY);
       return RCC_FATAL;
     }
     // iq_data is used for magnitude calculation on last sample and storing the current iq for FIFO calculation
-    IqstreamIqData iq_data;  
-    
+    IqstreamIqData iq_data;
+
     // Calculate phase on previous items, this should match the number from RP_CORDIC_FOR_FSKAPP_STAGEDELAY.
     // This also makes sure that samples from the are m_trailing_data are not sent unless the total number of samples to send is greater than the stage delay.
     for (unsigned phase_values_calculated = 0; samples_to_send > phase_values_calculated && m_trailing_data.size() > 0; phase_values_calculated++)
@@ -144,19 +144,19 @@ public:
 
       log(OCPI_LOG_DEBUG, "Trailing Data Calc = real : %i imag : %i magnitude : %i phase : %f", iq_data.I, iq_data.Q, properties().magnitude, phase);
       *outData++ = phase;
-      m_trailing_data.pop_front();        
+      m_trailing_data.pop_front();
     }
 
     if (willLog(OCPI_LOG_DEBUG))
-    { 
+    {
       log(OCPI_LOG_DEBUG, "Elements Remaining in trailingData : %zu", m_trailing_data.size());
       log(OCPI_LOG_DEBUG, "inData counts : %zu", num_of_elements);
       for ( unsigned i = 0; i < num_of_elements; i++ )
-      {   
+      {
         log(OCPI_LOG_DEBUG, "inData = I: %i Q: %i", inData[i].I, inData[i].Q);
       }
     }
-    
+
     // Calculate phase on incoming items
     const unsigned elements_to_compute = num_of_elements - RP_CORDIC_FOR_FSKAPP_STAGEDELAY;
     for (unsigned i = 0; num_of_elements > RP_CORDIC_FOR_FSKAPP_STAGEDELAY && i < elements_to_compute; i++)
@@ -170,11 +170,11 @@ public:
     // Calculate magnitude:
     // Only compute magnitude on last sample of message since you will not normally read the value of a volatile property during run phase of a rcc worker
     // Magnitude Volatile property, Data is not accessed via the port/Data plane but from the control plane
-    properties().magnitude = calculate_magnitude(iq_data.I, iq_data.Q); 
+    properties().magnitude = calculate_magnitude(iq_data.I, iq_data.Q);
 
     log(OCPI_LOG_DEBUG, "Elements computed : %d",elements_to_compute);
     log(OCPI_LOG_DEBUG, "Remaining elements input elements : %zu", num_of_elements);
-    
+
     auto in_data_counts = num_of_elements;
     // copy remaining incoming items
     for (unsigned i = elements_to_compute; i < num_of_elements; i++)
@@ -213,8 +213,8 @@ public:
         log(OCPI_LOG_DEBUG, "Lookahead phase : %lf", phase);
       }
     }
-    
-    log(OCPI_LOG_DEBUG, "inData Samples : %zu", num_of_elements);    
+
+    log(OCPI_LOG_DEBUG, "inData Samples : %zu", num_of_elements);
     log(OCPI_LOG_DEBUG, "Samples sent to outData : %zu", samples_to_send);
     log(OCPI_LOG_DEBUG, "Remaining Samples at RCC_ADVANCE : %zu", m_trailing_data.size());
 
@@ -243,4 +243,3 @@ RP_CORDIC_FOR_FSKAPP_START_INFO
 // Insert any static info assignments here (memSize, memSizes, portInfo)
 // e.g.: info.memSize = sizeof(MyMemoryStruct);
 RP_CORDIC_FOR_FSKAPP_END_INFO
-

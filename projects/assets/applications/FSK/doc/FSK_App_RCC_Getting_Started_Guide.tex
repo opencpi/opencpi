@@ -1,0 +1,214 @@
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+%----------------------------------------------------------------------------------------
+% Update the docTitle and docVersion per document
+%----------------------------------------------------------------------------------------
+\def\docTitle{OpenCPI\\ FSK App RCC Getting Started Guide}
+\def\docVersion{1.6}
+%----------------------------------------------------------------------------------------
+\def\snippetpath{../../../../../doc/av/tex/snippets}
+\input{\snippetpath/includes}
+\input{LaTeX_Header}
+\date{Version \docVersion} % Force date to be blank and override date with version
+\title{\docTitle}
+\lhead{FSK App RCC Getting Started Guide}
+\setcounter{secnumdepth}{4}
+\setcounter{tocdepth}{4}
+\newcommand{\subsubsubsection}[1]{\paragraph{#1}\mbox{}\\\mbox{}\\}
+%----------------------------------------------------------------------------------------
+\usepackage[T1]{fontenc} % http://tex.stackexchange.com/a/181119
+\usepackage{graphicx}
+\graphicspath{ {figures/} }
+\lstset{ % https://tex.stackexchange.com/a/116572
+  basicstyle=\ttfamily,
+  columns=fullflexible,
+  % frame=single,
+  breaklines=true,
+  showstringspaces=true,
+  showspaces=true,
+  postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+}
+\usepackage{textcomp}
+\usepackage{enumerate}
+\begin{document}
+\maketitle
+%\thispagestyle{fancy}
+\newpage
+
+	\begin{center}
+	\textit{\textbf{Revision History}}
+		\begin{table}[H]
+		\label{table:revisions} % Add "[H]" to force placement of table
+			\begin{tabularx}{\textwidth}{|c|X|l|}
+			\hline
+			\rowcolor{blue}
+			\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+		    \hline
+		    v1.6 & Initial Release, FSK App RCC only mode & 8/2019 \\
+			\hline
+			\end{tabularx}
+		\end{table}
+	\end{center}
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+\section{References}
+
+	This document assumes a basic understanding of the Linux command line (or ``shell'') environment.  The reference(s) in Table 1 can be used as an overview of OpenCPI and may prove useful.
+
+\def\myreferences{
+\hline
+FSK App Guide\footnote{Provides details of the ``FSK App'' reference application used in this document} & \githubioFlat{assets/FSK\_app.pdf} \\
+\hline
+FSK App Getting Started Guide & \githubioFlat{assets/FSK\_App\_RCC\_Getting\_Started\_Guide.pdf} \\
+}
+\input{References_Table}
+
+\newpage
+\begin{flushleft}
+\section{Overview}
+This purpose of this document is to provide a compact set of instructions to build, run, and verify the OpenCPI Frequency Shift Keying Modulation (FSK) reference application (known as the ``FSK App'') in a software-only manner.
+While the FSK reference application supports several heterogeneous execution modes (\textit{filerw}, \textit{txrx}, \textit{bbloopback}, \textit{rx}, \textit{tx}) and is supported on various systems, this guide will only discuss execution of the \textit{filerw\_rcc} mode on CentOS~7 and/or Epiq Solution's Matchstiq-Z1.
+These steps can be adjusted for other platforms. As its name implies, the \textit{filerw\_rcc} mode of the FSK App operates \textit{only} using RCC workers.
+~\\ \medskip
+Successful execution of the FSK App in the \textit{filerw\_rcc} mode demonstrates that the framework has been built successfully and also validates that an RCC platform's workers and framework libraries properly execute.
+Additionally, when developing the RCC portion of a Board Support Package (BSP), this allows independently validating that the RCC platform works as a first step towards a fully-featured BSP.
+The HDL platform can be later validated using one of the other FSK App heterogeneous modes in the companion document \githubio[\textit{FSK App Getting Started Guide}]{assets/FSK\_App\_Getting\_Started\_Guide.pdf}.
+~\\ \medskip
+The definitive documentation for the FSK App, including the remaining modes, is the \githubio[\textit{FSK App Guide}]{assets/FSK\_app.pdf}.
+
+\section{Prerequisites}
+This document assumes that the OpenCPI framework has been installed.  The application is supported on all of the OpenCPI RCC platforms, but this document shows examples for CentOS~7's platform \path{centos7} and Matchstiq-Z1's platform \path{xilinx13_3}.
+
+\section{Building the FSK Application }
+This section explains the steps for building everything to run the FSK App.  Following these steps will build more workers than required for the FSK App to execute, but provides an easy way to be certain all artifacts have been built.
+% Since this is repeated a lot... the ugliness with {-}- stops TeX from making it a longer dash
+\newcommand{\BuildRCCForPlatform}[1]{\texttt{ocpidev build {-}-rcc {-}-rcc-platform #1}}
+\newcommand{\BuildProject}[1]{
+\subsection{Build the \textit{#1} project}
+If the \textit{#1} project has not been created, follow the instructions in the Getting Started Guide.
+Once the \textit{#1} project has been created, the following \path{ocpidev} command can be used to build the primitives and workers required by the FSK App.
+Navigate to the installed and registered \textit{#1} project directory and run the command:
+\begin{itemize}
+\item CentOS~7:
+\subitem\BuildRCCForPlatform{centos7}
+\item Matchstiq-Z1:
+\subitem\BuildRCCForPlatform{xilinx13\_3}
+\end{itemize}
+}
+% Output the two sections:
+\foreach \proj in {core, assets} {
+  \BuildProject{\proj}
+}
+% App Building doesn't use the "--rcc" flag (WHY?)
+\newcommand{\BuildAppForPlatform}[1]{\texttt{ocpidev build {-}-rcc-platform #1}}
+\subsection{Build the FSK Application Executable}
+Next, ensure the executable for the FSK Application has been built. Navigate to the \path{applications/FSK} of the \textit{assets} project and run the command:
+\begin{itemize}
+\item CentOS~7:
+\subitem\BuildAppForPlatform{centos7}
+\subitem If successful, an executable file \path{target-centos7/FSK} should now exist.
+\item Matchstiq-Z1:
+\subitem\BuildAppForPlatform{xilinx13\_3}
+\subitem If successful, an executable file \path{target-xilinx13_3/FSK} should now exist.
+\end{itemize}
+
+\section{Running the Application on CentOS~7}
+This example demonstrates running the framework and FSK App on a host machine that was used to build the artifacts.
+The following steps describe setup and execution of the FSK in \textit{filerw\_rcc} mode on
+CentOS~7.
+
+\subsection{Setting OCPI\_LIBRARY\_PATH Environment Variable}
+\newcommand{\OcpiLibraryPathBlurb}{
+The \path{OCPI_LIBRARY_PATH} environment variable is a colon-separated list of files/directories which is searched for executable artifacts during deployment of the application.
+For proper execution of the FSK App, all artifacts (detailed in the FSK App document) must be included in the \path{OCPI_LIBRARY_PATH} environment variable.
+Example syntax for setting the library path is provided below.}
+\OcpiLibraryPathBlurb~\\
+\begin{verbatim}
+$ export OCPI_LIBRARY_PATH=~/ocpi_projects/assets/artifacts/:~/ocpi_projects/core/artifacts/
+\end{verbatim}
+\subsection{Running the Application}
+To run the application, navigate to the \path{assets/applications/FSK} directory and run the \path{FSK} executable in the \path{target-centos7} directory. Example syntax can be seen below.
+\begin{verbatim}
+$ ./target-centos7/FSK filerw_rcc
+\end{verbatim}
+
+After execution, continue to \sref{ViewTheResults}.
+
+\section{Running FSK App on Matchstiq-Z1 }
+The following steps describe setup and execution of the FSK in \textit{filerw\_rcc} mode on the Matchstiq-Z1.  This section requires that the Matchstiq-Z1 has been prepared for use with OpenCPI, ensure that the \githubio[\textit{Matchstiq\_Z1\ Getting Started Guide}]{assets/Matchstiq\_Z1\_Getting\_Started\_Guide.pdf} has been completed and network mode is functional before proceeding.
+Running the FSK App on any non-host platform demonstrates that the framework and RCC platform configuration (cross-compilation flags, etc.) work correctly.
+Additionally, these steps can be used to run the application with the framework artifacts stored remotely on a network store (networked mode) or located on the device (standalone mode).
+
+\subsection{Setting Up the Execution Platform}
+For embedded platforms (\textit{e.g.} Matchstiq-Z1), connect to the platform via a serial port. Example syntax for establishing a connection can be seen below:
+
+\begin{itemize}
+\item Matchstiq-Z1\footnote{This command works only if the \path{udev} rules have been properly loaded.}:
+\begin{itemize}
+\item[]
+\begin{verbatim}
+screen /dev/matchstiq_z1_0 115200
+\end{verbatim}
+\end{itemize}
+\end{itemize}
+
+\begin{itemize}
+\item In General:
+\begin{itemize}
+\item[]
+\begin{verbatim}
+sudo screen /dev/ttyUSB0 115200
+\end{verbatim}
+\end{itemize}
+\end{itemize}
+
+For this document we use what is called Networked mode, which is one of two modes typically used for running applications\footnote{Consult the \textit{Matchstiq-Z1 Getting Started Guide} for more information}. It involves creating NFS mounts between the development platform and the execution platform to enable application deployment. A setup script is used to automate the required steps for this mode. The example script must be modified to match your host machine's paths before you run it. Example syntax for running this script can be seen below:
+\begin{verbatim}
+source /mnt/card/opencpi/mynetsetup.sh <IP Address of Development Host>
+\end{verbatim}
+\subsection{Setting OCPI\_LIBRARY\_PATH Environment Variable}
+\OcpiLibraryPathBlurb~\\
+\begin{verbatim}
+$ export OCPI_LIBRARY_PATH=/mnt/ocpi_assets/artifacts:/mnt/ocpi_core/artifacts
+\end{verbatim}
+
+\subsection{Running the Application}
+To run the application, navigate to the \path{applications/FSK} directory and run the executable in the \path{target-<RCC Platform>} directory of your Execution Platform. Example syntax can be seen below.
+\begin{verbatim}
+$ ./target-xilinx13_3/FSK filerw_rcc
+\end{verbatim}
+Reference the \githubio[\textit{FSK App Getting Started Guide}]{assets/FSK\_App\_Getting\_Started\_Guide.pdf} for executing the remaining modes (\textit{filerw}, \textit{txrx}, \textit{bbloopback}, \textit{rx}, \textit{tx}) of the FSK Application. Ensure that \path{OCPI_LIBRARY_PATH} is configured, as provided, for the respective mode and platform. \\ \medskip
+
+\section{View the Results}\label{ViewTheResults}
+After the application completes, the output can be found in the \path{applications/FSK/odata} directory. To view the results on the Development Host, navigate to the \path{applications/FSK} directory and verify the output of these commands:
+% AV-5637: New image
+\begin{verbatim}
+$ file odata/out_app_fsk_filerw_rcc.bin
+odata/out_app_fsk_filerw_rcc.bin: JPEG image data, JFIF standard 1.01
+$ eog odata/out_app_fsk_filerw_rcc.bin
+<Image Viewer launches, showing image of Orioles Bird>
+\end{verbatim}
+\end{flushleft}
+\end{document}

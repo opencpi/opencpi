@@ -55,8 +55,8 @@
   <Instance Component="ocpi.assets.dsp_comps.fir_real_sse" Name="rx_fir_real">
     <Property Name="taps" ValueFile="idata/rx_rrcos_taps.dat"/>
   </Instance>
-  <!-- GP Out device worker-->
-  <!-- An example of how to use the GP Out device worker. Setting the mask_data
+  <!-- Matchstiq Z1 GP Out device worker-->
+  <!-- An example of how to use the Matchstiq Z1 GP Out device worker. Setting the mask_data
   property to drive GPIO pin 2 low and pin 3 high. GPIO pin 1 is controlled by
   the lime_tx device worker. -->
   <Instance Component="ocpi.core.gp_out">

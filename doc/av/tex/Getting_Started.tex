@@ -59,7 +59,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
                         v1.0 & Initial creation & 2/2016 \\
                         \hline
                         v1.1 & Updated for OpenCPI Release 1.1 & 3/2017 \\
-			            \hline
+                        \hline
                         v1.2 & Updated for OpenCPI Release 1.2 & 8/2017 \\
                         \hline
                         v1.3 & Updated for OpenCPI Release 1.3 & 2/2018 \\
@@ -400,14 +400,9 @@ Refer to table \ref{tab:plats} to determine whether the platform being built for
 If the \code{xsim} platform is being used, the \code{ocpi.assets} project does \textit{not} need to be built at this time.\\
 
 \newpage
-\section{Basic Example Application}
+\section{Creating a New Example Application}
 \label{sec:basic_example}
-
-\begin{center}
-\framebox{\parbox{0.75\linewidth}{\centering This section provides a \textit{basic} example application that the user can create. \\
-There are more detailed examples and presentation slides available as ``Standalone Training'' on \href{http://opencpi.github.io/}{\path{github.io}}.}}
-\end{center}
-
+\subsection{Overview}
 This simple application will contain three HDL Workers: \verb+ramp+, \verb+square+, and \verb+ander+, which can be seen in Figure~\ref{fig:simple_app_diagram}. \newline
 
 \begin{figure}[h]
@@ -1087,5 +1082,14 @@ Once the workers (\sref{example:buildworkers}) and assemblies (\sref{example:bui
 \bend
 
 %\todo{recap what was learned as a closing}
+
+\section{Other Example Applications}
+For more examples, please consult:
+\begin{itemize}
+  \item \githubio[\textit{FSK App RCC Getting Started Guide}]{assets/FSK\_App\_RCC\_Getting\_Started\_Guide.pdf} for a software-only variant of the FSK App (described below)
+  -- \textbf{this is the only demonstration that will execute end-to-end on a CentOS system without additional software installed, \textit{e.g.} a simulator}.
+  \item \githubio[\textit{FSK App Getting Started Guide}]{assets/FSK\_App\_Getting\_Started\_Guide.pdf} for an FPGA-based FSK Example, including RF TX and RX.
+  \item More detailed examples and presentation slides available as ``Standalone Training'' on \href{http://opencpi.github.io/}{\path{github.io}}.
+\end{itemize}
 
 \end{document}

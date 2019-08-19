@@ -1,4 +1,5 @@
 <RccWorker language='c++' spec='fir_real_sse-spec' controlOperations='release' StaticPreReqLibs='liquid'>
     <Property Name='HDL_WORKER_DELAY' Type='uChar' 
      Description='The fir_real_sse hdl worker has some register delay that need to be taken into account in RCC implementation.' Parameter='true' Default='4'/>
+    <SpecProperty Name="peak" Default="2000" Initial="true"/>
 </RccWorker>

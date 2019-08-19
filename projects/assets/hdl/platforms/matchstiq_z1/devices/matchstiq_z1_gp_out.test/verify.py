@@ -44,7 +44,7 @@ if len(odata) != len(goldendata):
     print "    Length = ", len(odata), "while expected length is = ", len(goldendata)
     sys.exit(1)
 else:
-    print "    PASS: Golden and output file lengths match'"
+    print "    PASS: Golden and output file lengths match"
 
 if np.array_equal(goldendata, odata):
     print "    PASS: Golden and output file match"

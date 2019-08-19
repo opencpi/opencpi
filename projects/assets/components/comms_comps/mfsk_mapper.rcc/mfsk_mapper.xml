@@ -1,1 +1,3 @@
-<RccWorker Language="c++" Spec="mfsk_mapper-spec"/>
+<RccWorker Language="c++" Spec="mfsk_mapper-spec" controlOperations="initialize">
+  <SpecProperty Name="input_data_byte_grouping" Parameter="true"/>
+</RccWorker>

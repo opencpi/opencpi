@@ -133,7 +133,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \begin{flushleft}
 The Matchstiq-Z1 Platform Worker is the interface between the Processing System and the FPGA on the Matchstiq-Z1 Platform. It makes the connections between the AXI buses on the ARM and the OpenCPI Control and Data Planes. Optionally, it can also be used to interface with the SPI, I2C, and UART buses with device workers. \newline
 
-There is also a GPO device worker called matchstiq\_z1\_gp\_out that can control the three GPIO pins present on the Matchstiq-Z1. By default it is not included in the platform configuration files but can be utilized by adding it to an assembly container. If the device worker is not added to an assembly container, the unused pins will be driven low.
+There is also a GPO device worker called matchstiq\_z1\_gp\_out that can control the three GPIO pins present on the Matchstiq-Z1. By default it is not included in the OWD or platform configuration files but can be utilized by adding it to an assembly container using the "virtual card" matchstiq\_z1\_gp\_out\_card. 
 
 \end{flushleft}
 
@@ -249,7 +249,7 @@ core/hdl/primitives/sdp/sdp\_body.vhd
 \begin{landscape}
 	\section*{Component Spec Properties}
 	\begin{scriptsize}
-		\begin{tabular}{|p{3cm}|p{1.5cm}|c|c|c|p{1.5cm}|p{1cm}|p{6cm}|}
+		\begin{tabular}{|p{3cm}|p{1.5cm}|c|c|c|p{1.2cm}|p{3cm}|p{6cm}|}
 			\hline
 			\rowcolor{blue}
 			Name               & Type   & SequenceLength & ArrayDimensions & Accessibility      & Valid Range & Default & Usage                                                                         \\
@@ -289,9 +289,9 @@ core/hdl/primitives/sdp/sdp\_body.vhd
 			\hline
 			\verb+LEDS+        & ULong  & -              & -               & Writable, Readable & Standard    & -       & Setting of LEDs in the platform, with readback                                \\
 			\hline
-			\verb+nSlots+      & ULong  & -              & -               & Parameter & Standard & 0 & Number of slots available for cards, which indicates the usable length of the slotCardIsPresent array property. \\
+			\verb+nSlots+      & ULong  & -              & -               & Parameter & Standard & 1 & Number of slots available for cards, which indicates the usable length of the slotCardIsPresent array property. \\
 			\hline
-			\verb+slotNames+   & String & 32             & -               & Parameter & Standard & ``'' & A string which is intended to include comma-separated names of the slots available for cards. The inter-comma position of each name corresponds to the same index of the slotCardIsPresent array property. \\
+			\verb+slotNames+   & String & 32             & -               & Parameter & Standard & matchstiq\_z1\_gpio\_slot & A string which is intended to include comma-separated names of the slots available for cards. The inter-comma position of each name corresponds to the same index of the slotCardIsPresent array property. \\
 			\hline
 			\verb+slotCardIsPresent+ & Bool & -          & 64              & Volatile           & Standard    & -       & An array of booleans, where each index contains an indication whether a card is physically present in the given index's slot. For a description of a given index's slot, see the corresponding comma-separated string contents in the slotName property. Note that only the first min(nSlots,64) of the 64 indices contain pertinent information. \\
 			\hline
@@ -385,8 +385,6 @@ core/hdl/primitives/sdp/sdp\_body.vhd
 			tmp100                     &                  &                             &               &                         \\
 			\hline
 			matchstiq\_z1\_i2c         &CLK\_FREQ\_p & 100*10\textsuperscript{6}                            & SCL               & -                         \\
-			\hline
-			matchstiq\_z1\_gp\_out         &simulation\_p &  false  &       & -                         \\
 			\hline
 		\end{tabular}
 

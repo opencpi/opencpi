@@ -236,7 +236,7 @@ The \texttt{input\_mask} property provides a way for enabling or disabling the u
                 \hline
                 \verb+mask_data+ & uLong & 0 & - & - & - & false & Volatile, Writable & Bitfield containing the data to write the GPIO pins and the mask. The mask allows setting GPIO pins on or off in a single operation. The MSW must be the mask and LSW must be the data and the 3 LSB of the mask and data correspond to the 3 GPIO pins of the Matchstiq-Z1. For example if mask\_data = 0x00010003, the mask = 0x0001 and data = 0x0003. This would set gpio1 to 1. \\
                 \hline
-                \verb+simulation_p+ & bool & false & - & - & - & true & Readable & If true generate circuits for simulation logic. \\
+                \verb+simulation_p+ & bool & false & - & - & - & true & - & If true generate circuits for simulation logic. \\
                 \hline
         \end{tabular}
         \end{scriptsize}

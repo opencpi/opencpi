@@ -51,7 +51,7 @@
                  Interconnect="<interconnect_name, probably zynq or pcie>"/-->
   <!-- e.g. <Connection Device="lime_adc" Port="out" Interconnect="pcie"/> -->
   <!-- e.g. <Connection Device="lime_dac" Port="in"  Interconnect="pcie"/> -->
-  <!-- GP Out device worker-->
-  <Connection Device="matchstiq_z1_gp_out" Port="in"  Interconnect="zynq"/>
+  <!-- Matchstiq Z1 GP Out device worker-->
+  <Connection Device="matchstiq_z1_gp_out" Card="matchstiq_z1_gp_out_card" Port="in" Interconnect="zynq"/>
 
 </HdlContainer>

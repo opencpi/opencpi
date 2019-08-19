@@ -169,7 +169,6 @@ Build Configuration Notes:
     <parameter name='ocpi_debug' value='false'/>
     <parameter name='ocpi_endian' value='little'/>
   </configuration>
-
 <!-- Debug Build Configurations -->
 <!--
   <configuration id='0'>

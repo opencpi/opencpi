@@ -1,0 +1,38 @@
+<HdlDevice Language="vhdl" Spec="gp_in-spec.xml" Version="2">
+
+  <Property Name="NUM_INPUTS" Type="uChar" Parameter="true" Default="1" Description="Number of GP Inputs. The max number of GP Inputs supported is 16."/>
+
+  <Property Name="USE_DEBOUNCE" Type="bool" Parameter="true" Default="false" Description="Enable/Disable build-time inclusion of debounce circuit."/>
+
+  <Property Name="COUNTER_WIDTH" Type="uLong" Parameter="true" Default="1" Description="The width of the debounce circuit's counter. Too calculate the width:
+    ceil(log2(clock rate * debounce time))."/>
+
+  <!-- There's an issue calculating the debounce circuit's counter width within the worker when building for targets/platforms (zed_ise, ml605) that use older tools.
+       When AV-5635 is resolved, CLK_RATE_HZ and DEBOUNCE_TIME_PSEC should be uncommented and should be used instead of COUNTER_WIDTH. -->
+  <!-- <Property Name="CLK_RATE_HZ" Type="double" Parameter="true" Default="100e6" Description="The clock rate of the clock feeding the debounce circuit in Hz."/>
+
+  <Property Name="DEBOUNCE_TIME_PSEC" Type="double" Parameter="true" Default="1e10" Description="The desired debounce time for the debounce circuit in picoseconds."/> -->
+
+  <Property Name="EDGE_MODE" Type="bool" Parameter="true" Default="false" Description="Enable/Disable build-time inclusion of edge detector circuit."/>
+
+  <Property Name="RISING" Type="bool" Parameter="true" Default="true" Description="
+    True - Selects the edge detector's rising edge output.
+    False - Selects the edge detector's falling edge output."/>
+
+  <Property Name="USE_TOGGLE" Type="bool" Parameter="true" Default="false" Description="Enable/Disable build-time inclusion of toggle circuit."/>
+
+  <Property Name="EVENT_MODE" Type="bool" Parameter="true" Default="false" Description="
+    True - Output port data valid only when there is a change in the data to be sent the output port.
+    False - Output port data valid every clock cycle."/>
+
+  <Property Name="mask_data" Type="uLong" Volatile="true" Description="Bitfield
+    containing the data read from the GPIO pins and the mask. The mask allows
+    knowledge of which GPIO pins changed since the previous read cycle. The MSW
+    must be the mask and LSW must be the data. The mask is the current data XOR
+    the previous data."/>
+
+  <StreamInterface Name="out" DataWidth="32" insertEOM="true"/>
+
+  <Signal Input="gpi_pin" Width="NUM_INPUTS"/>
+
+</HdlDevice>

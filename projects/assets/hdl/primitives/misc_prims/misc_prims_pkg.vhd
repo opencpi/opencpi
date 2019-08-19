@@ -80,4 +80,14 @@ component edge_detector
     falling_pulse     : out std_logic);
 end component;
 
+component debounce
+  generic (
+    COUNTER_WIDTH : positive);
+  port(
+    CLK    : in  std_logic;
+    RST    : in  std_logic;
+    BUTTON : in  std_logic;
+    RESULT : out std_logic);
+end component;
+
 end package misc_prims;

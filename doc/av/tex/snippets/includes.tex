@@ -15,8 +15,7 @@
 \newcommand{\sref}[1]{Section~\ref{#1}} % To quickly reference a section
 
 % To quickly reference a versioned PDF on github.io
-% \def\ocpiversion{1.5.0}
-\def\ocpiversion{1.5.0rc4} % TEMPORARY
+\def\ocpiversion{1.5.0}
 
 % This gives a link to github.io document. By default, it puts the filename.
 % You can optionally change the link, e.g.
@@ -26,6 +25,11 @@
 \newcommand{\githubio}[2][]{% The default is for FIRST param!
 \href{http://opencpi.github.io/releases/\ocpiversion/#2}{\ifthenelse{\equal{#1}{}}{\texttt{#2}}{#1}}}
 \newcommand{\githubioURL}[1]{\url{http://opencpi.github.io/releases/\ocpiversion/#1}}
+% Lastly, if you want a SINGLE leading path stripped, e.g. assets/X.pdf => X.pdf:
+\newcommand{\githubioFlat}[1]{%
+\StrBehind{#1}{/}[\den]%
+\href{http://opencpi.github.io/releases/\ocpiversion/#1}{\texttt{\den}}%
+}
 
 % Fix import paths
 \makeatletter

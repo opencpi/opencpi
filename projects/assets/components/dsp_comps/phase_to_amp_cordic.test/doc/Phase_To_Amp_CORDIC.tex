@@ -119,9 +119,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Component Library & ocpi.assets.dsp\_comps                              \\
 	\hline
-	Workers           & \comp.hdl                                          \\
+	Workers           & \comp.hdl, \comp.rcc                                                                                   \\
 	\hline
-	Tested Platforms  & xsim, isim, modelsim, alst4, ml605, ZedBoard(PL), Matchstiq-Z1(PL), E310(PL) \\
+	Tested Platforms  & xsim, isim, modelsim, alst4, ml605, ZedBoard(PL), Matchstiq-Z1(PL), E310(PL), centos7, xilinx13\_3 \\
 	\hline
 \end{tabular}
 
@@ -138,7 +138,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		\hline
 		v1.5 & & 4/2019\\
 		\hline
-		v1.6 & Convert Worker to Version 2 HDL API & 11/2019\\
+		v1.6 & Convert Worker to Version 2 HDL API, Created RCC Worker for FSK App& 11/2019\\
 		\hline
 		\end{tabularx}
 	\end{table}
@@ -170,6 +170,39 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 	Build time parameters control the width of the input, output and the number of stages of the CORDIC primitive module. The I/O data widths of the worker itself are set within the OCS and adjusted in the OWD.
 \end{flushleft}
+
+\subsection*{\comp.rcc}
+\begin{flushleft}
+This RCC worker is intended to be used in an all-RCC worker version of the FSK application,
+as it is currently implemented.  Where components are incorrectly named to reflect their implementation, rather than based on their functionality, i.e. phase\_to\_amp\_cordic vs polar\_rect.\medskip
+
+Additionally, this worker implements a secondary function (i.e. phase accumulator), which
+does not respect the component (1 function) model.
+For these reasons, and those discussed below, it is highly recommended that the usage
+of this RCC worker be limited to the all-RCC FSK applications and not used for new applications.\medskip
+
+This RCC (C++) worker is a work-a-like to the HDL worker, similarly named phase\_to\_amp\_cordic.hdl.
+However, it does NOT implement a CORDIC algorithm (i.e. stages of shifts \& adds),
+but rather utilizes floating point cmath functions to calculate its output.
+Due to HDL worker implementation decisions, which affect performance, the RCC worker
+was required to implement additional (restrictive) functionality to emulate the HDL worker's
+behavior.\medskip
+
+The calculations that it does first is phase accumulating the incoming real samples. 
+Then iterates over the phase values and converts from phase to radians as the input to the cmath sin and cos functions.
+The resulting value is multiplied by the magnitude to produce the scaled output given to the output port.\medskip
+
+The HDL worker will not output the final samples depending on the number of CORDIC stages and pipeline stages. 
+To match the HDL implementation, the rcc worker implements a stage delay using a deque as a FIFO (in\_FIFO).
+The FIFO contains the previous input samples that would still be present in the HDL implementation's pipline. 
+Calculations are made when data is present in the FIFO and enough data on the input port is present to push more data out.
+Then on the input data phase calculations are made.\medskip
+
+Limitations:  
+This worker does not implement the CORDIC (shifts-add) algorithm, 
+but equivalent floating point math with fixed-point adjustments (using float to integer truncation)\medskip
+\end{flushleft}
+
 
 \section*{Block Diagrams}
 \subsection*{Top level}
@@ -252,6 +285,29 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		Property & \verb+PEAK_MONITOR+     & Bool    & -              & -               & Parameter     & Standard        & true      & Enable/Disable build-time inclusion of peak monitor circuit\\
 		\hline
 		Property & \verb+peak+     & Short & -              & -               & Volatile & Standard        & 0 & Peak value of I/Q output (valid when PEAK\_MONITOR=true)\\
+		\hline
+	\end{tabular}
+\end{scriptsize}
+\subsection*{\comp.rcc}
+\begin{scriptsize}
+	\begin{tabular}{|p{3cm}|p{2cm}|c|c|c|c|c|p{1cm}|p{6cm}|}
+		\hline
+		\rowcolor{blue}
+		Type         & Name              & Type & SequenceLength & ArrayDimensions & Accessibility & Valid Range & Default & Usage                                    \\
+		\hline
+		SpecProperty & \verb+DATA_WIDTH+ & -    & -              & -               & Parameter     & 8-16        & 16      & Input (real) and Output (I/Q) data width \\
+		\hline
+		SpecProperty & \verb+DATA_EXT+   & -    & -              & -               & Parameter     & 6           & 6       & CORDIC requirement: Number of extension bits \\
+		\hline
+		SpecProperty & \verb+STAGES+     & -    & -              & -               & Parameter     & 8-16        & 12      & Number of CORDIC stages implemented      \\
+		\hline
+		Property & \verb+PEAK_MONITOR+     & Bool    & -              & -               & Parameter     & Standard        & true      & Enable/Disable build-time inclusion of peak monitor circuit\\
+		\hline
+		Property & \verb+peak+     & Short & -              & -               & Volatile & Standard        & 0 & Peak value of I/Q output (valid when PEAK\_MONITOR=true)\\
+		\hline
+		Property & \verb+AdditionalDelay+     & UChar & -              & -               & Parameter        & Standard & 2 & Additional number of delays over CORDIC stages (STAGES) to match HDL implementation.\\
+		\hline
+		Property & \verb+StageDelay+     & UChar & -              & -               & Parameter        & 0-255 & STAGES + AdditionalDelay & Number of delays to match HDL implementation.\\
 		\hline
 	\end{tabular}
 \end{scriptsize}

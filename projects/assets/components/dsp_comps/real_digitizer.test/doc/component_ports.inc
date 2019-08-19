@@ -15,7 +15,7 @@ Name & Producer & Protocol & Optional
 \hline
 in & false & rstream\_protocol.xml & false\\
 \hline
-out & true & rstream\_protocol.xml & false\\
+out & true & & false\\
 \hline
 \end{longtable}
 \end{scriptsize}

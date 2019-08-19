@@ -389,7 +389,7 @@ int main(int argc, char **argv) {
   try {
     args_t args(parse_and_validate_args(argc, argv));
 
-    if(args.mode == "filerw") {
+    if(args.mode == "filerw" || args.mode == "filerw_rcc") {
       FSKApp app(get_and_print_oas_filename(args, "").c_str(), args);
       run(app);
     }

@@ -1,0 +1,77 @@
+<tests useHDLFileIo='true' spec='gp_in'>
+
+
+  <!-- The first test case tests the gpi device worker by toggling GPIO pins on and then off with the debounce circuit, edge detector circuit, or toggle circuit
+      disabled. Test case two toggles the pins on and off with only the debounce circuit enabled. The third test case toggles the pins on and off with only the
+      edge detector circuit enabled. Test case four toggles the pins on, off, on, and then off with only the toggle circuit enabled.
+      The fifth test case tests toggling the GPIO pins on, off, and then on with the debounce circuit, edge detector circuit, and toggle circuit enabled.   -->
+
+  <!-- Backpressure is disabled for all cases as backpressure is never applied to the "signal" interface. -->
+
+  <output port='out' script='verify.py' disableBackpressure='true'/>
+  <property name='testCase' test='true'/>
+  <property name='numClockCycles' value='200'/>
+
+  <case duration="5">
+    <input port='em_in' script='generate.py'/>
+    <property name='testCase' value='1'/>
+    <property name='NUM_INPUTS' value='1'/>
+    <property name='USE_DEBOUNCE' value='false'/>
+    <property name='EDGE_MODE' value='false'/>
+    <property name='RISING' value='true'/>
+    <property name='USE_TOGGLE' value='false'/>
+    <property name='EVENT_MODE' value='false'/>
+  </case>
+
+  <case duration="5">
+    <input port='em_in' script='generate.py' messageSize='12312'/>
+    <property name='testCase' value='2'/>
+    <property name='NUM_INPUTS' value='1'/>
+    <property name='USE_DEBOUNCE' value='true'/>
+    <property name='COUNTER_WIDTH' value='10'/>
+    <!-- Uncomment below and use these instead of COUNTER_WIDTH when AV-5635 resolved  -->
+    <!-- <property name='CLK_RATE_HZ' value='100e6'/>
+    <property name='DEBOUNCE_TIME_PSEC' value='1.024e7'/> -->
+    <property name='EDGE_MODE' value='false'/>
+    <property name='RISING' value='true'/>
+    <property name='USE_TOGGLE' value='false'/>
+  </case>
+
+  <case duration="5">
+    <input port='em_in' script='generate.py'/>
+    <property name='testCase' value='3'/>
+    <property name='NUM_INPUTS' value='1'/>
+    <property name='USE_DEBOUNCE' value='false'/>
+    <property name='EDGE_MODE' value='true'/>
+    <property name='RISING' value='true'/>
+    <property name='USE_TOGGLE' value='false'/>
+  </case>
+
+  <case duration="5">
+    <input port='em_in' script='generate.py'/>
+    <property name='testCase' value='4'/>
+    <property name='NUM_INPUTS' value='1'/>
+    <property name='USE_DEBOUNCE' value='false'/>
+    <property name='EDGE_MODE' value='false'/>
+    <property name='RISING' value='true'/>
+    <property name='USE_TOGGLE' value='true'/>
+  </case>
+
+
+  <case duration="5">
+    <!-- messageSize is set to 12312 because there are 12312 input data bytes generated
+    for the second test case and want to send them as one message -->
+    <input port='em_in' script='generate.py' messageSize='12312'/>
+    <property name='testCase' value='5'/>
+    <property name='NUM_INPUTS' value='16'/>
+    <property name='USE_DEBOUNCE' value='true'/>
+    <property name='COUNTER_WIDTH' value='10'/>
+    <!-- Uncomment below and use these instead of COUNTER_WIDTH when AV-5635 resolved  -->
+    <!-- <property name='CLK_RATE_HZ' value='100e6'/>
+    <property name='DEBOUNCE_TIME_PSEC' value='1.024e7'/> -->
+    <property name='EDGE_MODE' value='true'/>
+    <property name='RISING' value='true'/>
+    <property name='USE_TOGGLE' value='true'/>
+  </case>
+
+</tests>

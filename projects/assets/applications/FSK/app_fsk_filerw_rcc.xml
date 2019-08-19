@@ -1,0 +1,88 @@
+<Application Package='ocpi.assets' Done="file_write">
+  <!-- TX Chain -->
+  <Instance Component="ocpi.assets.comms_comps.mfsk_mapper" Name="mfsk_mapper" >
+    <Property Name="symbols" Value="-32768,32767"/>
+    <Property Name="input_data_byte_grouping" Value="1"/>
+  </Instance>
+  <Instance Component="ocpi.assets.util_comps.zero_pad" Name="zero_pad" Selection="DWIDTH_p==16">
+    <Property Name="num_zeros" Value="38"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.fir_real_sse" Name="tx_fir_real">
+    <Property Name="taps" ValueFile="idata/tx_rrcos_taps.dat"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.phase_to_amp_cordic" Name="phase_to_amp_cordic">
+    <Property Name="magnitude" Value="20000"/>
+    <Property Name="DATA_WIDTH" Value="16"/>
+    <Property Name="DATA_EXT" Value="6"/>
+    <Property Name="STAGES" Value="16"/>
+  </Instance>
+  <!-- RX Chain -->
+  <Instance Component="ocpi.assets.dsp_comps.rp_cordic" Name="rp_cordic">
+    <Property Name="DATA_WIDTH" Value="16"/>
+    <Property Name="DATA_EXT" Value="6"/>
+    <Property Name="STAGES" Value="16"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.fir_real_sse" Name="rx_fir_real">
+    <Property Name="taps" ValueFile="idata/rx_rrcos_taps.dat"/>
+  </Instance>
+  
+  <!-- RCC Components-->
+  <!-- TX Chain -->
+  <Instance Component="ocpi.core.file_read" Name="file_read">
+    <Property Name="fileName" Value="idata/Os.jpeg"/>
+    <Property Name="messagesInFile" Value="false"/>
+    <Property Name="granularity" Value="1"/>
+  </Instance>
+  <!-- RX Chain -->
+  <Instance Component="ocpi.assets.dsp_comps.baudTracking" Name="baudTracking">
+    <Property name="bypass" value="false"/>
+    <Property name="SPB" value="39"/>
+    <Property name="BaudAvrCount" value="10"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.real_digitizer" Name="real_digitizer">
+    <Property Name="input_data_byte_grouping" Value="1"/>
+  </Instance>
+  <Instance Component="ocpi.core.file_write" Name="file_write">
+    <Property Name="fileName" Value="odata/out_app_fsk_filerw_rcc.bin"/>
+    <Property Name="messagesInFile" Value="false"/>
+  </Instance>
+  <!-- Connections -->
+  <!-- TX Chain -->
+  <Connection>
+    <Port Instance="file_read" Name="out" buffersize="16352" />
+    <Port Instance="mfsk_mapper" Name="in" buffersize="16352" />
+  </Connection>
+  <Connection>
+    <Port Instance="mfsk_mapper" Name="out"/>
+    <Port Instance="zero_pad" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="zero_pad" Name="out"/>
+    <Port Instance="tx_fir_real" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="tx_fir_real" Name="out"/>
+    <Port Instance="phase_to_amp_cordic" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="phase_to_amp_cordic" Name="out"/>
+    <Port Instance="rp_cordic" Name="in"/>
+  </Connection>
+  <!-- RX Chain -->
+  <Connection>
+    <Port Instance="rp_cordic" Name="out"/>
+    <Port Instance="rx_fir_real" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="rx_fir_real" Name="out"/>
+    <Port Instance="baudTracking" Name="in" Buffersize="16352" Buffercount='4'/>
+  </Connection>
+  <Connection>
+    <Port Instance="baudTracking" Name="out"/>
+    <Port Instance="real_digitizer" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="real_digitizer" Name="out"/>
+    <Port Instance="file_write" Name="in"/>
+  </Connection>
+</Application>

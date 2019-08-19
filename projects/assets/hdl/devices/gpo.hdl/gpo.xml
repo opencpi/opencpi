@@ -1,0 +1,24 @@
+<HdlDevice Language="vhdl" Spec="gp_out-spec.xml" Version="2">
+
+  <Property Name="NUM_OUTPUTS" Type="uChar" Parameter="true" Default="1" Description="Number of GP Outputs. The max number of GP Outputs supported is 16."/>
+
+  <Property Name="mask_enable" Type="uChar" Writable="true" Default="0x03"
+    Description="Bitfield that allows enabling or disabling the use of the
+    property 'mask_data'; or input port 'data' and 'mask'. Bit 0 is the property and bit 1 is the input port.
+    If a bit is a 1 then the corresponding way of controlling the GPIO pin is enabled."/>
+
+  <Property Name="mask_data" Type="uLong" Writable="true"
+    Default="0" Description="Bitfield containing the data to write the GPIO pins
+    and the mask. The mask allows setting GPIO pins on or off in a single operation and
+    only affects the corresponding data pin; mask bit 0 will allow for data bit 0 to be
+    set. The MSW must be the mask and LSW must be the data. For example if mask_data
+    = 0x00010003, the mask = 0x0001 and data = 0x0003. This would set gpo_pin[0] to 1
+    and leave all other pins untouched."/>
+
+    <Property Name="pin_state" Type="uShort" Volatile="true" Description="Current state of the GPIO pins."/>
+
+    <StreamInterface Name="in" DataWidth="32"/>
+
+    <Signal Output="gpo_pin" Width="NUM_OUTPUTS"/>
+
+</HdlDevice>

@@ -82,7 +82,7 @@
 \begin{itemize}
   \item assets/components/misc\_comps/\comp.hdl/\comp.vhd
   \item assets/components/misc\_comps/\comp.hdl/out\_port\_inject\_zlm.vhd
-  \item assets/components/misc\_comps/\comp.hdl/set\_clr.vhd
+  \item assets/primitives/util\_prims/set\_clr/src/set\_clr.vhd
   \item assets/primitives/misc\_prims/lfsr/src/lfsr.vhd
 \end{itemize}
 

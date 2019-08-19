@@ -30,6 +30,7 @@ Libraries=ocpi fixed_float util
 # except that any *_pkg.vhd files will be compiled first
 SourceFiles=$(patsubst %,%.vhd,\
 	misc_prims_pkg \
+	debounce/src/debounce \
 	lfsr/src/lfsr \
 	round_conv/src/round_conv \
 	event_in_to_txen/src/event_in_to_txen \

@@ -69,12 +69,12 @@ set_property PACKAGE_PIN U20  [get_ports {lime_dac_TX_CLK}];
 #set_property PACKAGE_PIN U6  [get_ports {lime_tx_txen}];
 
 
-# Matchstiq-Z1 GPIO device worker gpio1. Routed to GPIO pin 19 on the rear debug connector
-set_property PACKAGE_PIN U6  [get_ports {matchstiq_z1_gp_out_gpio1}];
-# Matchstiq-Z1 GPIO device worker gpio2. Routed to GPIO pin 3 on the rear debug connector
-set_property PACKAGE_PIN Y10  [get_ports {matchstiq_z1_gp_out_gpio2}];
-# Matchstiq-Z1 GPIO device worker gpio3. Routed to GPIO pin 4 on the rear debug connector
-set_property PACKAGE_PIN Y6  [get_ports {matchstiq_z1_gp_out_gpio3}];
+# Routed to GPIO pin 19 on the rear debug connector
+set_property PACKAGE_PIN U6  [get_ports {MATCHSTIQ_Z1_GPIO_SLOT_FPGA_GPIO1}];
+# Routed to GPIO pin 3 on the rear debug connector
+set_property PACKAGE_PIN Y10  [get_ports {MATCHSTIQ_Z1_GPIO_SLOT_FPGA_GPIO2}];
+# Routed to GPIO pin 4 on the rear debug connector
+set_property PACKAGE_PIN Y6  [get_ports {MATCHSTIQ_Z1_GPIO_SLOT_FPGA_GPIO3}];
 
 
 #TX Interface

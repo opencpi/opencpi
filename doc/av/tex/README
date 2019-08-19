@@ -3,7 +3,7 @@ In order to manually build the latex documentation in this folder, various depen
 Run:
 $ sudo yum install -y texlive-latex rubber ghostscript
 For CentOS 7, the packages needed are:
-$ sudo yum install -y texlive-latex-bin texlive-texconfig-bin texlive-metafont-bin texlive-cm texlive-pdftex-def texlive-ifluatex texlive-zapfding texlive-helvetic texlive-times texlive-symbol texlive-titlesec texlive-multirow texlive-dvips texlive-fancyhdr texlive-collection-fontsrecommended texlive-microtype texlive-rotating texlive-placeins texlive-appendix
+$ sudo yum install -y texlive-latex-bin texlive-texconfig-bin texlive-metafont-bin texlive-cm texlive-pdftex-def texlive-ifluatex texlive-zapfding texlive-helvetic texlive-times texlive-symbol texlive-titlesec texlive-multirow texlive-dvips texlive-fancyhdr texlive-collection-fontsrecommended texlive-microtype texlive-rotating texlive-placeins texlive-appendix texlive-xstring
 
 To build a single PDF from sources, run:
 $ rubber --pdf <filename>.tex

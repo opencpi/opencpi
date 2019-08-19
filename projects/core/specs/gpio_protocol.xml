@@ -1,10 +1,14 @@
 <!-- GPIO Protocol  -->
+<!-- The protocol contains a data and mask. The MSW must be the mask and the LSW must be the data.
+     General Purpose Output - The mask allows setting GPIO pins on or off in a single operation.
+     In order for a GPIO pin to take on the value of a data bit, the corresponding mask bit has to be set to 1.
+     For example if mask_data = 0x00010003, the mask = 0x0001 and data = 0x0003. This would set GPIO pin 0 to 1 and
+     all other pins are left untouched
+     General Purpose Input - The mask allows knowledge of which GPIO pins changed since the previous read cycle.
+     The mask is the current data XOR the previous data. -->
 <Protocol datavaluegranularity="2">
-  <!-- The protocol contains a data and mask. The mask allows setting GPIO pins on or off in a single operation.-->
-  <!-- In order for a GPIO pin to take on the value of a set data bit, the corresponding mask bit has to be set. -->
-  <!-- For example if mask_data = 0x00010003, the mask = 0x0001 and data = 0x0003. This would set GPIO pin 0 to 1. -->
   <Operation Name="gpio" >
-    <Argument name="mask_data" type="Struct" >
+    <Argument name="mask_data" type="Struct">
       <member name="data" type="uShort"/>
       <member name="mask" type="uShort"/>
     </Argument>

@@ -95,5 +95,4 @@ Build Configuration Notes:
     <parameter name='R' value='8192'/>
     <parameter name='ACC_WIDTH' value='58'/>
   </configuration>
-
 </build>

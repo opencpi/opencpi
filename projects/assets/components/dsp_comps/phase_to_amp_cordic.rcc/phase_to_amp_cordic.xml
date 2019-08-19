@@ -1,0 +1,17 @@
+<RccWorker language='c++' spec='phase_to_amp_cordic-spec' controlOperations="initialize">
+  <SpecProperty Name="DATA_WIDTH" Parameter="true" Default="16"/>
+  <SpecProperty Name="DATA_EXT" Parameter="true" Default="6"/>
+  <SpecProperty Name="STAGES" Parameter="true" Default="12"/>
+
+  <Property Name="PEAK_MONITOR" Type="bool" Parameter="true" Default="true"
+	    Description="Enable/Disable build-time inclusion of peak monitor circuit" />
+
+  <Property Name="peak" Type="short" Volatile="true"
+	    Description="Peak value of I/Q output (valid when PEAK_MONITOR=true)"/>
+	    
+  <Property Name="AdditionalDelay" Type="uchar" Parameter="true" Value="2"
+            Description="Additional number of delays over CORDIC stages (STAGES) to match HDL implementation."/>
+  
+  <Property Name="StageDelay" Type="uchar" Parameter="true" Value="STAGES+AdditionalDelay"
+            Description="Number of delays to match HDL implementation."/>
+</RccWorker>

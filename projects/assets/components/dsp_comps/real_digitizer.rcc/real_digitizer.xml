@@ -1,7 +1,9 @@
-<RccWorker controloperations="start" Spec="real_digitizer-spec.xml">
+<RccWorker language='c++' spec='real_digitizer-spec' controlOperations="start">
   <Property Name="enable_printing" Type="bool" Writable="true" Default="true"
                                    Description="Enable stdout/stderr printing."/>
   <Property Name="sync_criteria_met" Type="bool" Volatile="true"
-                                     Description="Indicates either 0xFACE found or need_sync is false."/>
+                                     Description="Indicates either sync_pattern found or need_sync is false."/>
+  <Property Name="sync_pattern" Type="uShort" Default="0xFACE" 
+                                     Description="Input pattern indicating start of data." Initial="true"/>
+  <SpecProperty Name="input_data_byte_grouping" Parameter="true"/>                                                                       
 </RccWorker>
-

@@ -1,6 +1,6 @@
-<!-- GP Out Device Worker OCS -->
+<!-- GP Out OCS -->
 <ComponentSpec>
   <!-- Port -->
-  <DataInterfaceSpec Name="in" Producer="false" Optional="true" Protocol="gpio_protocol.xml"/>
+  <Port Name="in" Protocol="gpio_protocol.xml" Optional="true"/>
 
 </ComponentSpec>

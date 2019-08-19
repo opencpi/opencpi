@@ -39,6 +39,7 @@ import os.path
 import opencpi.colors as color
 import numpy as np
 
+np.set_printoptions(threshold=np.nan)
 
 if len(sys.argv) != 3:
     print("Invalid arguments:  usage is: verify.py <output-file> <input-file>")
@@ -67,6 +68,9 @@ ofilename.close()
 # Read all input data as real int16 samples
 ifilename = open(sys.argv[2], 'rb')
 idata = np.fromfile(ifilename, dtype=np.int16, count=-1)
+#print ("idata : ", idata)
+real = odata['real_idx']
+imag = odata['imag_idx']
 ifilename.close()
 
 # Test #1 - Check that output data is not all zeros
@@ -83,8 +87,9 @@ if len(odata) != int(NUM_SAMPLES-STAGES-2):
 # Test #3 - Check that output data values
 if (enable == "true"): # => NORMAL MODE
     Fs = 1 #simply arbitrary
-    real = odata['real_idx']
-    imag = odata['imag_idx']
+    #print ("odata : ", odata)
+    #print ("odata real : ", real)
+    #print ("odata imag : ", imag)
     # Construct complex array of vectors for performing FFT
     # Zero-pad "data" with the number of input samples - output samples
     # so that the expected tone will be at the correct frequency.
@@ -116,7 +121,7 @@ if (enable == "true"): # => NORMAL MODE
     # Check that the difference between the calculated and expected frequencies is greater
     # than the max possible difference (max_delta).
     if (calc_delta > max_delta):
-        print ("\tExpected:Max:Delta ", expected_freq, measured_freq, calc_delta, max_delta)
+        print ("\tExpected freq: ", expected_freq," Measured freq: ", measured_freq, " calc delta ", calc_delta, " max delta ", max_delta)
         sys.exit(1)
     print ("\tResults (Normal Mode): Max freq is within the expected range")
 

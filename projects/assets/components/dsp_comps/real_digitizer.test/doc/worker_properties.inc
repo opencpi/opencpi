@@ -22,5 +22,7 @@ enable\_printing & bool & - & - & Writable & Standard & true & Enable stdout/std
 \hline
 sync\_criteria\_met & bool & - & - & Volatile & Standard & 0 & Indicates either 0xFACE found or need\_sync is false.\\
 \hline
+sync\_pattern & uShort & - & - & Initial & 0x0000-0xFFFF & 16 & Input pattern indicating start of data.\\
+\hline
 \end{longtable}
 \end{scriptsize}

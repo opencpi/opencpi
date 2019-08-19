@@ -1,0 +1,19 @@
+The use of the matchstiq_z1_gpio_slot is to create a "virtual slot" and so that
+different device workers can be connected to the FPGA GPIO pins of the matchstiq_z1.
+These "virtual cards" don't go through all possible permutations of gpi and gpo
+device workers; they serve as examples. Other permutations can be added as needed
+if another one is desired.
+The framework does not allow one to parameterize which component is inserted at
+build time/parameterizing which worker signals will connect to an FPGA pin.
+So this is used as a workaround and is not recommended practice.
+
+The "virtual cards" have these configurations:
+ matchstiq_z1_gpi_card.xml - FPGA_GPIO1/2/3 = IN/IN/IN
+ matchstiq_z1_gpio_in_in_out_card.xml - FPGA_GPIO1/2/3 = IN/IN/OUT
+ matchstiq_z1_gpio_in_out_in_card.xml - FPGA_GPIO1/2/3 = IN/OUT/IN
+ matchstiq_z1_gpio_in_out_out_card.xml - FPGA_GPIO1/2/3 = IN/OUT/OUT
+ matchstiq_z1_gpio_out_in_in_card.xml - FPGA_GPIO1/2/3 = OUT/IN/IN
+ matchstiq_z1_gpio_out_in_out_card.xml - FPGA_GPIO1/2/3 = OUT/IN/OUT
+ matchstiq_z1_gpio_out_out_in_card.xml - FPGA_GPIO1/2/3 = OUT/OUT/IN
+ matchstiq_z1_gpo_card.xml - FPGA_GPIO1/2/3 = OUT/OUT/OUT
+ matchstiq_z1_gp_out_card.xml - FPGA_GPIO1/2/3 = OUT/OUT/OUT

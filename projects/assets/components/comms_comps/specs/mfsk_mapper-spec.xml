@@ -1,8 +1,10 @@
 <ComponentSpec>
   <Property Name="M_p" Type="uchar" Default="2" Readable="true" Parameter="true"/>
-  
+
   <Property Name="symbols" Type="short" Readable="true" Writable="true" ArrayLength="M_p"/>
-  
+
+  <Property Name="input_data_byte_grouping" Type="uchar" Default="2" Initial="true" Description="Used to determine the number of bytes read together in a unit of data, sometimes resulting in byte swapping on the output."/>
+
   <DataInterfaceSpec Name="in" Producer="false"/>
   <DataInterfaceSpec Name="out" Producer="true" Protocol="rstream_protocol.xml" ZeroLengthMessages="true"/>
 </ComponentSpec>

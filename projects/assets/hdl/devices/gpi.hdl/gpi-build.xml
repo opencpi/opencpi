@@ -1,0 +1,75 @@
+<build>
+  <configuration id="0">
+    <Parameter Name="NUM_INPUTS" Value="1"/>
+    <Parameter Name="USE_DEBOUNCE" Value="false"/>
+    <Parameter Name="EDGE_MODE" Value="false"/>
+    <Parameter Name="RISING" Value="true"/>
+    <Parameter Name="USE_TOGGLE" Value="false"/>
+  </configuration>
+  <configuration id="1">
+    <Parameter Name="NUM_INPUTS" Value="1"/>
+    <Parameter Name="USE_DEBOUNCE" Value="false"/>
+    <Parameter Name="EDGE_MODE" Value="false"/>
+    <Parameter Name="RISING" Value="true"/>
+    <Parameter Name="USE_TOGGLE" Value="false"/>
+    <Parameter Name="EVENT_MODE" Value="true"/>
+  </configuration>
+  <configuration id="2">
+     <Parameter Name="NUM_INPUTS" Value="1"/>
+     <Parameter Name="USE_DEBOUNCE" Value="true"/>
+     <Parameter Name="COUNTER_WIDTH" Value="20"/>
+     <Parameter Name="EDGE_MODE" Value="false"/>
+     <Parameter Name="RISING" Value="true"/>
+     <Parameter Name="USE_TOGGLE" Value="false"/>
+   </configuration>
+   <configuration id="3">
+     <Parameter Name="NUM_INPUTS" Value="1"/>
+     <Parameter Name="USE_DEBOUNCE" Value="true"/>
+     <Parameter Name="COUNTER_WIDTH" Value="10"/>
+     <!-- Uncomment below and use these instead of COUNTER_WIDTH when AV-5635 resolved  -->
+     <!-- <Parameter Name="CLK_RATE_HZ" Value="100e6"/>
+     <Parameter Name="DEBOUNCE_TIME_PSEC" Value="1.024e7"/> -->
+     <Parameter Name="EDGE_MODE" Value="false"/>
+     <Parameter Name="RISING" Value="true"/>
+     <Parameter Name="USE_TOGGLE" Value="false"/>
+   </configuration>
+   <configuration id="4">
+     <Parameter Name="NUM_INPUTS" Value="1"/>
+     <Parameter Name="USE_DEBOUNCE" Value="false"/>
+     <Parameter Name="EDGE_MODE" Value="true"/>
+     <Parameter Name="RISING" Value="true"/>
+     <Parameter Name="USE_TOGGLE" Value="false"/>
+   </configuration>
+   <configuration id="5">
+     <Parameter Name="NUM_INPUTS" Value="1"/>
+     <Parameter Name="USE_DEBOUNCE" Value="false"/>
+     <Parameter Name="EDGE_MODE" Value="false"/>
+     <Parameter Name="RISING" Value="true"/>
+     <Parameter Name="USE_TOGGLE" Value="true"/>
+   </configuration>
+   <configuration id="6">
+     <Parameter Name="NUM_INPUTS" Value="2"/>
+     <Parameter Name="USE_DEBOUNCE" Value="false"/>
+     <Parameter Name="EDGE_MODE" Value="false"/>
+     <Parameter Name="RISING" Value="true"/>
+     <Parameter Name="USE_TOGGLE" Value="false"/>
+   </configuration>
+   <configuration id="7">
+     <Parameter Name="NUM_INPUTS" Value="3"/>
+     <Parameter Name="USE_DEBOUNCE" Value="false"/>
+     <Parameter Name="EDGE_MODE" Value="false"/>
+     <Parameter Name="RISING" Value="true"/>
+     <Parameter Name="USE_TOGGLE" Value="false"/>
+   </configuration>
+   <configuration id="8">
+     <Parameter Name="NUM_INPUTS" Value="16"/>
+     <Parameter Name="USE_DEBOUNCE" Value="true"/>
+     <Parameter Name="COUNTER_WIDTH" Value="10"/>
+     <!-- Uncomment below and use these instead of COUNTER_WIDTH when AV-5635 resolved  -->
+     <!-- <Parameter Name="CLK_RATE_HZ" Value="100e6"/>
+     <Parameter Name="DEBOUNCE_TIME_PSEC" Value="1.024e7"/> -->
+     <Parameter Name="EDGE_MODE" Value="true"/>
+     <Parameter Name="RISING" Value="true"/>
+     <Parameter Name="USE_TOGGLE" Value="true"/>
+   </configuration>
+</build>

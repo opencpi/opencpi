@@ -19,5 +19,7 @@ Name                 & Type   & SequenceLength & ArrayDimensions & Accessibility
 \hline
 need\_sync & Bool & - & - & Readable, Initial & Standard & true & -\\
 \hline
+input\_data\_byte\_grouping & UChar & - & - & Initial & 1,2,4,8 & 2 & Used to determine the number of bytes in a group of data to swap to little endian byte ordering.\\
+\hline
 \end{longtable}
 \end{scriptsize}

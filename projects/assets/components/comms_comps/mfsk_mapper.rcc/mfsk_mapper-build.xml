@@ -1,11 +1,25 @@
 <build>
   <configuration id='0'>
     <parameter name='M_p' value='2'/>
+    <parameter name='input_data_byte_grouping' value='1'/>
     <parameter name='ocpi_debug' value='false'/>
     <parameter name='ocpi_endian' value='little'/>
   </configuration>
   <configuration id='1'>
     <parameter name='M_p' value='4'/>
+    <parameter name='input_data_byte_grouping' value='1'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+    <configuration id='2'>
+    <parameter name='M_p' value='2'/>
+    <parameter name='input_data_byte_grouping' value='2'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+  <configuration id='3'>
+    <parameter name='M_p' value='4'/>
+    <parameter name='input_data_byte_grouping' value='2'/>
     <parameter name='ocpi_debug' value='false'/>
     <parameter name='ocpi_endian' value='little'/>
   </configuration>
