@@ -82,6 +82,7 @@ for file in ${file_list[@]}; do
            [ -d $file ] && mkdir -p $opencpi_output_path/$edited_file)
   fi
 done
+[ -e $opencpi_output_path/$hdl_platform/$hdl_rcc_platform/system.xml ] &&
 mv $opencpi_output_path/$hdl_platform/$hdl_rcc_platform/system.xml $opencpi_output_path
 # Combine hardware platform udev-rules and one obtained from prepare-package.sh
 mkdir -p $output_path/$hdl_platform/host-udev-rules
